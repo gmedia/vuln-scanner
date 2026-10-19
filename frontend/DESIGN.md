@@ -129,7 +129,7 @@ All spacing derives from **4px**.
 
 ### StatTile (shared KPI tile)
 
-- **Location**: `frontend/src/components/patterns/StatTile.tsx` — `StatTile`, `StatGrid`, `StatGridSkeleton`. **This is the only KPI tile implementation.** Do not declare a local `KpiTile` / `StatTile` / `AdminKpiTile` in a page or feature folder.
+- **Location**: `frontend/src/components/patterns/StatTile.tsx` — `StatTile`, `StatGrid`, `StatGridSkeleton`. **This is the only KPI tile implementation.** Do not declare a local `KpiTile` / `StatCard` / `AdminKpiTile` in a page or feature folder.
 - **Structure**: bordered card → 2px `SiemRail` → 10px uppercase label → mono tabular value → optional extra block.
 - **Variants**: `rounded` (`lg` default, `md` for `/credit-history` and `/ai`), `inset` (`tile` `pl-2`, `tight` `pl-1`, `none`), `railClass={null}` (no rail), `icon` (label-row icon, `/scan` and `/admin`), `valueFirst` (`/dashboard` number above label), `extraPlacement` (`below` default, `inline` for the Guard degraded badge), `isLoading` + `skeleton`.
 - **Grid**: `StatGrid` owns `grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4`; override columns through `className` (e.g. `lg:grid-cols-3`, `lg:grid-cols-[1fr_1fr_2fr]`). `StatGridSkeleton` owns the loading grid.
@@ -394,7 +394,7 @@ Print invoice (sections 0–8) and SIEM (above) are **separate surfaces**. This 
 
 - Embedded refs: shortlisted `linear.app` / `stripe` / `supabase` → picked Layer A `redesign-skill` + Layer B `linear.app` (ops density, luminance steps, one accent) stacked with `layout-skill` (stack + page-grid). Same routing as `/siem` (#873). Not Stripe marketing; not print invoice; not a Wazuh/CrowdStrike clone.
 - Lazyweb: 6 queries (`crowdstrike falcon hosts`, `wazuh agents`, `sentinelone endpoints`, `endpoint protection agent inventory`, `daytona api keys`, `lago api keys`). Screens saved under `/tmp/lazyweb-refs/`. **Viewed grammar (not pixel copy):** SentinelOne / Fortinet endpoint pages = dense host table + status, not stacked marketing cards; secret-once APIs (Knock / Lago-class) = mono token + copy, shown once. Skipped Forbes/CNBC/Databricks hits (news, not product UI). Pack `generate_report` skipped (deprecated lazyweb path; sibling SIEM harvest is the in-repo contract).
-- Sibling harvest: `SiemIndexerStrip` (2px rail KPI tiles + live pulse), `SiemRail`, `SiemEmptyIsland`, `UptimeKpiRow` / `HostOverview` (uppercase 10px labels, mono tabular values, `rounded-md border`), `HostInstallCard` (mono `pre` + copy, not a green soup), PageHeader (`h2` + subtitle + actions). Credit History filter bar is **out** — Guard has no filter row.
+- Sibling harvest: `SiemIndexerStrip` (2px rail KPI tiles + live pulse), `SiemRail`, `EmptyState`, `UptimeKpiRow` / `HostOverview` (uppercase 10px labels, mono tabular values, `rounded-md border`), `HostInstallCard` (mono `pre` + copy, not a green soup), PageHeader (`h2` + subtitle + actions). Credit History filter bar is **out** — Guard has no filter row.
 - Imagen drafts: skipped — existing SPA + SIEM grammar + viewed EDR/secret screens are the reference; no extra imagegen deps.
 - Skipped lanes: react-grab / react-scan / react-doctor install — AGENTS.md forbids extra deps for a visual slice; `main.tsx` has none.
 
@@ -490,7 +490,7 @@ PageHeader actions: Enable (when off + admin) or Sync (when on + admin). Sync ke
 
 ### GuardAgentsPanel
 
-- **Structure**: one shell `data-testid="guard-agents"`. Empty: `SiemEmptyIsland` + `data-testid="guard-agents-empty"` (icon `Monitor`, copy `noAgents`). Loading = `TableRowSkeleton rows={4} columns={5}`.
+- **Structure**: one shell `data-testid="guard-agents"`. Empty: `EmptyState` + `data-testid="guard-agents-empty"` (icon `Monitor`, copy `noAgents`). Loading = `TableRowSkeleton rows={4} columns={5}`.
 - **Row**: 2px rail — online `bg-primary`, disconnected `bg-amber-600`, pending `bg-sky-600`, disabled `bg-border`. Name mono; UUID `CopyableId`; last seen + helper poll; version; asset chip `guard-asset-chip-{id}`; admin Select `guard-link-asset-{id}`; host-token `guard-host-token-issue`; disable `guard-disable-{id}`.
 - **Do not** dump IP in the default row (keep current columns). Do not `table-fixed`.
 
@@ -556,7 +556,7 @@ P15 flatten: KPI strip is **not** inside a status Card. Enroll, agents, and aler
 |------|----------|--------------|--------------|
 | react-scan / react-grab not wired | SPA entry | AGENTS.md forbids extra deps for a visual slice | Separate tooling PR |
 | Duplicate mobile + desktop agent/token markup | GuardAgents / Enroll | Frozen testids on both card and row; `useIsMobile` rewrite is out of a visual slice | Named a11y slice |
-| `SiemRail` / `SiemEmptyIsland` imported into Guard | chrome | One rail primitive; extracting `components/ops/` is a third-family risk | Keep import until a named ops-chrome PR |
+| `SiemRail` imported into Guard, `EmptyState` from `components/patterns/` | chrome | One rail + one empty primitive; extracting `components/ops/` is a third-family risk | Keep import until a named ops-chrome PR |
 | No IP column on agent table | agents | Current columns frozen by unit tests (`Last seen`, `Version`, `min-w-[40rem]`) | Named column slice |
 | Lazyweb pack `generate_report` not filed | research log | Deprecated MCP path; in-repo SIEM harvest is the contract | Ignore |
 | Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Three surfaces; merging would pollute print | Keep split |
@@ -570,7 +570,7 @@ Print §§0–8 and Guard SPA above stay locked. This section is the **dark SPA*
 ## 0. Research Log (Assets)
 
 - Embedded refs: shortlisted `linear.app` / `stripe` / `supabase` → picked Layer A `redesign-skill` + `layout-skill` (stack + page-grid) and Layer B `linear.app` (ops density, luminance steps, one accent). Same routing as `/guard` / `/siem`. Not Stripe marketing; not print invoice; not a CMDB / AWS inventory clone.
-- Sibling harvest: `GuardKpiStrip` (`KpiTile` + `SiemRail`, `grid-cols-2 gap-3 lg:grid-cols-4`), `SiemEmptyIsland`, `GuardAgentCard` / `GuardAgentsPanel` (mobile cards `md:hidden` + desktop table `hidden md:block`, 2px type rail before copy), `PageHeader`, kit `Progress` (`indicatorClassName`), `TableRowSkeleton`. Credit History filter bar is **already** the Assets filter contract (`AssetFilters` h-10 / gap-2) — do not restyle it into a 12-col Apply gutter.
+- Sibling harvest: `GuardKpiStrip` (`StatTile` + `SiemRail`, `grid-cols-2 gap-3 lg:grid-cols-4`), `EmptyState`, `GuardAgentCard` / `GuardAgentsPanel` (mobile cards `md:hidden` + desktop table `hidden md:block`, 2px type rail before copy), `PageHeader`, kit `Progress` (`indicatorClassName`), `TableRowSkeleton`. Credit History filter bar is **already** the Assets filter contract (`AssetFilters` h-10 / gap-2) — do not restyle it into a 12-col Apply gutter.
 - Current `/assets` diagnosis: SKU quota buried in PageHeader as a thin `h-1.5` bar; empty/loading are generic Cards; type is muted text with no rail; mobile cards are nested `bg-card` chips without a leading rail; desktop table is a flat spreadsheet; quota-at-cap has no urgency color.
 - Imagen drafts: skipped — existing SPA + Guard/SIEM grammar is the reference; no extra imagegen deps.
 - Skipped lanes: react-grab / react-scan / react-doctor — AGENTS.md forbids extra deps for a visual slice.
@@ -904,8 +904,8 @@ Print §§0–8 and SIEM / Guard / Assets / page-nav above stay locked. This sec
 ## 0. Research Log (Status page)
 
 - Embedded refs: shortlisted `linear.app` / `stripe` / `supabase` → picked Layer A `redesign-skill` + `layout-skill` (stack + page-grid) and Layer B `linear.app` (ops density, luminance steps, one accent). Same routing as `/guard` / `/siem` / `/assets`. Not Stripe marketing; not Linear indigo; not a public status-page clone of Better Stack's marketing skin.
-- Sibling harvest: `GuardKpiStrip` / `SiemIndexerStrip` (`KpiTile` + `SiemRail`, `grid-cols-2 gap-3 lg:grid-cols-4`, live `GuardPulse` when healthy), `SiemEmptyIsland`, `GuardAgentCard` (mobile cards `md:hidden` + desktop table `hidden md:block`, 2px rail before copy), `PageHeader` `h2`. Identity / hostname / components / incidents stay **sibling shells**, not a dashboard of nested Card-in-Card icons.
-- Current `/uptime/status-page` diagnosis (post-#868): `StatusHealthHero` is a flat `rounded-lg` card with no rail and no pulse; `StatusKpiRow` is three border tiles without `SiemRail`; stacked kit `Card`s for identity / DNS / components / incidents; empty components/incidents are ad-hoc muted boxes, not `SiemEmptyIsland`; incident mobile cards and desktop rows have wash but no leading rail. Correct-but-flat.
+- Sibling harvest: `GuardKpiStrip` / `SiemIndexerStrip` (`StatTile` + `SiemRail`, `grid-cols-2 gap-3 lg:grid-cols-4`, live `GuardPulse` when healthy), `EmptyState`, `GuardAgentCard` (mobile cards `md:hidden` + desktop table `hidden md:block`, 2px rail before copy), `PageHeader` `h2`. Identity / hostname / components / incidents stay **sibling shells**, not a dashboard of nested Card-in-Card icons.
+- Current `/uptime/status-page` diagnosis (post-#868): `StatusHealthHero` is a flat `rounded-lg` card with no rail and no pulse; `StatusKpiRow` is three border tiles without `SiemRail`; stacked kit `Card`s for identity / DNS / components / incidents; empty components/incidents are ad-hoc muted boxes, not `EmptyState`; incident mobile cards and desktop rows have wash but no leading rail. Correct-but-flat.
 - Lazyweb screens viewed (6): Better Stack (overall banner + component rows), Google Apps Status (traffic-light overall), Splunk status (incident ops table), UptimeRobot (KPI counts + public URL), GetFernand (copyable DNS), mobile-alerts (stacked cards, 44px taps). Grammar taken: **overall health is the first read**; copyable DNS as secret-rail records; incidents table desktop / cards mobile; empty islands. Not pixel copies; not a second public-page skin.
 - Imagen drafts: skipped — existing SPA + Guard/SIEM grammar is the reference; no extra imagegen deps.
 - Skipped lanes: react-grab / react-scan / react-doctor — AGENTS.md forbids extra deps for a visual slice. Lazyweb `update.sh` failed (`set: Illegal option -o pipefail`); screens already on disk under `/tmp/lazyweb-refs/status-page/`.
@@ -1018,14 +1018,14 @@ Content stress: long slug / hostname / TXT token uses `break-all` / `truncate` +
 
 ### StatusComponentBoard
 
-- Empty: `SiemEmptyIsland` icon `Activity`, title `noComponents`.
+- Empty: `EmptyState` icon `Activity`, title `noComponents`.
 - Rows: `relative`, first cell `pl-4` + `componentRailClass` (`up` primary / `down` destructive / `degraded` amber / else border). Down wash `bg-destructive/[0.04]`. Remove icon-only, `aria-label` i18n `remove`, frozen `status-component-remove-{id}`, visible text must **not** match `/Remove/`.
 
 ### StatusIncidentList / Card
 
 - Mobile list frozen classes + `status-incident-card-{id}`. Card: `relative overflow-hidden … pl-4` + `incidentRailClass`. Unresolved wash kept. `status-incident-post-update-{id}` on open incidents. Title input is **not** on the card (sheet only).
 - Desktop: frozen classes + `<table>` + `status-incident-row-{id}`. First cell `relative pl-4` + rail (Guard agent row grammar). Unresolved row wash kept.
-- Empty: `SiemEmptyIsland` icon `Radio`, title `noIncidents`.
+- Empty: `EmptyState` icon `Radio`, title `noIncidents`.
 - Sheet: frozen `status-incident-sheet` with `right-0`; create testids unchanged.
 
 ### Empty create / loading
@@ -1057,7 +1057,7 @@ Content stress: long slug / hostname / TXT token uses `break-all` / `truncate` +
 | Hero / KPI / shells / cards | `border border-border bg-card rounded-lg` | Surfaces |
 | Rail | `absolute inset-y-2 left-0 w-0.5 rounded-full` (`SiemRail`) | Overall, KPI, DNS copy, component, incident |
 | TXT secret | `bg-primary/5` + primary rail | Pending hostname |
-| Empty island | `rounded-xl border border-border bg-muted/40` (`SiemEmptyIsland`) | No page / no components / no incidents |
+| Empty island | `rounded-xl border border-border bg-muted/40` (`EmptyState`) | No page / no components / no incidents |
 | Open incident | `bg-amber-500/[0.04]` + amber/orange/sky rail | Unresolved |
 
 P15 flatten: KPI strip is **not** inside a status Card. Hero is a sibling of the KPI strip, not a CardHeader icon row.
@@ -1086,7 +1086,7 @@ P15 flatten: KPI strip is **not** inside a status Card. Hero is a sibling of the
 |------|----------|--------------|--------------|
 | react-scan / react-grab not wired | SPA entry | AGENTS.md forbids extra deps for a visual slice | Separate tooling PR |
 | Duplicate mobile + desktop incident markup | StatusIncidentList | Frozen testids on both card and row | Named a11y slice |
-| `SiemRail` / `SiemEmptyIsland` / `GuardPulse` imported into status | chrome | One rail/pulse primitive; extracting `components/ops/` is a third-family risk | Keep import until a named ops-chrome PR |
+| `SiemRail` / `GuardPulse` imported into status, `EmptyState` from `components/patterns/` | chrome | One rail/pulse primitive; extracting `components/ops/` is a third-family risk | Keep import until a named ops-chrome PR |
 | Public `/status/{slug}` HTML not restyled | FastAPI island | Authenticated SPA only; public must rhyme Landing | Named public-status slice |
 | `StatusPage.tsx` already >250 LOC | page | Extracting identity/host would mix a visual slice with a module split | Named extract |
 | Lazyweb pack `generate_report` not filed | research log | `update.sh` pipefail; screens on disk are the harvest | Ignore |
@@ -1099,8 +1099,8 @@ Print §§0–8 and SIEM / Guard / Assets / Status / page-nav above stay locked.
 ## 0. Research Log (Uptime)
 
 - Embedded refs: shortlisted `linear.app` / `stripe` / `sentry` → picked Layer A `redesign-skill` + `layout-skill` (stack + page-grid; AppShell owns document scroll) and Layer B `linear.app` (ops density, luminance steps, one accent, tabular mono). Same routing as `/guard` / `/siem` / `/assets` / `/uptime/status-page`. Not Stripe marketing; not Linear indigo `#5e6ad2`; not a Better Stack / UptimeRobot marketing clone.
-- Sibling harvest: `GuardKpiStrip` / `AssetKpiStrip` / `StatusKpiRow` (`KpiTile` + `SiemRail`, `grid-cols-2 gap-3`, live `GuardPulse` when healthy), `StatusHealthHero` (2px overall rail + wash + pulse), `SiemEmptyIsland`, `GuardAgentCard` / `SiemEventMobileCard` (mobile cards `md:hidden` + desktop table `hidden md:block`, 2px rail in first cell), `PageHeader` `h2`. Fleet KPI and detail hero must be **sibling shells**, not nested Card-in-Card icon rows.
-- Current `/uptime` diagnosis: `UptimeKpiRow` is three generic `rounded-md` border tiles (no rail, no pulse); `UptimeMonitorList` mobile cards and desktop `table-fixed` rows wash down-state but have no leading rail; empty filter/list is an ad-hoc muted box, not `SiemEmptyIsland`; sparkline 96×28 already exists. Correct-but-flat Card stack.
+- Sibling harvest: `GuardKpiStrip` / `AssetKpiStrip` / `StatusKpiRow` (`StatTile` + `SiemRail`, `grid-cols-2 gap-3`, live `GuardPulse` when healthy), `StatusHealthHero` (2px overall rail + wash + pulse), `EmptyState`, `GuardAgentCard` / `SiemEventMobileCard` (mobile cards `md:hidden` + desktop table `hidden md:block`, 2px rail in first cell), `PageHeader` `h2`. Fleet KPI and detail hero must be **sibling shells**, not nested Card-in-Card icon rows.
+- Current `/uptime` diagnosis: `UptimeKpiRow` is three generic `rounded-md` border tiles (no rail, no pulse); `UptimeMonitorList` mobile cards and desktop `table-fixed` rows wash down-state but have no leading rail; empty filter/list is an ad-hoc muted box, not `EmptyState`; sparkline 96×28 already exists. Correct-but-flat Card stack.
 - Current `/uptime/:id` diagnosis: hero is a flat `rounded-lg` card with a muted protocol circle (generic icon-in-circle trap); `uptime-detail-kpi` is three border tiles without `SiemRail`; availability bar already has `segmentClass` / `buildBarSegments` (keep); outage rows and history cards have wash but no rail. `UptimeDetail.tsx` ~775 pure LOC — extract chrome, do not grow the page.
 - Competitive grammar (Better Stack / Pingdom / UptimeRobot / Sentry, sibling P15): **fleet health is the first read** (up/down counts + pulse); probe target is a mono record under a state rail; availability is a **timeline bar**, not a sparkline-as-hero; outages are an ops list. Not pixel copies; not a second public-page skin.
 - Imagen drafts: skipped — existing SPA + Guard/SIEM/Status grammar is the reference; no extra imagegen deps.
@@ -1115,7 +1115,7 @@ Print §§0–8 and SIEM / Guard / Assets / Status / page-nav above stay locked.
 
 The one memorable moment: when any monitor is `up`, the Up KPI rail goes primary and a live pulse sits next to the count. On detail, when the probe is enabled and `up`, the hero rail goes primary and the pulse sits next to the state word. When a probe is `down`, the rail goes destructive **before** the operator opens History. Sparkline stays a 96×28 latency spark in the desktop Spark column — not the hero.
 
-Do **not** use Lucide `Shield` (Guard cliché) or a filled green masthead. Protocol uses existing `ProtocolGlyph` (Globe / Network / HeartPulse / Radio / Activity). Empty fleet uses `Activity`. Filter-empty uses `Activity`. Outages-empty / history-empty use `SiemEmptyIsland`. Loading is skeleton KPI tiles + a filter-bar placeholder (`data-testid="uptime-filters-loading"`, 3 input-shaped `h-10` in `grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3`, same order as loaded) + `TableRowSkeleton rows={5} columns={7}` for the list, not a spinner in a Card. `/uptime/:id` loading mirrors the whole page: header + hero + range-filter `OpsShell` + 3 KPI + timeline `OpsShell` + outages `OpsShell` + history card (`rows={5} columns={4}`).
+Do **not** use Lucide `Shield` (Guard cliché) or a filled green masthead. Protocol uses existing `ProtocolGlyph` (Globe / Network / HeartPulse / Radio / Activity). Empty fleet uses `Activity`. Filter-empty uses `Activity`. Outages-empty / history-empty use `EmptyState`. Loading is skeleton KPI tiles + a filter-bar placeholder (`data-testid="uptime-filters-loading"`, 3 input-shaped `h-10` in `grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3`, same order as loaded) + `TableRowSkeleton rows={5} columns={7}` for the list, not a spinner in a Card. `/uptime/:id` loading mirrors the whole page: header + hero + range-filter `OpsShell` + 3 KPI + timeline `OpsShell` + outages `OpsShell` + history card (`rows={5} columns={4}`).
 
 Public `/status/{slug}` and `/uptime/status-page` are **out of scope**.
 
@@ -1193,17 +1193,17 @@ Content stress: long name / URL uses `truncate` / `break-all` + `min-w-0`. 375px
 
 | Primitive | Anatomy | States |
 |-----------|---------|--------|
-| `UptimeKpiRow` (`uptime-kpi`) | `KpiTile` + `SiemRail` + optional `GuardPulse` on Up; SKU tile + `Progress` (`uptime-sku-quota`) | Up rail primary + pulse when `upCount > 0`; Down rail destructive when `downCount > 0` else muted; SKU rail primary / amber / destructive by quota |
+| `UptimeKpiRow` (`uptime-kpi`) | `StatTile` + `SiemRail` + optional `GuardPulse` on Up; SKU tile + `Progress` (`uptime-sku-quota`) | Up rail primary + pulse when `upCount > 0`; Down rail destructive when `downCount > 0` else muted; SKU rail primary / amber / destructive by quota |
 | `UptimeHealthHero` | `StatusHealthHero` grammar: `relative overflow-hidden rounded-lg border bg-card pl-4` + `SiemRail` + wash + `ProtocolGlyph` + target + meta cluster + pulse when enabled+up | up / down / degraded / unknown / paused (`enabled=false` → idle rail, no pulse) |
-| `UptimeDetailKpiStrip` (`uptime-detail-kpi`) | 3 `KpiTile` + `SiemRail`; retention note `col-span-3` (`uptime-samples-retention-note`) | Range % primary rail; OK/Samples border rail; blanked `—` when beyond 7-day sample retention |
+| `UptimeDetailKpiStrip` (`uptime-detail-kpi`) | 3 `StatTile` + `SiemRail`; retention note `col-span-3` (`uptime-samples-retention-note`) | Range % primary rail; OK/Samples border rail; blanked `—` when beyond 7-day sample retention |
 | Monitor card (mobile) | `relative rounded-lg border bg-card p-3 pl-4` + `SiemRail` + Badge + glyph + 24h/latency + `MonitorActionsMenu` | down wash; **no** `uptime-row` |
 | Monitor row (desktop) | `table-fixed` + `h-12` + first cell `relative pl-4` + `SiemRail` + sparkline + actions | `uptime-row`; hover `bg-muted/50`; down wash |
 | `Sparkline` (`uptime-sparkline`) | 96×28 SVG area+stroke; empty `"—"` | stroke primary / destructive / muted; height ≥ 28 (frozen) |
 | Availability bar (`uptime-availability-bar`) | `h-8` flex segments, `segmentClass` | up primary, down destructive, else muted |
 | Outage row (`uptime-outage-row`) | `relative rounded-md border p-3 pl-4` + destructive rail | ongoing vs duration; pager `uptime-outage-pagination` |
-| History (`uptime-history-panel`) | Card + mobile cards / desktop table; fail wash + rail | loading `TableRowSkeleton rows={5} columns={4}`; empty → `SiemEmptyIsland` |
+| History (`uptime-history-panel`) | Card + mobile cards / desktop table; fail wash + rail | loading `TableRowSkeleton rows={5} columns={4}`; empty → `EmptyState` |
 | Empty fleet (`uptime-empty`) | Card island + `Activity` + `uptime-empty-cta` | keep testids; CTA `Button` |
-| Filter empty | `SiemEmptyIsland` | `filterEmpty` copy |
+| Filter empty | `EmptyState` | `filterEmpty` copy |
 | Add/edit | existing right `Sheet` (`uptime-sheet` `right-0`) | do not invent a modal |
 
 Default / hover / focus / disabled / loading / error / empty / current: kit Button / Tabs / DatePicker / Badge. Hover that changes nothing is slop — rows, links, buttons only. Unknown enabled monitors keep the existing 4s list poll.
@@ -1229,7 +1229,7 @@ Default / hover / focus / disabled / loading / error / empty / current: kit Butt
 |------|-----------|-----|
 | Hero / KPI / shells / cards | `border border-border bg-card rounded-lg` | Surfaces (list KPI tiles `rounded-lg` to match Guard; filters accordion stays `rounded-md` — frozen) |
 | Rail | `absolute inset-y-2 left-0 w-0.5 rounded-full` (`SiemRail`) | KPI, hero, monitor card/row, outage, failed history |
-| Empty island | `rounded-xl border border-border bg-muted/40` (`SiemEmptyIsland`) | Filter empty, outages empty, history empty |
+| Empty island | `rounded-xl border border-border bg-muted/40` (`EmptyState`) | Filter empty, outages empty, history empty |
 | Down wash | `bg-destructive/[0.04]` + destructive rail | Down monitor, failed sample |
 | Up wash | `bg-primary/5` | Detail hero when `up` |
 
@@ -1260,7 +1260,7 @@ P15 flatten: fleet KPI strip is **not** inside a monitors Card. Detail hero is a
 |------|----------|--------------|--------------|
 | react-scan / react-grab not wired | SPA entry | AGENTS.md forbids extra deps for a visual slice | Separate tooling PR |
 | Duplicate mobile + desktop monitor / history markup | UptimeMonitorList / UptimeHistoryPanel | Frozen `uptime-row` is desktop-only; history has mobile+desktop testids | Named a11y slice |
-| `SiemRail` / `SiemEmptyIsland` / `GuardPulse` imported into uptime | chrome | One rail/pulse primitive; extracting `components/ops/` is a third-family risk | Keep import until a named ops-chrome PR |
+| `SiemRail` / `GuardPulse` imported into uptime, `EmptyState` from `components/patterns/` | chrome | One rail/pulse primitive; extracting `components/ops/` is a third-family risk | Keep import until a named ops-chrome PR |
 | `UptimeDetail.tsx` still large after hero/KPI extract | page | Range/outage/sample logic is the page; further split would mix visual slice with a module split | Named extract |
 | Filters accordion stays `rounded-md` while KPI tiles go `rounded-lg` | UptimeFiltersSection | Frozen class match on `rounded-md` + `last:border-b` | Keep |
 | Lazyweb pack `generate_report` not filed | research log | `/tmp/lazyweb-refs` empty this session; sibling P15 is the harvest | Ignore |
@@ -1274,7 +1274,7 @@ Print §§0–8 and SIEM / Guard / Assets / page-nav / Status / Uptime above sta
 ## 0. Research Log (Host Protect)
 
 - Embedded refs: shortlisted `linear.app` / `stripe` / `supabase` → picked Layer A `redesign-skill` + `layout-skill` (stack + page-grid; AppShell owns document scroll) and Layer B `linear.app` (ops density, luminance steps, one accent, tabular mono). Same routing as `/guard` / `/siem` / `/assets` / `/uptime`. Not Stripe marketing; not Linear indigo `#5e6ad2`; not a Wazuh / Imunify dashboard clone.
-- Sibling harvest: `GuardKpiStrip` / `UptimeKpiRow` / `AssetKpiStrip` (`KpiTile` + `SiemRail` + `GuardPulse`), `SiemEmptyIsland`, `GuardAgentCard` (2px rail before copy), `UptimeMonitorList` (mobile cards `md:hidden` + desktop table `hidden md:block`), `PageHeader` `h2`, kit `Progress` (`indicatorClassName`), page-nav `TabsList variant="line"`.
+- Sibling harvest: `GuardKpiStrip` / `UptimeKpiRow` / `AssetKpiStrip` (`StatTile` + `SiemRail` + `GuardPulse`), `EmptyState`, `GuardAgentCard` (2px rail before copy), `UptimeMonitorList` (mobile cards `md:hidden` + desktop table `hidden md:block`), `PageHeader` `h2`, kit `Progress` (`indicatorClassName`), page-nav `TabsList variant="line"`.
 - Current `/host` diagnosis (post-#877): `HostOverview` was four flat `rounded-md` border tiles with no rail and no pulse; SKU quota lived as a thin `h-1.5` bar inside PageHeader copy; `HostSiteCard` was a nested `Card` stack with no leading state rail; suspicious-file and WAF-event rows were flat spreadsheet rows; empty / feature-off / no-agents were ad-hoc Cards. Correct-but-flat.
 - Imagen drafts: skipped — existing SPA + sibling P15 grammar is the reference; no extra imagegen deps.
 - Lazyweb pack: skipped this session — sibling P15 + competitive grammar is the harvest.
@@ -1354,7 +1354,7 @@ Responsive:
 
 | Primitive | Anatomy | States |
 |-----------|---------|--------|
-| `HostKpiStrip` (`host-overview`) | 4 `KpiTile` + `SiemRail`; quota tile mounts kit `Progress`; helper tile mounts `GuardPulse` | Quota rail primary / amber / destructive; helper pulse when agents > 0 and not stale |
+| `HostKpiStrip` (`host-overview`) | 4 `StatTile` + `SiemRail`; quota tile mounts kit `Progress`; helper tile mounts `GuardPulse` | Quota rail primary / amber / destructive; helper pulse when agents > 0 and not stale |
 | Install shell (`host-install-card`) | `relative overflow-hidden rounded-lg border bg-card pl-4` + primary `SiemRail` + mono `pre` | static |
 | `HostSiteCard` (`host-site-card-{id}`) | `relative overflow-hidden rounded-lg border bg-card pl-4` + `SiemRail(siteTone)` + wash; header, hairline, settings grid, hairline, hits | critical / running / failed / completed / idle |
 | `HostHitsList` (`host-hits`) | mobile cards `md:hidden` + desktop `table-fixed`; destructive rail for webshell/backdoor | open / quarantined / pending / ignored |
@@ -1413,7 +1413,7 @@ P15 flatten: the KPI strip is **not** inside PageHeader and **not** inside the l
 | Item | Location | Why accepted | Owner / Exit |
 |------|----------|--------------|--------------|
 | Duplicate mobile + desktop hits / WAF-event markup | HostHitsList / HostWafEventsList | Frozen testids on both card and row; `useIsMobile` would drop one tree | Named a11y slice |
-| `SiemRail` / `SiemEmptyIsland` / `GuardPulse` imported into host | chrome | One rail/pulse primitive; extracting `components/ops/` is a third-family risk | Keep import until a named ops-chrome PR |
+| `SiemRail` / `GuardPulse` imported into host, `EmptyState` from `components/patterns/` | chrome | One rail/pulse primitive; extracting `components/ops/` is a third-family risk | Keep import until a named ops-chrome PR |
 | Site settings stay four labeled `Select`s in the card | HostSiteCard | Frozen testids; collapsing to a settings sheet is a module change, not a visual slice | Named refactor |
 | `HostWafPanel` still holds query + mutation logic | panel | This slice restyles chrome only; a `useHostWaf` hook split mixes visual with module work | Named extract |
 | Print `DESIGN.md` remains invoice-only in §§0–8 | this file | Multiple SPA surfaces; merging would pollute print | Keep split |
@@ -1425,7 +1425,7 @@ Print §§0–8 and SIEM / Guard / Assets / page-nav / Status / Uptime above sta
 ## 0. Research Log (Dashboard)
 
 - Embedded refs: shortlisted `linear.app` / `stripe` / `supabase` → picked Layer A `redesign-skill` + `layout-skill` (stack + page-grid; AppShell owns document scroll) and Layer B `linear.app` (ops density, luminance steps, one accent, tabular mono). Same routing as `/guard` / `/siem` / `/assets` / `/uptime` / `/host`. Not Stripe marketing; not Linear indigo `#5e6ad2`; not a marketing hero.
-- Sibling harvest: `GuardKpiStrip` / `UptimeKpiRow` / `AssetKpiStrip` (`KpiTile` + `SiemRail` + `GuardPulse`), `SiemEmptyIsland` grammar, `UptimeMonitorList` / `GuardAgentCard` (2px rail before copy), `PageHeader` `h2`, page-nav line tabs (unused here).
+- Sibling harvest: `GuardKpiStrip` / `UptimeKpiRow` / `AssetKpiStrip` (`StatTile` + `SiemRail` + `GuardPulse`), `EmptyState` grammar, `UptimeMonitorList` / `GuardAgentCard` (2px rail before copy), `PageHeader` `h2`, page-nav line tabs (unused here).
 - Current `/dashboard` diagnosis: `StatCard` was three flat `rounded-md` border tiles tinted by a border colour with no rail and no pulse; the attention block was a generic destructive `Alert`; recent rows were flat `bg-card` cards / plain table rows with no rail; empty and all-lab states were ad-hoc muted boxes; the two sidebar sections were plain Cards with a `CardHeader` icon row.
 - Imagen drafts: skipped — existing SPA + sibling P15 grammar is the reference; no extra imagegen deps.
 - Lazyweb pack: skipped this session — sibling P15 is the harvest.
@@ -1515,7 +1515,7 @@ Responsive:
 | Attach coverage shell | railed shell + hairline title + schedule rows + Manage CTA | rail primary when enabled > 0, destructive at `MAX_ENABLED_SCHEDULES`, muted when none |
 | Guard shell | railed shell + hairline title + agent count + Open Guard CTA | rail primary when agents > 0 and none stale, destructive when stale, muted when none |
 
-`StatTile` renders the **value before the label** (frozen: `getByText("Open risk").previousElementSibling` is the value element, which keeps `TONE_TEXT.red` / `text-foreground`). Do **not** reorder to the label-first `KpiTile` used elsewhere without updating that frozen test.
+`DashboardKpiStrip` renders `StatTile` with `valueFirst` — the **value before the label** (frozen: `getByText("Open risk").previousElementSibling` is the value element, which keeps `TONE_TEXT.red` / `text-foreground`). Every other strip is label-first. Do **not** drop `valueFirst` without updating that frozen test.
 
 ## 6. Motion
 
@@ -1562,7 +1562,7 @@ P15 flatten: the KPI strip is **not** inside PageHeader and **not** inside the r
 
 | Item | Location | Why accepted | Owner / Exit |
 |------|----------|--------------|--------------|
-| `StatTile` is value-before-label, unlike `KpiTile` | DashboardKpiStrip | Frozen `previousElementSibling` + `TONE_TEXT.red` contract in `Dashboard.test.tsx` | Named test refactor if the contract changes |
+| `DashboardKpiStrip` uses `StatTile valueFirst` while every other strip is label-first | Dashboard | Frozen `previousElementSibling` + `TONE_TEXT.red` contract in `Dashboard.test.tsx` | Named test refactor if the contract changes |
 | Duplicate mobile + desktop recent-row markup | Dashboard | Frozen both-surface rendering; `useIsMobile` would drop one tree | Named a11y slice |
 | `SiemRail` / `GuardPulse` imported into dashboard | chrome | One rail/pulse primitive; extracting `components/ops/` is a third-family risk | Keep import until a named ops-chrome PR |
 | Dashboard keeps local `severityCount` / `latestPerTarget` helpers | page | Pre-existing; this slice restyles chrome only | Named extract |
@@ -1575,7 +1575,7 @@ Print §§0–8, SIEM / Guard / Assets / page-nav / Status / Uptime / Host / Das
 ## 0. Research Log (Scan detail)
 
 - Embedded refs: shortlisted `linear.app` / `stripe` / `supabase` → picked Layer A `redesign-skill` + `layout-skill` (stack + page-grid; AppShell owns document scroll) and Layer B `linear.app` (ops density, luminance steps, one accent, tabular mono). Same routing as `/guard` / `/siem` / `/assets` / `/uptime` / `/host` / `/dashboard`. Not Stripe marketing; not Linear indigo `#5e6ad2`.
-- Sibling harvest: `GuardKpiStrip` / `UptimeDetailKpiStrip` / `HostKpiStrip` (`KpiTile` + `SiemRail` + `GuardPulse`), `SiemEmptyIsland` island grammar, `HostHitsList` (rail inside the first cell, mobile card + desktop row), `lib/siemSeverity.ts` canonical severity rail palette (critical destructive / high orange-500 / medium yellow-500 / low blue-500), page-nav `TabsList variant="line"`.
+- Sibling harvest: `GuardKpiStrip` / `UptimeDetailKpiStrip` / `HostKpiStrip` (`StatTile` + `SiemRail` + `GuardPulse`), `EmptyState` island grammar, `HostHitsList` (rail inside the first cell, mobile card + desktop row), `lib/siemSeverity.ts` canonical severity rail palette (critical destructive / high orange-500 / medium yellow-500 / low blue-500), page-nav `TabsList variant="line"`.
 - Current `/scan/:id` diagnosis (post-#877): page-nav line tabs already shipped, but the four `QuickStat` tiles were flat Cards tinted by a border colour with no rail; the findings / severity / scan-info / export panels were plain `Card`s with no rail; findings rows and mobile cards were flat; the diff hint was a bare `p` and the export-empty / diff-pending states were unstyled paragraphs.
 - Imagen drafts: skipped — existing SPA + sibling P15 grammar is the reference; no extra imagegen deps.
 - Lazyweb pack: skipped this session — sibling P15 is the harvest.
@@ -1659,8 +1659,8 @@ Responsive:
 
 | Primitive | Anatomy | States |
 |-----------|---------|--------|
-| `ScanKpiStrip` (`scan-kpi-strip`) | 4 `KpiTile` + `SiemRail` + icon + `GuardPulse` on duration | findings rail = worst severity (or failed/running); duration rail = status, pulse while running; target / type neutral |
-| `KpiTile` | `relative min-w-0 overflow-hidden rounded-lg border bg-card px-4 py-3 pl-4` + `SiemRail` | `truncate` value with `title` |
+| `ScanKpiStrip` (`scan-kpi-strip`) | 4 `StatTile` + `SiemRail` + icon + `GuardPulse` on duration | findings rail = worst severity (or failed/running); duration rail = status, pulse while running; target / type neutral |
+| `StatTile` (`components/patterns/StatTile.tsx`) | `relative min-w-0 overflow-hidden rounded-lg border border-border bg-card px-4 py-3 pl-4` + `SiemRail` + 10px uppercase label + mono tabular value | variants: `rounded`, `inset`, `railClass={null}`, `icon`, `valueFirst`, `extraPlacement`, `isLoading`; `truncate` value with `title` |
 | Findings shell | `Shell` (`relative overflow-hidden rounded-lg border bg-card pl-4`) + `SiemRail(findingsRailClass)` + wash + `ShellHead` hairline + `FindingsTable` + pagination | rail by worst severity / failed / running; wash only when critical |
 | Severity shell | `Shell` + `SiemRail(severityRailClass(worst))` + `ShellHead` + `SeverityChart` | worst severity, border when none |
 | Scan info shell | `Shell` + `SiemRail("bg-border")` + `ShellHead` + `InfoRow`s | static |
@@ -1733,7 +1733,7 @@ Print §§0–8 and SIEM / Guard / Assets / page-nav / Status / Uptime / Host / 
 ## 0. Research Log (Schedules)
 
 - Embedded refs: shortlisted `linear.app` / `stripe` / `supabase` → picked Layer A `redesign-skill` + `layout-skill` (stack + page-grid; AppShell owns document scroll) and Layer B `linear.app` (ops density, luminance steps, one accent, tabular mono). Same routing as `/guard` / `/siem` / `/assets` / `/uptime` / `/host` / `/dashboard` / `/scan/:id`. Not Stripe marketing; not Linear indigo `#5e6ad2`.
-- Sibling harvest: `HostKpiStrip` quota rail (primary → amber → destructive before the cap blocks), `GuardKpiStrip` / `ScanKpiStrip` (`KpiTile` + `SiemRail`), `HostSiteCard` / `HostHitsList` (rail inside the first cell, mobile card + desktop row), `SiemEmptyIsland` island grammar, `ScheduleRowActions` (pre-existing mobile-first action grid).
+- Sibling harvest: `HostKpiStrip` quota rail (primary → amber → destructive before the cap blocks), `GuardKpiStrip` / `ScanKpiStrip` (`StatTile` + `SiemRail`), `HostSiteCard` / `HostHitsList` (rail inside the first cell, mobile card + desktop row), `EmptyState` island grammar, `ScheduleRowActions` (pre-existing mobile-first action grid).
 - Current `/schedules` diagnosis: the quota was a plain `Card` with a muted `h-1.5` `Progress` and no rail (the cap only surfaced as a separate amber `Alert`); the create form was a flat `Card` with `space-y-2` fields and unlabeled `Select`s; the list was a flat `Card` whose rows had no rail and only a muted `disabled` badge.
 - Imagen drafts: skipped — existing SPA + sibling P15 grammar is the reference; no extra imagegen deps.
 - Lazyweb pack: skipped this session — sibling P15 is the harvest.
@@ -1974,7 +1974,7 @@ Print §§0–8 and SIEM / Guard / Assets / page-nav / Status / Uptime / Host / 
 ## 0. Research Log (Auth)
 
 - Embedded refs: shortlisted `linear.app` / `stripe` / `supabase` → picked Layer A `redesign-skill` + `layout-skill` (stack + page-grid; the layout owns the viewport) and Layer B `linear.app` (ops density, luminance steps, one accent). Same routing as the ops consoles, but **scaled down**: auth is a single centered island, not a console. Not Stripe marketing; not Linear indigo `#5e6ad2`.
-- Sibling harvest: `SiemRail` + the `Shell` / `ShellHead` chrome from `/host` / `/dashboard` / `/scan/:id` / `/schedules`, `SiemEmptyIsland` island grammar, `GuardPulse` (unused here — no live signal on auth).
+- Sibling harvest: `SiemRail` + the `Shell` / `ShellHead` chrome from `/host` / `/dashboard` / `/scan/:id` / `/schedules`, `EmptyState` island grammar, `GuardPulse` (unused here — no live signal on auth).
 - Current auth diagnosis: all five pages wrapped content in kit `Card className={AUTH_CARD_CLASS}` + `CardContent className="pt-6"` — a flat hairline card with no state signal. Status icons floated (`h-12 w-12 text-primary mx-auto`) with no chip; error / cooldown copy was bare colored `<p>`; Register / Forgot / Reset / Verify used raw `<label className="block text-xs text-muted-foreground">` while Login used kit `Label`; field wrappers were `space-y-2`.
 - Imagen drafts: skipped — existing SPA + sibling shell grammar is the reference; no extra imagegen deps.
 - Lazyweb pack: skipped this session — sibling shells are the harvest.
@@ -2131,7 +2131,7 @@ Print §§0–8 and SIEM / Guard / Assets / page-nav / Status / Uptime / Host / 
 ## 0. Research Log (Profile)
 
 - Embedded refs: shortlisted `linear.app` / `stripe` / `supabase` → picked Layer A `redesign-skill` + `layout-skill` (stack + page-grid; AppShell owns document scroll) and Layer B `linear.app` (ops density, luminance steps, one accent, tabular mono). Same routing as `/guard` / `/siem` / `/assets` / `/uptime` / `/host` / `/dashboard` / `/scan/:id` / `/schedules`, and the same rail vocabulary as the auth family. Not Stripe marketing; not Linear indigo `#5e6ad2`.
-- Sibling harvest: `AuthCard` state rail (primary → destructive → amber → primary/success), `HostKpiStrip` / `ScanKpiStrip` / `DashboardKpiStrip` (`StatTile` / `KpiTile` + `SiemRail`), the `Shell` / `ShellHead` hairline pattern from `/host` / `/dashboard` / `/scan/:id` / `/schedules`, `SiemEmptyIsland` island grammar.
+- Sibling harvest: `AuthCard` state rail (primary → destructive → amber → primary/success), `HostKpiStrip` / `ScanKpiStrip` / `DashboardKpiStrip` (`StatTile` + `SiemRail`), the `Shell` / `ShellHead` hairline pattern from `/host` / `/dashboard` / `/scan/:id` / `/schedules`, `EmptyState` island grammar.
 - Current `/profile` diagnosis: `profile-identity` was a flat `article` (`rounded-lg border border-border bg-card`) with a plain muted avatar; the three `StatTile`s were flat `rounded-md` border tiles with no rail; the change-password / update-email cards were kit `Card` + `CardHeader` + `CardContent` with no rail and no state signal; error / cooldown copy used kit `Alert` (default + destructive) rather than a railed notice; submit buttons were `w-full sm:w-auto` with no 44pt mobile target.
 - Imagen drafts: skipped — existing SPA + sibling P15 grammar is the reference; no extra imagegen deps.
 - Lazyweb pack: skipped this session — sibling P15 is the harvest.
@@ -2293,7 +2293,7 @@ Print §§0–8 and SIEM / Guard / Assets / page-nav / Status / Uptime / Host / 
 ## 0. Research Log (Workspace)
 
 - Embedded refs: shortlisted `linear.app` / `stripe` / `supabase` → picked Layer A `redesign-skill` + `layout-skill` (stack + page-grid; AppShell owns document scroll) and Layer B `linear.app` (ops density, luminance steps, one accent, tabular mono). Same routing as `/guard` / `/siem` / `/assets` / `/uptime` / `/host` / `/dashboard` / `/scan/:id` / `/schedules`, plus the state-rail vocabulary from auth / profile. Not Stripe marketing; not Linear indigo `#5e6ad2`.
-- Sibling harvest: `AuthCard` / `ProfileShell` state rails (primary → destructive → amber → primary/success), `HostKpiStrip` / `DashboardKpiStrip` (`StatTile` + `SiemRail`), the `Shell` / `ShellHead` hairline pattern, `SiemEmptyIsland` island grammar (already present here as `EmptyIsland`), `HostHitsList` (rail inside the first cell, mobile card + desktop row).
+- Sibling harvest: `AuthCard` / `ProfileShell` state rails (primary → destructive → amber → primary/success), `HostKpiStrip` / `DashboardKpiStrip` (`StatTile` + `SiemRail`), the `Shell` / `ShellHead` hairline pattern, `EmptyState` island grammar (already present here as `EmptyIsland`), `HostHitsList` (rail inside the first cell, mobile card + desktop row).
 - Current `/settings/workspace` diagnosis: every section was a flat kit `Card` + `CardHeader` + `CardContent` with no rail (15 `CardHeader` uses); the org identity card, members, invite form, pending invites, billing, and pilot checklist were visually identical shells; the three `StatTile`s were flat `rounded-md` tiles; error / cooldown copy used kit `Alert`; member / invite rows were flat cards and table rows with no rail; invoice cards had no rail.
 - Imagen drafts: skipped — existing SPA + sibling P15 grammar is the reference; no extra imagegen deps.
 - Lazyweb pack: skipped this session — sibling P15 is the harvest.
@@ -2451,7 +2451,7 @@ Print §§0–8 and every SPA section above stay locked. This section is the **d
 ## 0. Research Log (Admin wave 1)
 
 - Embedded refs: shortlisted `linear.app` / `stripe` / `supabase` → picked Layer A `redesign-skill` + `layout-skill` (stack + page-grid; AppShell owns document scroll) and Layer B `linear.app` (ops density, luminance steps, one accent, tabular mono). Same routing as the ops consoles and the account area. Not Stripe marketing; not Linear indigo `#5e6ad2`.
-- Sibling harvest: `WorkspaceShell` / `ProfileShell` / `AuthCard` rail shells, `HostKpiStrip` / `DashboardKpiStrip` (`StatTile` + `SiemRail`), `HostHitsList` (rail inside the first cell, mobile card + desktop row), `SiemEmptyIsland` island grammar, `SiemRail`.
+- Sibling harvest: `WorkspaceShell` / `ProfileShell` / `AuthCard` rail shells, `HostKpiStrip` / `DashboardKpiStrip` (`StatTile` + `SiemRail`), `HostHitsList` (rail inside the first cell, mobile card + desktop row), `EmptyState` island grammar, `SiemRail`.
 - Current admin diagnosis: `AdminDashboard` KPI cards were `CardContent` circles with a tinted icon (no rail); the two charts and the quick-links block were flat `Card` + `CardHeader`; `AdminUsers` was a flat `Card` with an ad-hoc muted-circle empty state and rail-less table rows; `AdminUserDetail` was 18 `Card` uses with no rail and inline `red-600` / `green-600` feedback boxes; no admin page had a rail.
 - Imagen drafts: skipped — existing SPA + sibling P15 grammar is the reference; no extra imagegen deps.
 - Lazyweb pack: skipped this session — sibling P15 is the harvest.
@@ -2536,7 +2536,7 @@ Responsive:
 | `AdminShellHead` | `border-b border-border px-4 py-3` + icon chip + `h3` + hint + optional aside | static |
 | `AdminShellBody` | `px-4 py-4` | static |
 | `AdminIconChip` | `h-8 w-8 rounded-md border bg-muted/40` + muted icon | static |
-| `AdminKpiTile` (`admin-kpi-{kind}`) | `relative min-w-0 overflow-hidden rounded-lg border bg-card px-4 py-3 pl-4` + rail + icon + label + value | loading → `Skeleton`; value tinted by `kpiValueClass(tone)` |
+| `AdminKpiTile` (`admin-kpi-{kind}`) | thin `kind → tone` wrapper over `StatTile` (`icon` + `railClass` + `valueClassName`) | loading → `skeleton`; value tinted by `kpiValueClass(tone)` |
 | `AdminNotice` | `relative overflow-hidden rounded-md border bg-card px-3 py-2 pl-4` + rail + `text-xs` | danger / success / warn |
 | User row | mobile card `relative … pl-4` + rail; desktop first cell `relative pl-4` + rail | unverified warn / admin primary / plain idle |
 | Detail profile shell | `AdminShell` + rail by verification | verified primary / unverified warn |
@@ -2610,7 +2610,7 @@ Print §§0–8 and every SPA section above stay locked. This section is the **d
 ## 0. Research Log (Admin wave 2A)
 
 - Reused wave-1 routing (`linear.app` density + existing Sinexis tokens). No new reference pull.
-- Sibling harvest: wave-1 `AdminShell` / `AdminShellHead` / `AdminShellBody` / `adminChrome`; `HostKpiStrip` rail language; `SiemEmptyIsland` island grammar.
+- Sibling harvest: wave-1 `AdminShell` / `AdminShellHead` / `AdminShellBody` / `adminChrome`; `HostKpiStrip` rail language; `EmptyState` island grammar.
 - Current diagnosis: `AdminHpp` was **20 `Card` uses** — the biggest remaining `Card` debt in the repo — with rail-less rates/overhead/costs/report sections and line-margin cards; `AdminPricing` was a kit `Alert` banner + one `Card` with a muted-circle empty state; neither had a rail, and neither had any e2e (so the only safety net is the unit suite).
 - Imagen / Lazyweb: skipped — wave-1 grammar is the reference; AGENTS.md forbids extra deps for a visual slice.
 
@@ -2711,7 +2711,7 @@ Print §§0–8 and every SPA section above stay locked. This section is the **d
 ## 0. Research Log (Scanner)
 
 - Embedded refs: shortlisted `linear.app` / `stripe` / `supabase` → picked Layer A `redesign-skill` + `layout-skill` (stack + page-grid; AppShell owns document scroll) and Layer B `linear.app` (ops density, luminance steps, one accent, tabular mono). Same routing as the ops consoles. Not Stripe marketing; not Linear indigo `#5e6ad2`.
-- Sibling harvest: `ScanKpiStrip` + `scanChrome` severity palette (critical destructive / high orange / medium yellow / low blue / info muted) already built for `/scan/:id`; `HostKpiStrip` rail tiles; `SiemEmptyIsland` island grammar; `PageHeader` `h2`.
+- Sibling harvest: `ScanKpiStrip` + `scanChrome` severity palette (critical destructive / high orange / medium yellow / low blue / info muted) already built for `/scan/:id`; `HostKpiStrip` rail tiles; `EmptyState` island grammar; `PageHeader` `h2`.
 - Current diagnosis: all three pages were four flat `Card` + `CardHeader` sections (Scan target / Scan progress / Results / coverage) with no rail; the **Results severity grid was five tinted `bg-*-600/10` pills with no rail** — exactly the pre-P15 `StatCard` pattern; the results summary bar was a flat `bg-muted` row; the three results blocks were byte-identical copies.
 - Imagen / Lazyweb: skipped — sibling P15 grammar is the reference; AGENTS.md forbids extra deps for a visual slice.
 
@@ -2810,7 +2810,7 @@ Print §§0–8 and every SPA section above stay locked. This section is the **d
 ## 0. Research Log (Admin wave 2B)
 
 - Reused wave-1/2A routing and grammar. No new reference pull.
-- Sibling harvest: `AdminShell` / `AdminShellHead` / `AdminShellBody`; the billing surface's `WorkspaceInvoiceCard` status-rail precedent; `HostHitsList` (rail inside the first cell, mobile card + desktop row); `SiemEmptyIsland` island grammar.
+- Sibling harvest: `AdminShell` / `AdminShellHead` / `AdminShellBody`; the billing surface's `WorkspaceInvoiceCard` status-rail precedent; `HostHitsList` (rail inside the first cell, mobile card + desktop row); `EmptyState` island grammar.
 - Current diagnosis: `AdminInvoices` (3 `Card` + 7 `CardHeader`) had a kit `Alert` banner, a flat SKU catalog, a flat create form, and a rail-less invoice table with a bare empty `<p>`; `AdminBlog` (2 `Card` + 5 `CardHeader`) had rail-less form + list and a bare empty `<p>`; `AdminEmailLogs` (1 `Card` + 3 `CardHeader`) had a rail-less table and an ad-hoc muted-circle empty state; `AdminAi` (1 `Card`) had a kit `Alert` feature-off and the four tab shells were plain `Card`s. None had a rail.
 - Imagen / Lazyweb: skipped — wave-1 grammar is the reference; AGENTS.md forbids extra deps for a visual slice.
 
@@ -2957,7 +2957,7 @@ New tone helpers: `incidentsListRailClass(statuses)` (`statusChrome.ts`) and `ou
 
 `OpsShell` also frames loading placeholders on `/siem` (`siem-loading`), `/host` (`host-sites-loading`), the StatusPage editor (`status-page-loading`), and `/uptime/:id` with `railClass="bg-border"`. Their page-level loading layouts and `/scan/:id` mirror the loaded sections rather than collapsing into a bare `Card`: StatusPage keeps hero → KPI → identity/host/components/incidents; UptimeDetail keeps header → hero → range → KPI → timeline/outages/history; ScanDetail keeps tabs → findings + severity/scan-info. The shared `TableRowSkeleton({rows, columns})` defaults `columns` to 4 and renders `Math.max(1, columns)` bars per row (first `flex-1`, then `w-16`, `hidden sm:block w-24`, `hidden md:block w-12`, and `hidden lg:block w-16` for further bars). Table-backed loading surfaces pass the loaded column count.
 
-`SiemEmptyIsland` (`components/siem/SiemEmptyIsland.tsx`) is the **shared empty/flag-off island** across the family (uptime, host, guard, status, siem, and now `/ai`). `/ai` uses it for `ai-feature-off` (Bot), no-org (Building2), and load-fail (TriangleAlert) — replacing the kit `Alert` those states used before. `Alert` stays for inline notices (e.g. `AiKeysPanel`), not for page-level empty states.
+`EmptyState` (`components/patterns/EmptyState.tsx`) is the **only** empty/flag-off panel in the SPA (uptime, host, guard, status, siem, `/ai`, admin, dashboard, assets, inbox, credit history). Variants: `island` (default), `dashed`, `bare`, `inline`; sizes `none` / `sm` / `md` / `lg`. The old siem empty-island module is retired — do not re-add it. `/ai` uses it for `ai-feature-off` (Bot), no-org (Building2), and load-fail (TriangleAlert) — replacing the kit `Alert` those states used before. `Alert` stays for inline notices (e.g. `AiKeysPanel`), not for page-level empty states.
 
 ## 6. Motion
 
@@ -2995,7 +2995,7 @@ Print §§0–8 and every SPA section above stay locked. These are the last two 
 ## 0. Research Log (Inbox & credit history)
 
 - Reused the family grammar and the `OpsShell` extracted in the previous slice. No new reference pull.
-- Sibling harvest: `OpsShell` (`components/ops/OpsShell.tsx`), the per-row rail precedent inside both pages (`InboxRow`, `LedgerMobileCard` / `TransactionRow`), `SiemEmptyIsland` island grammar.
+- Sibling harvest: `OpsShell` (`components/ops/OpsShell.tsx`), the per-row rail precedent inside both pages (`InboxRow`, `LedgerMobileCard` / `TransactionRow`), `EmptyState` island grammar.
 - Current diagnosis: `/inbox` had one `Card` + `CardHeader` list shell and a bare bordered `<div>` filter bar; `/credit-history` had an `article` identity band, three flat `StatTile`s, a bare bordered `<div>` filter bar, and one `Card` + `CardHeader` list shell. Every rail already existed at row level; the shells had none. `/credit-history` also carried a `TYPE_COLORS` badge palette.
 - Imagen / Lazyweb: skipped — family grammar is the reference; AGENTS.md forbids extra deps for a visual slice.
 
