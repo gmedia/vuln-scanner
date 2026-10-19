@@ -2,7 +2,7 @@
 
 **Status:** active rule. This file is the single normative entry point for UI changes.
 **Applies to:** every change under `frontend/src/`, public FastAPI HTML islands, and print/PDF surfaces.
-**Does not replace:** per-surface visual contracts in [`frontend/DESIGN.md`](../../frontend/DESIGN.md).
+**Does not replace:** per-surface visual contracts. Start at [`frontend/DESIGN.md`](../../frontend/DESIGN.md) (index), then open the one file in [`frontend/design/`](../../frontend/design/) for the surface you are changing.
 
 ---
 
@@ -11,7 +11,7 @@
 1. **This file** — hard invariants and the change protocol.
 2. [`AGENTS.md`](../../AGENTS.md) and [`frontend/AGENTS.md`](../../frontend/AGENTS.md) — short agent-facing summary.
 3. Domain rules: [`row-actions.md`](row-actions.md), [`theme-v1.md`](theme-v1.md), [`shadcn-ui-migration.md`](shadcn-ui-migration.md), [`i18n-v1.md`](i18n-v1.md).
-4. [`frontend/DESIGN.md`](../../frontend/DESIGN.md) — per-surface contracts (`/siem`, `/guard`, `/assets`, admin, auth, Landing, …).
+4. [`frontend/DESIGN.md`](../../frontend/DESIGN.md) — index of the per-surface contracts; the contracts themselves live in [`frontend/design/`](../../frontend/design/) (`foundation.md`, `siem.md`, `guard.md`, `assets.md`, `navigation.md`, `uptime.md`, `host.md`, `dashboard.md`, `scan.md`, `auth.md`, `admin.md`, `content.md`). **Open only the file for the surface you are changing.**
 5. Feature specs — **must not redefine** design law; they link here instead.
 
 If a lower layer contradicts a higher layer, the higher layer wins and the lower layer is fixed in the same PR.
@@ -45,8 +45,9 @@ If a lower layer contradicts a higher layer, the higher layer wins and the lower
 | 19 | Rail/wash/value colours come from `lib/toneMap.ts` (`toneRail`, `toneWash`, `toneText`). Status chrome modules keep their `*Tone` type but must not hard-code `bg-<status>` literals. | Machine: `toneMap.test.ts` |
 | 20 | Every `Input`, `Textarea`, and `SelectTrigger` outside `components/ui/` has an accessible name: `id` (paired with `Label htmlFor`), `aria-label`, or `aria-labelledby`. | Machine: `designInvariants.test.ts` |
 | 21 | Empty panels render `EmptyState`. A hand-rolled panel (`min-h-[6rem|8rem|12rem|16rem]`, dashed muted box, or `rounded-xl` muted island) is a violation. `EMPTY_PANEL_RATCHET` lists temporary exceptions; stale entries fail, so the list only shrinks. | Machine: `designInvariants.test.ts` |
-| 22 | Design docs (`frontend/DESIGN.md`, `frontend/AGENTS.md`) may only reference `components/` `pages/` `lib/` `hooks/` `theme/` source paths that exist, and must not name a retired primitive. | Machine: `docContract.test.ts` |
+| 22 | Design docs (`frontend/DESIGN.md`, `frontend/design/*.md`, `frontend/AGENTS.md`) may only reference `components/` `pages/` `lib/` `hooks/` `theme/` source paths that exist, and must not name a retired primitive. | Machine: `docContract.test.ts` |
 | 23 | Row-action menus: a `MoreHorizontal` trigger must wrap 2+ actions (1 action = visible `Button`), and `AlertDialogTrigger` must never sit inside a `DropdownMenuItem` (use a sibling controlled dialog). | Machine: `designInvariants.test.ts` |
+| 24 | Design contracts are split: `frontend/DESIGN.md` is the index and every `frontend/design/*.md` must be linked from it and keep the eight contract sections. Every relative link in the design docs must resolve. Do not re-inline a surface into the index. | Machine: `docContract.test.ts` + `scripts/check-design-links.mjs` |
 
 ### Adding to the allowlist
 
@@ -74,7 +75,7 @@ CSS variable references such as `hsl(var(--card))` are **not** literals and are 
 
 Answer these six questions in the PR description. Keep each answer to one line.
 
-1. **Surface** — which page/surface changes? Link its `frontend/DESIGN.md` section.
+1. **Surface** — which page/surface changes? Link its file under `frontend/design/`.
 2. **Closest pattern** — which existing file are you copying? Name the path.
 3. **Primitives** — which `components/ui/*` and shared compositions are used? If none fit, stop: a new primitive is a separate PR.
 4. **States** — how are loading, empty, error, disabled, permission-denied, mobile, light, and dark handled?
