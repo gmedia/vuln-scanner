@@ -13,8 +13,9 @@
 ## 0) Session boot (do this first)
 
 ```bash
-# MANDATORY (also in AGENTS.md)
-gh pr list --state open --assignee @me
+# MANDATORY (also in AGENTS.md). `--author`, not `--assignee`: gh pr create does
+# not assign the author, so --assignee returns nothing and the merge step never runs.
+gh pr list --state open --author @me
 
 GIT_MASTER=1 git fetch origin
 GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull origin main
