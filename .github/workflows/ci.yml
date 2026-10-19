@@ -3,8 +3,10 @@ name: CI/CD
 on:
   push:
     branches: [main]
+  # No `branches` filter on purpose. With `branches: [main]`, a PR whose base is
+  # another feature branch (a stacked PR) never runs CI at all — #1000 merged
+  # with zero checks that way. A PR must be verified against whatever it targets.
   pull_request:
-    branches: [main]
   workflow_dispatch:
     inputs:
       skip_tests:

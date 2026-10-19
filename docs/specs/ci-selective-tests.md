@@ -34,7 +34,7 @@ There is **no `paths:` filter**. Docs-only PRs still pay Compose + Playwright.
 1. **`push` to `main`, Sunday cron, and `workflow_dispatch` without skip flags** run the **full** suite as today (including full Playwright, full pytest both dirs, coverage fail-under).
 2. **Do not** run a **subset of pytest files** on CI while `--cov-fail-under` remains in `backend/pyproject.toml` / `workers/pyproject.toml`. Partial collection **fails the job** or forces a weaker gate.
 3. **Do not** change fail-under numbers in this epic.
-4. Vitest CI (`npm test` → `vitest run`) has **no** coverage gate; subset is *technically* safe but **not S1**.
+4. Vitest CI enforces the `vitest.config.ts` coverage thresholds (75 statements/lines, 70 branches/functions) on **full** runs (`npx vitest run --coverage`). Selective runs (`VITEST_GLOBS`) skip coverage by design — global thresholds are meaningless for a subset. A change to any `frontend/src/test/**` file forces a full run, because editing tests can lower coverage.
 4a. **Design invariants always run** when `frontend/**` changes: `frontend-design-invariants` executes `designInvariants`, `themeTokens`, `toneColors`, `e2eSelectors`, and `i18n` regardless of selective Vitest globs. See [`design-invariants.md`](design-invariants.md).
 5. `deploy` must `needs` a **green aggregator**, never a possibly-skipped E2E job.
 6. Frozen e2e testids stay: `user-menu`, `org-switcher*`, `export-executive`, `rescan-button`, `guard-state`, `guide-desktop-toc`.
@@ -44,6 +44,7 @@ There is **no `paths:` filter**. Docs-only PRs still pay Compose + Playwright.
 10. **Unknown paths fail-closed** → `always_full`. `docs_only` only if **every** changed file is docs/markdown.
 11. **`push` to `main` empty diff** is **not** docs_only. `always_full` is an **event** bit first (`push`+`main`, `schedule`, `dispatch`, workflow/`Makefile` change, missing merge-base).
 12. Required GitHub check after S1: **`ci-ok` only**. Per-matrix job names (`python-tests (backend)`) as required checks will **block docs-only PRs** when skipped.
+13. **`pull_request` must not filter by base branch.** With `branches: [main]`, a PR whose base is another feature branch (a stacked PR) never triggers CI — #1000 merged with zero checks that way. A PR is verified against whatever it targets; `deploy` stays guarded by `github.ref_name == 'main'` + `push`, so this cannot deploy from a PR.
 
 ---
 
