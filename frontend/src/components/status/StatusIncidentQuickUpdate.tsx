@@ -48,7 +48,11 @@ export function StatusIncidentQuickUpdate({
       />
       <div className="flex flex-wrap gap-2">
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="h-10 min-h-10 w-48">
+          <SelectTrigger
+            id={`inc-upd-status-${incidentId}`}
+            aria-label={t("status")}
+            className="h-10 min-h-10 w-48"
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
