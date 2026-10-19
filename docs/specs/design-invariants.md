@@ -34,7 +34,7 @@ If a lower layer contradicts a higher layer, the higher layer wins and the lower
 | 8 | E2E selects by `data-testid` or role; never by palette class, Lucide class, or `.nth()`. | Machine: `e2eSelectors.test.ts` |
 | 9 | Every user-visible string exists in both `en` and `id` catalogs. | Machine: `i18n.test.ts` |
 | 10 | Native `<button>` only for icon toggles, full-width list/card rows, and kit internals. Primary actions use `Button`. | Review |
-| 11 | Every form control has an accessible name: `Label htmlFor` + matching `id`, or `aria-label`. Placeholder-only is forbidden. | Review |
+| 11 | Every form control has an accessible name: `Label htmlFor` + matching `id`, or `aria-label`. Placeholder-only is forbidden. | Machine: `designInvariants.test.ts` (invariant 20); Review for label wording |
 | 12 | Filter bars copy Credit History: equal `gap-3` grid, field wrapper `flex min-w-0 flex-col gap-1.5`, controls `h-10 min-h-10`, mobile `FilterSheet` where the reference uses one. No `grid-cols-12` or far-right Apply gutter. | Review; SIEM has a machine check |
 | 13 | Row actions: `text-right` on head and cell, `justify-end` for block flex, 1 action = visible `Button`, 2+ = `DropdownMenu`, `onSelect`, destructive last + separator, sibling controlled `AlertDialog`, irreversible only, mobile ≥ 44px, `desktop` prop not `sm:`. | Review + per-page tests; see [`row-actions.md`](row-actions.md) |
 | 14 | Do not restyle `components/ui/*` for one screenshot. Kit changes are their own PR with a written reason. | Review |
@@ -43,6 +43,7 @@ If a lower layer contradicts a higher layer, the higher layer wins and the lower
 | 17 | KPI/metric tiles use `StatTile` + `StatGrid` from `components/patterns/StatTile.tsx`. No page-local `KpiTile` / `StatTile` / `StatCard`. | Machine: `designInvariants.test.ts` |
 | 18 | Empty states use `EmptyState` from `components/patterns/EmptyState.tsx`. No page-local `EmptyIsland` / `EmptyState` / `EmptyPanel`. | Machine: `designInvariants.test.ts` |
 | 19 | Rail/wash/value colours come from `lib/toneMap.ts` (`toneRail`, `toneWash`, `toneText`). Status chrome modules keep their `*Tone` type but must not hard-code `bg-<status>` literals. | Machine: `toneMap.test.ts` |
+| 20 | Every `Input`, `Textarea`, and `SelectTrigger` outside `components/ui/` has an accessible name: `id` (paired with `Label htmlFor`), `aria-label`, or `aria-labelledby`. | Machine: `designInvariants.test.ts` |
 
 ### Adding to the allowlist
 

@@ -21,6 +21,8 @@ const LOCAL_TILE =
 const LOCAL_EMPTY =
   /(?:function|const)\s+(?:EmptyIsland|EmptyState|EmptyPanel)\b/;
 
+const ACCESSIBLE_NAME = /\s(?:id|aria-label|aria-labelledby)=/;
+
 const TILE_ALLOWLIST: ReadonlySet<string> = new Set([
   "components/patterns/StatTile.tsx",
 ]);
@@ -66,6 +68,69 @@ function report(violations: readonly Violation[]): string {
   return violations.map((v) => `${v.file}:${v.line} ${v.text}`).join("\n");
 }
 
+// Character walk, not regex: `=>` and string props contain `>`.
+function jsxTagBlocks(
+  source: string,
+  name: string,
+): Array<{ readonly line: number; readonly block: string }> {
+  const blocks: Array<{ line: number; block: string }> = [];
+  const opener = new RegExp(`<${name}(?=[\\s/>])`, "g");
+  for (const match of source.matchAll(opener)) {
+    const start = match.index ?? 0;
+    let index = start + match[0].length;
+    let braces = 0;
+    let quote: string | null = null;
+    while (index < source.length) {
+      const char = source[index] as string;
+      if (quote) {
+        if (char === "\\") index += 2;
+        else {
+          if (char === quote) quote = null;
+          index += 1;
+        }
+        continue;
+      }
+      if (char === '"' || char === "'" || char === "`") {
+        quote = char;
+        index += 1;
+        continue;
+      }
+      if (char === "{") braces += 1;
+      else if (char === "}") braces -= 1;
+      else if (char === ">" && braces === 0) break;
+      index += 1;
+    }
+    const block = source.slice(start, index + 1);
+    blocks.push({
+      line: source.slice(0, start).split("\n").length,
+      block,
+    });
+  }
+  return blocks;
+}
+
+function scanControls(): { total: number; unlabeled: Violation[] } {
+  const unlabeled: Violation[] = [];
+  let total = 0;
+  for (const [path, source] of FILES) {
+    const file = rel(path);
+    if (file.startsWith("components/ui/")) continue;
+    for (const tag of ["Input", "Textarea", "SelectTrigger"]) {
+      for (const { line, block } of jsxTagBlocks(source, tag)) {
+        total += 1;
+        if (!ACCESSIBLE_NAME.test(block)) {
+          unlabeled.push({
+            file,
+            line,
+            text: block.split("\n")[0]?.trim() ?? tag,
+          });
+        }
+      }
+    }
+  }
+  return { total, unlabeled };
+}
+
 describe("design invariants", () => {
   it("bans blocking window dialogs", () => {
     const bad = scan(WINDOW_DIALOG);
@@ -108,6 +173,15 @@ describe("design invariants", () => {
     expect(
       bad,
       `Use EmptyState from components/patterns/EmptyState:\n${report(bad)}`,
+    ).toEqual([]);
+  });
+
+  it("requires an accessible name on every form control", () => {
+    const { total, unlabeled } = scanControls();
+    expect(total).toBeGreaterThan(50);
+    expect(
+      unlabeled,
+      `Add id + Label htmlFor, or aria-label:\n${report(unlabeled)}`,
     ).toEqual([]);
   });
 });

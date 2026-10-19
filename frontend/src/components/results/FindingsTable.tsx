@@ -277,6 +277,7 @@ function FindingsTable({
           <Input
             type="text"
             placeholder={t("filterFindings")}
+            aria-label={t("filterFindings")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
