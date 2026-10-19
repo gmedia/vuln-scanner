@@ -4,7 +4,7 @@
 
 ## OVERVIEW
 
-Vite + React + TS + shadcn. Node >=24. Dev :5173; prod compose publishes :5174.
+Vite + React + TS + shadcn. Node >=24.15.0 (jsdom 30 engine floor). Dev :5173; prod compose publishes :5174.
 
 ## WHERE TO LOOK
 

@@ -136,7 +136,7 @@ Sinexis/VulnScanner: FastAPI + Celery + Vite SPA Docker stack. Scan attach SaaS 
 
 - Ruff line 120, py312; mypy strict (tests/alembic excluded).
 - Pytest cov fail-under **75** backend / **76** workers. Vitest 75/70, enforced in CI on **full** frontend runs (`--coverage`); selective runs skip it.
-- Node **>=24**. Prefix git: `GIT_MASTER=1`.
+- Node **>=24.15.0** (jsdom 30 engine floor). Prefix git: `GIT_MASTER=1`.
 - Vite proxy → `http://backend:8000` (Docker DNS).
 - Feature flags: `SIEM_ENABLED` compose default false; Host Protect/WAF prod true, local/CI false.
 
