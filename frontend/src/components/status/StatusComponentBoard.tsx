@@ -1,7 +1,7 @@
 import { Activity, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { StatusComponent } from "@/api/statusPage";
-import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { SiemRail } from "@/components/siem/siemChrome";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -45,7 +45,7 @@ export function StatusComponentBoard({
 
   if (components.length === 0) {
     return (
-      <SiemEmptyIsland icon={Activity} title={t("noComponents")} />
+      <EmptyState titleTone="muted" icon={Activity} title={t("noComponents")} />
     );
   }
 

@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -67,6 +67,7 @@ import {
 } from "@/components/workspace/workspaceChrome";
 import { SiemRail } from "@/components/siem/siemChrome";
 import { StatTile } from "@/components/patterns/StatTile";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { useAuthStore } from "@/store/authStore";
 import {
   acceptInvite,
@@ -147,34 +148,6 @@ function RoleBadge({ role }: { role: string }) {
     >
       {roleLabel(role, t)}
     </Badge>
-  );
-}
-
-function EmptyIsland({
-  icon: Icon,
-  title,
-  hint,
-  testId,
-  action,
-}: {
-  icon: typeof Users;
-  title: string;
-  hint?: string;
-  testId?: string;
-  action?: ReactNode;
-}) {
-  return (
-    <div
-      className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
-      data-testid={testId}
-    >
-      <Icon className="h-8 w-8 text-muted-foreground" aria-hidden />
-      <p className="text-sm font-medium text-foreground">{title}</p>
-      {hint ? (
-        <p className="max-w-md text-xs text-muted-foreground">{hint}</p>
-      ) : null}
-      {action}
-    </div>
   );
 }
 
@@ -506,7 +479,7 @@ function WorkspaceSettings() {
           />
           <WorkspaceShellBody>
             {!orgId && (
-              <EmptyIsland
+              <EmptyState
                 icon={Building2}
                 title={t("noOrgYet")}
                 hint={t("noOrgYetHint")}
@@ -521,7 +494,7 @@ function WorkspaceSettings() {
               </p>
             )}
             {membersQuery.data && membersQuery.data.length === 0 && (
-              <EmptyIsland icon={Users} title={t("noMembers")} />
+              <EmptyState icon={Users} title={t("noMembers")} />
             )}
             {membersQuery.data && membersQuery.data.length > 0 && (
               <MembersList
@@ -674,7 +647,7 @@ function WorkspaceSettings() {
               </p>
             )}
             {invitesQuery.data && invitesQuery.data.length === 0 && (
-              <EmptyIsland
+              <EmptyState
                 icon={Mail}
                 title={t("noPendingInvites")}
                 hint={t("noPendingInvitesHint")}
@@ -728,7 +701,7 @@ function WorkspaceSettings() {
                 </span>
               </WorkspaceNotice>
             ) : (invoicesQuery.data?.items.length ?? 0) === 0 ? (
-              <EmptyIsland
+              <EmptyState
                 icon={Receipt}
                 title={t("billingEmpty")}
                 testId="workspace-billing-empty"

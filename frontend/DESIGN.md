@@ -110,6 +110,15 @@ All spacing derives from **4px**.
 
 ## 5. Components
 
+### EmptyState (shared empty panel)
+
+- **Location**: `frontend/src/components/patterns/EmptyState.tsx`. **This is the only empty-state implementation.** Do not declare a local `EmptyIsland` / `EmptyState` / `EmptyPanel`.
+- **Variants**: `island` (default — `rounded-xl border border-border bg-muted/40`), `dashed` (section that will fill in later), `bare` (borderless centered, full-page not-found).
+- **Sizes**: `sm` (`min-h-[8rem]`, default), `md` (`min-h-[12rem]` → `16rem` at `md`), `lg` (`min-h-[16rem]`).
+- **Props**: `icon`, `title`, `hint`, `action`, `testId`, `titleTone` (`strong` default, `muted` for ops consoles), `className` for outer spacing (`m-4`), `iconClassName` for size overrides.
+- **Composition**: when the hint or CTA lives outside the panel (Guard alerts), keep it in the caller — do not add ad-hoc hint slots.
+- **Tests**: `src/test/EmptyState.test.tsx`; the frozen testids (`credit-empty`, `workspace-invites-empty`, `workspace-billing-empty`, `guard-agents-empty`, `siem-*`, `host-waf-off`, `ai-feature-off`, …) stay on the caller.
+
 ### StatTile (shared KPI tile)
 
 - **Location**: `frontend/src/components/patterns/StatTile.tsx` — `StatTile`, `StatGrid`, `StatGridSkeleton`. **This is the only KPI tile implementation.** Do not declare a local `KpiTile` / `StatTile` / `AdminKpiTile` in a page or feature folder.

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Activity, Trash2 } from "lucide-react";
 import type { UptimeMonitor } from "@/api/uptime";
 import { SwipeableRow } from "@/components/gesture/SwipeableRow";
-import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { SiemRail } from "@/components/siem/siemChrome";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -45,7 +45,7 @@ export function UptimeMonitorList({
   if (monitors.length === 0) {
     return (
       <div className="m-4">
-        <SiemEmptyIsland icon={Activity} title={t("filterEmpty")} />
+        <EmptyState titleTone="muted" icon={Activity} title={t("filterEmpty")} />
       </div>
     );
   }

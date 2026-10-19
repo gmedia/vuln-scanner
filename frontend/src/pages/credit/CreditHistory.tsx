@@ -16,6 +16,7 @@ import {
   OpsShellHead,
 } from "@/components/ops/OpsShell";
 import { StatTile } from "@/components/patterns/StatTile";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import {
   creditListRailClass,
   creditTypeRailClass,
@@ -84,16 +85,6 @@ function formatLedgerStamp(iso: string): { date: string; time: string } {
       minute: "2-digit",
     }),
   };
-}
-
-function EmptyIsland({ title, hint }: { title: string; hint: string }) {
-  return (
-    <div data-testid="credit-empty" className="m-4 flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
-      <History className="h-8 w-8 text-muted-foreground" aria-hidden />
-      <p className="text-sm font-medium text-foreground">{title}</p>
-      <p className="max-w-md text-xs text-muted-foreground">{hint}</p>
-    </div>
-  );
 }
 
 function TypeBadge({ type }: { type: string }) {
@@ -337,11 +328,23 @@ function CreditHistory() {
     );
   } else if (!data || data.items.length === 0) {
     listBody = (
-      <EmptyIsland title={t("emptyTitle")} hint={t("emptyHint")} />
+      <EmptyState
+        testId="credit-empty"
+        className="m-4"
+        icon={History}
+        title={t("emptyTitle")}
+        hint={t("emptyHint")}
+      />
     );
   } else if (filteredItems.length === 0) {
     listBody = (
-      <EmptyIsland title={t("noMatchTitle")} hint={t("noMatchHint")} />
+      <EmptyState
+        testId="credit-empty"
+        className="m-4"
+        icon={History}
+        title={t("noMatchTitle")}
+        hint={t("noMatchHint")}
+      />
     );
   } else {
     listBody = (

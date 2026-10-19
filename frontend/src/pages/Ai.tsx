@@ -11,7 +11,7 @@ import {
   Wallet,
 } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
-import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { Tabs, TabsContent, TabsList, TabCount, TabsTrigger } from "@/components/ui/Tabs";
 import {
   createAiKey,
@@ -109,7 +109,7 @@ export default function Ai() {
     return (
       <div className="w-full space-y-6">
         <Header />
-        <SiemEmptyIsland icon={Building2} title={t("pickOrg")} />
+        <EmptyState titleTone="muted" icon={Building2} title={t("pickOrg")} />
       </div>
     );
   }
@@ -118,7 +118,8 @@ export default function Ai() {
     return (
       <div className="w-full space-y-6">
         <Header />
-        <SiemEmptyIsland
+        <EmptyState
+          titleTone="muted"
           icon={Bot}
           title={t("featureOff")}
           testId="ai-feature-off"
@@ -131,7 +132,7 @@ export default function Ai() {
     return (
       <div className="w-full space-y-6">
         <Header />
-        <SiemEmptyIsland icon={TriangleAlert} title={t("loadFail")} />
+        <EmptyState titleTone="muted" icon={TriangleAlert} title={t("loadFail")} />
       </div>
     );
   }

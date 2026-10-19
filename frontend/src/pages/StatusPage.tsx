@@ -37,7 +37,7 @@ import {
   hostnameStatusVariant,
   incidentsListRailClass,
 } from "@/components/status/statusChrome";
-import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { SiemRail } from "@/components/siem/siemChrome";
 import {
   addComponent,
@@ -618,7 +618,7 @@ export default function StatusPage() {
               />
               {page.incidents.length === 0 ? (
                 <div className="m-4">
-                  <SiemEmptyIsland icon={Radio} title={t("noIncidents")} />
+                  <EmptyState titleTone="muted" icon={Radio} title={t("noIncidents")} />
                 </div>
               ) : (
                 <StatusIncidentList

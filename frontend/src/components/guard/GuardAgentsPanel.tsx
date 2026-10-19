@@ -13,7 +13,7 @@ import {
   formatWhen,
   type GuardTranslate,
 } from "@/components/guard/guardFormat";
-import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { SiemRail } from "@/components/siem/siemChrome";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import {
@@ -150,7 +150,8 @@ export function GuardAgentsPanel({
         {loading ? (
           <TableRowSkeleton rows={4} columns={5} />
         ) : agents.length === 0 ? (
-          <SiemEmptyIsland
+          <EmptyState
+          titleTone="muted"
             icon={Monitor}
             title={t("noAgents")}
             testId="guard-agents-empty"

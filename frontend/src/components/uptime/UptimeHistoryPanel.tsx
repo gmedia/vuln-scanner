@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Activity } from "lucide-react";
 import type { UptimeMonitor, UptimeSample } from "@/api/uptime";
-import { SiemEmptyIsland } from "@/components/siem/SiemEmptyIsland";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { SiemRail } from "@/components/siem/siemChrome";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -58,7 +58,8 @@ export function UptimeHistoryPanel({
         {loading ? (
           <TableRowSkeleton rows={5} columns={4} />
         ) : rows.length === 0 ? (
-          <SiemEmptyIsland
+          <EmptyState
+          titleTone="muted"
             icon={Activity}
             title={emptyHint ?? t("historyEmpty")}
           />
