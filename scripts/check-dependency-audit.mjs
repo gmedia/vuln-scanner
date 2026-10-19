@@ -31,7 +31,8 @@ function readAllowlist() {
   if (!Array.isArray(entries)) {
     throw new Error(`${allowlistPath}: expected an array or { "entries": [] }`);
   }
-  return entries;
+  // The file is shared with the Python gate; only npm entries are ours.
+  return entries.filter((e) => (e.ecosystem ?? "npm") === "npm");
 }
 
 function runAudit() {

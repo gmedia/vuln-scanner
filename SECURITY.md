@@ -92,4 +92,4 @@ CI job **`deps-audit`** (in `ci-ok`) runs `node scripts/check-dependency-audit.m
 
 To accept a risk, add an entry with `id` (GHSA), `package`, `reason`, and `expires` (ISO date). Expired entries fail the gate; entries that no longer match an advisory are reported as stale so they get removed.
 
-**Not yet covered:** Python — `pip-audit` is not run. Frontend only, for now.
+Python is covered too: CI job **`deps-audit-python`** runs `python scripts/check-pip-audit.py`, which audits `backend/requirements.txt` and `workers/requirements.txt` with `pip-audit` and applies the same allowlist (`ecosystem: "pip"`). `pip-audit` reports no severity, so **any** known vulnerability blocks.

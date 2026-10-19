@@ -40,6 +40,10 @@ patch below the first patched version keeps the vulnerability while looking like
 CI job `deps-audit` enforces this — see
 [SECURITY.md — Accepted residual dependency risks](../SECURITY.md#accepted-residual-dependency-risks).
 
+Python is covered by `deps-audit-python` (`scripts/check-pip-audit.py`, `pip-audit` over
+`backend/` + `workers/` requirements). Both audits share
+`.github/dependency-audit-allowlist.json`; entries carry `ecosystem: npm|pip`.
+
 ## Broker smoke (prod or staging)
 
 After worker/backend deploys or Redis image changes, verify broker path (does **not** start a scan):
