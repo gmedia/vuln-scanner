@@ -29,7 +29,7 @@ aiosmtplib==5.1.2
 boto3>=1.34
 email-validator==2.3.0
 # Transitive dependency pins for CVE fixes
-idna==3.18
+idna==3.20
 urllib3==2.7.0
 msgpack==1.2.3
 tornado==6.5.10
