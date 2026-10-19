@@ -17,10 +17,15 @@
 
 ## Session Start (MANDATORY)
 ```
-gh pr list --state open --assignee @me
+gh pr list --state open --author @me
 ```
-- CI green → `gh pr merge --squash` → `git branch -d <branch>`
-- CI red → `git checkout <branch>` → fix → push
+Use `--author @me`, not `--assignee @me`: `gh pr create` does **not** assign the PR to
+its author, so `--assignee` returns nothing and the merge step below never runs.
+
+- Your PR, CI green → `gh pr merge --squash` → `git branch -d <branch>`
+- Your PR, CI red → `git checkout <branch>` → fix → push
+- **PR you did not author** → report it; do not fix or merge it unless the user names it.
+  Another session may still be working on it.
 - Then: `git checkout main && git pull`, confirm tip, open `docs/AGENT_EXECUTION_GUIDE.md`
 
 ## CI deploy vs Alembic (do not confuse)
@@ -48,6 +53,12 @@ When **`main` CI is green including the `deploy` job**, production already ran *
 5. Create PR: `gh pr create --fill`
 6. **Move to next task immediately** — do not poll CI
 
+Polling is still forbidden **unless the user explicitly asks you to watch, wait for, or
+merge in this turn** (e.g. "cek PR, merge jika hijau"). That request is the only
+exception: honour it for the PRs the user named, then return to this rule. CI takes
+~7 minutes on `main` (`deploy` 407s, `e2e-tests` 384s), so a wait loop burns a turn
+for information the next turn already has.
+
 ## PR Handoff Template
 Every PR description must include:
 ```markdown
@@ -66,7 +77,9 @@ UI PRs must also fill the design change protocol in [`.github/pull_request_templ
 
 ## Anti-patterns
 - Working on `main` branch
-- Waiting/polling for CI/CD
+- Waiting/polling for CI/CD (see the explicit-request exception in **Workflow**)
+- **Merging with red CI** — a `push` to `main` runs `deploy`, so a red merge reaches production
+- Merging or "fixing" a PR you did not author without the user naming it
 - Multiple unrelated tasks in one PR
 - Empty PR descriptions
 - Force-push to shared branches
