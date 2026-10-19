@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import userEvent from "@testing-library/user-event";
 import Inbox from "@/pages/Inbox";
 import { inboxApi } from "@/api/inbox";
 
@@ -191,8 +190,7 @@ describe("Inbox", () => {
     );
   });
 
-  it("F2 status filter offers Bounced and filters via list({status:'bounced'})", async () => {
-    const user = userEvent.setup();
+  it("F2 status filter offers Bounced and filters via list({status:'bounced'})", () => {
     vi.mocked(inboxApi.list).mockResolvedValue({ items: [], total: 0 });
     vi.mocked(useQuery).mockImplementation((opts: unknown) => {
       const queryFn = (opts as { queryFn: () => Promise<unknown> }).queryFn;
@@ -208,9 +206,7 @@ describe("Inbox", () => {
     ).toBeInTheDocument();
     const probes = screen.getAllByLabelText("select-probe") as HTMLInputElement[];
     const statusProbe = probes[probes.length - 1];
-    await user.click(statusProbe);
-    await user.clear(statusProbe);
-    await user.type(statusProbe, "bounced");
+    fireEvent.change(statusProbe, { target: { value: "bounced" } });
     expect(inboxApi.list).toHaveBeenCalledWith(
       expect.objectContaining({ status: "bounced" }),
     );
