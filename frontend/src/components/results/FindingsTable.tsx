@@ -31,6 +31,7 @@ import {
   severityRailClass,
   severityWashClass,
 } from "@/components/scan/scanChrome";
+import { RAILED_ROW_CLASS } from "@/components/patterns/RailedShell";
 
 export type FindingsEmptyReason = "clean" | "failed" | "incomplete";
 export type FindingsSortKey = "severity" | "title" | "category" | "cvss_score";
@@ -334,7 +335,7 @@ function FindingsTable({
               <div
                 key={finding.id}
                 className={cn(
-                  "relative overflow-hidden rounded-lg border border-border bg-card p-3 pl-4",
+                  RAILED_ROW_CLASS,
                   severityWashClass(finding.severity),
                 )}
               >

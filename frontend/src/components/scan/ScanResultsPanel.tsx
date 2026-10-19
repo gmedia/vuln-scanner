@@ -16,6 +16,7 @@ import {
 } from "@/components/scan/scanChrome";
 import { cn } from "@/lib/utils";
 import { TONE_TEXT } from "@/lib/toneColors";
+import { RAILED_CARD_CLASS } from "@/components/patterns/RailedShell";
 
 type ScanSummary = {
   readonly critical?: unknown;
@@ -75,7 +76,7 @@ export function ScanResultsPanel({
           {SEVERITIES.map((item) => (
             <div
               key={item.key}
-              className="relative overflow-hidden rounded-lg border border-border bg-card px-3 py-2 pl-4"
+              className={cn(RAILED_CARD_CLASS, "px-3 py-2")}
             >
               <SiemRail className={severityRailClass(item.key)} />
               <span
@@ -93,7 +94,7 @@ export function ScanResultsPanel({
           ))}
         </div>
 
-        <div className="relative overflow-hidden rounded-md border border-border bg-muted/40 p-3 pl-4">
+        <div className={cn(RAILED_CARD_CLASS, "rounded-md bg-muted/40 p-3")}>
           <SiemRail
             className={needsAttention ? "bg-destructive" : "bg-primary"}
           />

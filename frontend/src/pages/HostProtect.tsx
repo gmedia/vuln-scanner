@@ -50,6 +50,7 @@ import HostInstallCard from "@/components/host/HostInstallCard";
 import HostSiteCard from "@/components/host/HostSiteCard";
 import { formatHelperPollAt, isHelperPollStale } from "@/lib/sinexisInstall";
 import { useAuthStore } from "@/store/authStore";
+import { RAILED_CARD_CLASS } from "@/components/patterns/RailedShell";
 
 const HOST_TABS = ["malware", "waf"] as const;
 type HostTab = (typeof HOST_TABS)[number];
@@ -402,7 +403,7 @@ export default function HostProtect() {
                   {Array.from({ length: 3 }).map((_, i) => (
                     <div
                       key={i}
-                      className="relative overflow-hidden rounded-lg border border-border bg-card pl-4"
+                      className={RAILED_CARD_CLASS}
                     >
                       <SiemRail className="bg-border" />
                       <div className="space-y-3 px-4 py-3">

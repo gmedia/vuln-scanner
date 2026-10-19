@@ -1,17 +1,16 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import {
+  RailedNotice,
   RailedShell,
   RailedShellBody,
   RailedShellHead,
 } from "@/components/patterns/RailedShell";
-import { SiemRail } from "@/components/siem/siemChrome";
 import {
   workspaceRailClass,
   workspaceWashClass,
   type WorkspaceTone,
 } from "@/components/workspace/workspaceChrome";
-import { cn } from "@/lib/utils";
 import { TONE_TEXT } from "@/lib/toneColors";
 
 export function WorkspaceShell({
@@ -122,23 +121,14 @@ export function WorkspaceNotice({
   readonly role?: "alert" | "status";
 }) {
   return (
-    <div
-      className={cn(
-        "relative overflow-hidden rounded-md border bg-card px-3 py-2 pl-4",
-        NOTICE_BORDER[tone],
-        workspaceWashClass(tone),
-      )}
+    <RailedNotice
+      railClass={workspaceRailClass(tone)}
+      borderClass={NOTICE_BORDER[tone]}
+      wash={workspaceWashClass(tone)}
+      textClass={NOTICE_TEXT[tone]}
+      role={role}
     >
-      <SiemRail className={workspaceRailClass(tone)} />
-      <div
-        role={role}
-        className={cn(
-          "flex items-start gap-2 pl-2 text-xs leading-relaxed",
-          NOTICE_TEXT[tone],
-        )}
-      >
-        {children}
-      </div>
-    </div>
+      {children}
+    </RailedNotice>
   );
 }

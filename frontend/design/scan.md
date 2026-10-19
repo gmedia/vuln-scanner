@@ -153,7 +153,7 @@ P15 flatten: the KPI strip is **not** inside PageHeader and **not** inside the f
 | `ScanDetail.tsx` still holds findings / diff / export tab bodies + local `Shell` / `InfoRow` | page | This slice restyles chrome only; splitting tabs into panels mixes visual with module work | Named extract |
 | `FindingsTable` owns filter + sort + expand + rails | results | Rail is one span inside the existing first cell; extracting a row component would fork the frozen table contract | Named refactor |
 | Duplicate mobile + desktop finding markup | FindingsTable | Frozen testids on both card and row; `useIsMobile` would drop one tree | Named a11y slice |
-| `SiemRail` / `GuardPulse` imported into scan + results | chrome | One rail/pulse primitive; extracting `components/ops/` is a third-family risk | Keep import until a named ops-chrome PR |
+| `SiemRail` / `GuardPulse` imported into scan + results | chrome | One rail/pulse primitive; railed surfaces share `components/patterns/RailedShell.tsx`, so this is a single import, not a third family | Keep import |
 | Severity rail palette duplicated from `lib/siemSeverity.ts` | scanChrome | That helper is keyed by numeric level, not severity name; a name-keyed export is a follow-up | Named lib extract |
 | Print contract stays invoice-only (see the print specs) | print specs | Multiple SPA surfaces; merging would pollute print | Keep split |
 
@@ -303,7 +303,7 @@ P15 flatten: the quota shell is **not** inside the create shell and **not** insi
 | `Schedules.tsx` still holds form + mutations + list + runs panel | page | This slice restyles chrome only; splitting into panels mixes visual with module work | Named extract |
 | `ScheduleRowActions` keeps the mobile-first grid → icon-row switch | page | Frozen aria-labels + `schedule-print-executive`; restructuring would risk them | Named refactor |
 | Duplicate mobile card + desktop table row markup | page | Frozen `schedules-mobile-list` and table both render; `useIsMobile` would drop one tree | Named a11y slice |
-| `SiemRail` imported into schedules | chrome | One rail primitive; extracting `components/ops/` is a third-family risk | Keep import until a named ops-chrome PR |
+| `SiemRail` imported into schedules | chrome | One rail primitive; railed surfaces share `components/patterns/RailedShell.tsx`, so this is a single import, not a third family | Keep import |
 | `export { mapScheduleError }` on the page | page | Pre-existing re-export kept for tests; `react-refresh` warning is known | Named move to `api/schedules` |
 | Print contract stays invoice-only (see the print specs) | print specs | Multiple SPA surfaces; merging would pollute print | Keep split |
 

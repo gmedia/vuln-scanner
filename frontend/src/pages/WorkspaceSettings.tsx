@@ -98,6 +98,7 @@ import {
   publicInviteUrl,
   readInviteToken,
 } from "@/lib/inviteToken";
+import { RAILED_ROW_CLASS } from "@/components/patterns/RailedShell";
 
 function apiDetail(err: unknown, fallback: string): string {
   if (err && typeof err === "object" && "response" in err) {
@@ -883,7 +884,7 @@ function MembersList({
         {members.map((m) => (
           <div
             key={m.user_id}
-            className="relative overflow-hidden rounded-lg border border-border bg-card p-3 pl-4"
+            className={RAILED_ROW_CLASS}
           >
             <SiemRail className={workspaceRailClass(roleTone(m.role))} />
             <p className="break-all font-mono text-xs text-foreground">

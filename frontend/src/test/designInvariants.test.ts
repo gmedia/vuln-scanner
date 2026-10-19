@@ -22,12 +22,16 @@ const LOCAL_EMPTY =
   /(?:function|const)\s+(?:EmptyIsland|EmptyState|EmptyPanel)\b/;
 
 const ACCESSIBLE_NAME = /\s(?:id|aria-label|aria-labelledby)=/;
+const RAILED_SHELL_LITERAL = /relative overflow-hidden[^"'`]*pl-4/;
 
 const TILE_ALLOWLIST: ReadonlySet<string> = new Set([
   "components/patterns/StatTile.tsx",
 ]);
 const EMPTY_ALLOWLIST: ReadonlySet<string> = new Set([
   "components/patterns/EmptyState.tsx",
+]);
+const SHELL_ALLOWLIST: ReadonlySet<string> = new Set([
+  "components/patterns/RailedShell.tsx",
 ]);
 
 const EMPTY_PANEL_MIN_H = /min-h-\[(?:6|8|12|16)rem\]/;
@@ -294,6 +298,14 @@ describe("design invariants", () => {
     expect(
       unlabeled,
       `Add id + Label htmlFor, or aria-label:\n${report(unlabeled)}`,
+    ).toEqual([]);
+  });
+
+  it("bans hand-rolled railed shell class strings", () => {
+    const bad = scan(RAILED_SHELL_LITERAL, SHELL_ALLOWLIST);
+    expect(
+      bad,
+      `Use RailedShell or RAILED_CARD_CLASS / RAILED_ROW_CLASS / RAILED_NOTICE_CLASS:\n${report(bad)}`,
     ).toEqual([]);
   });
 

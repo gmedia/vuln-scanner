@@ -12,6 +12,15 @@ import { cn } from "@/lib/utils";
  * module owns the markup. Use `frame="plain"` when the caller supplies its own
  * card frame (scan detail shells) instead of the kit `Card`.
  */
+export const RAILED_CARD_CLASS =
+  "relative overflow-hidden rounded-lg border border-border bg-card pl-4";
+
+export const RAILED_ROW_CLASS =
+  "relative overflow-hidden rounded-lg border border-border bg-card p-3 pl-4";
+
+export const RAILED_NOTICE_CLASS =
+  "relative overflow-hidden rounded-md border bg-card px-3 py-2 pl-4";
+
 export type RailedShellProps = {
   readonly railClass: string;
   readonly wash?: string | null;
@@ -19,6 +28,7 @@ export type RailedShellProps = {
   readonly className?: string;
   readonly testid?: string;
   readonly frame?: "card" | "plain";
+  readonly as?: "div" | "article";
 };
 
 export function RailedShell({
@@ -28,21 +38,19 @@ export function RailedShell({
   className,
   testid,
   frame = "card",
+  as: Tag = "div",
 }: RailedShellProps) {
   const classes = cn("relative overflow-hidden pl-4", wash, className);
 
   if (frame === "plain") {
     return (
-      <div
+      <Tag
         data-testid={testid}
-        className={cn(
-          "rounded-lg border border-border bg-card",
-          classes,
-        )}
+        className={cn("rounded-lg border border-border bg-card", classes)}
       >
         <SiemRail className={railClass} />
         {children}
-      </div>
+      </Tag>
     );
   }
 
@@ -167,5 +175,64 @@ export function RailedIconChip({
     >
       <Icon className="h-4 w-4 text-muted-foreground" />
     </span>
+  );
+}
+
+export type RailedNoticeProps = {
+  readonly railClass: string;
+  readonly borderClass: string;
+  readonly wash?: string | null;
+  readonly textClass: string;
+  readonly role?: "alert" | "status";
+  readonly testid?: string;
+  readonly contentTestid?: string;
+  readonly className?: string;
+  readonly layout?: "flex" | "paragraph";
+  readonly children: ReactNode;
+};
+
+export function RailedNotice({
+  railClass,
+  borderClass,
+  wash,
+  textClass,
+  role,
+  testid,
+  contentTestid,
+  className,
+  layout = "flex",
+  children,
+}: RailedNoticeProps) {
+  return (
+    <div
+      data-testid={testid}
+      className={cn(
+        "relative overflow-hidden rounded-md border bg-card px-3 py-2 pl-4",
+        borderClass,
+        wash,
+        className,
+      )}
+    >
+      <SiemRail className={railClass} />
+      {layout === "flex" ? (
+        <div
+          role={role}
+          className={cn(
+            "flex items-start gap-2 pl-2 text-xs leading-relaxed",
+            textClass,
+          )}
+        >
+          {children}
+        </div>
+      ) : (
+        <p
+          role={role}
+          data-testid={contentTestid}
+          className={cn("pl-2 text-xs leading-relaxed", textClass)}
+        >
+          {children}
+        </p>
+      )}
+    </div>
   );
 }

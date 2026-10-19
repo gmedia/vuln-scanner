@@ -27,6 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/Table";
 import { Trash2 } from "lucide-react";
+import { RAILED_ROW_CLASS } from "@/components/patterns/RailedShell";
 
 export function AssetCard({
   asset,
@@ -55,7 +56,7 @@ export function AssetCard({
         }
       >
         <div
-          className="relative overflow-hidden rounded-lg border border-border bg-card p-3 pl-4"
+          className={RAILED_ROW_CLASS}
           data-testid={`asset-card-${asset.id}`}
         >
           <SiemRail className={assetRailClass(asset.scan_type)} />

@@ -15,6 +15,8 @@ import {
   GUARD_ENROLL_PATH_VARS,
   GUARD_HOST_SETUP_STEP_KEYS,
 } from "@/lib/guardEnrollHost";
+import { RAILED_CARD_CLASS } from "@/components/patterns/RailedShell";
+import { cn } from "@/lib/utils";
 
 export function GuardOnceSecret({
   rawToken,
@@ -139,7 +141,7 @@ export function GuardHostTokenOnce({
 }) {
   return (
     <div
-      className="relative overflow-hidden rounded-lg border border-primary/40 bg-primary/5 px-4 py-3 pl-4"
+      className={cn(RAILED_CARD_CLASS, "border-primary/40 bg-primary/5 px-4 py-3")}
       data-testid="guard-host-token-once"
     >
       <SiemRail className="bg-primary" />

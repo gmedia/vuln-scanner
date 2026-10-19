@@ -25,6 +25,7 @@ import {
   stateRailClass,
 } from "@/components/uptime/uptimeChrome";
 import { cn } from "@/lib/utils";
+import { RAILED_ROW_CLASS } from "@/components/patterns/RailedShell";
 
 export function UptimeMonitorList({
   monitors,
@@ -71,7 +72,7 @@ export function UptimeMonitorList({
           >
             <div
               className={cn(
-                "relative overflow-hidden rounded-lg border border-border bg-card p-3 pl-4 text-left",
+                cn(RAILED_ROW_CLASS, "text-left"),
                 m.state === "down" && "bg-destructive/[0.04]",
               )}
               data-testid={`uptime-card-${m.id}`}

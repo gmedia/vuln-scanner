@@ -145,7 +145,7 @@ P15 flatten: the KPI strip is **not** inside PageHeader and **not** inside the l
 | Item | Location | Why accepted | Owner / Exit |
 |------|----------|--------------|--------------|
 | Duplicate mobile + desktop hits / WAF-event markup | HostHitsList / HostWafEventsList | Frozen testids on both card and row; `useIsMobile` would drop one tree | Named a11y slice |
-| `SiemRail` / `GuardPulse` imported into host, `EmptyState` from `components/patterns/` | chrome | One rail/pulse primitive; extracting `components/ops/` is a third-family risk | Keep import until a named ops-chrome PR |
+| `SiemRail` / `GuardPulse` imported into host, `EmptyState` from `components/patterns/` | chrome | One rail/pulse primitive; railed surfaces share `components/patterns/RailedShell.tsx`, so this is a single import, not a third family | Keep import |
 | Site settings stay four labeled `Select`s in the card | HostSiteCard | Frozen testids; collapsing to a settings sheet is a module change, not a visual slice | Named refactor |
 | `HostWafPanel` still holds query + mutation logic | panel | This slice restyles chrome only; a `useHostWaf` hook split mixes visual with module work | Named extract |
 | Print contract stays invoice-only (see the print specs) | print specs | Multiple SPA surfaces; merging would pollute print | Keep split |

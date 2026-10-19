@@ -9,6 +9,7 @@ import {
   overallWashClass,
 } from "@/components/status/statusChrome";
 import { cn } from "@/lib/utils";
+import { RAILED_CARD_CLASS } from "@/components/patterns/RailedShell";
 
 export function StatusHealthHero({
   title,
@@ -23,7 +24,7 @@ export function StatusHealthHero({
   const wash = overallWashClass(overall, published);
   const pulse = published && overall === "operational";
   return (
-    <article className="relative overflow-hidden rounded-lg border border-border bg-card pl-4">
+    <article className={RAILED_CARD_CLASS}>
       <SiemRail className={overallRailClass(overall, published)} />
       {wash ? (
         <span
