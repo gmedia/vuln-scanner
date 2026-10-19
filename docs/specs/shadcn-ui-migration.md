@@ -40,7 +40,7 @@ Card padding stays `p-4` / `pt-0` (asserted by `src/test/Card.test.tsx`). Do not
 
 accordion, alert, alert-dialog, Badge, Button, badgeVariants, buttonVariants, Calendar, Card, chart, Checkbox, DatePicker, DateTimePicker, dropdown-menu, Input, Label, Pagination, Popover, Progress, Select, Separator, sheet, sidebar, Skeleton, sonner, Table, Tabs, Textarea, Tooltip.
 
-**Sidebar kit hazard:** `SidebarMenuButton size="lg"` in `frontend/src/components/ui/sidebar.tsx` has `group-data-[collapsible=icon]:p-0!`, which overrides base `group-data-[collapsible=icon]:p-2!`. It is unsafe for unguarded text/icon content inside the collapsed rail. See [`frontend/DESIGN.md`](../../frontend/DESIGN.md) § "App shell chrome (Sidebar / Header)" (#973, #975); don't restyle the kit for this surface.
+**Sidebar kit hazard:** `SidebarMenuButton size="lg"` in `frontend/src/components/ui/sidebar.tsx` has `group-data-[collapsible=icon]:p-0!`, which overrides base `group-data-[collapsible=icon]:p-2!`. It is unsafe for unguarded text/icon content inside the collapsed rail. See [`frontend/design/navigation.md`](../../frontend/design/navigation.md) § "App shell chrome (Sidebar / Header)" (#973, #975); don't restyle the kit for this surface.
 
 ### Installed with limited use
 
