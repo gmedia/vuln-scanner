@@ -38,7 +38,7 @@ If a lower layer contradicts a higher layer, the higher layer wins and the lower
 | 12 | Filter bars copy Credit History: equal `gap-3` grid, field wrapper `flex min-w-0 flex-col gap-1.5`, controls `h-10 min-h-10`, mobile `FilterSheet` where the reference uses one. No `grid-cols-12` or far-right Apply gutter. | Review; SIEM has a machine check |
 | 13 | Row actions: `text-right` on head and cell, `justify-end` for block flex, 1 action = visible `Button`, 2+ = `DropdownMenu`, `onSelect`, destructive last + separator, sibling controlled `AlertDialog`, irreversible only, mobile ≥ 44px, `desktop` prop not `sm:`. | Machine: single-action `MoreHorizontal` menu + nested `AlertDialogTrigger` (invariant 23); Review + per-page tests for the rest; see [`row-actions.md`](row-actions.md) |
 | 14 | Do not restyle `components/ui/*` for one screenshot. Kit changes are their own PR with a written reason. | Review |
-| 15 | Frozen e2e testids stay; new controls get a new stable testid. | Machine: existing unit/E2E queries; Review |
+| 15 | Frozen e2e testids stay; new controls get a new stable testid. | Machine: the E2E spec that queries a removed testid fails; `e2eSelectors.test.ts` forces testids/roles over brittle selectors. Review for naming |
 | 16 | Do not add a primitive, token, radius, shadow, font, or motion value without updating the inventory and `index.css` in the same PR. | Review |
 | 17 | KPI/metric tiles use `StatTile` + `StatGrid` from `components/patterns/StatTile.tsx`. No page-local `KpiTile` / `StatTile` / `StatCard`. | Machine: `designInvariants.test.ts` |
 | 18 | Empty states use `EmptyState` from `components/patterns/EmptyState.tsx`. No page-local `EmptyIsland` / `EmptyState` / `EmptyPanel`. | Machine: `designInvariants.test.ts` |
@@ -50,6 +50,7 @@ If a lower layer contradicts a higher layer, the higher layer wins and the lower
 | 24 | Design contracts are split: `frontend/DESIGN.md` is the index and every `frontend/design/*.md` must be linked from it and keep the eight contract sections. Every relative link in the design docs must resolve. Do not re-inline a surface into the index. | Machine: `docContract.test.ts` + `scripts/check-design-links.mjs` |
 | 25 | Railed surfaces use `RailedShell` (or `RAILED_CARD_CLASS` / `RAILED_ROW_CLASS` / `RAILED_NOTICE_CLASS`) from `components/patterns/RailedShell.tsx`. Do not hand-write `relative overflow-hidden … pl-4`. | Machine: `designInvariants.test.ts` |
 | 26 | `docs/**/*.md` and `frontend/AGENTS.md` may only reference `components/` `pages/` `lib/` `hooks/` `theme/` source paths that exist, and must not name a retired primitive. | Machine: `scripts/check-design-docs.mjs` |
+| 27 | The invariant registry stays consistent: ids are unique and run 1..N, every `Machine:` claim cites a test or delegates to another invariant, and every cited test/script exists and is wired into CI. | Machine: `scripts/check-invariant-registry.mjs` |
 
 ### Adding to the allowlist
 

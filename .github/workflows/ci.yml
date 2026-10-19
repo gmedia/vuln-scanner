@@ -487,6 +487,9 @@ jobs:
       - name: Design docs
         working-directory: .
         run: node scripts/check-design-docs.mjs
+      - name: Invariant registry
+        working-directory: .
+        run: node scripts/check-invariant-registry.mjs
       - name: Design invariants
         run: |
           npx vitest run \
@@ -494,6 +497,7 @@ jobs:
             src/test/docContract.test.ts \
             src/test/themeTokens.test.ts \
             src/test/toneColors.test.ts \
+            src/test/toneMap.test.ts \
             src/test/e2eSelectors.test.ts \
             src/test/i18n.test.ts
 
