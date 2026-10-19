@@ -30,6 +30,36 @@ const EMPTY_ALLOWLIST: ReadonlySet<string> = new Set([
   "components/patterns/EmptyState.tsx",
 ]);
 
+const EMPTY_PANEL_MIN_H = /min-h-\[(?:6|8|12|16)rem\]/;
+const EMPTY_PANEL_DASHED = /border-dashed/;
+const EMPTY_PANEL_ISLAND = /bg-muted\/40/;
+
+const EMPTY_PANEL_RATCHET: ReadonlySet<string> = new Set([
+  "pages/Schedules.tsx",
+  "pages/ScanDetail.tsx",
+  "pages/Uptime.tsx",
+  "pages/Dashboard.tsx",
+  "pages/Siem.tsx",
+  "pages/StatusPage.tsx",
+  "pages/UptimeDetail.tsx",
+  "pages/Inbox.tsx",
+  "pages/HostProtect.tsx",
+  "components/scan/MobileUpload.tsx",
+  "components/ai/AiCatalogPanel.tsx",
+  "components/ai/AiWalletPanel.tsx",
+  "components/ai/AiKeysPanel.tsx",
+  "components/ai/AiUsagePanel.tsx",
+  "components/host/HostWafEventsList.tsx",
+  "components/host/HostSiteCard.tsx",
+  "components/assets/AssetListPanel.tsx",
+  "pages/admin/AdminInvoices.tsx",
+  "pages/admin/AdminUserDetail.tsx",
+  "pages/admin/AdminBlog.tsx",
+  "pages/admin/AdminHpp.tsx",
+  "pages/admin/AdminUsers.tsx",
+  "pages/admin/AdminEmailLogs.tsx",
+]);
+
 const SOURCES = import.meta.glob("../**/*.{ts,tsx}", {
   query: "?raw",
   import: "default",
@@ -131,6 +161,28 @@ function scanControls(): { total: number; unlabeled: Violation[] } {
   return { total, unlabeled };
 }
 
+function emptyPanelSites(): Map<string, number[]> {
+  const sites = new Map<string, number[]>();
+  for (const [path, source] of FILES) {
+    const file = rel(path);
+    if (EMPTY_ALLOWLIST.has(file)) continue;
+    const lines: number[] = [];
+    for (const [index, text] of source.split("\n").entries()) {
+      const island =
+        EMPTY_PANEL_ISLAND.test(text) &&
+        text.includes("rounded-xl") &&
+        text.includes("border-border");
+      const dashed =
+        EMPTY_PANEL_DASHED.test(text) && text.includes("bg-muted");
+      if (EMPTY_PANEL_MIN_H.test(text) || dashed || island) {
+        lines.push(index + 1);
+      }
+    }
+    if (lines.length > 0) sites.set(file, lines);
+  }
+  return sites;
+}
+
 describe("design invariants", () => {
   it("bans blocking window dialogs", () => {
     const bad = scan(WINDOW_DIALOG);
@@ -182,6 +234,27 @@ describe("design invariants", () => {
     expect(
       unlabeled,
       `Add id + Label htmlFor, or aria-label:\n${report(unlabeled)}`,
+    ).toEqual([]);
+  });
+
+  it("requires EmptyState for hand-rolled empty panels", () => {
+    const sites = emptyPanelSites();
+    expect(sites.size).toBeGreaterThan(0);
+    const unexpected = [...sites]
+      .filter(([file]) => !EMPTY_PANEL_RATCHET.has(file))
+      .map(([file, lines]) => `${file}:${lines.join(",")}`);
+    expect(
+      unexpected,
+      `Use EmptyState from components/patterns/EmptyState:\n${unexpected.join("\n")}`,
+    ).toEqual([]);
+  });
+
+  it("rejects stale entries in the empty-panel ratchet", () => {
+    const sites = emptyPanelSites();
+    const stale = [...EMPTY_PANEL_RATCHET].filter((file) => !sites.has(file));
+    expect(
+      stale,
+      `These files no longer hand-roll an empty panel; drop them from EMPTY_PANEL_RATCHET:\n${stale.join("\n")}`,
     ).toEqual([]);
   });
 });
