@@ -39,5 +39,5 @@ markdown==3.11.1
 weasyprint==70.0
 types-bleach==6.4.0.20260728
 types-Markdown==3.10.2.20261007
-langsmith==0.14.5
+langsmith==0.14.11
 protobuf==7.36.2
