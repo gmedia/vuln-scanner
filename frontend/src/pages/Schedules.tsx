@@ -88,6 +88,7 @@ import { canMutateWorkspace } from "@/api/orgs";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/authStore";
 import PageHeader from "@/components/layout/PageHeader";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { useTranslation } from "react-i18next";
 
 function formatWhen(iso: string | null, locale: string): string {
@@ -637,10 +638,11 @@ function Schedules() {
             <p className="text-sm text-destructive">{t("loadFailed")}</p>
           )}
           {!isLoading && data && data.length === 0 && (
-            <div className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
-              <CalendarClock className="h-8 w-8 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">{t("empty")}</p>
-            </div>
+            <EmptyState
+              icon={CalendarClock}
+              title={t("empty")}
+              titleTone="muted"
+            />
           )}
           {!isLoading && data && data.length > 0 && (
             <>

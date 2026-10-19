@@ -5,6 +5,7 @@ import { type AssetItemActions } from "@/components/assets/AssetItemChrome";
 import { AssetCard, AssetTableRow } from "@/components/assets/AssetListItems";
 import { type AssetTranslate } from "@/components/assets/assetChrome";
 import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Skeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 import {
@@ -86,24 +87,26 @@ export function AssetListPanel({
 
   if (items.length === 0) {
     return (
-      <div
-        className="flex min-h-[12rem] flex-col items-center justify-center gap-3 rounded-xl border border-border bg-muted/40 px-6 py-16 text-center md:min-h-[16rem] md:py-20"
-        data-testid="assets-empty"
-      >
-        <Globe className="h-8 w-8 text-muted-foreground" aria-hidden />
-        <p className="text-balance text-sm font-medium text-foreground">{t("empty")}</p>
-        <p className="max-w-md text-balance text-sm text-muted-foreground">
-          {t("emptyHint")}
-        </p>
-        <Button
-          className="mt-2 min-h-11"
-          data-testid="assets-empty-cta"
-          disabled={atCap}
-          onClick={onAdd}
-        >
-          {t("emptyCta")}
-        </Button>
-      </div>
+      <EmptyState
+        testId="assets-empty"
+        size="md"
+        className="py-16 md:py-20"
+        icon={Globe}
+        title={t("empty")}
+        titleClassName="text-balance"
+        hint={t("emptyHint")}
+        hintClassName="text-balance text-sm"
+        action={
+          <Button
+            className="mt-2 min-h-11"
+            data-testid="assets-empty-cta"
+            disabled={atCap}
+            onClick={onAdd}
+          >
+            {t("emptyCta")}
+          </Button>
+        }
+      />
     );
   }
 
@@ -131,20 +134,24 @@ export function AssetListPanel({
       </CardHeader>
       <CardContent className="p-0">
         {visible.length === 0 ? (
-          <div
-            className="flex min-h-[8rem] flex-col items-center justify-center gap-3 px-6 py-10 text-center"
-            data-testid="assets-no-match"
-          >
-            <p className="text-sm text-muted-foreground">{t("noTagMatch")}</p>
-            <Button
-              type="button"
-              variant="outline"
-              data-testid="assets-clear-filters"
-              onClick={onClearAll}
-            >
-              {t("clearFilters")}
-            </Button>
-          </div>
+          <EmptyState
+            testId="assets-no-match"
+            size="none"
+            variant="bare"
+            className="min-h-[8rem] gap-3 px-6 py-10"
+            title={t("noTagMatch")}
+            titleTone="muted"
+            action={
+              <Button
+                type="button"
+                variant="outline"
+                data-testid="assets-clear-filters"
+                onClick={onClearAll}
+              >
+                {t("clearFilters")}
+              </Button>
+            }
+          />
         ) : (
           <>
             <div className="space-y-2 p-3 md:hidden" data-testid="assets-list-mobile">

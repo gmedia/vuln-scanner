@@ -35,29 +35,11 @@ const EMPTY_PANEL_DASHED = /border-dashed/;
 const EMPTY_PANEL_ISLAND = /bg-muted\/40/;
 
 const EMPTY_PANEL_RATCHET: ReadonlySet<string> = new Set([
-  "pages/Schedules.tsx",
   "pages/ScanDetail.tsx",
-  "pages/Uptime.tsx",
-  "pages/Dashboard.tsx",
   "pages/Siem.tsx",
   "pages/StatusPage.tsx",
-  "pages/UptimeDetail.tsx",
-  "pages/Inbox.tsx",
-  "pages/HostProtect.tsx",
   "components/scan/MobileUpload.tsx",
-  "components/ai/AiCatalogPanel.tsx",
   "components/ai/AiWalletPanel.tsx",
-  "components/ai/AiKeysPanel.tsx",
-  "components/ai/AiUsagePanel.tsx",
-  "components/host/HostWafEventsList.tsx",
-  "components/host/HostSiteCard.tsx",
-  "components/assets/AssetListPanel.tsx",
-  "pages/admin/AdminInvoices.tsx",
-  "pages/admin/AdminUserDetail.tsx",
-  "pages/admin/AdminBlog.tsx",
-  "pages/admin/AdminHpp.tsx",
-  "pages/admin/AdminUsers.tsx",
-  "pages/admin/AdminEmailLogs.tsx",
 ]);
 
 const SOURCES = import.meta.glob("../**/*.{ts,tsx}", {
@@ -166,8 +148,17 @@ function emptyPanelSites(): Map<string, number[]> {
   for (const [path, source] of FILES) {
     const file = rel(path);
     if (EMPTY_ALLOWLIST.has(file)) continue;
+    const emptyStateLines = new Set<number>();
+    for (const { line, block } of jsxTagBlocks(source, "EmptyState")) {
+      const span = block.split("\n").length;
+      for (let offset = 0; offset < span; offset += 1) {
+        emptyStateLines.add(line + offset);
+      }
+    }
     const lines: number[] = [];
     for (const [index, text] of source.split("\n").entries()) {
+      const lineNumber = index + 1;
+      if (emptyStateLines.has(lineNumber)) continue;
       const island =
         EMPTY_PANEL_ISLAND.test(text) &&
         text.includes("rounded-xl") &&
@@ -175,7 +166,7 @@ function emptyPanelSites(): Map<string, number[]> {
       const dashed =
         EMPTY_PANEL_DASHED.test(text) && text.includes("bg-muted");
       if (EMPTY_PANEL_MIN_H.test(text) || dashed || island) {
-        lines.push(index + 1);
+        lines.push(lineNumber);
       }
     }
     if (lines.length > 0) sites.set(file, lines);

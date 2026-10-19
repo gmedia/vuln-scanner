@@ -2,6 +2,7 @@ import { KeyRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AiKey } from "@/api/ai";
 import { formatAiTime } from "@/components/admin/aiFormat";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -96,11 +97,11 @@ export function AiKeysPanel({
         {loading ? (
           <TableRowSkeleton rows={5} columns={6} />
         ) : keys.length === 0 ? (
-          <div className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center">
-            <KeyRound className="h-8 w-8 text-muted-foreground" aria-hidden />
-            <p className="text-sm font-medium text-foreground">{t("keysEmpty")}</p>
-            <p className="text-xs text-muted-foreground">{t("keysEmptyHint")}</p>
-          </div>
+          <EmptyState
+            icon={KeyRound}
+            title={t("keysEmpty")}
+            hint={t("keysEmptyHint")}
+          />
         ) : (
           <>
             <div className="space-y-2 md:hidden" data-testid="ai-keys-list-mobile">

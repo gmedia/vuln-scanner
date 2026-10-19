@@ -40,6 +40,7 @@ import {
 } from "@/components/admin/adminChrome";
 import { SiemRail } from "@/components/siem/siemChrome";
 import PageHeader from "@/components/layout/PageHeader";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { adminApi, type EmailSendLogItem } from "@/api/admin";
 import { emailLogPageItems } from "@/lib/pagination";
 import { useTranslation } from "react-i18next";
@@ -174,15 +175,11 @@ function AdminEmailLogs() {
           {isLoading && !data ? (
             <TableRowSkeleton rows={5} columns={6} />
           ) : !data || data.items.length === 0 ? (
-            <div
-              className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-6 py-8 text-center"
-              data-testid="email-logs-empty"
-            >
-              <Mail className="h-8 w-8 text-muted-foreground" aria-hidden />
-              <p className="text-sm font-medium text-foreground">
-                {t("emailLogsEmpty")}
-              </p>
-            </div>
+            <EmptyState
+              testId="email-logs-empty"
+              icon={Mail}
+              title={t("emailLogsEmpty")}
+            />
           ) : (
             <>
               <div className="space-y-2 md:hidden">
