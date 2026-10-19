@@ -1,7 +1,6 @@
 import { GuardPulse } from "@/components/guard/guardChrome";
-import { SiemRail } from "@/components/siem/siemChrome";
+import { StatGrid, StatTile } from "@/components/patterns/StatTile";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { cn } from "@/lib/utils";
 import { TONE_TEXT } from "@/lib/toneColors";
 
 export type DashboardKpiStripProps = {
@@ -19,57 +18,12 @@ export type DashboardKpiStripProps = {
   };
 };
 
-function StatTile({
-  label,
-  value,
-  isLoading,
-  railClass,
-  valueClassName,
-  pulse = false,
-  className,
-}: {
-  readonly label: string;
-  readonly value: number | string;
-  readonly isLoading: boolean;
-  readonly railClass: string;
-  readonly valueClassName: string;
-  readonly pulse?: boolean;
-  readonly className?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        "relative overflow-hidden rounded-lg border border-border bg-card px-4 py-3 pl-4",
-        className,
-      )}
-    >
-      <SiemRail className={railClass} />
-      <div className="pl-2">
-        {isLoading ? (
-          <>
-            <Skeleton className="mb-1 h-7 w-14" />
-            <Skeleton className="h-3 w-12" />
-          </>
-        ) : (
-          <>
-            <span
-              className={cn(
-                "font-mono text-xl font-bold tracking-tight tabular-nums sm:text-2xl",
-                valueClassName,
-              )}
-            >
-              {value}
-            </span>
-            <span className="mt-1 flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground">
-              {label}
-              {pulse ? <GuardPulse /> : null}
-            </span>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
+const TILE_SKELETON = (
+  <>
+    <Skeleton className="mb-1 h-7 w-14" />
+    <Skeleton className="h-3 w-12" />
+  </>
+);
 
 export function DashboardKpiStrip({
   openRisk,
@@ -99,33 +53,44 @@ export function DashboardKpiStrip({
         : "bg-primary";
 
   return (
-    <div
-      data-testid="dashboard-kpi-strip"
-      className="grid grid-cols-2 gap-3 lg:grid-cols-3"
+    <StatGrid
+      testid="dashboard-kpi-strip"
+      className="gap-3 lg:grid-cols-3"
     >
       <StatTile
         label={labels.openRisk}
         value={openRisk}
+        valueFirst
         isLoading={loading}
+        skeleton={TILE_SKELETON}
         railClass={riskTone}
-        valueClassName={openRisk > 0 ? TONE_TEXT.red : "text-foreground"}
-        pulse={openRisk > 0}
+        valueClassName={`text-xl tracking-tight sm:text-2xl ${
+          openRisk > 0 ? TONE_TEXT.red : "text-foreground"
+        }`}
+        labelClassName="font-normal"
+        pulse={openRisk > 0 ? <GuardPulse /> : null}
         className="col-span-2 lg:col-span-1"
       />
       <StatTile
         label={labels.weekChm}
         value={`${weekCritical}/${weekHigh}/${weekMedium}`}
+        valueFirst
         isLoading={loading}
+        skeleton={TILE_SKELETON}
         railClass={weekTone}
-        valueClassName={TONE_TEXT.orange}
+        valueClassName={`text-xl tracking-tight sm:text-2xl ${TONE_TEXT.orange}`}
+        labelClassName="font-normal"
       />
       <StatTile
         label={labels.schedules}
         value={`${enabledSchedules} / ${scheduleLimit}`}
-        isLoading={false}
+        valueFirst
         railClass={schedulesTone}
-        valueClassName={schedulesFull ? "text-destructive" : "text-foreground"}
+        valueClassName={`text-xl tracking-tight sm:text-2xl ${
+          schedulesFull ? "text-destructive" : "text-foreground"
+        }`}
+        labelClassName="font-normal"
       />
-    </div>
+    </StatGrid>
   );
 }

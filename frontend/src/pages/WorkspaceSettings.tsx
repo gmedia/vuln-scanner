@@ -64,9 +64,9 @@ import {
   invoiceListTone,
   roleTone,
   workspaceRailClass,
-  type WorkspaceTone,
 } from "@/components/workspace/workspaceChrome";
 import { SiemRail } from "@/components/siem/siemChrome";
+import { StatTile } from "@/components/patterns/StatTile";
 import { useAuthStore } from "@/store/authStore";
 import {
   acceptInvite,
@@ -83,7 +83,7 @@ import {
   type OrgInvoiceItem,
   type OrgMember,
 } from "@/api/orgs";
-import { cn, type ApiError } from "@/lib/utils";
+import { type ApiError } from "@/lib/utils";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { WorkspaceInvoiceCard } from "@/components/invoice/WorkspaceInvoiceCard";
@@ -147,35 +147,6 @@ function RoleBadge({ role }: { role: string }) {
     >
       {roleLabel(role, t)}
     </Badge>
-  );
-}
-
-function StatTile({
-  label,
-  value,
-  tone = "primary",
-  emphasize = false,
-}: {
-  readonly label: string;
-  readonly value: ReactNode;
-  readonly tone?: WorkspaceTone;
-  readonly emphasize?: boolean;
-}) {
-  return (
-    <div className="relative min-w-0 overflow-hidden rounded-lg border border-border bg-card px-4 py-3 pl-4">
-      <SiemRail className={workspaceRailClass(tone)} />
-      <p className="pl-2 text-[10px] uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
-      <div
-        className={cn(
-          "mt-1 pl-2 font-mono text-lg font-bold tabular-nums text-foreground",
-          emphasize && "text-xl font-semibold tracking-tight sm:text-lg",
-        )}
-      >
-        {value}
-      </div>
-    </div>
   );
 }
 
@@ -476,8 +447,9 @@ function WorkspaceSettings() {
                 value={
                   membersQuery.isLoading ? "…" : String(memberCount ?? "—")
                 }
-                tone={countTone(memberCount)}
-                emphasize
+                railClass={workspaceRailClass(countTone(memberCount))}
+                valueClassName="text-xl font-semibold tracking-tight sm:text-lg"
+                labelClassName="font-normal"
               />
               <StatTile
                 label={t("statInvites")}
@@ -488,7 +460,10 @@ function WorkspaceSettings() {
                       : String(pendingCount ?? "—")
                     : "—"
                 }
-                tone={canManage ? countTone(pendingCount) : "idle"}
+                railClass={workspaceRailClass(
+                  canManage ? countTone(pendingCount) : "idle",
+                )}
+                labelClassName="font-normal"
               />
               <StatTile
                 label={t("statInvoices")}
@@ -499,7 +474,10 @@ function WorkspaceSettings() {
                       : String(invoiceCount ?? "—")
                     : "—"
                 }
-                tone={canManage ? invoiceListTone(invoiceStatuses) : "idle"}
+                railClass={workspaceRailClass(
+                  canManage ? invoiceListTone(invoiceStatuses) : "idle",
+                )}
+                labelClassName="font-normal"
               />
             </div>
           </WorkspaceShellBody>

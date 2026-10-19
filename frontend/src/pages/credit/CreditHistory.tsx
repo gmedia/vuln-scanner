@@ -15,7 +15,7 @@ import {
   OpsShellBody,
   OpsShellHead,
 } from "@/components/ops/OpsShell";
-import { SiemRail } from "@/components/siem/siemChrome";
+import { StatTile } from "@/components/patterns/StatTile";
 import {
   creditListRailClass,
   creditTypeRailClass,
@@ -84,38 +84,6 @@ function formatLedgerStamp(iso: string): { date: string; time: string } {
       minute: "2-digit",
     }),
   };
-}
-
-function StatTile({
-  label,
-  value,
-  emphasize = false,
-  valueClassName,
-  railClass = "bg-primary",
-}: {
-  label: string;
-  value: ReactNode;
-  emphasize?: boolean;
-  valueClassName?: string;
-  railClass?: string;
-}) {
-  return (
-    <div className="relative overflow-hidden rounded-md border border-border bg-card px-4 py-3 pl-4">
-      <SiemRail className={railClass} />
-      <p className="pl-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
-      <div
-        className={cn(
-          "mt-1 pl-1 font-mono text-lg font-bold tabular-nums text-foreground",
-          emphasize && "text-xl tracking-tight",
-          valueClassName,
-        )}
-      >
-        {value}
-      </div>
-    </div>
-  );
 }
 
 function EmptyIsland({ title, hint }: { title: string; hint: string }) {
@@ -472,19 +440,29 @@ function CreditHistory() {
           <StatTile
             label={t("currentBalance")}
             value={credits.toLocaleString()}
-            emphasize
+            rounded="md"
+            inset="tight"
+            labelClassName="font-normal"
+            railClass="bg-primary"
+            valueClassName="text-xl tracking-tight"
           />
           <StatTile
             label={t("periodCredits")}
             value={`+${periodCredits.toLocaleString()}`}
-            valueClassName={TONE_TEXT.green}
+            rounded="md"
+            inset="tight"
+            labelClassName="font-normal"
             railClass="bg-primary"
+            valueClassName={TONE_TEXT.green}
           />
           <StatTile
             label={t("periodDebits")}
             value={`-${periodDebits.toLocaleString()}`}
-            valueClassName={TONE_TEXT.red}
+            rounded="md"
+            inset="tight"
+            labelClassName="font-normal"
             railClass="bg-destructive"
+            valueClassName={TONE_TEXT.red}
           />
         </div>
       </OpsShell>

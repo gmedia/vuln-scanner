@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Copy, WalletCards } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatIdr } from "@/components/admin/aiFormat";
+import { StatTile } from "@/components/patterns/StatTile";
 import { Button } from "@/components/ui/Button";
 import {
   Card,
@@ -52,6 +53,10 @@ export function AiWalletPanel({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <StatTile
             label={t("balance")}
+            rounded="md"
+            inset="none"
+            railClass={null}
+            labelClassName="font-normal"
             value={
               walletLoading ? (
                 <Skeleton className="h-7 w-28" />
@@ -62,12 +67,20 @@ export function AiWalletPanel({
           />
           <StatTile
             label={t("statKeys")}
+            rounded="md"
+            inset="none"
+            railClass={null}
+            labelClassName="font-normal"
             value={
               keysLoading ? <Skeleton className="h-7 w-12" /> : String(activeKeys)
             }
           />
           <StatTile
             label={t("statPeriod")}
+            rounded="md"
+            inset="none"
+            railClass={null}
+            labelClassName="font-normal"
             value={
               usageLoading ? (
                 <Skeleton className="h-7 w-24" />
@@ -130,21 +143,3 @@ export function AiWalletPanel({
   );
 }
 
-function StatTile({
-  label,
-  value,
-}: {
-  readonly label: string;
-  readonly value: ReactNode;
-}) {
-  return (
-    <div className="rounded-md border border-border bg-card px-4 py-3">
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
-      <div className="mt-1 font-mono text-lg font-bold tabular-nums text-foreground">
-        {value}
-      </div>
-    </div>
-  );
-}

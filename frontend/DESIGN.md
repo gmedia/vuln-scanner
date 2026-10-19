@@ -110,6 +110,15 @@ All spacing derives from **4px**.
 
 ## 5. Components
 
+### StatTile (shared KPI tile)
+
+- **Location**: `frontend/src/components/patterns/StatTile.tsx` — `StatTile`, `StatGrid`, `StatGridSkeleton`. **This is the only KPI tile implementation.** Do not declare a local `KpiTile` / `StatTile` / `AdminKpiTile` in a page or feature folder.
+- **Structure**: bordered card → 2px `SiemRail` → 10px uppercase label → mono tabular value → optional extra block.
+- **Variants**: `rounded` (`lg` default, `md` for `/credit-history` and `/ai`), `inset` (`tile` `pl-2`, `tight` `pl-1`, `none`), `railClass={null}` (no rail), `icon` (label-row icon, `/scan` and `/admin`), `valueFirst` (`/dashboard` number above label), `extraPlacement` (`below` default, `inline` for the Guard degraded badge), `isLoading` + `skeleton`.
+- **Grid**: `StatGrid` owns `grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4`; override columns through `className` (e.g. `lg:grid-cols-3`, `lg:grid-cols-[1fr_1fr_2fr]`). `StatGridSkeleton` owns the loading grid.
+- **Do not**: add a one-off tile because a value needs a badge or a progress bar — pass `extra`. Do not hard-code a rail color outside `*Chrome` helpers or `toneColors`.
+- **Tests**: `src/test/StatTile.test.tsx` covers rail/pulse/extra/loading/value-first/grid. Strip tests assert the frozen testids (`scan-kpi-*`, `uptime-kpi`, `guard-kpi-strip`, `status-kpi-strip`, `host-overview*`, `assets-kpi-strip`, `siem-indexer-strip`, `dashboard-kpi-strip`, `admin-kpi-*`).
+
 ### InvoicePrintSheet
 
 - **Structure**: `<article class="invoice-print-sheet">` → header (brand + meta) → parties → items `<table>` → totals → optional `.inv-pay` (`data-testid="invoice-print-bank"`) → footer.

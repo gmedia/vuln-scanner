@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -32,11 +32,10 @@ import {
   formTone,
   profileRailClass,
   verificationTone,
-  type ProfileTone,
 } from "@/components/profile/profileChrome";
 import { SiemRail } from "@/components/siem/siemChrome";
+import { StatTile } from "@/components/patterns/StatTile";
 import PageHeader from "@/components/layout/PageHeader";
-import { cn } from "@/lib/utils";
 
 function emailInitials(email: string | undefined): string {
   const local = (email ?? "").split("@")[0]?.trim() ?? "";
@@ -108,35 +107,6 @@ function PasswordField({
             <Eye className="h-4 w-4" />
           )}
         </button>
-      </div>
-    </div>
-  );
-}
-
-function StatTile({
-  label,
-  value,
-  tone = "primary",
-  emphasize = false,
-}: {
-  label: string;
-  value: ReactNode;
-  tone?: ProfileTone;
-  emphasize?: boolean;
-}) {
-  return (
-    <div className="relative min-w-0 overflow-hidden rounded-lg border border-border bg-card px-4 py-3 pl-4">
-      <SiemRail className={profileRailClass(tone)} />
-      <p className="pl-2 text-[10px] uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
-      <div
-        className={cn(
-          "mt-1 pl-2 font-mono text-lg font-bold tabular-nums text-foreground",
-          emphasize && "text-xl tracking-tight",
-        )}
-      >
-        {value}
       </div>
     </div>
   );
@@ -340,20 +310,23 @@ function Profile() {
         className="grid grid-cols-1 gap-3 sm:grid-cols-3"
       >
         <StatTile
-                           label={t("kpiVerification")}
+          label={t("kpiVerification")}
           value={user?.is_verified ? t("verified") : t("unverified")}
-          tone={verifyTone}
+          railClass={profileRailClass(verifyTone)}
+          labelClassName="font-normal"
         />
         <StatTile
-                           label={t("kpiAccess")}
+          label={t("kpiAccess")}
           value={user?.is_admin ? t("admin") : t("operator")}
-          tone={access}
+          railClass={profileRailClass(access)}
+          labelClassName="font-normal"
         />
         <StatTile
-                           label={t("kpiCredits")}
+          label={t("kpiCredits")}
           value={(user?.credits ?? 0).toLocaleString()}
-          tone={credits}
-          emphasize
+          railClass={profileRailClass(credits)}
+          valueClassName="text-xl tracking-tight"
+          labelClassName="font-normal"
         />
       </div>
 
