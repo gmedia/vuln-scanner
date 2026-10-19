@@ -47,7 +47,7 @@ If a lower layer contradicts a higher layer, the higher layer wins and the lower
 | 21 | Empty panels render `EmptyState`. A hand-rolled panel (`min-h-[6rem|8rem|12rem|16rem]`, dashed muted box, or `rounded-xl` muted island) is a violation. `EMPTY_PANEL_RATCHET` lists temporary exceptions; stale entries fail, so the list only shrinks. | Machine: `designInvariants.test.ts` |
 | 22 | Design docs (`frontend/DESIGN.md`, `frontend/design/*.md`, `frontend/AGENTS.md`) may only reference `components/` `pages/` `lib/` `hooks/` `theme/` source paths that exist, and must not name a retired primitive. | Machine: `docContract.test.ts` |
 | 23 | Row-action menus: a `MoreHorizontal` trigger must wrap 2+ actions (1 action = visible `Button`), and `AlertDialogTrigger` must never sit inside a `DropdownMenuItem` (use a sibling controlled dialog). | Machine: `designInvariants.test.ts` |
-| 24 | Design contracts are split: `frontend/DESIGN.md` is the index and every `frontend/design/*.md` must be linked from it, keep the eight contract sections, and resolve every relative link. Do not re-inline a surface into the index. | Machine: `docContract.test.ts` |
+| 24 | Design contracts are split: `frontend/DESIGN.md` is the index and every `frontend/design/*.md` must be linked from it and keep the eight contract sections. Every relative link in the design docs must resolve. Do not re-inline a surface into the index. | Machine: `docContract.test.ts` + `scripts/check-design-links.mjs` |
 
 ### Adding to the allowlist
 

@@ -1,7 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { existsSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 
 const DOCS = import.meta.glob(
   ["../../DESIGN.md", "../../AGENTS.md", "../../design/*.md"],
@@ -69,30 +66,6 @@ describe("design doc contract", () => {
     expect(
       [...new Set(broken)],
       `DESIGN.md links files that do not exist:\n${broken.join("\n")}`,
-    ).toEqual([]);
-  });
-
-  it("resolves every relative markdown link", () => {
-    const FRONTEND = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-    const broken: string[] = [];
-    let checked = 0;
-    for (const doc of parsed) {
-      const from = resolve(FRONTEND, doc.name);
-      for (const match of doc.text.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
-        const target = match[1] as string;
-        if (/^(https?:|#|mailto:)/.test(target)) continue;
-        const file = target.split("#")[0];
-        if (!file) continue;
-        checked += 1;
-        if (!existsSync(resolve(dirname(from), file))) {
-          broken.push(`${doc.name}: ${target}`);
-        }
-      }
-    }
-    expect(checked).toBeGreaterThan(10);
-    expect(
-      [...new Set(broken)],
-      `Relative links must resolve from the file that contains them:\n${broken.join("\n")}`,
     ).toEqual([]);
   });
 
