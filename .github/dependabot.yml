@@ -9,6 +9,15 @@ updates:
     labels:
       - "dependencies"
       - "frontend"
+    groups:
+      radix:
+        patterns:
+          - "@radix-ui/*"
+      frontend-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
 
   - package-ecosystem: "pip"
     directory: "/backend"
@@ -19,6 +28,12 @@ updates:
     labels:
       - "dependencies"
       - "backend"
+    groups:
+      backend-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
 
   - package-ecosystem: "pip"
     directory: "/workers"
@@ -29,6 +44,12 @@ updates:
     labels:
       - "dependencies"
       - "workers"
+    groups:
+      workers-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
 
   - package-ecosystem: "docker"
     directory: "/"
@@ -39,3 +60,9 @@ updates:
     labels:
       - "dependencies"
       - "docker"
+    groups:
+      docker-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"

@@ -884,6 +884,19 @@ jobs:
           sarif_file: trivy-results-frontend.sarif
           category: trivy-frontend
 
+  deps-sync:
+    name: deps-sync
+    needs: [changes]
+    if: ${{ (github.event_name != 'workflow_dispatch' || !inputs.skip_tests)
+            && (needs.changes.outputs.always_full == 'true'
+                || needs.changes.outputs.backend == 'true'
+                || needs.changes.outputs.workers == 'true') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check backend/workers requirement pins match
+        run: bash scripts/check-requirements-sync.sh
+
   env-inventory:
     name: env-inventory
     needs: [changes]
@@ -914,6 +927,7 @@ jobs:
       - frontend-lint
       - e2e-tests
       - env-inventory
+      - deps-sync
     if: ${{ always() && !cancelled() }}
     steps:
       - name: Fail if any required job failed

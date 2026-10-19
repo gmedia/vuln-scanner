@@ -21,6 +21,7 @@ Canonical Celery app `vuln_scanner` in `celery_app.py`. `entrypoint.sh` switches
 
 - `celery -A celery_app worker -Q <queue>`. Queues: `ip_scan`, `domain_scan`, `mobile_scan`, `dead_letter`, `uptime_check`.
 - Own `pyproject.toml` / `requirements.txt`. Pytest cov fail-under **76**.
+- Workers import backend modules (`app.config`, `app.database`, `app.services.*`, `app.models.*`), so any package pinned in **both** requirements files must match. Dependabot bumps one file at a time; `scripts/check-requirements-sync.sh` (CI job `deps-sync`) fails the build on drift — align both files in the same PR.
 - Uses `DATABASE_URL_SYNC`. **Does not run Alembic.**
 
 ## ANTI-PATTERNS
