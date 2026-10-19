@@ -2,6 +2,7 @@ import { Fragment, useState, useMemo } from "react";
 import { ChevronDown, ChevronUp, ListFilter, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ScanFinding } from "@/api/scans";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import {
@@ -316,9 +317,13 @@ function FindingsTable({
 
       <div className="space-y-2 md:hidden">
         {sorted.length === 0 ? (
-          <p className="p-8 text-center text-sm text-muted-foreground">
-            {t("noMatchingFindings")}
-          </p>
+          <EmptyState
+            variant="inline"
+            size="none"
+            className="p-8"
+            titleTone="muted"
+            title={t("noMatchingFindings")}
+          />
         ) : (
           sorted.map((finding) => {
             const isExpanded = expandedId === finding.id;
@@ -421,11 +426,13 @@ function FindingsTable({
           <TableBody>
             {sorted.length === 0 ? (
               <TableRow className="hover:bg-transparent">
-                <TableCell
-                  colSpan={7}
-                  className="p-8 text-center text-sm text-muted-foreground"
-                >
-                  {t("noMatchingFindings")}
+                <TableCell colSpan={7} className="p-8 text-center">
+                  <EmptyState
+                    variant="inline"
+                    size="none"
+                    titleTone="muted"
+                    title={t("noMatchingFindings")}
+                  />
                 </TableCell>
               </TableRow>
             ) : (

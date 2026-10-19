@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils";
  * `bare` is the same stack without the border (full-page not-found states).
  * `dashed` marks a section that will fill in later (no baseline yet).
  */
-export type EmptyStateVariant = "island" | "bare" | "dashed";
-export type EmptyStateSize = "sm" | "md" | "lg";
+export type EmptyStateVariant = "island" | "bare" | "dashed" | "inline";
+export type EmptyStateSize = "none" | "sm" | "md" | "lg";
 
 export type EmptyStateProps = {
   readonly icon?: LucideIcon;
@@ -26,6 +26,7 @@ export type EmptyStateProps = {
 };
 
 const SIZE: Record<EmptyStateSize, string> = {
+  none: "",
   sm: "min-h-[8rem] gap-2 px-6 py-8",
   md: "min-h-[12rem] gap-3 px-6 py-12 md:min-h-[16rem] md:py-16",
   lg: "min-h-[16rem] gap-3 px-6 py-16 md:py-20",
@@ -35,6 +36,7 @@ const VARIANT: Record<EmptyStateVariant, string> = {
   island: "rounded-xl border border-border bg-muted/40",
   bare: "",
   dashed: "rounded-lg border border-dashed border-border bg-muted/30",
+  inline: "",
 };
 
 export function EmptyState({

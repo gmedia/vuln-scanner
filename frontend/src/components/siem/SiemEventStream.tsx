@@ -1,4 +1,5 @@
 import type { SiemEvent } from "@/api/siem";
+import { EmptyState } from "@/components/patterns/EmptyState";
 import { EventPager } from "@/components/siem/EventPager";
 import { formatSiemWhen } from "@/components/siem/formatSiemWhen";
 import { LevelChip, SiemRail } from "@/components/siem/siemChrome";
@@ -87,11 +88,13 @@ function EventTable({
       <TableBody>
         {events.length === 0 ? (
           <TableRow data-testid="siem-events-empty">
-            <TableCell
-              colSpan={4}
-              className="py-10 text-center text-muted-foreground"
-            >
-              {t("eventsEmpty")}
+            <TableCell colSpan={4} className="py-10 text-center">
+              <EmptyState
+                variant="inline"
+                size="none"
+                titleTone="muted"
+                title={t("eventsEmpty")}
+              />
             </TableCell>
           </TableRow>
         ) : (
@@ -182,12 +185,14 @@ export function SiemEventStream({
         {pagers}
         <div className="space-y-2">
           {events.length === 0 ? (
-            <p
-              data-testid="siem-events-empty"
-              className="py-10 text-center text-muted-foreground"
-            >
-              {t("eventsEmpty")}
-            </p>
+            <EmptyState
+              testId="siem-events-empty"
+              variant="inline"
+              size="none"
+              className="py-10"
+              titleTone="muted"
+              title={t("eventsEmpty")}
+            />
           ) : (
             events.map((ev) => (
               <SiemEventMobileCard
