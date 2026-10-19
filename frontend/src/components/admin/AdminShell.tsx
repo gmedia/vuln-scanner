@@ -1,8 +1,13 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { StatTile } from "@/components/patterns/StatTile";
+import {
+  RailedIconChip,
+  RailedShell,
+  RailedShellBody,
+  RailedShellHead,
+} from "@/components/patterns/RailedShell";
 import { SiemRail } from "@/components/siem/siemChrome";
-import { Card } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
 import {
   adminRailClass,
@@ -29,29 +34,19 @@ export function AdminShell({
   readonly testid?: string;
 }) {
   return (
-    <Card
-      data-testid={testid}
-      className={cn(
-        "relative overflow-hidden pl-4",
-        wash ? adminWashClass(tone) : undefined,
-        className,
-      )}
+    <RailedShell
+      railClass={adminRailClass(tone)}
+      wash={wash ? adminWashClass(tone) : undefined}
+      className={className}
+      testid={testid}
     >
-      <SiemRail className={adminRailClass(tone)} />
       {children}
-    </Card>
+    </RailedShell>
   );
 }
 
-export function AdminIconChip({ icon: Icon }: { readonly icon: LucideIcon }) {
-  return (
-    <span
-      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted/40"
-      aria-hidden
-    >
-      <Icon className="h-4 w-4 text-muted-foreground" />
-    </span>
-  );
+export function AdminIconChip({ icon }: { readonly icon: LucideIcon }) {
+  return <RailedIconChip icon={icon} />;
 }
 
 export function AdminShellHead({
@@ -70,24 +65,17 @@ export function AdminShellHead({
   readonly className?: string;
 }) {
   return (
-    <div className={cn("border-b border-border px-4 py-3", className)}>
-      {children ?? (
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="flex min-w-0 items-start gap-3">
-            {icon ? <AdminIconChip icon={icon} /> : null}
-            <div className="min-w-0">
-              {title ? (
-                <h3 className="text-sm font-medium tracking-wide">{title}</h3>
-              ) : null}
-              {hint ? (
-                <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>
-              ) : null}
-            </div>
-          </div>
-          {aside ? <div className="shrink-0">{aside}</div> : null}
-        </div>
-      )}
-    </div>
+    <RailedShellHead
+      icon={icon}
+      iconChip="md"
+      align="start"
+      title={title}
+      hint={hint}
+      aside={aside}
+      className={className}
+    >
+      {children}
+    </RailedShellHead>
   );
 }
 
@@ -98,7 +86,7 @@ export function AdminShellBody({
   readonly children: ReactNode;
   readonly className?: string;
 }) {
-  return <div className={cn("px-4 py-4", className)}>{children}</div>;
+  return <RailedShellBody className={className}>{children}</RailedShellBody>;
 }
 
 export function AdminKpiTile({

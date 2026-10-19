@@ -1,8 +1,8 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { AUTH_CARD_CLASS } from "@/components/layout/AuthLayout";
+import { RailedShell } from "@/components/patterns/RailedShell";
 import { SiemRail } from "@/components/siem/siemChrome";
-import { Card } from "@/components/ui/Card";
 import {
   authRailClass,
   authWashClass,
@@ -23,17 +23,13 @@ export function AuthCard({
   readonly className?: string;
 }) {
   return (
-    <Card
-      className={cn(
-        AUTH_CARD_CLASS,
-        "relative overflow-hidden pl-4",
-        wash ? authWashClass(tone) : undefined,
-        className,
-      )}
+    <RailedShell
+      railClass={authRailClass(tone)}
+      wash={wash ? authWashClass(tone) : undefined}
+      className={cn(AUTH_CARD_CLASS, className)}
     >
-      <SiemRail className={authRailClass(tone)} />
       {children}
-    </Card>
+    </RailedShell>
   );
 }
 

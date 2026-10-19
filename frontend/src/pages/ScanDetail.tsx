@@ -16,6 +16,7 @@ import {
 import { useScanDetail, useScanDiff, useScanFindings } from "@/hooks/useScan";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { EmptyState } from "@/components/patterns/EmptyState";
+import { RailedShell } from "@/components/patterns/RailedShell";
 import { type ScanDiff, downloadFile, printFile } from "@/api/scans";
 import type {
   FindingsSortDir,
@@ -124,16 +125,14 @@ function Shell({
   readonly className?: string;
 }) {
   return (
-    <div
-      className={cn(
-        "relative overflow-hidden rounded-lg border border-border bg-card pl-4",
-        wash,
-        className,
-      )}
+    <RailedShell
+      frame="plain"
+      railClass={railClass}
+      wash={wash}
+      className={className}
     >
-      <SiemRail className={railClass} />
       {children}
-    </div>
+    </RailedShell>
   );
 }
 
