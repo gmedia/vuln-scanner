@@ -1,14 +1,16 @@
+import { toneRail } from "@/lib/toneMap";
+
 export function inboxStatusRailClass(status: string): string {
-  if (status === "sent") return "bg-primary";
-  if (status === "bounced") return "bg-orange-600";
-  if (status === "complained") return "bg-yellow-700";
-  return "bg-destructive";
+  if (status === "sent") return toneRail("primary");
+  if (status === "bounced") return toneRail("high");
+  if (status === "complained") return toneRail("medium");
+  return toneRail("danger");
 }
 
 export function inboxListRailClass(statuses: readonly string[]): string {
-  if (statuses.length === 0) return "bg-border";
-  if (statuses.includes("failed")) return "bg-destructive";
-  if (statuses.includes("bounced")) return "bg-orange-600";
-  if (statuses.includes("complained")) return "bg-yellow-700";
-  return "bg-primary";
+  if (statuses.length === 0) return toneRail("idle");
+  if (statuses.includes("failed")) return toneRail("danger");
+  if (statuses.includes("bounced")) return toneRail("high");
+  if (statuses.includes("complained")) return toneRail("medium");
+  return toneRail("primary");
 }

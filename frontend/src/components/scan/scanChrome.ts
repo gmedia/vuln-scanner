@@ -1,4 +1,5 @@
 import { TONE_TEXT } from "@/lib/toneColors";
+import { toneRail, toneWash } from "@/lib/toneMap";
 
 export type FindingSeverity = "critical" | "high" | "medium" | "low" | "info";
 
@@ -36,15 +37,15 @@ export function worstSeverity(
 export function severityRailClass(severity: string): string {
   switch (severity) {
     case "critical":
-      return "bg-destructive";
+      return toneRail("critical");
     case "high":
-      return "bg-orange-600";
+      return toneRail("high");
     case "medium":
-      return "bg-yellow-700";
+      return toneRail("medium");
     case "low":
-      return "bg-blue-500";
+      return toneRail("low");
     default:
-      return "bg-border";
+      return toneRail("idle");
   }
 }
 
@@ -64,34 +65,34 @@ export function severityTextClass(severity: string | null): string {
 }
 
 export function statusRailClass(status: string): string {
-  if (status === "failed") return "bg-destructive";
-  if (status === "running") return "bg-sky-600";
-  if (status === "pending") return "bg-amber-600";
-  if (status === "completed") return "bg-primary";
-  return "bg-border";
+  if (status === "failed") return toneRail("failed");
+  if (status === "running") return toneRail("running");
+  if (status === "pending") return toneRail("pending");
+  if (status === "completed") return toneRail("completed");
+  return toneRail("idle");
 }
 
 export function findingsRailClass(
   status: string,
   summary: SeveritySummary,
 ): string {
-  if (status === "failed") return "bg-destructive";
+  if (status === "failed") return toneRail("failed");
   if (status === "running" || status === "pending") {
     return statusRailClass(status);
   }
   const worst = worstSeverity(summary);
-  return worst ? severityRailClass(worst) : "bg-border";
+  return worst ? severityRailClass(worst) : toneRail("idle");
 }
 
 export function severityWashClass(severity: string | null): string | null {
-  return severity === "critical" ? "bg-destructive/[0.04]" : null;
+  return severity === "critical" ? toneWash("critical") ?? null : null;
 }
 
 export function findingsWashClass(
   status: string,
   summary: SeveritySummary,
 ): string | null {
-  if (status === "failed") return "bg-destructive/[0.04]";
+  if (status === "failed") return toneWash("failed") ?? null;
   return severityWashClass(worstSeverity(summary));
 }
 
@@ -102,10 +103,10 @@ export function diffRailClass(diff: {
   readonly resolved: number;
   readonly worsened: number;
 }): string {
-  if (diff.new_critical > 0) return "bg-destructive";
-  if (diff.new_high > 0 || diff.worsened > 0) return "bg-orange-600";
-  if (diff.resolved > 0) return "bg-primary";
-  return "bg-border";
+  if (diff.new_critical > 0) return toneRail("critical");
+  if (diff.new_high > 0 || diff.worsened > 0) return toneRail("high");
+  if (diff.resolved > 0) return toneRail("completed");
+  return toneRail("idle");
 }
 
 export function scannerResultRailClass(summary: {
@@ -114,11 +115,11 @@ export function scannerResultRailClass(summary: {
   readonly medium?: number;
   readonly low?: number;
 }): string {
-  if ((summary.critical ?? 0) > 0) return "bg-destructive";
-  if ((summary.high ?? 0) > 0) return "bg-orange-600";
-  if ((summary.medium ?? 0) > 0) return "bg-yellow-700";
-  if ((summary.low ?? 0) > 0) return "bg-blue-500";
-  return "bg-primary";
+  if ((summary.critical ?? 0) > 0) return toneRail("critical");
+  if ((summary.high ?? 0) > 0) return toneRail("high");
+  if ((summary.medium ?? 0) > 0) return toneRail("medium");
+  if ((summary.low ?? 0) > 0) return toneRail("low");
+  return toneRail("primary");
 }
 
 export function scannerResultWashClass(summary: {
@@ -126,6 +127,6 @@ export function scannerResultWashClass(summary: {
   readonly high?: number;
 }): string | undefined {
   return (summary.critical ?? 0) > 0 || (summary.high ?? 0) > 0
-    ? "bg-destructive/[0.04]"
+    ? toneWash("critical")
     : undefined;
 }

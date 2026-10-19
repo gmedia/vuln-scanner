@@ -42,6 +42,7 @@ If a lower layer contradicts a higher layer, the higher layer wins and the lower
 | 16 | Do not add a primitive, token, radius, shadow, font, or motion value without updating the inventory and `index.css` in the same PR. | Review |
 | 17 | KPI/metric tiles use `StatTile` + `StatGrid` from `components/patterns/StatTile.tsx`. No page-local `KpiTile` / `StatTile` / `StatCard`. | Machine: `designInvariants.test.ts` |
 | 18 | Empty states use `EmptyState` from `components/patterns/EmptyState.tsx`. No page-local `EmptyIsland` / `EmptyState` / `EmptyPanel`. | Machine: `designInvariants.test.ts` |
+| 19 | Rail/wash/value colours come from `lib/toneMap.ts` (`toneRail`, `toneWash`, `toneText`). Status chrome modules keep their `*Tone` type but must not hard-code `bg-<status>` literals. | Machine: `toneMap.test.ts` |
 
 ### Adding to the allowlist
 

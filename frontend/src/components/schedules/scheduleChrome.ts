@@ -1,3 +1,5 @@
+import { toneRail, toneWash } from "@/lib/toneMap";
+
 export type ScheduleTone = "critical" | "enabled" | "disabled";
 
 export function scheduleTone(s: {
@@ -9,27 +11,25 @@ export function scheduleTone(s: {
 }
 
 export function scheduleRailClass(tone: ScheduleTone): string {
-  if (tone === "critical") return "bg-destructive";
-  if (tone === "enabled") return "bg-primary";
-  return "bg-border";
+  return toneRail(tone);
 }
 
 export function scheduleWashClass(tone: ScheduleTone): string | undefined {
-  return tone === "critical" ? "bg-destructive/[0.04]" : undefined;
+  return toneWash(tone);
 }
 
 export function quotaRailClass(enabled: number, max: number): string {
-  if (max > 0 && enabled >= max) return "bg-destructive";
-  if (max > 0 && enabled / max >= 0.8) return "bg-amber-600";
-  return "bg-primary";
+  if (max > 0 && enabled >= max) return toneRail("danger");
+  if (max > 0 && enabled / max >= 0.8) return toneRail("warn");
+  return toneRail("primary");
 }
 
 export function quotaIndicatorClass(
   enabled: number,
   max: number,
 ): string | undefined {
-  if (max > 0 && enabled >= max) return "bg-destructive";
-  if (max > 0 && enabled / max >= 0.8) return "bg-amber-600";
+  if (max > 0 && enabled >= max) return toneRail("danger");
+  if (max > 0 && enabled / max >= 0.8) return toneRail("warn");
   return undefined;
 }
 

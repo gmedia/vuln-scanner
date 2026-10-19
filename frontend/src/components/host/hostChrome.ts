@@ -1,3 +1,5 @@
+import { toneRail, toneWash } from "@/lib/toneMap";
+
 export function hitStatusVariant(
   status: string,
 ): "critical" | "high" | "completed" | "pending" | "running" | "default" {
@@ -37,16 +39,11 @@ export function siteTone(input: {
 }
 
 export function hostToneRailClass(tone: HostTone): string {
-  if (tone === "critical" || tone === "failed") return "bg-destructive";
-  if (tone === "running") return "bg-sky-600";
-  if (tone === "completed") return "bg-primary";
-  return "bg-border";
+  return toneRail(tone);
 }
 
 export function hostToneWashClass(tone: HostTone): string | null {
-  if (tone === "critical" || tone === "failed") return "bg-destructive/[0.04]";
-  if (tone === "completed") return "bg-primary/5";
-  return null;
+  return toneWash(tone) ?? null;
 }
 
 export function hostToneBadgeVariant(
@@ -58,16 +55,16 @@ export function hostToneBadgeVariant(
 
 export function hitRailClass(cls: string): string {
   return cls === "webshell" || cls === "backdoor"
-    ? "bg-destructive"
-    : "bg-border";
+    ? toneRail("danger")
+    : toneRail("idle");
 }
 
 export function wafActionRailClass(action: string): string {
-  return action === "block" ? "bg-destructive" : "bg-border";
+  return action === "block" ? toneRail("danger") : toneRail("idle");
 }
 
 export function wafModeRailClass(mode: string): string {
-  if (mode === "protect") return "bg-primary";
-  if (mode === "detect") return "bg-sky-600";
-  return "bg-border";
+  if (mode === "protect") return toneRail("primary");
+  if (mode === "detect") return toneRail("info");
+  return toneRail("idle");
 }
