@@ -561,7 +561,15 @@ async def send_billing_reminder_email(
     heading = t(loc, "billing_email", "heading", number=invoice_number)
     inner = f"""\
   <p style="color: #374151;">
-    {t(loc, "billing_email", f"intro_{stage}", org=organization_name, amount=amount, due_date=due)}
+    {t(
+        loc,
+        "billing_email",
+        f"intro_{stage}",
+        number=invoice_number,
+        org=organization_name,
+        amount=amount,
+        due_date=due,
+    )}
   </p>
   <p style="color: #6b7280; font-size: 13px;">
     {t(loc, "billing_email", "period", start=_short_date(period_start), end=_short_date(period_end))}

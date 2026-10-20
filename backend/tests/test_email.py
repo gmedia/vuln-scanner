@@ -812,6 +812,33 @@ class TestSendBillingReminderEmail:
         assert sent_msg["Subject"] == "Second notice: invoice SX-202610-0001 is overdue"
         assert sent_msg.get_payload()[0].get_content_type() == "text/plain"
 
+    @pytest.mark.asyncio
+    async def test_final_stage_interpolates_the_invoice_number(self, monkeypatch):
+        monkeypatch.setattr(email_module, "FRONTEND_URL", "https://app.example.test")
+        mock_smtp = AsyncMock()
+        mock_smtp.connect = AsyncMock()
+        mock_smtp.send_message = AsyncMock()
+        mock_smtp.quit = AsyncMock()
+
+        with patch("app.services.email.aiosmtplib.SMTP", return_value=mock_smtp):
+            ok = await send_billing_reminder_email(
+                "billing@example.com",
+                stage="final",
+                invoice_number="SX-202610-0002",
+                organization_name="Hotel Beta",
+                amount_idr=2_000_000,
+                due_date=datetime(2026, 10, 1, tzinfo=UTC),
+                period_start=datetime(2026, 10, 1, tzinfo=UTC),
+                period_end=datetime(2026, 10, 31, tzinfo=UTC),
+                locale="en",
+            )
+
+        assert ok is True
+        sent_msg = mock_smtp.send_message.call_args[0][0]
+        html = sent_msg.get_payload()[1].get_payload(decode=True).decode("utf-8")
+        assert "SX-202610-0002" in html
+        assert "Rp 2.000.000" in html
+
 
 class TestEmailSendLogHelpers:
     def test_mask_recipient(self):
