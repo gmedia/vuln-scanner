@@ -102,6 +102,7 @@ def _invoice(*, days_ago: int = 1) -> SimpleNamespace:
         period_end=now + timedelta(days=1),
         status="sent",
         paid_at=None,
+        sent_at=now - timedelta(days=30),
     )
 
 

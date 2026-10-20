@@ -22,6 +22,11 @@ REMINDER_STAGES: tuple[tuple[str, int], ...] = (
 
 _STAGE_RANK: dict[str, int] = {name: rank for rank, (name, _) in enumerate(REMINDER_STAGES, start=1)}
 
+# If an invoice is sent after its due date, its first reminder must not be a
+# "final notice". Cap the opening contact so the customer gets one normal
+# overdue notice before escalation continues.
+FIRST_CONTACT_CAP = "overdue_1"
+
 
 def stage_rank(stage: str | None) -> int:
     if stage is None:
@@ -47,3 +52,21 @@ def next_stage(due_date: datetime, now: datetime, last_stage: str | None) -> str
     if stage_rank(candidate) <= stage_rank(last_stage):
         return None
     return candidate
+
+
+def first_contact_stage(
+    due_date: datetime,
+    now: datetime,
+    sent_at: datetime | None,
+) -> str | None:
+    """Stage for the first reminder on an invoice with no ledger rows."""
+    stage = due_stage(due_date, now)
+    if stage is None:
+        return None
+    if (
+        sent_at is not None
+        and sent_at.date() > due_date.date()
+        and stage_rank(stage) > stage_rank(FIRST_CONTACT_CAP)
+    ):
+        return FIRST_CONTACT_CAP
+    return stage

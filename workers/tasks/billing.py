@@ -29,7 +29,11 @@ from app.models.billing import BillingReminder  # noqa: E402
 from app.models.invoice import OrgInvoice  # noqa: E402
 from app.models.organization import Organization, OrganizationMembership  # noqa: E402
 from app.models.user import User  # noqa: E402
-from app.services.billing_reminders import due_stage, stage_rank  # noqa: E402
+from app.services.billing_reminders import (  # noqa: E402
+    due_stage,
+    first_contact_stage,
+    stage_rank,
+)
 from app.services.email import send_billing_reminder_email  # noqa: E402
 
 # Days after ``due_date`` before an active subscription becomes ``past_due``.
@@ -213,17 +217,20 @@ def send_due_reminders(self: Any) -> dict[str, int]:
         skipped = 0
 
         for inv, organization_name in rows:
-            stage = due_stage(inv.due_date, now)
-            if stage is None:
-                continue
-            rank = stage_rank(stage)
-
             existing_rows = cast(
                 list[BillingReminder],
                 session.execute(
                     select(BillingReminder).where(BillingReminder.invoice_id == inv.id)
                 ).scalars().all(),
             )
+            if existing_rows:
+                stage = due_stage(inv.due_date, now)
+            else:
+                stage = first_contact_stage(inv.due_date, now, inv.sent_at)
+            if stage is None:
+                continue
+            rank = stage_rank(stage)
+
             max_rank = max((row.stage_rank for row in existing_rows), default=0)
             existing = next((row for row in existing_rows if row.stage == stage), None)
 

@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 from app.services.billing_reminders import (
     REMINDER_STAGES,
     due_stage,
+    first_contact_stage,
     next_stage,
     stage_rank,
 )
@@ -60,3 +61,22 @@ def test_next_stage_skips_older_stages_after_an_outage() -> None:
 def test_next_stage_returns_none_when_already_sent() -> None:
     assert next_stage(DUE, _at(23), "overdue_2") is None
     assert next_stage(DUE, datetime(2026, 11, 24, 9, tzinfo=UTC), "suspend_notice") is None
+
+
+def test_first_contact_is_normal_when_sent_on_time() -> None:
+    assert first_contact_stage(DUE, _at(18), datetime(2026, 10, 15, 8, tzinfo=UTC)) == "overdue_1"
+
+
+def test_first_contact_is_capped_when_sent_late() -> None:
+    # Sent 20 days after the due date; without the cap this would be `final`.
+    sent_late = datetime(2026, 11, 4, 8, tzinfo=UTC)
+    assert due_stage(DUE, _at(5, 11)) == "final"
+    assert first_contact_stage(DUE, _at(5, 11), sent_late) == "overdue_1"
+
+
+def test_first_contact_without_sent_at_is_unchanged() -> None:
+    assert first_contact_stage(DUE, _at(5, 11), None) == "final"
+
+
+def test_first_contact_before_the_window_is_none() -> None:
+    assert first_contact_stage(DUE, _at(10), None) is None
