@@ -1,6 +1,6 @@
 """Invoice due dates and billing reminder ledger.
 
-Revision ID: add_invoice_due_dates_and_reminders
+Revision ID: add_invoice_due_reminders
 Revises: backfill_subscriptions
 Create Date: 2026-10-20
 
@@ -19,7 +19,7 @@ from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
-revision: str = "add_invoice_due_dates_and_reminders"
+revision: str = "add_invoice_due_reminders"
 down_revision: str | None = "backfill_subscriptions"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
