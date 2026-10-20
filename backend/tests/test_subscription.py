@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.main import app
 from app.models.asset import ScanAsset
+from app.models.billing import Subscription
 from app.models.organization import Organization, OrganizationMembership
 from app.models.user import User
 from app.services.auth import create_access_token, hash_password
@@ -213,7 +216,7 @@ async def test_paid_scan_invoice_makes_plan_active(db_session, ctx):
             )
             body = overview.json()
             assert body["plan"]["status"] == "active"
-            assert body["plan"]["source"] == "invoice"
+            assert body["plan"]["source"] == "subscription"
             assert body["plan"]["amount_idr"] == 650_000
             assert body["plan"]["invoice_number"].startswith("SX-")
     finally:
@@ -332,5 +335,126 @@ async def test_enterprise_is_quote_only(db_session, ctx):
             assert downgrade.status_code == 201
             assert downgrade.json()["current_sku"] == "enterprise"
             assert downgrade.json()["direction"] == "downgrade"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_subscription_row_overrides_invoice_status(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            created = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={"organization_id": str(ctx["org"].id), "sku": "pro"},
+            )
+            invoice_id = created.json()["id"]
+            paid = await client.post(
+                f"/api/admin/invoices/{invoice_id}/paid",
+                headers=_auth(ctx["admin"]),
+                json={"bank_ref": "TF-SUB-STATE-1"},
+            )
+            assert paid.status_code == 200
+
+            sub = (
+                await db_session.execute(
+                    select(Subscription).where(
+                        Subscription.organization_id == ctx["org"].id
+                    )
+                )
+            ).scalar_one()
+            sub.status = "past_due"
+            sub.cancel_at_period_end = True
+            await db_session.commit()
+
+            overview = await client.get(
+                f"/api/orgs/{ctx['org'].id}/subscription",
+                headers=_auth(ctx["owner"], ctx["org"].id),
+            )
+            plan = overview.json()["plan"]
+            assert plan["source"] == "subscription"
+            assert plan["status"] == "pending_payment"
+            assert plan["cancel_at_period_end"] is True
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_canceled_subscription_shows_expired(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            created = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={"organization_id": str(ctx["org"].id), "sku": "pro"},
+            )
+            invoice_id = created.json()["id"]
+            await client.post(
+                f"/api/admin/invoices/{invoice_id}/paid",
+                headers=_auth(ctx["admin"]),
+                json={"bank_ref": "TF-SUB-STATE-2"},
+            )
+            sub = (
+                await db_session.execute(
+                    select(Subscription).where(
+                        Subscription.organization_id == ctx["org"].id
+                    )
+                )
+            ).scalar_one()
+            sub.status = "canceled"
+            await db_session.commit()
+
+            overview = await client.get(
+                f"/api/orgs/{ctx['org'].id}/subscription",
+                headers=_auth(ctx["owner"], ctx["org"].id),
+            )
+            plan = overview.json()["plan"]
+            assert plan["source"] == "subscription"
+            assert plan["status"] == "expired"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_subscription_period_wins_over_invoice_period(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            created = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={"organization_id": str(ctx["org"].id), "sku": "pro"},
+            )
+            invoice_id = created.json()["id"]
+            await client.post(
+                f"/api/admin/invoices/{invoice_id}/paid",
+                headers=_auth(ctx["admin"]),
+                json={"bank_ref": "TF-SUB-STATE-3"},
+            )
+            sub = (
+                await db_session.execute(
+                    select(Subscription).where(
+                        Subscription.organization_id == ctx["org"].id
+                    )
+                )
+            ).scalar_one()
+            sub.cycle = "annual"
+            sub.current_period_start = datetime(2026, 1, 1, tzinfo=UTC)
+            sub.current_period_end = datetime(2026, 12, 31, 23, 59, 59, tzinfo=UTC)
+            await db_session.commit()
+
+            overview = await client.get(
+                f"/api/orgs/{ctx['org'].id}/subscription",
+                headers=_auth(ctx["owner"], ctx["org"].id),
+            )
+            plan = overview.json()["plan"]
+            assert plan["cycle"] == "annual"
+            assert plan["period_start"].startswith("2026-01-01")
+            assert plan["period_end"].startswith("2026-12-31")
     finally:
         app.dependency_overrides.clear()

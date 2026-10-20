@@ -15,7 +15,7 @@ export interface SubscriptionPlan {
   sku: SubscriptionSku;
   label: string;
   status: SubscriptionStatus;
-  source: "invoice" | "default" | "ops" | "custom";
+  source: "invoice" | "default" | "ops" | "custom" | "subscription";
   cycle: SubscriptionCycle;
   amount_idr: number | null;
   period_start: string | null;
@@ -23,6 +23,7 @@ export interface SubscriptionPlan {
   renewal_at: string | null;
   invoice_id: string | null;
   invoice_number: string | null;
+  cancel_at_period_end?: boolean;
 }
 
 export interface SubscriptionUsageItem {

@@ -9,6 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.asset import ASSET_SKU_LIMITS, ScanAsset
+from app.models.billing import Subscription
 from app.models.guard import GUARD_SKU_LIMITS, GuardAgent
 from app.models.host_protect import HOST_SITE_SKU_LIMITS, HostSite
 from app.models.invoice import (
@@ -163,34 +164,110 @@ class SubscriptionService:
         )
         return result.scalar_one_or_none()
 
-    def _plan(self, org: Organization, invoice: OrgInvoice | None) -> SubscriptionPlan:
+    def _invoice_plan_status(
+        self,
+        sku: str,
+        invoice: OrgInvoice | None,
+        *,
+        now: datetime,
+        period_end: datetime | None,
+    ) -> tuple[str, str]:
+        """Legacy derivation, used only when no subscription row exists yet."""
+        if invoice is None:
+            return "unbilled", "default" if sku == "basic" else "ops"
+        if invoice.status == "sent":
+            return "pending_payment", "invoice"
+        if invoice.status == "draft":
+            return "draft", "invoice"
+        if invoice.status == "paid":
+            status = "active" if period_end is not None and period_end >= now else "expired"
+            return status, "invoice"
+        return "unbilled", "default" if sku == "basic" else "ops"
+
+    def _subscription_plan_status(
+        self,
+        subscription: Subscription,
+        invoice: OrgInvoice | None,
+        *,
+        now: datetime,
+        period_end: datetime | None,
+    ) -> str:
+        """Billing status wins over invoice status once a row exists.
+
+        The invoice is evidence of a payment; the subscription row is the
+        lifecycle truth (past_due from a failed renewal, cancel-at-period-end,
+        immediate cancel). Period end still decides whether access is current.
+        """
+        if subscription.status in ("canceled", "unpaid"):
+            return "expired"
+        if subscription.status == "past_due":
+            if period_end is not None and period_end >= now:
+                return "pending_payment"
+            return "expired"
+        if subscription.status in ("active", "trialing"):
+            if period_end is None:
+                return "active"
+            return "active" if period_end >= now else "expired"
+        # incomplete: no settled payment yet.
+        if invoice is not None and invoice.status == "draft":
+            return "draft"
+        if invoice is not None and invoice.status == "sent":
+            return "pending_payment"
+        return "unbilled"
+
+    def _plan(
+        self,
+        org: Organization,
+        invoice: OrgInvoice | None,
+        subscription: Subscription | None = None,
+    ) -> SubscriptionPlan:
         sku = org.sku or "basic"
         now = datetime.now(UTC)
-        period_end = _utc(invoice.period_end) if invoice is not None else None
+        invoice_end = _utc(invoice.period_end) if invoice is not None else None
 
         if sku == "enterprise":
-            plan_status = "enterprise"
-            source = "custom"
-        elif invoice is None:
-            plan_status = "unbilled"
-            source = "default" if sku == "basic" else "ops"
-        elif invoice.status == "sent":
-            plan_status = "pending_payment"
-            source = "invoice"
-        elif invoice.status == "draft":
-            plan_status = "draft"
-            source = "invoice"
-        elif invoice.status == "paid":
-            plan_status = "active" if period_end is not None and period_end >= now else "expired"
-            source = "invoice"
-        else:
-            plan_status = "unbilled"
-            source = "default" if sku == "basic" else "ops"
+            return SubscriptionPlan(
+                sku=sku,
+                label=f"Sinexis Secure — {SKU_LABEL.get(sku, sku)}",
+                status="enterprise",
+                source="custom",
+            )
 
+        if subscription is not None:
+            period_start = _utc(subscription.current_period_start) or (
+                _utc(invoice.period_start) if invoice is not None else None
+            )
+            period_end = _utc(subscription.current_period_end) or invoice_end
+            return SubscriptionPlan(
+                sku=sku,
+                label=f"Sinexis Secure — {SKU_LABEL.get(sku, sku)}",
+                status=self._subscription_plan_status(
+                    subscription,
+                    invoice,
+                    now=now,
+                    period_end=period_end,
+                ),
+                source="subscription",
+                cycle=subscription.cycle,
+                amount_idr=invoice.amount_idr if invoice is not None else None,
+                period_start=period_start,
+                period_end=period_end,
+                renewal_at=period_end,
+                invoice_id=invoice.id if invoice is not None else None,
+                invoice_number=invoice.number if invoice is not None else None,
+                cancel_at_period_end=subscription.cancel_at_period_end,
+            )
+
+        plan_status, source = self._invoice_plan_status(
+            sku,
+            invoice,
+            now=now,
+            period_end=invoice_end,
+        )
         cycle = "monthly"
         if invoice is not None:
             start = _utc(invoice.period_start)
-            if start is not None and period_end is not None and (period_end - start).days > 40:
+            if start is not None and invoice_end is not None and (invoice_end - start).days > 40:
                 cycle = "annual"
 
         return SubscriptionPlan(
@@ -201,8 +278,8 @@ class SubscriptionService:
             cycle=cycle,
             amount_idr=invoice.amount_idr if invoice is not None else None,
             period_start=_utc(invoice.period_start) if invoice is not None else None,
-            period_end=period_end,
-            renewal_at=period_end,
+            period_end=invoice_end,
+            renewal_at=invoice_end,
             invoice_id=invoice.id if invoice is not None else None,
             invoice_number=invoice.number if invoice is not None else None,
         )
@@ -261,15 +338,22 @@ class SubscriptionService:
         request, email = row
         return _request_item(request, requested_by_email=email)
 
+    async def _subscription(self, organization_id: UUID) -> Subscription | None:
+        result = await self.db.execute(
+            select(Subscription).where(Subscription.organization_id == organization_id)
+        )
+        return result.scalar_one_or_none()
+
     async def overview(self, org: Organization, role: str) -> SubscriptionOverviewResponse:
         invoice = await self._latest_scan_invoice(org.id)
+        subscription = await self._subscription(org.id)
         usage, seats = await self._usage(org.id, org.sku or "basic")
         catalog, bundles = await self._catalog()
         can_manage = role_at_least(role, "admin")
         return SubscriptionOverviewResponse(
             organization_id=org.id,
             organization_name=org.name,
-            plan=self._plan(org, invoice),
+            plan=self._plan(org, invoice, subscription),
             usage=usage,
             workspace_seats=seats,
             catalog=catalog,
