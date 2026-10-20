@@ -314,6 +314,48 @@ describe("Subscription billing truth", () => {
     expect(screen.getByText(/TF-1/)).toBeInTheDocument();
   });
 
+  it("flags a Guard fleet that sits above its seat count", async () => {
+    vi.mocked(getSubscription).mockResolvedValue(
+      overview({
+        usage: [
+          { product: "scan", used: 2, limit: 3, unit: "asset" },
+          { product: "host", used: 1, limit: 3, unit: "site" },
+          { product: "uptime", used: 12, limit: 50, unit: "monitor" },
+          { product: "guard", used: 5, limit: 3, unit: "agent" },
+        ],
+      }),
+    );
+    renderPage();
+
+    await screen.findByTestId("subscription-summary");
+    expect(
+      screen.getByTestId("subscription-usage-over-guard"),
+    ).toHaveTextContent("Over by 2");
+    expect(screen.getByTestId("subscription-usage-guard")).toHaveTextContent(
+      "5 / 3",
+    );
+  });
+
+  it("shows a full-capacity message when usage equals the limit", async () => {
+    vi.mocked(getSubscription).mockResolvedValue(
+      overview({
+        usage: [
+          { product: "scan", used: 3, limit: 3, unit: "asset" },
+          { product: "host", used: 1, limit: 3, unit: "site" },
+          { product: "uptime", used: 12, limit: 50, unit: "monitor" },
+          { product: "guard", used: 3, limit: 3, unit: "agent" },
+        ],
+      }),
+    );
+    renderPage();
+
+    await screen.findByTestId("subscription-summary");
+    expect(screen.queryByTestId("subscription-usage-over-scan")).toBeNull();
+    expect(screen.getByTestId("subscription-usage-scan")).toHaveTextContent(
+      "Capacity full",
+    );
+  });
+
   it("hides payment attempts from viewers", async () => {
     setRole("viewer");
     vi.mocked(getSubscription).mockResolvedValue(

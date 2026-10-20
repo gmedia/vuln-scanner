@@ -115,5 +115,6 @@
   "attemptStatus_expired": "Kedaluwarsa",
   "attemptStatus_refunded": "Dikembalikan",
   "attemptRef": "Ref",
-  "attemptMethod": "Metode"
+  "attemptMethod": "Metode",
+  "usageOver": "Melebihi {{over}} seat — sinkronisasi Wazuh bisa melampaui seat"
 }

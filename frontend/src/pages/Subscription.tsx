@@ -112,6 +112,9 @@ function UsageTile({ item }: { readonly item: SubscriptionUsageItem }) {
   const { t } = useTranslation("subscription");
   const limit = item.limit;
   const state = limit != null ? quotaState(item.used, limit) : null;
+  // Wazuh sync does not enforce GUARD_SKU_LIMITS, so a Guard fleet can sit
+  // above its seat count. Surface that instead of calling it "full".
+  const over = limit != null && item.used > limit ? item.used - limit : 0;
   const value =
     limit != null
       ? t("usageValue", { used: item.used, limit })
@@ -128,7 +131,14 @@ function UsageTile({ item }: { readonly item: SubscriptionUsageItem }) {
             indicatorClassName={usageTone(item)}
             aria-label={`${t(`product_${item.product}`)} ${value}`}
           />
-          {state?.atCap ? (
+          {over > 0 ? (
+            <p
+              className="text-[11px] text-destructive"
+              data-testid={`subscription-usage-over-${item.product}`}
+            >
+              {t("usageOver", { over })}
+            </p>
+          ) : state?.atCap ? (
             <p className="text-[11px] text-destructive">{t("usageFull")}</p>
           ) : state?.tone === "warn" ? (
             <p className="text-[11px] text-muted-foreground">{t("usageWarn")}</p>
