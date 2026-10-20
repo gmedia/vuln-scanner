@@ -89,6 +89,7 @@ function overview(overrides: Partial<SubscriptionOverview> = {}): SubscriptionOv
       can_self_serve: false,
     },
     pending_request: null,
+    recent_attempts: [],
     ...overrides,
   };
 }
@@ -215,5 +216,120 @@ describe("Subscription page", () => {
     useAuthStore.setState({ activeOrgId: null, organizations: [] });
     renderPage();
     expect(screen.getByTestId("subscription-no-org")).toBeInTheDocument();
+  });
+});
+
+
+describe("Subscription billing truth", () => {
+  beforeEach(() => {
+    vi.mocked(getSubscription).mockReset();
+    vi.mocked(createSubscriptionRequest).mockReset();
+    vi.mocked(cancelSubscriptionRequest).mockReset();
+    vi.mocked(listOrgInvoices).mockReset();
+    vi.mocked(listOrgInvoices).mockResolvedValue({ items: [], total: 0 });
+    setRole("owner");
+  });
+
+  it("shows the grace state instead of a dead period", async () => {
+    vi.mocked(getSubscription).mockResolvedValue(
+      overview({
+        plan: {
+          ...overview().plan,
+          status: "grace",
+          billing_status: "active",
+          period_end: "2026-09-30T23:59:59Z",
+        },
+      }),
+    );
+    renderPage();
+
+    await screen.findByTestId("subscription-summary");
+    expect(screen.getByTestId("subscription-grace")).toBeInTheDocument();
+    expect(screen.getByText("Grace period")).toBeInTheDocument();
+  });
+
+  it("shows the cancel-at-period-end banner", async () => {
+    vi.mocked(getSubscription).mockResolvedValue(
+      overview({
+        plan: {
+          ...overview().plan,
+          cancel_at_period_end: true,
+        },
+      }),
+    );
+    renderPage();
+
+    await screen.findByTestId("subscription-summary");
+    expect(
+      screen.getByTestId("subscription-cancel-scheduled"),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the failed renewal notice for past_due", async () => {
+    vi.mocked(getSubscription).mockResolvedValue(
+      overview({
+        plan: {
+          ...overview().plan,
+          status: "pending_payment",
+          billing_status: "past_due",
+        },
+      }),
+    );
+    renderPage();
+
+    await screen.findByTestId("subscription-summary");
+    expect(screen.getByTestId("subscription-past-due")).toBeInTheDocument();
+    expect(screen.getByText("Renewal payment failed")).toBeInTheDocument();
+  });
+
+  it("renders payment attempts for managers", async () => {
+    vi.mocked(getSubscription).mockResolvedValue(
+      overview({
+        recent_attempts: [
+          {
+            id: "att-1",
+            organization_id: "org-a",
+            invoice_id: "inv-1",
+            provider: "manual",
+            provider_ref: "TF-1",
+            amount_idr: 1_000_000,
+            currency: "IDR",
+            status: "succeeded",
+            method: "bank_transfer",
+            failure_code: null,
+            failure_message: null,
+            next_retry_at: null,
+            succeeded_at: "2026-10-01T00:00:00Z",
+            failed_at: null,
+            created_at: "2026-10-01T00:00:00Z",
+            updated_at: "2026-10-01T00:00:00Z",
+          },
+        ],
+      }),
+    );
+    renderPage();
+
+    await screen.findByTestId("subscription-summary");
+    expect(screen.getByTestId("subscription-attempts")).toBeInTheDocument();
+    expect(screen.getByText(/TF-1/)).toBeInTheDocument();
+  });
+
+  it("hides payment attempts from viewers", async () => {
+    setRole("viewer");
+    vi.mocked(getSubscription).mockResolvedValue(
+      overview({
+        capabilities: {
+          can_manage: false,
+          can_request_change: false,
+          can_view_invoices: false,
+          can_self_serve: false,
+        },
+      }),
+    );
+    renderPage();
+
+    await screen.findByTestId("subscription-summary");
+    expect(screen.queryByTestId("subscription-attempts")).toBeNull();
+    expect(screen.queryByTestId("subscription-attempts-empty")).toBeNull();
   });
 });

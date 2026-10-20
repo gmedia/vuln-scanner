@@ -21,6 +21,7 @@ export function subscriptionWashClass(
 
 export function planTone(status: SubscriptionStatus): SubscriptionTone {
   if (status === "active") return "primary";
+  if (status === "grace") return "warn";
   if (status === "pending_payment") return "warn";
   if (status === "draft") return "info";
   if (status === "expired") return "danger";
@@ -32,6 +33,7 @@ export function planBadgeVariant(
   status: SubscriptionStatus,
 ): "success" | "pending" | "info" | "failed" | "default" {
   if (status === "active") return "success";
+  if (status === "grace") return "pending";
   if (status === "pending_payment") return "pending";
   if (status === "draft") return "info";
   if (status === "expired") return "failed";

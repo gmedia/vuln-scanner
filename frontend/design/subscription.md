@@ -55,8 +55,9 @@ All status colours route through `components/subscription/subscriptionChrome.ts`
 
 | Primitive | Anatomy | States |
 |---|---|---|
-| Plan summary (`subscription-summary`) | `WorkspaceShell` + head + plan name/price/period + status badge | active / pending_payment / draft / expired / unbilled / enterprise |
-| Pending request notice | `WorkspaceNotice tone="warn"` + cancel button | pending / canceling |
+| Plan summary (`subscription-summary`) | `WorkspaceShell` + head + plan name/price/period + status badge | active / grace / pending_payment / draft / expired / unbilled / enterprise |
+| Billing notice (`subscription-past-due` / `-cancel-scheduled` / `-grace`) | `WorkspaceNotice tone="warn"` above the pending-request notice; only one renders | past_due / cancel-at-period-end / grace |
+| Payment history (`subscription-attempts`) | bordered rows under the invoice list, manager-only | empty / list |
 | Capacity tile (`subscription-usage-*`) | `StatTile` + `Progress` + quota label | ok / warn ≥80% / cap 100% / custom limit |
 | Plan card (`subscription-plan-*`) | `Card` + title + price + capacity list + footer CTA | current (disabled, primary border) / upgrade / downgrade / request-only |
 | Enterprise card | `Card` with no price | quote-only |
@@ -65,7 +66,9 @@ All status colours route through `components/subscription/subscriptionChrome.ts`
 | Request dialog | controlled `AlertDialog` + `Textarea` + submit | idle / pending / error |
 | FAQ | `Accordion` | collapsed / expanded |
 
-Frozen testids: `subscription-page`, `subscription-summary`, `subscription-usage-{product}`, `subscription-usage-workspace`, `subscription-plans`, `subscription-plan-{tier}`, `subscription-plan-enterprise`, `subscription-alacarte-table`, `subscription-invoices`, `subscription-invoices-empty`, `subscription-cancel-request`, `subscription-request-note`, `subscription-request-submit`, `subscription-no-org`, `subscription-error`.
+Notice precedence: `past_due` → `cancel_at_period_end` → `grace`. Never stack them.
+
+Frozen testids: `subscription-page`, `subscription-summary`, `subscription-past-due`, `subscription-cancel-scheduled`, `subscription-grace`, `subscription-attempts`, `subscription-attempts-empty`, `subscription-usage-{product}`, `subscription-usage-workspace`, `subscription-plans`, `subscription-plan-{tier}`, `subscription-plan-enterprise`, `subscription-alacarte-table`, `subscription-invoices`, `subscription-invoices-empty`, `subscription-cancel-request`, `subscription-request-note`, `subscription-request-submit`, `subscription-no-org`, `subscription-error`.
 
 ## 6. Motion
 
@@ -98,3 +101,4 @@ Borders-only. `Card` + `border-border`; rails are 2px `SiemRail` via `WorkspaceS
 | Annual is display/request only | same | No annual invoice support in `sinexis-invoice-v1` | Annual invoice slice |
 | Bundle savings not shown as a badge | same | Guard is free with Host; the à-la-carte sum double-counts Guard | Resolve bundle arithmetic |
 | Invoice list also remains in `/settings/workspace` | `pages/WorkspaceSettings.tsx` | Backward-compatible; tests lock the billing card | Extract billing into this page in a named slice |
+| Cancel banner has no resume button | `pages/Subscription.tsx` | No customer cancel/resume endpoint exists; a dead button would lie | Add resume when customer self-serve lands |

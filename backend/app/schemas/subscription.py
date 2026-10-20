@@ -5,6 +5,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.billing import PaymentAttemptItem
+
 
 class SubscriptionPlan(BaseModel):
     sku: str
@@ -19,6 +21,7 @@ class SubscriptionPlan(BaseModel):
     invoice_id: uuid.UUID | None = None
     invoice_number: str | None = None
     cancel_at_period_end: bool = False
+    billing_status: str | None = None
 
 
 class SubscriptionUsageItem(BaseModel):
@@ -97,6 +100,7 @@ class SubscriptionOverviewResponse(BaseModel):
     enterprise: SubscriptionEnterpriseOffer
     capabilities: SubscriptionCapabilities
     pending_request: SubscriptionRequestItem | None = None
+    recent_attempts: list[PaymentAttemptItem] = Field(default_factory=list)
 
 
 class SubscriptionRequestCreate(BaseModel):

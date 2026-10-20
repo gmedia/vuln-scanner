@@ -458,3 +458,118 @@ async def test_subscription_period_wins_over_invoice_period(db_session, ctx):
             assert plan["period_end"].startswith("2026-12-31")
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_active_subscription_past_period_is_grace_not_expired(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            created = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={"organization_id": str(ctx["org"].id), "sku": "pro"},
+            )
+            await client.post(
+                f"/api/admin/invoices/{created.json()['id']}/paid",
+                headers=_auth(ctx["admin"]),
+                json={"bank_ref": "TF-GRACE-1"},
+            )
+            sub = (
+                await db_session.execute(
+                    select(Subscription).where(
+                        Subscription.organization_id == ctx["org"].id
+                    )
+                )
+            ).scalar_one()
+            # Period ended yesterday; the beat has not run yet, so the row is
+            # still active and the customer is inside the grace window.
+            sub.current_period_start = datetime(2026, 9, 1, tzinfo=UTC)
+            sub.current_period_end = datetime(2026, 9, 30, tzinfo=UTC)
+            await db_session.commit()
+
+            overview = await client.get(
+                f"/api/orgs/{ctx['org'].id}/subscription",
+                headers=_auth(ctx["owner"], ctx["org"].id),
+            )
+            plan = overview.json()["plan"]
+            assert plan["status"] == "grace"
+            assert plan["billing_status"] == "active"
+            assert plan["source"] == "subscription"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_past_due_after_period_end_is_expired(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            created = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={"organization_id": str(ctx["org"].id), "sku": "pro"},
+            )
+            await client.post(
+                f"/api/admin/invoices/{created.json()['id']}/paid",
+                headers=_auth(ctx["admin"]),
+                json={"bank_ref": "TF-GRACE-2"},
+            )
+            sub = (
+                await db_session.execute(
+                    select(Subscription).where(
+                        Subscription.organization_id == ctx["org"].id
+                    )
+                )
+            ).scalar_one()
+            sub.status = "past_due"
+            sub.current_period_start = datetime(2026, 9, 1, tzinfo=UTC)
+            sub.current_period_end = datetime(2026, 9, 30, tzinfo=UTC)
+            await db_session.commit()
+
+            overview = await client.get(
+                f"/api/orgs/{ctx['org'].id}/subscription",
+                headers=_auth(ctx["owner"], ctx["org"].id),
+            )
+            plan = overview.json()["plan"]
+            assert plan["status"] == "expired"
+            assert plan["billing_status"] == "past_due"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_recent_attempts_only_visible_to_managers(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            created = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={"organization_id": str(ctx["org"].id), "sku": "pro"},
+            )
+            await client.post(
+                f"/api/admin/invoices/{created.json()['id']}/paid",
+                headers=_auth(ctx["admin"]),
+                json={"bank_ref": "TF-ATTEMPT-1"},
+            )
+
+            owner_view = await client.get(
+                f"/api/orgs/{ctx['org'].id}/subscription",
+                headers=_auth(ctx["owner"], ctx["org"].id),
+            )
+            attempts = owner_view.json()["recent_attempts"]
+            assert len(attempts) == 1
+            assert attempts[0]["provider_ref"] == "TF-ATTEMPT-1"
+            assert attempts[0]["status"] == "succeeded"
+
+            viewer_view = await client.get(
+                f"/api/orgs/{ctx['org'].id}/subscription",
+                headers=_auth(ctx["viewer"], ctx["org"].id),
+            )
+            assert viewer_view.json()["recent_attempts"] == []
+    finally:
+        app.dependency_overrides.clear()
