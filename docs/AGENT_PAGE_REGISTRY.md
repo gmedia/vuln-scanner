@@ -79,6 +79,7 @@ Nav groups match Sidebar: **Scan** · **Attach** · **Account** · **Admin** (ad
 | `/inbox` | `pages/Inbox.tsx` | Account | User SMTP Sent/Failed log (`nav-inbox`). Spec [`inbox-delivered-v1.md`](specs/inbox-delivered-v1.md) S1b. **Not** Guard Discover. | `Inbox.test.tsx`, `Sidebar.test.tsx` |
 | `/profile` | `pages/Profile.tsx` | Account | Identity band (initials + verified/admin badges + org) + KPI tiles + password/email cards. Frozen form ids: `current-password`, `new-password`, `confirm-password`, `profile-email`, `profile-password`. | `Profile.test.tsx`, `e2e/profile.spec.ts` |
 | `/settings/workspace` | `pages/WorkspaceSettings.tsx` | Account | Org members, invites, P6 pilot checklist, Billing card (`workspace-billing`). Invoice HTML print = S1b [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md). | `WorkspaceSettings.test.tsx` |
+| `/settings/subscription` | `pages/Subscription.tsx` | Account | Plan summary, capacity meters, plan catalog, request-only change flow, invoice list. Contract: `frontend/design/subscription.md`. | `Subscription.test.tsx` |
 | `/org/members` | **same** `WorkspaceSettings.tsx` | — | Alias route; keep in sync | same |
 
 ### Admin (`AdminRoute`)
@@ -90,6 +91,7 @@ Nav groups match Sidebar: **Scan** · **Attach** · **Account** · **Admin** (ad
 | `/admin/users/:id` | `pages/admin/AdminUserDetail.tsx` | — | | `admin/AdminUserDetail.test.tsx`, `e2e/admin-user-detail.spec.ts` |
 | `/admin/hpp` | `pages/admin/AdminHpp.tsx` | Admin | IDR unit rates + monthly overhead + cost journal + date-range report + SKU overlay **estimasi**. Separate COGS/margin tool; retained after the pricing archive retired. `nav-admin-hpp`. Spec: `docs/specs/admin-hpp-v1.md`. | `admin/AdminHpp.test.tsx` |
 | `/admin/invoices` | `pages/admin/AdminInvoices.tsx` | Admin | Sinexis Scan invoices (bank transfer). Catalog + draft/send/paid/void. `nav-admin-invoices`. Pay loop: `docs/specs/sinexis-invoice-v1.md`. HTML print: S1b [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md). | `admin/AdminInvoices.test.tsx` |
+| `/admin/subscription-requests` | `pages/admin/AdminSubscriptionRequests.tsx` | Admin | Plan upgrade/downgrade queue; approve/reject with note. `nav-admin-subscription-requests`. | `admin/AdminSubscriptionRequests.test.tsx` |
 | `/admin/blog` | `pages/admin/AdminBlog.tsx` | Admin | CMS; `nav-admin-blog`. Locale key `blogStatus`. | `admin/AdminBlog.test.tsx` |
 | `/admin/email-logs` | `pages/admin/AdminEmailLogs.tsx` | Admin | Outbound SMTP log; masked recipient. `nav-admin-email-logs`. | `admin/AdminEmailLogs.test.tsx` |
 | `/admin/ai` | `pages/admin/AdminAi.tsx` | Admin | Catalog, usage, top-up, trial chat. `nav-admin-ai`. Flag `AI_GATEWAY_ENABLED`. | `admin/AdminAi.test.tsx` |
@@ -125,8 +127,8 @@ Minimum authenticated set (2k + mobile, light + dark) after a chrome/token chang
 4. `/scan/ip` `/scan/domain` `/scan/mobile`
 5. `/schedules` `/assets` `/host`
 6. `/guard` `/siem` `/uptime` `/uptime/:id` `/uptime/status-page`
-7. `/credit-history` `/profile` `/settings/workspace` `/guide`
-8. Admin: `/admin` `/admin/users` `/admin/hpp` `/admin/skus` `/admin/simulator` `/admin/invoices` `/admin/blog`
+7. `/credit-history` `/profile` `/settings/workspace` `/settings/subscription` `/guide`
+8. Admin: `/admin` `/admin/users` `/admin/hpp` `/admin/skus` `/admin/simulator` `/admin/invoices` `/admin/subscription-requests` `/admin/blog`
 
 Auth for prod visual: `E2E_EMAIL` / `E2E_PASSWORD` from **tc1 env** — never commit. Do not `POST /register` for the shared mailbox.
 
