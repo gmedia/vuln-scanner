@@ -116,5 +116,9 @@
   "attemptStatus_refunded": "Dikembalikan",
   "attemptRef": "Ref",
   "attemptMethod": "Metode",
-  "usageOver": "Melebihi {{over}} seat — sinkronisasi Wazuh bisa melampaui seat"
+  "usageOver": "Melebihi {{over}} seat — sinkronisasi Wazuh bisa melampaui seat",
+  "readOnlyTitle": "Workspace ini read-only",
+  "readOnlyOverdue": "Invoice sudah lewat jatuh tempo. Dashboard, riwayat, ekspor, dan billing tetap tersedia; scan, site, monitor, agent, dan undangan baru dijeda.",
+  "readOnlyCanceled": "Langganan sudah berakhir. Perpanjang untuk membuat scan, site, monitor, atau agent.",
+  "readOnlyBilling": "Billing tetap terbuka agar Anda bisa menyelesaikan invoice atau mengajukan perubahan paket."
 }

@@ -16,6 +16,7 @@ from app.schemas.uptime import (
     UptimeStatsResponse,
 )
 from app.services.auth import get_active_org_id, get_current_user
+from app.services.billing_access import BILLING_WRITE
 from app.services.uptime import UptimeService
 
 router = APIRouter(prefix="/uptime", tags=["uptime"])
@@ -30,7 +31,7 @@ async def list_monitors(
     return await UptimeService(db).list_monitors(current_user, get_active_org_id(request))
 
 
-@router.post("/monitors", response_model=UptimeMonitorResponse, status_code=201)
+@router.post("/monitors", response_model=UptimeMonitorResponse, status_code=201, dependencies=BILLING_WRITE)
 async def create_monitor(
     request: Request,
     body: UptimeMonitorCreate,
@@ -50,7 +51,7 @@ async def get_monitor(
     return await UptimeService(db).get(current_user, get_active_org_id(request), monitor_id)
 
 
-@router.patch("/monitors/{monitor_id}", response_model=UptimeMonitorResponse)
+@router.patch("/monitors/{monitor_id}", response_model=UptimeMonitorResponse, dependencies=BILLING_WRITE)
 async def update_monitor(
     request: Request,
     monitor_id: UUID,
@@ -61,7 +62,7 @@ async def update_monitor(
     return await UptimeService(db).update(current_user, get_active_org_id(request), monitor_id, body)
 
 
-@router.post("/monitors/{monitor_id}/pause", response_model=UptimeMonitorResponse)
+@router.post("/monitors/{monitor_id}/pause", response_model=UptimeMonitorResponse, dependencies=BILLING_WRITE)
 async def pause_monitor(
     request: Request,
     monitor_id: UUID,
@@ -74,7 +75,7 @@ async def pause_monitor(
     )
 
 
-@router.delete("/monitors/{monitor_id}", status_code=204)
+@router.delete("/monitors/{monitor_id}", status_code=204, dependencies=BILLING_WRITE)
 async def delete_monitor(
     request: Request,
     monitor_id: UUID,
@@ -145,7 +146,7 @@ async def list_events(
     return [UptimeEventResponse.model_validate(r) for r in rows]
 
 
-@router.post("/monitors/{monitor_id}/rotate-token", response_model=UptimeMonitorResponse)
+@router.post("/monitors/{monitor_id}/rotate-token", response_model=UptimeMonitorResponse, dependencies=BILLING_WRITE)
 async def rotate_heartbeat_token(
     request: Request,
     monitor_id: UUID,

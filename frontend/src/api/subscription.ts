@@ -68,6 +68,8 @@ export interface SubscriptionCapabilities {
   can_request_change: boolean;
   can_view_invoices: boolean;
   can_self_serve: boolean;
+  read_only: boolean;
+  read_only_reason: string | null;
 }
 
 export interface SubscriptionPaymentAttempt {

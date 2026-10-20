@@ -19,6 +19,7 @@ from app.schemas.schedule import ScheduleResponse
 from app.services.asset import AssetService
 from app.services.asset_pack_html import render_asset_pack_html
 from app.services.auth import get_active_org_id, get_current_user
+from app.services.billing_access import BILLING_WRITE
 
 router = APIRouter(prefix="/assets", tags=["assets"])
 
@@ -33,7 +34,7 @@ async def list_assets(
     return await AssetService(db).list_assets(current_user, get_active_org_id(request), tag=tag)
 
 
-@router.post("", response_model=AssetResponse, status_code=201)
+@router.post("", response_model=AssetResponse, status_code=201, dependencies=BILLING_WRITE)
 async def create_asset(
     request: Request,
     body: AssetCreate,
@@ -77,7 +78,7 @@ async def get_tag_colors(
     return await AssetService(db).get_tag_colors(current_user, get_active_org_id(request))
 
 
-@router.patch("/tag-colors", response_model=TagColorsResponse)
+@router.patch("/tag-colors", response_model=TagColorsResponse, dependencies=BILLING_WRITE)
 async def patch_tag_colors(
     request: Request,
     body: TagColorsUpdate,
@@ -97,7 +98,7 @@ async def get_asset(
     return await AssetService(db).get(current_user, get_active_org_id(request), asset_id)
 
 
-@router.patch("/{asset_id}", response_model=AssetResponse)
+@router.patch("/{asset_id}", response_model=AssetResponse, dependencies=BILLING_WRITE)
 async def update_asset(
     request: Request,
     asset_id: UUID,
@@ -108,7 +109,7 @@ async def update_asset(
     return await AssetService(db).update(current_user, get_active_org_id(request), asset_id, body)
 
 
-@router.delete("/{asset_id}", status_code=204)
+@router.delete("/{asset_id}", status_code=204, dependencies=BILLING_WRITE)
 async def delete_asset(
     request: Request,
     asset_id: UUID,
@@ -118,7 +119,7 @@ async def delete_asset(
     await AssetService(db).delete(current_user, get_active_org_id(request), asset_id)
 
 
-@router.post("/{asset_id}/schedules", response_model=ScheduleResponse, status_code=201)
+@router.post("/{asset_id}/schedules", response_model=ScheduleResponse, status_code=201, dependencies=BILLING_WRITE)
 async def create_asset_schedule(
     request: Request,
     asset_id: UUID,

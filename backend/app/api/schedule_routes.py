@@ -8,6 +8,7 @@ from app.models.user import User
 from app.schemas.scan import ScanJobResponse
 from app.schemas.schedule import ScheduleCreate, ScheduleResponse, ScheduleUpdate
 from app.services.auth import get_active_org_id, get_current_user
+from app.services.billing_access import BILLING_WRITE
 from app.services.schedule import ScheduleService
 
 router = APIRouter(prefix="/schedules", tags=["schedules"])
@@ -25,7 +26,7 @@ async def list_schedules(
     )
 
 
-@router.post("", response_model=ScheduleResponse, status_code=201)
+@router.post("", response_model=ScheduleResponse, status_code=201, dependencies=BILLING_WRITE)
 async def create_schedule(
     request: Request,
     body: ScheduleCreate,
@@ -49,7 +50,7 @@ async def get_schedule(
     return ScheduleResponse.model_validate(schedule)
 
 
-@router.patch("/{schedule_id}", response_model=ScheduleResponse)
+@router.patch("/{schedule_id}", response_model=ScheduleResponse, dependencies=BILLING_WRITE)
 async def update_schedule(
     schedule_id: UUID,
     body: ScheduleUpdate,
@@ -59,7 +60,7 @@ async def update_schedule(
     return await ScheduleService(db).update(schedule_id, current_user.id, body)
 
 
-@router.delete("/{schedule_id}", status_code=204)
+@router.delete("/{schedule_id}", status_code=204, dependencies=BILLING_WRITE)
 async def delete_schedule(
     schedule_id: UUID,
     current_user: User = Depends(get_current_user),

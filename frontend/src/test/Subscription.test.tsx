@@ -87,6 +87,8 @@ function overview(overrides: Partial<SubscriptionOverview> = {}): SubscriptionOv
       can_request_change: true,
       can_view_invoices: true,
       can_self_serve: false,
+      read_only: false,
+      read_only_reason: null,
     },
     pending_request: null,
     recent_attempts: [],
@@ -193,6 +195,8 @@ describe("Subscription page", () => {
           can_request_change: false,
           can_view_invoices: false,
           can_self_serve: false,
+          read_only: false,
+          read_only_reason: null,
         },
       }),
     );
@@ -356,6 +360,49 @@ describe("Subscription billing truth", () => {
     );
   });
 
+  it("explains the read-only state when the invoice is overdue", async () => {
+    vi.mocked(getSubscription).mockResolvedValue(
+      overview({
+        capabilities: {
+          can_manage: true,
+          can_request_change: true,
+          can_view_invoices: true,
+          can_self_serve: false,
+          read_only: true,
+          read_only_reason: "payment_overdue",
+        },
+      }),
+    );
+    renderPage();
+
+    await screen.findByTestId("subscription-summary");
+    const banner = screen.getByTestId("subscription-read-only");
+    expect(banner).toHaveTextContent("This workspace is read-only");
+    expect(banner).toHaveTextContent("overdue");
+    expect(banner).toHaveTextContent("Billing stays open");
+  });
+
+  it("uses the ended-subscription copy for a canceled workspace", async () => {
+    vi.mocked(getSubscription).mockResolvedValue(
+      overview({
+        capabilities: {
+          can_manage: true,
+          can_request_change: true,
+          can_view_invoices: true,
+          can_self_serve: false,
+          read_only: true,
+          read_only_reason: "subscription_canceled",
+        },
+      }),
+    );
+    renderPage();
+
+    await screen.findByTestId("subscription-summary");
+    expect(screen.getByTestId("subscription-read-only")).toHaveTextContent(
+      "subscription has ended",
+    );
+  });
+
   it("hides payment attempts from viewers", async () => {
     setRole("viewer");
     vi.mocked(getSubscription).mockResolvedValue(
@@ -365,6 +412,8 @@ describe("Subscription billing truth", () => {
           can_request_change: false,
           can_view_invoices: false,
           can_self_serve: false,
+          read_only: false,
+          read_only_reason: null,
         },
       }),
     );
