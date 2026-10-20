@@ -80,9 +80,40 @@ UI PRs must also fill the design change protocol in [`.github/pull_request_templ
 - Waiting/polling for CI/CD (see the explicit-request exception in **Workflow**)
 - **Merging with red CI** — a `push` to `main` runs `deploy`, so a red merge reaches production
 - Merging or "fixing" a PR you did not author without the user naming it
+- **Weakening a CI gate to get green** (raising a coverage threshold, deleting a check, allowlisting without a reason/expiry) — see **CI gates** above
 - Multiple unrelated tasks in one PR
 - Empty PR descriptions
 - Force-push to shared branches
+
+## CI gates (required checks — all block `ci-ok`)
+
+`ci-ok` is the **only** required check. It aggregates 17 jobs, including four drift/security
+gates that are easy to trip without knowing they exist. All of them run in CI; run the script
+locally before pushing.
+
+| Gate (job) | Enforces | If it fails |
+|---|---|---|
+| `env-inventory` | Every env var read by `docker-compose.prod.yml` / `…remote-data.yml`, **and** every var the CI `deploy` job writes, must be documented in `.env.example`. Connection-only `DEPLOY_*` keys are exempted inside the script. | Add the key to `.env.example`. Only if it is genuinely connection-only and must not reach the app `.env`, add it to `DEPLOY_INFRA_KEYS` in the script. |
+| `deps-sync` | A package declared in **both** `backend/requirements.txt` and `workers/requirements.txt` must use the **same specifier** (including ranges). Workers import `app.config` / `app.database` / `app.services.*` / `app.models.*`, so a mismatch runs one codebase against two dependency versions. | Align both files in the same PR. Dependabot bumps one file at a time, so this fires after a Dependabot merge — fix it forward, do not revert the bump. |
+| `deps-audit` | `npm audit` must have no **HIGH/CRITICAL** advisory outside `.github/dependency-audit-allowlist.json`. | Bump the package. If no patched release exists, add an allowlist entry with `id`, `package`, `reason`, `expires`. Never leave a security `overrides` floor one patch below the first patched version — that keeps the vulnerability while looking like a fix. |
+| `deps-audit-python` | `pip-audit` over both requirements files must find **no** advisory at all (pip-audit reports no severity, so there is no threshold). | Bump the pin, or allowlist with `ecosystem: "pip"`. |
+
+Local runs:
+
+```bash
+./scripts/check-env-inventory.sh
+./scripts/check-requirements-sync.sh
+node scripts/check-dependency-audit.mjs     # needs frontend/node_modules
+python3 scripts/check-pip-audit.py          # needs pip-audit installed
+```
+
+The two audit gates share one allowlist file. Expired entries fail; entries that no longer match
+an advisory are reported as stale so they get removed. **Raising a threshold or deleting a check
+to get green is an anti-pattern** — add tests, align pins, or record an explicit accepted risk.
+
+Container scanning is separate: `docker-scan-*` runs Trivy twice per image — SARIF for the
+Security tab, then a **blocking CRITICAL** check. See
+[`docs/dependency-pins.md`](docs/dependency-pins.md#container-image-scanning-trivy).
 
 ## Design system (MANDATORY)
 
