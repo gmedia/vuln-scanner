@@ -573,6 +573,7 @@ def _sample_invoice(*, status: str, product: str = "host", sku: str = "multi") -
         amount_idr=900_000,
         period_start=datetime(2026, 9, 1, tzinfo=UTC),
         period_end=datetime(2026, 9, 30, tzinfo=UTC),
+        due_date=datetime(2026, 9, 1, tzinfo=UTC),
         status=status,
         bank_ref="TF-UNIT" if status == "paid" else None,
         created_at=datetime(2026, 9, 2, tzinfo=UTC),
@@ -973,5 +974,76 @@ async def test_sku_prices_includes_locked_bundle_and_annual(db_session, ctx):
             assert by["multi"]["saving_idr"] == 1_100_000
             assert by["multi"]["saving_pct"] == 27.5
             assert body["annual"] == {"months_paid": 10, "months_served": 12}
+    finally:
+        app.dependency_overrides.clear()
+
+@pytest.mark.asyncio
+async def test_create_invoice_defaults_due_date_to_period_start(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            created = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={
+                    "organization_id": str(ctx["org"].id),
+                    "sku": "pro",
+                    "period_start": "2026-09-01T00:00:00Z",
+                },
+            )
+            assert created.status_code == 201, created.text
+            body = created.json()
+            assert body["due_date"].startswith("2026-09-01")
+            assert body["sent_at"] is None
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_create_invoice_accepts_custom_due_date(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            created = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={
+                    "organization_id": str(ctx["org"].id),
+                    "sku": "pro",
+                    "period_start": "2026-09-01T00:00:00Z",
+                    "due_date": "2026-09-30T00:00:00Z",
+                },
+            )
+            assert created.status_code == 201, created.text
+            assert created.json()["due_date"].startswith("2026-09-30")
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_send_invoice_stamps_sent_at(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            created = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={
+                    "organization_id": str(ctx["org"].id),
+                    "sku": "pro",
+                    "period_start": "2026-09-01T00:00:00Z",
+                },
+            )
+            sent = await client.post(
+                f"/api/admin/invoices/{created.json()['id']}/send",
+                headers=_auth(ctx["admin"]),
+            )
+            assert sent.status_code == 200, sent.text
+            body = sent.json()
+            assert body["status"] == "sent"
+            assert body["sent_at"] is not None
     finally:
         app.dependency_overrides.clear()

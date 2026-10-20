@@ -1,6 +1,6 @@
 from app.models.ai_gateway import AiApiKey, AiModel, AiProvider, AiReservation, AiUsageEvent, AiWallet
 from app.models.asset import ScanAsset
-from app.models.billing import PaymentAttempt, PaymentEvent, Subscription
+from app.models.billing import BillingReminder, PaymentAttempt, PaymentEvent, Subscription
 from app.models.blog import BlogPost
 from app.models.credit_log import CreditLog
 from app.models.email_send_log import EmailSendLog
@@ -38,6 +38,7 @@ __all__ = [
     "Subscription",
     "PaymentAttempt",
     "PaymentEvent",
+    "BillingReminder",
     "CreditLog",
     "HppRate",
     "HppOverhead",

@@ -20,5 +20,6 @@
   "status_draft": "Draf",
   "status_sent": "Terkirim",
   "status_paid": "Lunas",
-  "status_void": "Batal"
+  "status_void": "Batal",
+  "dueDate": "Jatuh tempo"
 }

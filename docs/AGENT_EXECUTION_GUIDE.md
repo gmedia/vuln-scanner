@@ -192,7 +192,7 @@ P0–P14 control planes are **on `main`**. Agent work is **development only** �
 
 **Shipped for workspace (P2 S1–S5):** org tables + backfill migration `add_workspace_orgs`; org API; JWT switch; SPA OrgSwitcher + Workspace Settings; worker schedule rows include `organization_id`; **S5** `MAX_SCHEDULES_PER_ORG` on create/re-enable.
 
-**Still absent (later epics / not coded yet):** nested Project, org wallet, per-org ApiKey, in-app subscription checkout (billing core table shipped — request-only), hard Sinexis domain cutover. **P3 assets** and **Guard thin** are on `main`; live Guard lab residual is human.
+**Still absent (later epics / not coded yet):** nested Project, org wallet, per-org ApiKey, in-app subscription checkout (billing core table shipped — request-only; **invoice due dates + hourly reminders shipped** in `billing.send_reminders`), hard Sinexis domain cutover. **P3 assets** and **Guard thin** are on `main`; live Guard lab residual is human.
 
 **Commercial kit (docs, not in-app catalog):** `docs/commercial/sinexis-one-pager.md`, `sku-scan-secure-addon.md` (P0 lock), `am-wave1-email-id.md`.
 

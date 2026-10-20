@@ -48,6 +48,7 @@ def render_invoice_html(
     amount = _esc(_idr(inv.amount_idr))
     period = _esc(f"{_day(inv.period_start)} – {_day(inv.period_end)}")
     issued = _esc(_day(inv.created_at))
+    due = _esc(_day(inv.due_date))
     status = _esc(t(locale, "invoice", f"status_{inv.status}"))
     item = _esc(f"{product} — {inv.sku.upper()}")
     bank_block = ""
@@ -143,6 +144,7 @@ def render_invoice_html(
         <p class="inv-number">{number}</p>
         <p class="inv-status{' inv-status--paid' if inv.status == 'paid' else ''}">{status}</p>
         <p class="inv-issued"><span class="inv-label">{label("issued")}</span> {issued}</p>
+        <p class="inv-issued"><span class="inv-label">{label("dueDate")}</span> {due}</p>
       </div>
     </header>
     <section class="inv-parties">

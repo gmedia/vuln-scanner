@@ -120,5 +120,6 @@
   "invoicePrintFooter_host": "Thank you. Sinexis Host Protect — bank transfer, no self-serve upgrade.",
   "invoicePrintFooter_uptime": "Thank you. Sinexis Uptime — bank transfer, no self-serve upgrade.",
   "invoicePrintFooter_guard": "Thank you. Sinexis Guard — bank transfer, no self-serve upgrade.",
-  "subscriptionLink": "Subscription"
+  "subscriptionLink": "Subscription",
+  "invoicePrintDue": "Due"
 }

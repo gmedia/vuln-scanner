@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import re
+from datetime import datetime
 from email.message import Message
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -531,3 +532,50 @@ async def send_invite_email(
         html_body=html_body,
     )
     return await _send_with_retry(msg, email_to, "Invite", user_id=user_id)
+
+def _idr(amount: int) -> str:
+    return f"Rp {amount:,}".replace(",", ".")
+
+
+def _short_date(value: datetime) -> str:
+    return value.strftime("%d %b %Y")
+
+
+async def send_billing_reminder_email(
+    email_to: str,
+    *,
+    stage: str,
+    invoice_number: str,
+    organization_name: str,
+    amount_idr: int,
+    due_date: datetime,
+    period_start: datetime,
+    period_end: datetime,
+    locale: str | None = None,
+    user_id: UUID | None = None,
+) -> bool:
+    loc = normalize_lang(locale)
+    amount = _idr(amount_idr)
+    due = _short_date(due_date)
+    link = f"{FRONTEND_URL}/settings/subscription"
+    heading = t(loc, "billing_email", "heading", number=invoice_number)
+    inner = f"""\
+  <p style="color: #374151;">
+    {t(loc, "billing_email", f"intro_{stage}", org=organization_name, amount=amount, due_date=due)}
+  </p>
+  <p style="color: #6b7280; font-size: 13px;">
+    {t(loc, "billing_email", "period", start=_short_date(period_start), end=_short_date(period_end))}
+  </p>
+{_cta_block(link, t(loc, "billing_email", "open"), t(loc, "billing_email", "or_copy"))}
+  <p style="color: #6b7280; font-size: 13px;">{t(loc, "billing_email", "footer")}</p>"""
+    html_body = _wrap_html(
+        heading=heading,
+        inner=inner,
+        preheader=t(loc, "billing_email", "preheader", number=invoice_number, amount=amount, due_date=due),
+    )
+    msg = _build_message(
+        email_to=email_to,
+        subject=t(loc, "billing_email", f"subject_{stage}", number=invoice_number, due_date=due),
+        html_body=html_body,
+    )
+    return await _send_with_retry(msg, email_to, "Billing reminder", user_id=user_id)

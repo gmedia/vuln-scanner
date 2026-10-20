@@ -120,5 +120,6 @@
   "invoicePrintFooter_host": "Terima kasih. Sinexis Host Protect — transfer bank, tanpa upgrade mandiri.",
   "invoicePrintFooter_uptime": "Terima kasih. Sinexis Uptime — transfer bank, tanpa upgrade mandiri.",
   "invoicePrintFooter_guard": "Terima kasih. Sinexis Guard — transfer bank, tanpa upgrade mandiri.",
-  "subscriptionLink": "Langganan"
+  "subscriptionLink": "Langganan",
+  "invoicePrintDue": "Jatuh tempo"
 }

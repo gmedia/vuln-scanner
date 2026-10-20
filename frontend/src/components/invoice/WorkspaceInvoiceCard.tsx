@@ -51,6 +51,9 @@ export function WorkspaceInvoiceCard({
     invoice.created_at ?? invoice.period_start,
     locale,
   );
+  const due = invoice.due_date
+    ? formatShortDate(invoice.due_date, locale)
+    : null;
 
   return (
     <li
@@ -94,6 +97,14 @@ export function WorkspaceInvoiceCard({
             {period}
           </dd>
         </div>
+        {due ? (
+          <div className="min-w-0 space-y-0.5">
+            <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              {t("invoicePrintDue")}
+            </dt>
+            <dd className="font-mono text-foreground">{due}</dd>
+          </div>
+        ) : null}
       </dl>
 
       <div className="flex flex-col gap-3 border-t border-border bg-muted/40 px-4 py-3 sm:flex-row sm:items-end sm:justify-between">
