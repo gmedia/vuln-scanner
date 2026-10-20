@@ -92,6 +92,8 @@ Grace is `BILLING_PAST_DUE_GRACE_DAYS` (default **7**). `past_due` keys off the 
 - `billing_reminders` is unique on `(invoice_id, stage)`; `stage_rank` prevents re-sending an earlier stage.
 - Recipients: verified `owner`/`admin` members of the organization, deduped by email, localized from `users.locale`.
 - `attempts` stops at 3 when no recipient accepted the mail; `sent_count`/`failed_count`/`last_error` are recorded for ops.
+- A stage that fails to send is **retried** on the next sweep while it is still the current stage (up to 3 attempts), instead of being suppressed by the ledger.
+- If an invoice is sent **after** its due date, the first contact is capped at `overdue_1` (`first_contact_stage`) so a late-sent invoice never opens with a "final notice".
 - `suspend_notice` is a **conditional escalation**, not an automatic suspension: access enforcement is still a separate product decision. Copy says non-payment "may lead to" suspension and asks the customer to contact their account manager.
 - Email kind `billing_reminder` is written to `email_send_logs`; it is intentionally **not** in `INBOX_KINDS` (it is addressed to billing contacts, not the in-app inbox).
 
