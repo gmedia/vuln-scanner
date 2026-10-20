@@ -195,15 +195,18 @@ def send_due_reminders(self: Any) -> dict[str, int]:
     now = datetime.now(UTC)
     session = get_sync_session()
     try:
-        rows = session.execute(
-            select(OrgInvoice, Organization.name)
-            .join(Organization, Organization.id == OrgInvoice.organization_id)
-            .where(
-                OrgInvoice.status == "sent",
-                OrgInvoice.paid_at.is_(None),
-                OrgInvoice.due_date.is_not(None),
-            )
-        ).all()
+        rows = cast(
+            list[tuple[OrgInvoice, str]],
+            session.execute(
+                select(OrgInvoice, Organization.name)
+                .join(Organization, Organization.id == OrgInvoice.organization_id)
+                .where(
+                    OrgInvoice.status == "sent",
+                    OrgInvoice.paid_at.is_(None),
+                    OrgInvoice.due_date.is_not(None),
+                )
+            ).all(),
+        )
 
         sent_total = 0
         failed_total = 0
@@ -215,9 +218,12 @@ def send_due_reminders(self: Any) -> dict[str, int]:
                 continue
             rank = stage_rank(stage)
 
-            existing_rows = session.execute(
-                select(BillingReminder).where(BillingReminder.invoice_id == inv.id)
-            ).scalars().all()
+            existing_rows = cast(
+                list[BillingReminder],
+                session.execute(
+                    select(BillingReminder).where(BillingReminder.invoice_id == inv.id)
+                ).scalars().all(),
+            )
             max_rank = max((row.stage_rank for row in existing_rows), default=0)
             if rank <= max_rank:
                 skipped += 1
