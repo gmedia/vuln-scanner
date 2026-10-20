@@ -58,7 +58,7 @@ All status colours route through `components/subscription/subscriptionChrome.ts`
 | Plan summary (`subscription-summary`) | `WorkspaceShell` + head + plan name/price/period + status badge | active / grace / pending_payment / draft / expired / unbilled / enterprise |
 | Billing notice (`subscription-past-due` / `-cancel-scheduled` / `-grace`) | `WorkspaceNotice tone="warn"` above the pending-request notice; only one renders | past_due / cancel-at-period-end / grace |
 | Payment history (`subscription-attempts`) | bordered rows under the invoice list, manager-only | empty / list |
-| Capacity tile (`subscription-usage-*`) | `StatTile` + `Progress` + quota label | ok / warn ≥80% / cap 100% / custom limit |
+| Capacity tile (`subscription-usage-*`) | `StatTile` + `Progress` + quota label | ok / warn ≥80% / cap 100% / **over seat** (`used > limit`) / custom limit |
 | Plan card (`subscription-plan-*`) | `Card` + title + price + capacity list + footer CTA | current (disabled, primary border) / upgrade / downgrade / request-only |
 | Enterprise card | `Card` with no price | quote-only |
 | À-la-carte table (`subscription-alacarte-table`) | 4 products × 3 tiers, list price + seats | static |
@@ -68,7 +68,9 @@ All status colours route through `components/subscription/subscriptionChrome.ts`
 
 Notice precedence: `past_due` → `cancel_at_period_end` → `grace`. Never stack them.
 
-Frozen testids: `subscription-page`, `subscription-summary`, `subscription-past-due`, `subscription-cancel-scheduled`, `subscription-grace`, `subscription-attempts`, `subscription-attempts-empty`, `subscription-usage-{product}`, `subscription-usage-workspace`, `subscription-plans`, `subscription-plan-{tier}`, `subscription-plan-enterprise`, `subscription-alacarte-table`, `subscription-invoices`, `subscription-invoices-empty`, `subscription-cancel-request`, `subscription-request-note`, `subscription-request-submit`, `subscription-no-org`, `subscription-error`.
+Over-seat precedence: `used > limit` renders "Over by N" instead of "Capacity full". The bar stays capped at 100%.
+
+Frozen testids: `subscription-page`, `subscription-summary`, `subscription-usage-over-{product}`, `subscription-past-due`, `subscription-cancel-scheduled`, `subscription-grace`, `subscription-attempts`, `subscription-attempts-empty`, `subscription-usage-{product}`, `subscription-usage-workspace`, `subscription-plans`, `subscription-plan-{tier}`, `subscription-plan-enterprise`, `subscription-alacarte-table`, `subscription-invoices`, `subscription-invoices-empty`, `subscription-cancel-request`, `subscription-request-note`, `subscription-request-submit`, `subscription-no-org`, `subscription-error`.
 
 ## 6. Motion
 
@@ -100,5 +102,6 @@ Borders-only. `Card` + `border-border`; rails are 2px `SiemRail` via `WorkspaceS
 | Request is a dialog, not a dedicated checkout route | `pages/Subscription.tsx` | Phase 1 is ops-issued invoice; no payment gateway | Phase 2 checkout |
 | Annual is display/request only | same | No annual invoice support in `sinexis-invoice-v1` | Annual invoice slice |
 | Bundle savings not shown as a badge | same | Guard is free with Host; the à-la-carte sum double-counts Guard | Resolve bundle arithmetic |
+| Guard sync may exceed its seat count | `services/guard_apply.py` | Wazuh sync must not drop agents; blocking it would hide real hosts. The meter flags the overage instead. | Enforce seats at sync once agent archival exists |
 | Invoice list also remains in `/settings/workspace` | `pages/WorkspaceSettings.tsx` | Backward-compatible; tests lock the billing card | Extract billing into this page in a named slice |
 | Cancel banner has no resume button | `pages/Subscription.tsx` | No customer cancel/resume endpoint exists; a dead button would lie | Add resume when customer self-serve lands |

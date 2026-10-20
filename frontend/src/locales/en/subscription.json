@@ -115,5 +115,6 @@
   "attemptStatus_expired": "Expired",
   "attemptStatus_refunded": "Refunded",
   "attemptRef": "Ref",
-  "attemptMethod": "Method"
+  "attemptMethod": "Method",
+  "usageOver": "Over by {{over}} — Wazuh sync can exceed the seat"
 }

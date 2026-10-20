@@ -65,6 +65,11 @@ Out:
 
 `recent_attempts` (last 5 `payment_attempts`) is populated only for owner/admin; viewers always receive `[]`.
 
+### Capacity meters
+
+- Scale: `quotaState()` (`frontend/src/lib/quota.ts`) — warn at 80%, cap at 100%.
+- `used > limit` is possible for Guard because Wazuh sync (`services/guard_apply.py`) does not enforce `GUARD_SKU_LIMITS`, while manual enroll does. Render **"Over by N"** (`data-testid="subscription-usage-over-{product}"`) instead of "Capacity full"; the bar stays at 100%. Do not block sync to fix the meter — dropping agents would hide real hosts.
+
 ## 4. API
 
 Org (JWT + membership):
