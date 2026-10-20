@@ -50,6 +50,8 @@ Out:
 | Latest Scan invoice `paid`, `period_end >= now` | `active` | `invoice` |
 | Latest Scan invoice `paid`, `period_end < now` | `expired` | `invoice` |
 
+**Precedence:** if a `subscriptions` row exists, its status/period/cycle win over the invoice derivation (`source = "subscription"`). `sku` still comes from `organizations.sku`. See [`billing-core-v1.md`](billing-core-v1.md) §2.1. The invoice row is then only used for `amount_idr`, `invoice_id`, and `invoice_number`.
+
 `period_start`, `period_end`, `renewal_at`, `amount_idr`, `invoice_number` come from that invoice. No synthetic renewal date.
 
 ## 4. API

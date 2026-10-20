@@ -18,6 +18,7 @@ class SubscriptionPlan(BaseModel):
     renewal_at: datetime | None = None
     invoice_id: uuid.UUID | None = None
     invoice_number: str | None = None
+    cancel_at_period_end: bool = False
 
 
 class SubscriptionUsageItem(BaseModel):
