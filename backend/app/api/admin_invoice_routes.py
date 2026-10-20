@@ -37,6 +37,7 @@ from app.schemas.invoice import (
     SkuPriceListResponse,
 )
 from app.services.auth import get_current_admin
+from app.services.billing import BillingService
 from app.services.invoice import InvoiceService, invoice_pdf_response, to_item
 
 router = APIRouter(prefix="/admin", tags=["admin-invoices"])
@@ -254,7 +255,12 @@ async def pay_invoice(
     limit_response = await admin_limiter(request)
     if limit_response:
         return limit_response
-    inv = await InvoiceService(db).mark_paid(invoice_id, body.bank_ref)
+    inv, _sub, _attempt = await BillingService(db).record_invoice_payment(
+        invoice_id,
+        current_admin,
+        method="bank_transfer",
+        reference=body.bank_ref,
+    )
     return InvoiceItem.model_validate(to_item(inv, org_name=None, include_bank=False))
 
 

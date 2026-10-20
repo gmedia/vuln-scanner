@@ -62,6 +62,7 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
         path = request.url.path
         if (
             path in EXCLUDED_PATHS
+            or path.startswith("/api/webhooks/payments/")
             or path.startswith("/ws/")
             or path.startswith("/api/blog")
             or path == "/blog"
