@@ -129,6 +129,10 @@ describe("Sidebar", () => {
       "href",
       "/admin/subscription-requests",
     );
+    expect(screen.getByTestId("nav-admin-subscriptions")).toHaveAttribute(
+      "href",
+      "/admin/subscriptions",
+    );
   });
 
   it("shows active scan section when activeJobId is set", () => {

@@ -112,6 +112,8 @@ Admin (`get_current_admin`):
 | POST | `/api/admin/subscriptions/{org_id}/record-payment` | `{invoice_id, method?, reference?}`; marks the invoice paid and records an attempt |
 | POST | `/api/admin/subscriptions/{org_id}/cancel` | `{at_period_end, note?}` |
 
+Admin UI: `/admin/subscriptions` (`frontend/src/pages/admin/AdminSubscriptions.tsx`) — status filter, payment history, record payment, cancel.
+
 Webhook (no JWT; shared secret):
 
 | Method | Path | Header |

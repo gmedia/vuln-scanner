@@ -44,6 +44,7 @@ const AdminSkuCatalog = lazy(() => import("@/pages/admin/AdminSkuCatalog"));
 const AdminHppSimulator = lazy(() => import("@/pages/admin/AdminHppSimulator"));
 const AdminInvoices = lazy(() => import("@/pages/admin/AdminInvoices"));
 const AdminSubscriptionRequests = lazy(() => import("@/pages/admin/AdminSubscriptionRequests"));
+const AdminSubscriptions = lazy(() => import("@/pages/admin/AdminSubscriptions"));
 const AdminBlog = lazy(() => import("@/pages/admin/AdminBlog"));
 const AdminEmailLogs = lazy(() => import("@/pages/admin/AdminEmailLogs"));
 const AdminAi = lazy(() => import("@/pages/admin/AdminAi"));
@@ -207,6 +208,10 @@ function App() {
               <Route
                 path="/admin/subscription-requests"
                 element={<PageBoundary component={AdminSubscriptionRequests} />}
+              />
+              <Route
+                path="/admin/subscriptions"
+                element={<PageBoundary component={AdminSubscriptions} />}
               />
               <Route
                 path="/admin/blog"
