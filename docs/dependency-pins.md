@@ -28,6 +28,35 @@ Three things combined to hide it:
 2. Digests never move on their own.
 3. The Trivy jobs use `continue-on-error: true`, so findings only reached the Security tab.
 
+### Container image scanning (Trivy)
+
+Every `docker-scan-*` job builds the image, uploads a SARIF report (HIGH+CRITICAL, so findings
+land in the Security tab), then runs a **blocking** check:
+
+| Severity | Behaviour |
+|---|---|
+| **CRITICAL** | **Fails the job** (`exit-code: 1`) |
+| HIGH | Reported in the Security tab only |
+
+`ignore-unfixed: true` on both, so only vulnerabilities with a published fix can fail a build.
+
+**Why CRITICAL blocks and HIGH does not:** Debian/Alpine bases gain new HIGH advisories
+routinely, and blocking on those would turn unrelated PRs red for something the PR cannot fix.
+CRITICAL is the line where shipping is worse than a red build.
+
+**Measured state after the 2026-10-19 base refresh** (built from the Dockerfiles, scanned with
+Trivy 0.76, `--ignore-unfixed`):
+
+| Image | Before | After |
+|---|---|---|
+| `vuln-scanner-backend` | 3 critical / 8 high | **0 / 0** |
+| `vuln-scanner-workers` | 3 critical / 5 high | **0 / 0** |
+| `vuln-scanner-frontend` | 2 critical / 51 high | **0 / 0** |
+| `nginx:1.27` (local compose only) | 2 critical / 53 high | 0 / **2** |
+
+The two remaining HIGHs in the local `nginx` image are `libexpat` and `libx11`, both with fixes
+published — refresh that tag when convenient; it is not part of the CI-scanned set.
+
 ### Rules
 
 - **Dependabot covers every Dockerfile directory** (`/backend`, `/workers`, `/frontend`,

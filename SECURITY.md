@@ -93,3 +93,7 @@ CI job **`deps-audit`** (in `ci-ok`) runs `node scripts/check-dependency-audit.m
 To accept a risk, add an entry with `id` (GHSA), `package`, `reason`, and `expires` (ISO date). Expired entries fail the gate; entries that no longer match an advisory are reported as stale so they get removed.
 
 Python is covered too: CI job **`deps-audit-python`** runs `python scripts/check-pip-audit.py`, which audits `backend/requirements.txt` and `workers/requirements.txt` with `pip-audit` and applies the same allowlist (`ecosystem: "pip"`). `pip-audit` reports no severity, so **any** known vulnerability blocks.
+
+### Container images
+
+The `docker-scan-*` jobs run Trivy twice per image: once as SARIF (HIGH+CRITICAL, into the Security tab) and once as a **blocking CRITICAL check** (`exit-code: 1`). HIGH stays advisory so a routine base-image advisory cannot turn an unrelated PR red. Both use `ignore-unfixed: true`, so only fixable issues can fail a build. Measured after the 2026-10-19 base refresh: all three images are **0 critical / 0 high**. See [`docs/dependency-pins.md`](docs/dependency-pins.md#container-image-scanning-trivy).
