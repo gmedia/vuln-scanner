@@ -41,7 +41,7 @@ Out:
 | Subscription status | Plan status shown |
 |---|---|
 | `active` / `trialing`, `period_end >= now` | `active` |
-| `active` / `trialing`, `period_end < now` | `expired` |
+| `active` / `trialing`, `period_end < now` | `grace` (inside the grace window) |
 | `past_due`, `period_end >= now` | `pending_payment` |
 | `past_due`, `period_end < now` | `expired` |
 | `unpaid` / `canceled` | `expired` |

@@ -47,12 +47,23 @@ Out:
 | No non-void Scan invoice, `org.sku != basic` | `unbilled` | `ops` |
 | Latest Scan invoice `sent` | `pending_payment` | `invoice` |
 | Latest Scan invoice `draft` | `draft` | `invoice` |
-| Latest Scan invoice `paid`, `period_end >= now` | `active` | `invoice` |
+| `subscriptions.status = active`, `period_end >= now` | `active` | `subscription` |
+| `subscriptions.status = active`, `period_end < now` | `grace` | `subscription` |
+| `subscriptions.status = past_due`, `period_end >= now` | `pending_payment` | `subscription` |
+| `subscriptions.status = past_due`, `period_end < now` | `expired` | `subscription` |
+| `subscriptions.status = canceled` / `unpaid` | `expired` | `subscription` |
+| Latest Scan invoice `paid`, `period_end >= now` (no row) | `active` | `invoice` |
 | Latest Scan invoice `paid`, `period_end < now` | `expired` | `invoice` |
 
 **Precedence:** if a `subscriptions` row exists, its status/period/cycle win over the invoice derivation (`source = "subscription"`). `sku` still comes from `organizations.sku`. See [`billing-core-v1.md`](billing-core-v1.md) §2.1. The invoice row is then only used for `amount_idr`, `invoice_id`, and `invoice_number`.
 
-`period_start`, `period_end`, `renewal_at`, `amount_idr`, `invoice_number` come from that invoice. No synthetic renewal date.
+`period_start`, `period_end`, `renewal_at`, `amount_idr`, `invoice_number` come from the subscription row when it exists (invoice fills `amount_idr`/`invoice_id`/`invoice_number`). No synthetic renewal date.
+
+`plan.billing_status` exposes the raw `subscriptions.status` so the page can distinguish a failed renewal (`past_due`) from an unpaid invoice. `plan.cancel_at_period_end` drives the "ends on" banner.
+
+`grace` means the period ended but the lifecycle beat has not yet marked `past_due`; access is intentionally still on. Do **not** render it as expired.
+
+`recent_attempts` (last 5 `payment_attempts`) is populated only for owner/admin; viewers always receive `[]`.
 
 ## 4. API
 
