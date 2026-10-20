@@ -28,6 +28,32 @@ Three things combined to hide it:
 2. Digests never move on their own.
 3. The Trivy jobs use `continue-on-error: true`, so findings only reached the Security tab.
 
+**Measured state** (images built from the Dockerfiles, scanned with Trivy 0.76,
+`--ignore-unfixed`, all four severities):
+
+| Image | Before #1067 | After #1067 | Now |
+|---|---|---|---|
+| `vuln-scanner-backend` | 3 critical / 8 high | 0 / 0 | **0 / 0 / 0 / 0** |
+| `vuln-scanner-workers` | 3 critical / 5 high | 0 / 0 | **0 / 0 / 0 / 0** |
+| `vuln-scanner-frontend` | 2 critical / 51 high | 0 / 0 | **0 / 0 / 0 / 0** |
+
+### Why pip is removed from the runtime image
+
+The base image ships **pip 25.0.1**, which carried six advisories. Upgrading pip made it worse in
+a non-obvious way: pip **vendors** its own `urllib3` and `msgpack`, and Trivy scans those copies
+as separate packages. pip 26.2.1's vendored `urllib3` 2.7.0 and `msgpack` 1.1.2 then appeared as
+**four new HIGH findings**.
+
+Nothing in either runtime stage installs packages (`entrypoint.sh` / `prestart.sh` never call
+pip), so the fix is to **remove pip and setuptools** rather than upgrade them. That drops six
+advisories and both vendored duplicates, and shrinks the attack surface.
+
+**Consequence:** `pip install` inside a running backend/worker container no longer works. That is
+intentional — install into the image via `requirements.txt`, or use a throwaway container.
+
+`frontend/Dockerfile` runs `apk upgrade --no-cache zlib`: Alpine's `zlib 1.3.2-r0` carried
+CVE-2026-85091, and a digest refresh alone does not move it.
+
 ### Rules
 
 - **Dependabot covers every Dockerfile directory** (`/backend`, `/workers`, `/frontend`,
