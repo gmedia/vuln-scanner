@@ -342,6 +342,16 @@ function WorkspaceSettings() {
             ? t("roleLine", { name: activeOrg.name, role: activeOrg.role })
             : t("subtitleMembers")
         }
+        actions={
+          <Button asChild variant="outline" size="sm">
+            <Link
+              to="/settings/subscription"
+              data-testid="workspace-subscription-link"
+            >
+              {t("subscriptionLink")}
+            </Link>
+          </Button>
+        }
       />
 
       {inviteToken && (

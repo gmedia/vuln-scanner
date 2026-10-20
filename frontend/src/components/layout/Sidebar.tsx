@@ -20,6 +20,7 @@ import {
   Bot,
   Receipt,
   Tags,
+  CreditCard,
 } from "lucide-react";
 import { BRAND } from "@/lib/brand";
 import { useTranslation } from "react-i18next";
@@ -103,6 +104,7 @@ const accountNav = [
   { to: "/inbox", labelKey: "inbox", icon: Inbox, testId: "nav-inbox" },
   { to: "/profile", labelKey: "profile", icon: User },
   { to: "/settings/workspace", labelKey: "workspace", icon: Users },
+  { to: "/settings/subscription", labelKey: "subscription", icon: CreditCard, testId: "nav-subscription" },
 ];
 
 function pathActive(pathname: string, to: string, end?: boolean) {
@@ -254,6 +256,12 @@ function Sidebar() {
                   labelKey="invoices"
                   icon={Receipt}
                   testId="nav-admin-invoices"
+                />
+                <NavItem
+                  to="/admin/subscription-requests"
+                  labelKey="subscriptionRequests"
+                  icon={CreditCard}
+                  testId="nav-admin-subscription-requests"
                 />
                 <NavItem
                   to="/admin/blog"

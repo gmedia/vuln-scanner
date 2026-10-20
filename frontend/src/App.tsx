@@ -35,6 +35,7 @@ const Inbox = lazy(() => import("@/pages/Inbox"));
 const Profile = lazy(() => import("@/pages/Profile"));
 const UserGuide = lazy(() => import("@/pages/UserGuide"));
 const WorkspaceSettings = lazy(() => import("@/pages/WorkspaceSettings"));
+const Subscription = lazy(() => import("@/pages/Subscription"));
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
 const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
 const AdminUserDetail = lazy(() => import("@/pages/admin/AdminUserDetail"));
@@ -42,6 +43,7 @@ const AdminHpp = lazy(() => import("@/pages/admin/AdminHpp"));
 const AdminSkuCatalog = lazy(() => import("@/pages/admin/AdminSkuCatalog"));
 const AdminHppSimulator = lazy(() => import("@/pages/admin/AdminHppSimulator"));
 const AdminInvoices = lazy(() => import("@/pages/admin/AdminInvoices"));
+const AdminSubscriptionRequests = lazy(() => import("@/pages/admin/AdminSubscriptionRequests"));
 const AdminBlog = lazy(() => import("@/pages/admin/AdminBlog"));
 const AdminEmailLogs = lazy(() => import("@/pages/admin/AdminEmailLogs"));
 const AdminAi = lazy(() => import("@/pages/admin/AdminAi"));
@@ -160,6 +162,10 @@ function App() {
               element={<PageBoundary component={UserGuide} />}
             />
             <Route
+              path="/settings/subscription"
+              element={<PageBoundary component={Subscription} />}
+            />
+            <Route
               path="/settings/workspace"
               element={<PageBoundary component={WorkspaceSettings} />}
             />
@@ -197,6 +203,10 @@ function App() {
               <Route
                 path="/admin/invoices"
                 element={<PageBoundary component={AdminInvoices} />}
+              />
+              <Route
+                path="/admin/subscription-requests"
+                element={<PageBoundary component={AdminSubscriptionRequests} />}
               />
               <Route
                 path="/admin/blog"

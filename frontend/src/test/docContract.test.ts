@@ -38,7 +38,7 @@ describe("design doc contract", () => {
     const names = parsed.map((d) => d.name).sort();
     expect(names).toContain("AGENTS.md");
     expect(names).toContain("DESIGN.md");
-    expect(names.filter((n) => n.startsWith("design/")).length).toBe(12);
+    expect(names.filter((n) => n.startsWith("design/")).length).toBe(13);
     expect(parsed.every((d) => d.text.length > 500)).toBe(true);
   });
 

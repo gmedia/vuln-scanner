@@ -83,6 +83,10 @@ describe("Sidebar", () => {
     expect(screen.getByText("Inbox")).toBeInTheDocument();
     expect(screen.getByTestId("nav-inbox")).toHaveAttribute("href", "/inbox");
     expect(screen.getByTestId("nav-guard")).toHaveAttribute("href", "/guard");
+    expect(screen.getByTestId("nav-subscription")).toHaveAttribute(
+      "href",
+      "/settings/subscription",
+    );
     const guide = screen
       .getAllByRole("link")
       .find((a) => a.getAttribute("href") === "/guide");
@@ -120,6 +124,10 @@ describe("Sidebar", () => {
     expect(screen.getByTestId("nav-admin-ai")).toHaveAttribute(
       "href",
       "/admin/ai",
+    );
+    expect(screen.getByTestId("nav-admin-subscription-requests")).toHaveAttribute(
+      "href",
+      "/admin/subscription-requests",
     );
   });
 

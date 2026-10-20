@@ -27,6 +27,7 @@ If a surface file contradicts a higher layer, the higher layer wins and the surf
 | `/dashboard` | [`design/dashboard.md`](design/dashboard.md) | ~150 |
 | `/scan/:id`, `/schedules`, `/scan/ip`, `/scan/domain`, `/scan/mobile` | [`design/scan.md`](design/scan.md) | ~405 |
 | `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-email`, `/profile`, `/settings/workspace` | [`design/auth.md`](design/auth.md) | ~470 |
+| `/settings/subscription` | [`design/subscription.md`](design/subscription.md) | ~150 |
 | `/admin`, `/admin/users`, `/admin/users/:id`, `/admin/hpp`, `/admin/invoices`, `/admin/blog`, `/admin/email-logs`, `/admin/ai` | [`design/admin.md`](design/admin.md) | ~360 |
 | `/inbox`, `/credit-history`, `/`, `/guide` | [`design/content.md`](design/content.md) | ~300 |
 
@@ -38,6 +39,7 @@ If a surface file contradicts a higher layer, the higher layer wins and the surf
 | A sidebar or header element, or a page-nav tab strip | `design/navigation.md` |
 | A table row action | [`row-actions.md`](../docs/specs/row-actions.md) + the surface file |
 | A KPI tile, empty state, or tone colour | `design/foundation.md` §5 + the surface file |
+| A plan card, capacity meter, or subscription request | `design/subscription.md` + `design/foundation.md` §5 |
 | A print/PDF surface | [`scan-pdf-invoice-print-v1.md`](../docs/specs/scan-pdf-invoice-print-v1.md) + [`sinexis-invoice-v1.md`](../docs/specs/sinexis-invoice-v1.md) |
 
 ## What each surface file contains
