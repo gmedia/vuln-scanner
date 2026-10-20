@@ -5,6 +5,7 @@ export type SubscriptionTier = "basic" | "pro" | "multi";
 export type SubscriptionCycle = "monthly" | "annual";
 export type SubscriptionStatus =
   | "active"
+  | "grace"
   | "pending_payment"
   | "draft"
   | "expired"
@@ -15,7 +16,7 @@ export interface SubscriptionPlan {
   sku: SubscriptionSku;
   label: string;
   status: SubscriptionStatus;
-  source: "invoice" | "default" | "ops" | "custom";
+  source: "invoice" | "default" | "ops" | "custom" | "subscription";
   cycle: SubscriptionCycle;
   amount_idr: number | null;
   period_start: string | null;
@@ -23,6 +24,8 @@ export interface SubscriptionPlan {
   renewal_at: string | null;
   invoice_id: string | null;
   invoice_number: string | null;
+  cancel_at_period_end?: boolean;
+  billing_status?: string | null;
 }
 
 export interface SubscriptionUsageItem {
@@ -67,6 +70,25 @@ export interface SubscriptionCapabilities {
   can_self_serve: boolean;
 }
 
+export interface SubscriptionPaymentAttempt {
+  id: string;
+  organization_id: string;
+  invoice_id: string | null;
+  provider: string;
+  provider_ref: string | null;
+  amount_idr: number;
+  currency: string;
+  status: "pending" | "succeeded" | "failed" | "expired" | "refunded";
+  method: string | null;
+  failure_code: string | null;
+  failure_message: string | null;
+  next_retry_at: string | null;
+  succeeded_at: string | null;
+  failed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface SubscriptionRequestItem {
   id: string;
   organization_id: string;
@@ -95,6 +117,7 @@ export interface SubscriptionOverview {
   enterprise: { contact_only: boolean };
   capabilities: SubscriptionCapabilities;
   pending_request: SubscriptionRequestItem | null;
+  recent_attempts: SubscriptionPaymentAttempt[];
 }
 
 export interface SubscriptionRequestCreate {

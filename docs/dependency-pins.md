@@ -28,10 +28,26 @@ Three things combined to hide it:
 2. Digests never move on their own.
 3. The Trivy jobs use `continue-on-error: true`, so findings only reached the Security tab.
 
+### Container image scanning (Trivy)
+
+Every `docker-scan-*` job builds the image, uploads a SARIF report (HIGH+CRITICAL, so findings
+land in the Security tab), then runs a **blocking** check:
+
+| Severity | Behaviour |
+|---|---|
+| **CRITICAL** | **Fails the job** (`exit-code: 1`) |
+| HIGH | Reported in the Security tab only |
+
+`ignore-unfixed: true` on both, so only vulnerabilities with a published fix can fail a build.
+
+**Why CRITICAL blocks and HIGH does not:** Debian/Alpine bases gain new HIGH advisories
+routinely, and blocking on those would turn unrelated PRs red for something the PR cannot fix.
+CRITICAL is the line where shipping is worse than a red build.
+
 **Measured state** (images built from the Dockerfiles, scanned with Trivy 0.76,
 `--ignore-unfixed`, all four severities):
 
-| Image | Before #1067 | After #1067 | Now |
+| Image | Before #1067 | After #1067 | After the pip/zlib fix |
 |---|---|---|---|
 | `vuln-scanner-backend` | 3 critical / 8 high | 0 / 0 | **0 / 0 / 0 / 0** |
 | `vuln-scanner-workers` | 3 critical / 5 high | 0 / 0 | **0 / 0 / 0 / 0** |
@@ -53,6 +69,10 @@ intentional — install into the image via `requirements.txt`, or use a throwawa
 
 `frontend/Dockerfile` runs `apk upgrade --no-cache zlib`: Alpine's `zlib 1.3.2-r0` carried
 CVE-2026-85091, and a digest refresh alone does not move it.
+
+The local-compose `nginx` image is **not** part of the CI-scanned set; it still reports
+`libexpat` and `libx11` HIGHs (both with fixes published) until its tag is refreshed.
+
 
 ### Rules
 

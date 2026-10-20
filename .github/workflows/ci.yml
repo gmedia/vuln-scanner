@@ -822,6 +822,14 @@ jobs:
         with:
           sarif_file: trivy-results-backend.sarif
           category: trivy-backend
+      - name: Fail on CRITICAL vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: vuln-scanner-backend:${{ github.sha }}
+          format: table
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
 
   docker-scan-workers:
     needs: [changes]
@@ -858,6 +866,14 @@ jobs:
         with:
           sarif_file: trivy-results-workers.sarif
           category: trivy-workers
+      - name: Fail on CRITICAL vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: vuln-scanner-workers:${{ github.sha }}
+          format: table
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
 
   docker-scan-frontend:
     needs: [changes]
@@ -894,6 +910,14 @@ jobs:
         with:
           sarif_file: trivy-results-frontend.sarif
           category: trivy-frontend
+      - name: Fail on CRITICAL vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: vuln-scanner-frontend:${{ github.sha }}
+          format: table
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
 
   deps-sync:
     name: deps-sync

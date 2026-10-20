@@ -34,6 +34,36 @@ Out:
 | B5 | Cancel-at-period-end only sets a flag; it does not revoke access. Immediate cancel sets `canceled` + `ended_at`. |
 | B6 | No scheduler finalizes a period-end cancel yet. Ops or a later job must do it. |
 
+## 2.1 Status precedence (single source of truth)
+
+`GET /api/orgs/{org_id}/subscription` reads `subscriptions` first and only falls back to invoice derivation when no row exists (orgs that never paid). `plan.source` is `"subscription"` in that case, `"invoice"`/`"default"`/`"ops"` on the fallback path.
+
+| Subscription status | Plan status shown |
+|---|---|
+| `active` / `trialing`, `period_end >= now` | `active` |
+| `active` / `trialing`, `period_end < now` | `grace` (inside the grace window) |
+| `past_due`, `period_end >= now` | `pending_payment` |
+| `past_due`, `period_end < now` | `expired` |
+| `unpaid` / `canceled` | `expired` |
+| `incomplete` + invoice `sent` | `pending_payment` |
+| `incomplete` + invoice `draft` | `draft` |
+| `incomplete`, no invoice | `unbilled` |
+
+`plan.sku` still comes from `organizations.sku` (the capacity source). The subscription row owns lifecycle only: status, period, cycle, `cancel_at_period_end`.
+
+## 2.2 Backfill
+
+`alembic/versions/backfill_subscriptions.py` seeds one `active` subscription per org whose latest non-void Scan invoice is `paid`, using that invoice's period. It uses `ON CONFLICT (organization_id) DO NOTHING`, so it is idempotent and never overwrites a row created by the live payment path. Downgrade is a no-op by design.
+
+## 2.3 Lifecycle beat
+
+`workers/tasks/billing.py::finalize_periods` runs hourly on the `ip_scan` queue:
+
+1. `cancel_at_period_end = true` and `current_period_end <= now` → `canceled`, `ended_at = now`, flag cleared.
+2. `status = 'active'` and `current_period_end + grace <= now` → `past_due`.
+
+Grace is `BILLING_PAST_DUE_GRACE_DAYS` (default **7**). The job never revokes access, never deletes data, and never marks `unpaid`; access enforcement and dunning remain product decisions.
+
 ## 3. State machine
 
 Statuses: `incomplete`, `trialing`, `active`, `past_due`, `unpaid`, `canceled`.
@@ -81,6 +111,8 @@ Admin (`get_current_admin`):
 | GET | `/api/admin/subscriptions/{org_id}` | Detail + last 20 attempts |
 | POST | `/api/admin/subscriptions/{org_id}/record-payment` | `{invoice_id, method?, reference?}`; marks the invoice paid and records an attempt |
 | POST | `/api/admin/subscriptions/{org_id}/cancel` | `{at_period_end, note?}` |
+
+Admin UI: `/admin/subscriptions` (`frontend/src/pages/admin/AdminSubscriptions.tsx`) — status filter, payment history, record payment, cancel.
 
 Webhook (no JWT; shared secret):
 

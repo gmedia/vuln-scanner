@@ -44,6 +44,7 @@ celery_app.conf.update(
         "uptime.purge": {"queue": "uptime_check"},
         "host_protect.run_scan": {"queue": "ip_scan"},
         "host_protect.run_due": {"queue": "ip_scan"},
+        "billing.finalize_periods": {"queue": "ip_scan"},
     },
     task_annotations={
         "ip_scan.run": {"rate_limit": "10/m"},
@@ -83,6 +84,10 @@ celery_app.conf.update(
             "task": "host_protect.run_due",
             "schedule": 300.0,
         },
+        "billing-finalize-periods-hourly": {
+            "task": "billing.finalize_periods",
+            "schedule": 3600.0,
+        },
     },
 )
 
@@ -97,5 +102,6 @@ celery_app.autodiscover_tasks(
         "tasks.guard",
         "tasks.uptime",
         "tasks.host_protect",
+        "tasks.billing",
     ]
 )
