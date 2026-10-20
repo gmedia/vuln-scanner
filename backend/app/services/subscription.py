@@ -9,7 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.asset import ASSET_SKU_LIMITS, ScanAsset
-from app.models.billing import Subscription
+from app.models.billing import PaymentAttempt, Subscription
 from app.models.guard import GUARD_SKU_LIMITS, GuardAgent
 from app.models.host_protect import HOST_SITE_SKU_LIMITS, HostSite
 from app.models.invoice import (
@@ -29,6 +29,7 @@ from app.models.organization import Organization, OrganizationMembership
 from app.models.subscription import SubscriptionRequest
 from app.models.uptime import UPTIME_SKU_LIMITS, UptimeMonitor
 from app.models.user import User
+from app.schemas.billing import PaymentAttemptItem
 from app.schemas.subscription import (
     SubscriptionAnnualPolicy,
     SubscriptionBundleItem,
@@ -207,7 +208,9 @@ class SubscriptionService:
         if subscription.status in ("active", "trialing"):
             if period_end is None:
                 return "active"
-            return "active" if period_end >= now else "expired"
+            # The lifecycle beat only flips to past_due after the grace window,
+            # so an active row past its period end is inside grace, not dead.
+            return "active" if period_end >= now else "grace"
         # incomplete: no settled payment yet.
         if invoice is not None and invoice.status == "draft":
             return "draft"
@@ -256,6 +259,7 @@ class SubscriptionService:
                 invoice_id=invoice.id if invoice is not None else None,
                 invoice_number=invoice.number if invoice is not None else None,
                 cancel_at_period_end=subscription.cancel_at_period_end,
+                billing_status=subscription.status,
             )
 
         plan_status, source = self._invoice_plan_status(
@@ -344,6 +348,17 @@ class SubscriptionService:
         )
         return result.scalar_one_or_none()
 
+    async def _recent_attempts(self, organization_id: UUID) -> list[PaymentAttemptItem]:
+        rows = (
+            await self.db.execute(
+                select(PaymentAttempt)
+                .where(PaymentAttempt.organization_id == organization_id)
+                .order_by(PaymentAttempt.created_at.desc())
+                .limit(5)
+            )
+        ).scalars().all()
+        return [PaymentAttemptItem.model_validate(row) for row in rows]
+
     async def overview(self, org: Organization, role: str) -> SubscriptionOverviewResponse:
         invoice = await self._latest_scan_invoice(org.id)
         subscription = await self._subscription(org.id)
@@ -370,6 +385,9 @@ class SubscriptionService:
                 can_self_serve=False,
             ),
             pending_request=await self._pending_request(org.id),
+            recent_attempts=(
+                await self._recent_attempts(org.id) if can_manage else []
+            ),
         )
 
     async def create_request(

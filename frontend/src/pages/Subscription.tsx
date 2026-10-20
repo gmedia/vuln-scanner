@@ -438,6 +438,54 @@ function Subscription() {
                 </div>
               </div>
 
+              {plan.billing_status === "past_due" ? (
+                <WorkspaceNotice
+                  tone={plan.status === "expired" ? "danger" : "warn"}
+                  role="status"
+                >
+                  <div data-testid="subscription-past-due">
+                    <p className="text-sm font-medium text-foreground">
+                      {t("pastDueTitle")}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {plan.status === "expired"
+                        ? t("pastDueExpired", {
+                            date: formatDate(plan.period_end, dateLocale),
+                          })
+                        : t("pastDueBody", {
+                            date: formatDate(plan.period_end, dateLocale),
+                          })}
+                    </p>
+                  </div>
+                </WorkspaceNotice>
+              ) : plan.cancel_at_period_end ? (
+                <WorkspaceNotice tone="warn" role="status">
+                  <div data-testid="subscription-cancel-scheduled">
+                    <p className="text-sm font-medium text-foreground">
+                      {t("cancelScheduledTitle", {
+                        date: formatDate(plan.period_end, dateLocale),
+                      })}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("cancelScheduledBody")}
+                    </p>
+                  </div>
+                </WorkspaceNotice>
+              ) : plan.status === "grace" ? (
+                <WorkspaceNotice tone="warn" role="status">
+                  <div data-testid="subscription-grace">
+                    <p className="text-sm font-medium text-foreground">
+                      {t("graceTitle")}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("graceBody", {
+                        date: formatDate(plan.period_end, dateLocale),
+                      })}
+                    </p>
+                  </div>
+                </WorkspaceNotice>
+              ) : null}
+
               {data.pending_request ? (
                 <WorkspaceNotice tone="warn" role="status">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -706,6 +754,68 @@ function Subscription() {
                   ))}
                 </ul>
               )}
+
+              {canManage ? (
+                <div className="space-y-2 border-t border-border pt-3">
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-medium tracking-wide text-foreground">
+                      {t("attemptsTitle")}
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
+                      {t("attemptsDescription")}
+                    </p>
+                  </div>
+                  {data.recent_attempts.length === 0 ? (
+                    <p
+                      className="text-xs text-muted-foreground"
+                      data-testid="subscription-attempts-empty"
+                    >
+                      {t("attemptsEmpty")}
+                    </p>
+                  ) : (
+                    <ul className="space-y-2" data-testid="subscription-attempts">
+                      {data.recent_attempts.map((attempt) => (
+                        <li
+                          key={attempt.id}
+                          data-testid={`subscription-attempt-${attempt.id}`}
+                          className="flex flex-col gap-2 rounded-md border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <div className="min-w-0 space-y-0.5">
+                            <p className="font-mono text-xs tabular-nums text-foreground">
+                              {formatDate(attempt.created_at, dateLocale)} ·{" "}
+                              {formatIdr(attempt.amount_idr)}
+                            </p>
+                            <p className="text-[11px] text-muted-foreground">
+                              {t("attemptMethod")}: {attempt.method ?? attempt.provider}
+                              {attempt.provider_ref ? (
+                                <>
+                                  {" · "}
+                                  {t("attemptRef")}: {attempt.provider_ref}
+                                </>
+                              ) : null}
+                            </p>
+                          </div>
+                          <Badge
+                            variant={
+                              attempt.status === "succeeded"
+                                ? "success"
+                                : attempt.status === "failed"
+                                  ? "failed"
+                                  : attempt.status === "expired"
+                                    ? "info"
+                                    : "pending"
+                            }
+                            data-status={attempt.status}
+                            className="shrink-0 self-start text-[10px] uppercase sm:self-auto"
+                          >
+                            {t(`attemptStatus_${attempt.status}`)}
+                          </Badge>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ) : null}
             </WorkspaceShellBody>
           </WorkspaceShell>
 
