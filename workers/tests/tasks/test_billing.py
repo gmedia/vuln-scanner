@@ -174,6 +174,49 @@ class TestSendDueRemindersRun:
         send.assert_not_awaited()
         session.add.assert_not_called()
 
+    def test_retries_a_failed_stage_instead_of_suppressing_it(self):
+        invoice = _invoice(days_ago=1)
+        failed = SimpleNamespace(
+            stage="due_today", stage_rank=2, sent_count=0, failed_count=1, attempts=1
+        )
+        session = _session(invoice=invoice, existing=[failed])
+
+        result, send = self._run(session)
+
+        assert result == {"sent_count": 1, "failed_count": 0, "skipped_count": 0}
+        send.assert_awaited_once()
+        assert failed.attempts == 2
+        assert failed.sent_count == 1
+        session.add.assert_not_called()
+
+    def test_stops_retrying_after_the_attempt_cap(self):
+        invoice = _invoice(days_ago=1)
+        exhausted = SimpleNamespace(
+            stage="due_today",
+            stage_rank=2,
+            sent_count=0,
+            failed_count=MAX_REMINDER_ATTEMPTS,
+            attempts=MAX_REMINDER_ATTEMPTS,
+        )
+        session = _session(invoice=invoice, existing=[exhausted])
+
+        result, send = self._run(session)
+
+        assert result["skipped_count"] == 1
+        send.assert_not_awaited()
+
+    def test_does_not_walk_back_to_an_earlier_stage(self):
+        invoice = _invoice(days_ago=1)
+        later = SimpleNamespace(
+            stage="overdue_1", stage_rank=3, sent_count=1, failed_count=0, attempts=1
+        )
+        session = _session(invoice=invoice, existing=[later])
+
+        result, send = self._run(session)
+
+        assert result["skipped_count"] == 1
+        send.assert_not_awaited()
+
     def test_records_no_recipients_without_sending(self):
         invoice = _invoice(days_ago=1)
         session = _session(invoice=invoice, recipients=[])

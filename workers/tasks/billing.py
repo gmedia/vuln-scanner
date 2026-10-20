@@ -225,14 +225,16 @@ def send_due_reminders(self: Any) -> dict[str, int]:
                 ).scalars().all(),
             )
             max_rank = max((row.stage_rank for row in existing_rows), default=0)
-            if rank <= max_rank:
-                skipped += 1
-                continue
-
             existing = next((row for row in existing_rows if row.stage == stage), None)
-            if existing is not None and (
-                existing.sent_count > 0 or existing.attempts >= MAX_REMINDER_ATTEMPTS
-            ):
+
+            # Retry the same stage while it is still the current one. A
+            # transient SMTP failure must not permanently suppress the notice.
+            if existing is not None:
+                if existing.sent_count > 0 or existing.attempts >= MAX_REMINDER_ATTEMPTS:
+                    skipped += 1
+                    continue
+            elif rank <= max_rank:
+                # A later stage was already handled; do not walk backwards.
                 skipped += 1
                 continue
 
