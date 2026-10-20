@@ -92,6 +92,7 @@ Nav groups match Sidebar: **Scan** · **Attach** · **Account** · **Admin** (ad
 | `/admin/hpp` | `pages/admin/AdminHpp.tsx` | Admin | IDR unit rates + monthly overhead + cost journal + date-range report + SKU overlay **estimasi**. Separate COGS/margin tool; retained after the pricing archive retired. `nav-admin-hpp`. Spec: `docs/specs/admin-hpp-v1.md`. | `admin/AdminHpp.test.tsx` |
 | `/admin/invoices` | `pages/admin/AdminInvoices.tsx` | Admin | Sinexis Scan invoices (bank transfer). Catalog + draft/send/paid/void. `nav-admin-invoices`. Pay loop: `docs/specs/sinexis-invoice-v1.md`. HTML print: S1b [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md). | `admin/AdminInvoices.test.tsx` |
 | `/admin/subscription-requests` | `pages/admin/AdminSubscriptionRequests.tsx` | Admin | Plan upgrade/downgrade queue; approve/reject with note. `nav-admin-subscription-requests`. | `admin/AdminSubscriptionRequests.test.tsx` |
+| `/admin/subscriptions` | `pages/admin/AdminSubscriptions.tsx` | Admin | Billing lifecycle per org: status, period, cancel flag, payment attempts; record payment + cancel. `nav-admin-subscriptions`. Spec: `docs/specs/billing-core-v1.md`. | `admin/AdminSubscriptions.test.tsx` |
 | `/admin/blog` | `pages/admin/AdminBlog.tsx` | Admin | CMS; `nav-admin-blog`. Locale key `blogStatus`. | `admin/AdminBlog.test.tsx` |
 | `/admin/email-logs` | `pages/admin/AdminEmailLogs.tsx` | Admin | Outbound SMTP log; masked recipient. `nav-admin-email-logs`. | `admin/AdminEmailLogs.test.tsx` |
 | `/admin/ai` | `pages/admin/AdminAi.tsx` | Admin | Catalog, usage, top-up, trial chat. `nav-admin-ai`. Flag `AI_GATEWAY_ENABLED`. | `admin/AdminAi.test.tsx` |
@@ -128,7 +129,7 @@ Minimum authenticated set (2k + mobile, light + dark) after a chrome/token chang
 5. `/schedules` `/assets` `/host`
 6. `/guard` `/siem` `/uptime` `/uptime/:id` `/uptime/status-page`
 7. `/credit-history` `/profile` `/settings/workspace` `/settings/subscription` `/guide`
-8. Admin: `/admin` `/admin/users` `/admin/hpp` `/admin/skus` `/admin/simulator` `/admin/invoices` `/admin/subscription-requests` `/admin/blog`
+8. Admin: `/admin` `/admin/users` `/admin/hpp` `/admin/skus` `/admin/simulator` `/admin/invoices` `/admin/subscription-requests` `/admin/subscriptions` `/admin/blog`
 
 Auth for prod visual: `E2E_EMAIL` / `E2E_PASSWORD` from **tc1 env** — never commit. Do not `POST /register` for the shared mailbox.
 

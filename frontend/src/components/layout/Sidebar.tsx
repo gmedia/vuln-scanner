@@ -21,6 +21,7 @@ import {
   Receipt,
   Tags,
   CreditCard,
+  Wallet,
 } from "lucide-react";
 import { BRAND } from "@/lib/brand";
 import { useTranslation } from "react-i18next";
@@ -262,6 +263,12 @@ function Sidebar() {
                   labelKey="subscriptionRequests"
                   icon={CreditCard}
                   testId="nav-admin-subscription-requests"
+                />
+                <NavItem
+                  to="/admin/subscriptions"
+                  labelKey="subscriptions"
+                  icon={Wallet}
+                  testId="nav-admin-subscriptions"
                 />
                 <NavItem
                   to="/admin/blog"
