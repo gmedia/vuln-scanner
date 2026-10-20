@@ -28,6 +28,10 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 USER root
-RUN apk add --no-cache su-exec && chmod +x /docker-entrypoint.sh
+# zlib 1.3.2-r0 in the base image carries CVE-2026-85091 (heap overflow);
+# 1.3.2-r1 fixes it. Alpine pins are not covered by the digest refresh.
+RUN apk add --no-cache su-exec \
+    && apk upgrade --no-cache zlib \
+    && chmod +x /docker-entrypoint.sh
 EXPOSE 8080
 ENTRYPOINT ["/docker-entrypoint.sh"]

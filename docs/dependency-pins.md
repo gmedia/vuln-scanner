@@ -44,18 +44,35 @@ land in the Security tab), then runs a **blocking** check:
 routinely, and blocking on those would turn unrelated PRs red for something the PR cannot fix.
 CRITICAL is the line where shipping is worse than a red build.
 
-**Measured state after the 2026-10-19 base refresh** (built from the Dockerfiles, scanned with
-Trivy 0.76, `--ignore-unfixed`):
+**Measured state** (images built from the Dockerfiles, scanned with Trivy 0.76,
+`--ignore-unfixed`, all four severities):
 
-| Image | Before | After |
-|---|---|---|
-| `vuln-scanner-backend` | 3 critical / 8 high | **0 / 0** |
-| `vuln-scanner-workers` | 3 critical / 5 high | **0 / 0** |
-| `vuln-scanner-frontend` | 2 critical / 51 high | **0 / 0** |
-| `nginx:1.27` (local compose only) | 2 critical / 53 high | 0 / **2** |
+| Image | Before #1067 | After #1067 | After the pip/zlib fix |
+|---|---|---|---|
+| `vuln-scanner-backend` | 3 critical / 8 high | 0 / 0 | **0 / 0 / 0 / 0** |
+| `vuln-scanner-workers` | 3 critical / 5 high | 0 / 0 | **0 / 0 / 0 / 0** |
+| `vuln-scanner-frontend` | 2 critical / 51 high | 0 / 0 | **0 / 0 / 0 / 0** |
 
-The two remaining HIGHs in the local `nginx` image are `libexpat` and `libx11`, both with fixes
-published — refresh that tag when convenient; it is not part of the CI-scanned set.
+### Why pip is removed from the runtime image
+
+The base image ships **pip 25.0.1**, which carried six advisories. Upgrading pip made it worse in
+a non-obvious way: pip **vendors** its own `urllib3` and `msgpack`, and Trivy scans those copies
+as separate packages. pip 26.2.1's vendored `urllib3` 2.7.0 and `msgpack` 1.1.2 then appeared as
+**four new HIGH findings**.
+
+Nothing in either runtime stage installs packages (`entrypoint.sh` / `prestart.sh` never call
+pip), so the fix is to **remove pip and setuptools** rather than upgrade them. That drops six
+advisories and both vendored duplicates, and shrinks the attack surface.
+
+**Consequence:** `pip install` inside a running backend/worker container no longer works. That is
+intentional — install into the image via `requirements.txt`, or use a throwaway container.
+
+`frontend/Dockerfile` runs `apk upgrade --no-cache zlib`: Alpine's `zlib 1.3.2-r0` carried
+CVE-2026-85091, and a digest refresh alone does not move it.
+
+The local-compose `nginx` image is **not** part of the CI-scanned set; it still reports
+`libexpat` and `libx11` HIGHs (both with fixes published) until its tag is refreshed.
+
 
 ### Rules
 
