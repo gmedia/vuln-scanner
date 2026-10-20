@@ -53,7 +53,18 @@ Out:
 
 ## 2.2 Backfill
 
-`alembic/versions/backfill_subscriptions.py` seeds one `active` subscription per org whose latest non-void Scan invoice is `paid`, using that invoice's period. It uses `ON CONFLICT (organization_id) DO NOTHING`, so it is idempotent and never overwrites a row created by the live payment path. Downgrade is a no-op by design.
+`alembic/versions/backfill_subscriptions.py` seeds one subscription per org whose latest non-void Scan invoice is `paid`, using that invoice's period.
+
+Status is **derived, never hardcoded**:
+
+| Latest paid Scan invoice | Backfilled status |
+|---|---|
+| `period_end >= now()` | `active` |
+| `period_end < now()` | `past_due` |
+
+A lapsed customer must not be seeded as `active`: the read path would then show a false "grace period" badge until the lifecycle beat caught up.
+
+It uses `ON CONFLICT (organization_id) DO NOTHING`, so it is idempotent and never overwrites a row created by the live payment path. Downgrade is a no-op by design. `backend/tests/test_backfill_subscriptions.py` guards these invariants (source-level, because the SQL is Postgres-only and the test database is SQLite).
 
 ## 2.3 Lifecycle beat
 

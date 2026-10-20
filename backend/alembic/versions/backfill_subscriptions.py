@@ -9,6 +9,11 @@ that paid before the deploy was invisible to the admin billing surface. This
 backfill seeds one row per organization whose latest non-void Scan invoice is
 paid, using that invoice's period.
 
+Status is derived from the invoice period, never hardcoded: a period that still
+covers ``now()`` is ``active``; a lapsed period is ``past_due``. Marking a
+long-lapsed customer ``active`` would show them a false "grace period" badge
+until the lifecycle beat caught up.
+
 Idempotent: ``ON CONFLICT (organization_id) DO NOTHING`` keeps rows created by
 the live payment path. Safe to run on a live database.
 """
@@ -45,7 +50,10 @@ SELECT
     gen_random_uuid(),
     o.id,
     o.sku,
-    'active',
+    CASE
+        WHEN latest.period_end >= now() THEN 'active'
+        ELSE 'past_due'
+    END,
     CASE
         WHEN latest.period_end - latest.period_start > INTERVAL '40 days' THEN 'annual'
         ELSE 'monthly'
