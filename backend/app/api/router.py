@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.admin_ai_routes import router as admin_ai_router
+from app.api.admin_billing_routes import router as admin_billing_router
 from app.api.admin_blog_routes import router as admin_blog_router
 from app.api.admin_invoice_routes import router as admin_invoice_router
 from app.api.admin_routes import router as admin_router
@@ -16,6 +17,7 @@ from app.api.host_waf_routes import router as host_waf_router
 from app.api.inbox_routes import router as inbox_router
 from app.api.key_routes import router as key_router
 from app.api.org_routes import router as org_router
+from app.api.payment_webhook_routes import router as payment_webhook_router
 from app.api.scan_routes import router as scan_router
 from app.api.schedule_routes import router as schedule_router
 from app.api.ses_webhook_routes import router as ses_webhook_router
@@ -37,6 +39,7 @@ api_router.include_router(inbox_router)
 api_router.include_router(admin_router)
 api_router.include_router(admin_invoice_router)
 api_router.include_router(admin_subscription_router)
+api_router.include_router(admin_billing_router)
 api_router.include_router(admin_blog_router)
 api_router.include_router(admin_ai_router)
 api_router.include_router(ai_router)
@@ -51,3 +54,4 @@ api_router.include_router(asset_router)
 api_router.include_router(uptime_router)
 api_router.include_router(status_page_router)
 api_router.include_router(ses_webhook_router)
+api_router.include_router(payment_webhook_router)

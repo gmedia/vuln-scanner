@@ -175,6 +175,9 @@ class Settings(BaseSettings):
     sns_topic_arn: str = "arn:aws:sns:us-east-1:123456789012:sinexis-bounces"
     ses_webhook_token: str = ""
 
+    # Billing core (phase 2). Empty disables the payment webhook endpoint.
+    payment_webhook_secret: str = ""
+
 
 settings = Settings()
 
