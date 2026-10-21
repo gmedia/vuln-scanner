@@ -241,7 +241,11 @@ function BillingProfileForm({
                 </p>
               )}
               <div className="flex flex-col gap-2 sm:flex-row">
+                <Label htmlFor="billing-recipient-email" className="sr-only">
+                  {t("recipientEmail")}
+                </Label>
                 <Input
+                  id="billing-recipient-email"
                   type="email"
                   value={recipientEmail}
                   maxLength={320}

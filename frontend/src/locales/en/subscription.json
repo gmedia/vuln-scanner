@@ -154,5 +154,21 @@
   "recipientAddFail": "Could not add recipient",
   "recipientRemoved": "Recipient removed",
   "recipientRemoveFail": "Could not remove recipient",
+<<<<<<< Updated upstream
   "saveBilling": "Save billing details"
+=======
+  "saveBilling": "Save billing details",
+  "cancelSubscription": "Cancel subscription",
+  "cancelSubscriptionTitle": "Cancel this subscription?",
+  "cancelSubscriptionBody": "Access continues until the end of the paid period. There is no refund for the current period.",
+  "cancelSubscriptionNote": "Reason (optional)",
+  "cancelReasonPlaceholder": "Tell us why you are leaving",
+  "cancelSubscriptionConfirm": "Cancel at period end",
+  "cancelSubscriptionDone": "Cancellation scheduled",
+  "cancelSubscriptionFail": "Could not schedule the cancellation",
+  "resumeSubscription": "Keep subscription",
+  "resumeDone": "Cancellation withdrawn",
+  "resumeFail": "Could not resume the subscription",
+  "recipientEmail": "Recipient email"
+>>>>>>> Stashed changes
 }
