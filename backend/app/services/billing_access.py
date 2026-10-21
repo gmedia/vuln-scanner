@@ -28,7 +28,7 @@ from app.models.organization import Organization
 from app.models.user import User
 from app.services.auth import get_active_org_id, get_current_user
 
-READ_ONLY_STATUSES = ("past_due", "unpaid", "canceled")
+READ_ONLY_STATUSES = ("past_due", "canceled")
 
 REASON_OVERDUE = "payment_overdue"
 REASON_CANCELED = "subscription_canceled"

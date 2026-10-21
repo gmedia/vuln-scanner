@@ -39,6 +39,7 @@ from app.services.email import send_billing_reminder_email  # noqa: E402
 # Days after ``due_date`` before an active subscription becomes ``past_due``.
 # Configurable so ops can widen the grace window without a deploy.
 PAST_DUE_GRACE_DAYS = int(os.getenv("BILLING_PAST_DUE_GRACE_DAYS", "7"))
+PAST_DUE_CANCEL_DAYS = int(os.getenv("BILLING_PAST_DUE_CANCEL_DAYS", "45"))
 MAX_REMINDER_ATTEMPTS = 3
 
 _CLOSE_CANCELED = text(
@@ -80,6 +81,33 @@ _MARK_PAST_DUE = text(
 )
 
 
+_TERMINAL_PAST_DUE = text(
+    """
+    WITH latest AS (
+        SELECT DISTINCT ON (organization_id)
+               organization_id, status, due_date
+        FROM org_invoices
+        WHERE product = 'scan'
+          AND status <> 'void'
+        ORDER BY organization_id, period_start DESC, created_at DESC
+    )
+    UPDATE subscriptions s
+    SET status = 'canceled',
+        cancel_at_period_end = false,
+        canceled_at = :now,
+        ended_at = :now,
+        updated_at = :now
+    FROM latest l
+    WHERE s.organization_id = l.organization_id
+      AND s.status = 'past_due'
+      AND l.status = 'sent'
+      AND l.due_date IS NOT NULL
+      AND l.due_date + make_interval(days => :terminal_days) <= :now
+    RETURNING s.id
+    """
+)
+
+
 def _count_rows(session: Any, statement: Any, params: dict[str, Any]) -> int:
     result = cast(CursorResult[Any], session.execute(statement, params))
     return len(result.all())
@@ -96,15 +124,24 @@ def finalize_periods(self: Any) -> dict[str, int]:
             _MARK_PAST_DUE,
             {"now": now, "grace_days": PAST_DUE_GRACE_DAYS},
         )
+        terminal = _count_rows(
+            session,
+            _TERMINAL_PAST_DUE,
+            {"now": now, "terminal_days": PAST_DUE_CANCEL_DAYS},
+        )
         session.commit()
-        if canceled or past_due:
+        if canceled or past_due or terminal:
             logger.info(
-                "Billing finalize: canceled={canceled} past_due={past_due} grace_days={grace}",
+                "Billing finalize: canceled={canceled} past_due={past_due} terminal={terminal}",
                 canceled=canceled,
                 past_due=past_due,
-                grace=PAST_DUE_GRACE_DAYS,
+                terminal=terminal,
             )
-        return {"canceled_count": canceled, "past_due_count": past_due}
+        return {
+            "canceled_count": canceled,
+            "past_due_count": past_due,
+            "terminal_count": terminal,
+        }
     except Exception:
         session.rollback()
         raise

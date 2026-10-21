@@ -29,10 +29,8 @@ class BillingTransitionError(ValueError):
 
 _ALLOWED: dict[str, frozenset[str]] = {
     "incomplete": frozenset({"active", "canceled"}),
-    "trialing": frozenset({"active", "past_due", "canceled"}),
-    "active": frozenset({"past_due", "unpaid", "canceled"}),
-    "past_due": frozenset({"active", "unpaid", "canceled"}),
-    "unpaid": frozenset({"active", "canceled"}),
+    "active": frozenset({"past_due", "canceled"}),
+    "past_due": frozenset({"active", "canceled"}),
     "canceled": frozenset({"active"}),
 }
 
