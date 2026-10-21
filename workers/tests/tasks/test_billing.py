@@ -125,17 +125,34 @@ def _invoice(*, days_ago: int = 1) -> SimpleNamespace:
     )
 
 
-def _session(*, invoice: SimpleNamespace, existing=None, recipients=None) -> MagicMock:
+def _session(
+    *,
+    invoice: SimpleNamespace,
+    existing=None,
+    recipients=None,
+    billing_emails=None,
+    billing_email="",
+) -> MagicMock:
     session = MagicMock()
     invoice_result = MagicMock()
     invoice_result.all.return_value = [(invoice, "Acme")]
     existing_result = MagicMock()
     existing_result.scalars.return_value.all.return_value = existing or []
+    billing_result = MagicMock()
+    billing_result.scalars.return_value.all.return_value = billing_emails or []
     recipients_result = MagicMock()
     recipients_result.all.return_value = (
         recipients if recipients is not None else [("owner@example.com", "en")]
     )
-    session.execute.side_effect = [invoice_result, existing_result, recipients_result]
+    session.get.return_value = (
+        SimpleNamespace(billing_email=billing_email) if billing_email else None
+    )
+    session.execute.side_effect = [
+        invoice_result,
+        existing_result,
+        billing_result,
+        recipients_result,
+    ]
     return session
 
 
@@ -236,6 +253,32 @@ class TestSendDueRemindersRun:
 
         assert result["skipped_count"] == 1
         send.assert_not_awaited()
+
+    def test_billing_recipient_replaces_the_owner_fallback(self):
+        invoice = _invoice(days_ago=1)
+        session = _session(
+            invoice=invoice,
+            billing_emails=["ap@example.com", "controller@example.com"],
+        )
+
+        result, send = self._run(session)
+
+        assert result["sent_count"] == 2
+        addresses = [call.args[0] for call in send.await_args_list]
+        assert addresses == ["ap@example.com", "controller@example.com"]
+
+    def test_profile_billing_email_is_the_first_recipient(self):
+        invoice = _invoice(days_ago=1)
+        session = _session(
+            invoice=invoice,
+            billing_email="finance@example.com",
+            billing_emails=["ap@example.com"],
+        )
+
+        result, send = self._run(session)
+
+        assert result["sent_count"] == 2
+        assert send.await_args_list[0].args[0] == "finance@example.com"
 
     def test_records_no_recipients_without_sending(self):
         invoice = _invoice(days_ago=1)

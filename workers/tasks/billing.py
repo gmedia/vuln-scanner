@@ -25,7 +25,7 @@ _BACKEND = os.path.join(os.path.dirname(__file__), "..", "..", "backend")
 if _BACKEND not in sys.path:
     sys.path.insert(0, os.path.abspath(_BACKEND))
 
-from app.models.billing import BillingReminder  # noqa: E402
+from app.models.billing import BillingRecipient, BillingReminder, OrgBillingProfile  # noqa: E402
 from app.models.invoice import OrgInvoice  # noqa: E402
 from app.models.organization import Organization, OrganizationMembership  # noqa: E402
 from app.models.user import User  # noqa: E402
@@ -150,6 +150,33 @@ def finalize_periods(self: Any) -> dict[str, int]:
 
 
 def _recipients(session: Any, organization_id: Any) -> list[tuple[str, str | None]]:
+    profile = session.get(OrgBillingProfile, organization_id)
+    billing_rows = session.execute(
+        select(BillingRecipient.email)
+        .where(
+            BillingRecipient.organization_id == organization_id,
+            BillingRecipient.kind == "billing",
+            BillingRecipient.disabled_at.is_(None),
+        )
+        .order_by(BillingRecipient.is_primary.desc(), BillingRecipient.created_at)
+    ).scalars().all()
+
+    billing_emails: list[str] = []
+    if profile is not None and profile.billing_email:
+        billing_emails.append(profile.billing_email)
+    billing_emails.extend(billing_rows)
+
+    if billing_emails:
+        seen_billing: set[str] = set()
+        deduped: list[tuple[str, str | None]] = []
+        for email in billing_emails:
+            normalized = (email or "").strip().lower()
+            if not normalized or normalized in seen_billing:
+                continue
+            seen_billing.add(normalized)
+            deduped.append((normalized, None))
+        return deduped
+
     rows = session.execute(
         select(User.email, User.locale)
         .join(OrganizationMembership, OrganizationMembership.user_id == User.id)

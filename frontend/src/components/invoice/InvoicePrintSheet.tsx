@@ -18,6 +18,7 @@ export type InvoicePrintData = {
   amount_idr: number;
   period_start: string;
   period_end: string;
+  due_date?: string;
   status: string;
   bank_ref: string | null;
   bank?: InvoicePrintBank;
@@ -42,6 +43,7 @@ export function InvoicePrintSheet({
   const seats = invoice.seats;
   const amount = formatIdr(invoice.amount_idr);
   const issued = formatPeriod(invoice.created_at ?? invoice.period_start);
+  const due = invoice.due_date ? formatPeriod(invoice.due_date) : null;
   const period = `${formatPeriod(invoice.period_start)} – ${formatPeriod(invoice.period_end)}`;
   const statusKey = `invoicePrintStatus_${invoice.status}`;
   const statusText = t(statusKey, { defaultValue: invoice.status });
@@ -66,6 +68,11 @@ export function InvoicePrintSheet({
           <p className="inv-issued">
             <span className="inv-label">{t("invoicePrintIssued")}</span> {issued}
           </p>
+          {due ? (
+            <p className="inv-issued" data-testid="invoice-print-due">
+              <span className="inv-label">{t("invoicePrintDue")}</span> {due}
+            </p>
+          ) : null}
         </div>
       </header>
 

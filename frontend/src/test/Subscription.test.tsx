@@ -27,6 +27,30 @@ vi.mock("@/api/subscription", async () => {
   };
 });
 
+vi.mock("@/api/billingProfile", () => ({
+  getBillingProfile: vi.fn(async () => ({
+    organization_id: "org-a",
+    legal_name: "",
+    tax_id: "",
+    nitku: "",
+    address_line1: "",
+    address_line2: "",
+    city: "",
+    province: "",
+    postal_code: "",
+    country: "ID",
+    billing_email: "",
+    po_required: false,
+    po_number: "",
+    payment_terms_days: 0,
+    pkp_status: "unknown",
+    recipients: [],
+  })),
+  saveBillingProfile: vi.fn(),
+  addBillingRecipient: vi.fn(),
+  removeBillingRecipient: vi.fn(),
+}));
+
 vi.mock("@/api/orgs", async () => {
   const actual =
     await vi.importActual<typeof import("@/api/orgs")>("@/api/orgs");

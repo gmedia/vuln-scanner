@@ -10,6 +10,7 @@ from sqlalchemy import (
     Integer,
     String,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -179,4 +180,89 @@ class BillingReminder(Base):
     __table_args__ = (
         UniqueConstraint("invoice_id", "stage", name="uq_billing_reminder_invoice_stage"),
         CheckConstraint(f"stage IN {BILLING_REMINDER_STAGES}", name="ck_billing_reminder_stage"),
+    )
+
+
+BILLING_RECIPIENT_KINDS = ("billing", "account")
+PKP_STATUSES = ("unknown", "pkp", "non_pkp")
+
+
+class OrgBillingProfile(Base):
+    """Buyer identity and payment terms used on invoices and reminders.
+
+    Kept separate from ``organizations`` so billing data can be edited by a
+    billing role without granting product-admin rights.
+    """
+
+    __tablename__ = "org_billing_profiles"
+
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    legal_name: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    tax_id: Mapped[str] = mapped_column(String(32), nullable=False, default="")
+    nitku: Mapped[str] = mapped_column(String(32), nullable=False, default="")
+    address_line1: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    address_line2: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    city: Mapped[str] = mapped_column(String(128), nullable=False, default="")
+    province: Mapped[str] = mapped_column(String(128), nullable=False, default="")
+    postal_code: Mapped[str] = mapped_column(String(16), nullable=False, default="")
+    country: Mapped[str] = mapped_column(String(2), nullable=False, default="ID")
+    billing_email: Mapped[str] = mapped_column(String(320), nullable=False, default="")
+    po_required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    po_number: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    payment_terms_days: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    pkp_status: Mapped[str] = mapped_column(String(20), nullable=False, default="unknown")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+
+    __table_args__ = (
+        CheckConstraint(f"pkp_status IN {PKP_STATUSES}", name="ck_billing_profile_pkp_status"),
+        CheckConstraint(
+            "payment_terms_days >= 0 AND payment_terms_days <= 180",
+            name="ck_billing_profile_payment_terms",
+        ),
+    )
+
+
+class BillingRecipient(Base):
+    """Email-only billing contact. Does not grant product access."""
+
+    __tablename__ = "billing_recipients"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    email: Mapped[str] = mapped_column(String(320), nullable=False)
+    kind: Mapped[str] = mapped_column(String(20), nullable=False, default="billing")
+    is_primary: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    disabled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+
+    __table_args__ = (
+        UniqueConstraint("organization_id", "email", name="uq_billing_recipient_org_email"),
+        CheckConstraint(f"kind IN {BILLING_RECIPIENT_KINDS}", name="ck_billing_recipient_kind"),
+        Index(
+            "uq_billing_recipient_primary",
+            "organization_id",
+            unique=True,
+            postgresql_where=text("is_primary AND disabled_at IS NULL"),
+            sqlite_where=text("is_primary AND disabled_at IS NULL"),
+        ),
     )
