@@ -31,6 +31,8 @@ email-validator==2.3.0
 # Transitive dependency pins for CVE fixes
 idna==3.20
 urllib3==2.8.0
+# GHSA-6q48-6c7w-9gw2 (critical): compromised emSign root CAs.
+certifi==2026.10.19
 msgpack==1.2.3
 tornado==6.5.10
 bleach==6.4.0

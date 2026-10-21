@@ -24,3 +24,5 @@ pytest-cov==7.1.0
 # Transitive dependency pins for CVE fixes
 langgraph-checkpoint==4.3.0
 langgraph-sdk==0.4.7
+# GHSA-6q48-6c7w-9gw2 (critical): compromised emSign root CAs.
+certifi==2026.10.19
