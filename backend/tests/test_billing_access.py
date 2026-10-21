@@ -259,3 +259,147 @@ async def test_overdue_reason_message_is_actionable(db_session, ctx):
     assert reason == REASON_OVERDUE
     message = read_only_message(reason)
     assert "Settle the invoice" in message
+
+
+@pytest_asyncio.fixture
+async def two_orgs(db_session: AsyncSession):
+    """Owner belongs to a healthy org (JWT active) and a lapsed org (path)."""
+    owner = await _make_user(db_session, "scope-owner@example.com")
+    member = await _make_user(db_session, "scope-member@example.com")
+    healthy = Organization(
+        id=uuid.uuid4(),
+        name="Healthy Org",
+        slug=f"healthy-{uuid.uuid4().hex[:6]}",
+        kind="company",
+        sku="pro",
+        created_by_user_id=owner.id,
+    )
+    lapsed = Organization(
+        id=uuid.uuid4(),
+        name="Lapsed Org",
+        slug=f"lapsed-{uuid.uuid4().hex[:6]}",
+        kind="company",
+        sku="pro",
+        created_by_user_id=owner.id,
+    )
+    db_session.add_all([healthy, lapsed])
+    await db_session.flush()
+    for org, role in ((healthy, "owner"), (lapsed, "owner")):
+        db_session.add(
+            OrganizationMembership(
+                id=uuid.uuid4(),
+                organization_id=org.id,
+                user_id=owner.id,
+                role=role,
+            )
+        )
+    db_session.add(
+        OrganizationMembership(
+            id=uuid.uuid4(),
+            organization_id=lapsed.id,
+            user_id=member.id,
+            role="member",
+        )
+    )
+    await db_session.commit()
+
+    db_session.add(
+        Subscription(
+            organization_id=healthy.id,
+            sku="pro",
+            status="active",
+            cycle="monthly",
+            provider="manual",
+        )
+    )
+    db_session.add(
+        Subscription(
+            organization_id=lapsed.id,
+            sku="pro",
+            status="past_due",
+            cycle="monthly",
+            provider="manual",
+        )
+    )
+    await db_session.commit()
+    return {"owner": owner, "member": member, "healthy": healthy, "lapsed": lapsed}
+
+
+@pytest.mark.asyncio
+async def test_path_org_is_judged_not_the_jwt_active_org(db_session, two_orgs):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            # JWT is scoped to the healthy org, but the path writes to the lapsed one.
+            response = await client.patch(
+                f"/api/orgs/{two_orgs['lapsed'].id}",
+                headers=_auth(two_orgs["owner"], two_orgs["healthy"].id),
+                json={"name": "Renamed while lapsed"},
+            )
+            assert response.status_code == 403, response.text
+            assert "read-only" in response.json()["detail"]
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_healthy_path_org_still_allows_writes(db_session, two_orgs):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.patch(
+                f"/api/orgs/{two_orgs['healthy'].id}",
+                headers=_auth(two_orgs["owner"], two_orgs["lapsed"].id),
+                json={"name": "Renamed healthy"},
+            )
+            assert response.status_code == 200, response.text
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_member_can_leave_a_lapsed_workspace(db_session, two_orgs):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.delete(
+                f"/api/orgs/{two_orgs['lapsed'].id}/members/{two_orgs['member'].id}",
+                headers=_auth(two_orgs["member"], two_orgs["lapsed"].id),
+            )
+            assert response.status_code == 204, response.text
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_admin_cannot_remove_another_member_while_lapsed(db_session, two_orgs):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.delete(
+                f"/api/orgs/{two_orgs['lapsed'].id}/members/{two_orgs['member'].id}",
+                headers=_auth(two_orgs["owner"], two_orgs["lapsed"].id),
+            )
+            assert response.status_code == 403, response.text
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_invite_is_blocked_on_the_path_org(db_session, two_orgs):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                f"/api/orgs/{two_orgs['lapsed'].id}/invites",
+                headers=_auth(two_orgs["owner"], two_orgs["healthy"].id),
+                json={"email": "new@example.com", "role": "member"},
+            )
+            assert response.status_code == 403, response.text
+    finally:
+        app.dependency_overrides.clear()

@@ -231,7 +231,15 @@ The two "allow" escape hatches are deliberate:
 - **No row** must never lock an org. The lifecycle beat creates rows; backfill only covers orgs that paid. A missing row is missing data, not evidence of non-payment.
 - **Enterprise** is a custom contract. Self-serve status must not override it.
 
-Enforced via the `BILLING_WRITE` dependency on write routes:
+Three dependency variants, chosen by how the handler finds its target org:
+
+| Constant | Judges | Use when |
+|---|---|---|
+| `BILLING_WRITE` | the JWT's **active** org | the handler resolves its target with `get_active_org_id(request)` |
+| `BILLING_WRITE_ORG` | the **`{org_id}` path param** | the handler writes to an org named in the path |
+| `BILLING_WRITE_MEMBER` | path org, **except self** | member removal, where leaving must stay possible |
+
+The split matters: a user can hold several memberships, so judging a path-scoped route by the JWT's active org lets a healthy workspace unlock a lapsed one — and blocks the reverse. Enforced on write routes:
 
 | Area | Blocked writes |
 |---|---|
@@ -243,9 +251,9 @@ Enforced via the `BILLING_WRITE` dependency on write routes:
 | Guard | enable, link asset, disable agent, host token, enroll token create/revoke, sync |
 | API keys | generate, revoke, delete |
 | AI keys | create, delete |
-| Workspace | update org, change role, remove member, create/revoke invite |
+| Workspace | update org, change role, remove another member, create/revoke invite |
 
-Never blocked: all GET routes, exports, invoice/billing endpoints, subscription overview, and plan-change requests. A read-only customer must be able to pay or upgrade without contacting support.
+Never blocked: all GET routes, exports, invoice/billing endpoints, subscription overview, and plan-change requests. A read-only customer must be able to pay or upgrade without contacting support. A member removing **themselves** (`DELETE /orgs/{org_id}/members/{self}`) is also never blocked: leaving is not spend, and blocking it would trap a user in a lapsed workspace until support intervenes.
 
 Deliberately **not** gated: agent-token ingest routes (`/agent/results`, `/agent/waf-events`, `/heartbeat/{token}`, `/enroll`) and org creation/join. Those are not customer-initiated spend.
 
