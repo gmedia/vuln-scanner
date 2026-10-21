@@ -113,7 +113,7 @@ export function WorkspaceInvoiceCard({
             {t("invoicePrintAmount")}
           </p>
           <p className="font-mono text-lg font-semibold tabular-nums text-foreground">
-            Rp {invoice.amount_idr.toLocaleString("id-ID")}
+            Rp {(invoice.total_idr ?? invoice.amount_idr).toLocaleString("id-ID")}
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {t("invoicePrintIssued")} {issued}

@@ -167,7 +167,7 @@ class BillingService:
             provider="manual",
             provider_ref=reference,
             created_by_user_id=actor.id,
-            amount_idr=inv.amount_idr,
+            amount_idr=inv.total_idr or inv.amount_idr,
             currency="IDR",
             status="succeeded",
             method=method,
@@ -229,7 +229,7 @@ class BillingService:
                 invoice_id=inv.id,
                 provider=provider,
                 provider_ref=ref,
-                amount_idr=inv.amount_idr,
+                amount_idr=inv.total_idr or inv.amount_idr,
                 status="pending",
                 method=str(data.get("method") or "") or None,
             )

@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from calendar import monthrange
 from datetime import UTC, datetime, timedelta
+from decimal import ROUND_HALF_UP, Decimal
 
 from fastapi import HTTPException, Response, status
 from sqlalchemy import func, select
@@ -57,6 +58,10 @@ def to_item(inv: OrgInvoice, *, org_name: str | None, include_bank: bool) -> dic
         "sku": inv.sku,
         "seats": PRODUCT_SEATS.get(inv.product, PRODUCT_SEATS["scan"]).get(inv.sku, 1),
         "amount_idr": inv.amount_idr,
+        "dpp_idr": inv.dpp_idr,
+        "ppn_idr": inv.ppn_idr,
+        "pph23_idr": inv.pph23_idr,
+        "total_idr": inv.total_idr,
         "period_start": inv.period_start,
         "period_end": inv.period_end,
         "due_date": inv.due_date,
@@ -149,10 +154,10 @@ class InvoiceService:
         if cat is None or not cat.invoicable:
             raise HTTPException(status_code=400, detail="SKU is not invoicable")
         start, end = month_bounds_utc(period_start)
+        profile = await self.db.get(OrgBillingProfile, organization_id)
         if due_date is not None:
             due = _as_utc(due_date)
         else:
-            profile = await self.db.get(OrgBillingProfile, organization_id)
             term_days = (
                 profile.payment_terms_days
                 if profile is not None
@@ -172,13 +177,38 @@ class InvoiceService:
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"{product.capitalize()} invoice already exists for this period",
             )
+        base = int(cat.list_idr)
+        if profile is not None and profile.pkp_status == "pkp":
+            dpp = int(
+                (Decimal(base) * Decimal(11) / Decimal(12)).quantize(
+                    Decimal("1"), rounding=ROUND_HALF_UP
+                )
+            )
+            ppn = int(
+                (Decimal(dpp) * Decimal("0.12")).quantize(
+                    Decimal("1"), rounding=ROUND_HALF_UP
+                )
+            )
+            pph23 = int(
+                (Decimal(base) * Decimal("0.02")).quantize(
+                    Decimal("1"), rounding=ROUND_HALF_UP
+                )
+            )
+            total = base + ppn
+        else:
+            dpp, ppn, pph23, total = base, 0, 0, base
+
         inv = OrgInvoice(
             id=uuid.uuid4(),
             organization_id=organization_id,
             number=await next_invoice_number(self.db, start),
             product=product,
             sku=sku,
-            amount_idr=int(cat.list_idr),
+            amount_idr=base,
+            dpp_idr=dpp,
+            ppn_idr=ppn,
+            pph23_idr=pph23,
+            total_idr=total,
             period_start=start,
             period_end=end,
             due_date=due,

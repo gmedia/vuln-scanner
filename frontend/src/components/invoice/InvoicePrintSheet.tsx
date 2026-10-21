@@ -16,6 +16,10 @@ export type InvoicePrintData = {
   product: InvoiceProduct;
   seats: number;
   amount_idr: number;
+  dpp_idr?: number;
+  ppn_idr?: number;
+  pph23_idr?: number;
+  total_idr?: number;
   period_start: string;
   period_end: string;
   due_date?: string;
@@ -42,6 +46,8 @@ export function InvoicePrintSheet({
   const skuLabel = invoice.sku.toUpperCase();
   const seats = invoice.seats;
   const amount = formatIdr(invoice.amount_idr);
+  const total = formatIdr(invoice.total_idr ?? invoice.amount_idr);
+  const hasTax = (invoice.ppn_idr ?? 0) > 0;
   const issued = formatPeriod(invoice.created_at ?? invoice.period_start);
   const due = invoice.due_date ? formatPeriod(invoice.due_date) : null;
   const period = `${formatPeriod(invoice.period_start)} – ${formatPeriod(invoice.period_end)}`;
@@ -122,19 +128,31 @@ export function InvoicePrintSheet({
           <span>{t("invoicePrintSubtotal")}</span>
           <span className="num">{amount}</span>
         </p>
+        {hasTax ? (
+          <>
+            <p className="inv-totals-row">
+              <span>{t("invoicePrintDpp")}</span>
+              <span className="num">{formatIdr(invoice.dpp_idr ?? 0)}</span>
+            </p>
+            <p className="inv-totals-row">
+              <span>{t("invoicePrintPpn")}</span>
+              <span className="num">{formatIdr(invoice.ppn_idr ?? 0)}</span>
+            </p>
+          </>
+        ) : null}
         <p className="inv-totals-row inv-totals-grand">
           <span>{t("invoicePrintTotal")}</span>
-          <span className="num">{amount}</span>
+          <span className="num">{total}</span>
         </p>
         {invoice.status === "paid" ? (
           <p className="inv-totals-row">
             <span>{t("invoicePrintAmountPaid")}</span>
-            <span className="num">{amount}</span>
+            <span className="num">{total}</span>
           </p>
         ) : (
           <p className="inv-totals-row">
             <span>{t("invoicePrintAmountDue")}</span>
-            <span className="num">{amount}</span>
+            <span className="num">{total}</span>
           </p>
         )}
         {invoice.status === "paid" && invoice.bank_ref ? (

@@ -152,6 +152,10 @@ export interface OrgInvoiceItem {
   sku: string;
   seats: number;
   amount_idr: number;
+  dpp_idr?: number;
+  ppn_idr?: number;
+  pph23_idr?: number;
+  total_idr?: number;
   period_start: string;
   period_end: string;
   due_date?: string;

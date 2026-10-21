@@ -1,7 +1,7 @@
 # Spec: Sinexis Invoice v1 (independent of GMD)
 
 **Status:** **Shipped on `main`** (I1–I9 pay loop). Owner: Sinexis bills Scan SKU **in-app**, not as a GMD colo/VPS `service_id`.
-**Seller copy:** env `INVOICE_BANK_*` only. No NPWP/PPN engine in v1 (tax_idr implicit 0). **HTML print** = product-depth track **S1b** in [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md). **I10 PDF shipped:** `GET .../export?format=pdf` reuses `render_scan_pdf` (no new PDF library, no gateway).
+**Seller copy:** env `INVOICE_BANK_*` only. **Tax update:** buyer identity (NPWP/NITKU/PKP) lives in `org_billing_profiles`, and invoices store `dpp_idr`/`ppn_idr`/`pph23_idr`/`total_idr` (see [`billing-core-v1.md`](billing-core-v1.md) §2.8). Faktur pajak XML/PJAP export is still out of scope. **HTML print** = product-depth track **S1b** in [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md). **I10 PDF shipped:** `GET .../export?format=pdf` reuses `render_scan_pdf` (no new PDF library, no gateway).
 **Does not** add Midtrans/Xendit. Does **not** merge AI Gateway IDR wallet. Does **not** mix HPP COGS into invoices. Does **not** revive Scan credits as a meter.
 
 ---
@@ -12,7 +12,7 @@
 |----|--------|----------|
 | **I1** | Who bills | **Sinexis** issues invoices. GMD rack/VPS invoices stay in GMD. No silent-bundle. |
 | **I2** | What is sold | **Scan SKU seats** (Basic / Pro / Multi; P0 lock 300_000 / 650_000 / 2_000_000) **and Host Protect SKU seats** (H4 **locked 2026-10-12**: 150_000 / 350_000 / 900_000). **H9 shipped:** Host catalog `invoicable=true`. Paid Host does **not** set `organizations.sku`. Unique period is per `(organization_id, product, period_start)` — Scan + Host same month OK. **Invoice-ok** for the short “ganti Imunify” line is **this Sinexis in-app path** (I1), **not** GMD `service_id` — see [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) §7.3. |
-| **I3** | Payment | **Manual bank transfer.** Admin marks `paid` after ops sees the transfer. No gateway, no auto-charge, no tax line. |
+| **I3** | Payment | **Manual bank transfer.** Admin marks `paid` after ops sees the transfer. No gateway, no auto-charge. **Updated:** DPP/PPN lines are printed for PKP buyers; non-PKP invoices keep `ppn_idr = 0`. |
 | **I4** | Period | Calendar month (UTC). One non-void invoice per `(organization_id, product, period_start)`. Scan + Host same month OK. |
 | **I5** | SKU mutation | Org admin **cannot** `PATCH /orgs/{id}` `sku` (403). Paid Scan invoice (or platform-admin set) is the gate. |
 | **I6** | New org default | `organizations.sku` default **`basic`** for **new** rows. Existing orgs unchanged. |

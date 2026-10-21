@@ -133,6 +133,23 @@ Billing recipients deliberately receive the same dunning mail as the primary. Sp
 
 The hourly beat closes scheduled cancellations once `current_period_end <= now` (§2.3 step 1).
 
+## 2.8 Invoice tax breakdown
+
+`org_invoices` stores four amounts alongside `amount_idr` (the catalog list price):
+
+| Column | Meaning |
+|---|---|
+| `dpp_idr` | DPP nilai lain: `amount × 11/12` for a PKP buyer, else `amount` |
+| `ppn_idr` | PPN: `12% × dpp` for a PKP buyer, else 0 |
+| `total_idr` | Amount payable: `amount + ppn` |
+| `pph23_idr` | Informational: `2% × amount` (buyer withholds; not added to total) |
+
+Computation happens at invoice creation from `org_billing_profiles.pkp_status`. Rounding is half-up to the rupiah. Existing invoices are backfilled with `dpp = total = amount` and zero tax, so the pay loop and historical documents are unchanged.
+
+`PaymentAttempt.amount_idr` records `total_idr`, because that is what the customer actually transfers. The PDF and the SPA card/print sheet show Subtotal, DPP, PPN, and Total when `ppn_idr > 0`.
+
+PPh 23 is stored but **not** printed on the invoice: it is withheld by the buyer, and showing it as a deduction from the invoice total would be wrong. Faktur pajak XML/PJAP export is not implemented yet; this slice captures the fields and math.
+
 ## 3. State machine
 
 Statuses: `incomplete`, `active`, `past_due`, `canceled`.

@@ -400,7 +400,7 @@ function AdminInvoices() {
                       {inv.organization_name ?? "—"}
                     </p>
                     <p className="mt-1 text-[11px] text-muted-foreground">
-                      {inv.product} · {inv.sku} · {formatIdr(inv.amount_idr)}
+                      {inv.product} · {inv.sku} · {formatIdr(inv.total_idr ?? inv.amount_idr)}
                     </p>
                     <div className="mt-3 flex justify-end">
                       <DropdownMenu>
@@ -501,7 +501,7 @@ function AdminInvoices() {
                       <TableCell>{inv.product}</TableCell>
                       <TableCell className="uppercase">{inv.sku}</TableCell>
                       <TableCell className="font-mono tabular-nums">
-                        {formatIdr(inv.amount_idr)}
+                        {formatIdr(inv.total_idr ?? inv.amount_idr)}
                       </TableCell>
                       <TableCell>
                         <Badge variant="default">{inv.status}</Badge>
