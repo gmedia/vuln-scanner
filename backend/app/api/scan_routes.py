@@ -25,6 +25,7 @@ from app.schemas.scan import (
 )
 from app.services.auth import get_active_org_id, get_current_user
 from app.services.baseline_diff import get_scan_diff
+from app.services.billing_access import BILLING_WRITE
 from app.services.executive_report import render_executive_html
 from app.services.scan_pdf import ScanPdfUnavailableError, render_scan_pdf
 from app.services.scanner import ScannerService
@@ -249,7 +250,7 @@ def _render_pdf_html(job: ScanJobDetailResponse) -> str:
     )
 
 
-@router.post("/scan/ip", response_model=ScanJobResponse, status_code=202)
+@router.post("/scan/ip", response_model=ScanJobResponse, status_code=202, dependencies=BILLING_WRITE)
 async def start_ip_scan(
     request: Request,
     req: ScanRequest,
@@ -270,7 +271,7 @@ async def start_ip_scan(
     return job
 
 
-@router.post("/scan/domain", response_model=ScanJobResponse, status_code=202)
+@router.post("/scan/domain", response_model=ScanJobResponse, status_code=202, dependencies=BILLING_WRITE)
 async def start_domain_scan(
     request: Request,
     req: DomainScanRequest,
@@ -290,7 +291,7 @@ async def start_domain_scan(
     return job
 
 
-@router.post("/scan/mobile", response_model=ScanJobResponse, status_code=202)
+@router.post("/scan/mobile", response_model=ScanJobResponse, status_code=202, dependencies=BILLING_WRITE)
 async def start_mobile_scan(
     request: Request,
     file: UploadFile = File(...),

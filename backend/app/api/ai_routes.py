@@ -23,6 +23,7 @@ from app.schemas.ai_gateway import (
 from app.services.ai_keys import create_key, list_keys, revoke_key
 from app.services.ai_wallet import get_wallet as get_wallet_row
 from app.services.auth import get_active_org_id, get_current_user
+from app.services.billing_access import BILLING_WRITE
 from app.services.organization import require_membership
 
 router = APIRouter(prefix="/ai", tags=["ai"])
@@ -131,7 +132,7 @@ async def get_keys(
     return AiKeyList(items=[_key_out(r) for r in rows], total=len(rows))
 
 
-@router.post("/keys", response_model=AiKeyOut, status_code=201)
+@router.post("/keys", response_model=AiKeyOut, status_code=201, dependencies=BILLING_WRITE)
 async def post_key(
     body: AiKeyCreate,
     request: Request,
@@ -147,7 +148,7 @@ async def post_key(
     return _key_out(row, plain)
 
 
-@router.delete("/keys/{key_id}", response_model=AiKeyOut)
+@router.delete("/keys/{key_id}", response_model=AiKeyOut, dependencies=BILLING_WRITE)
 async def delete_key(
     key_id: UUID,
     request: Request,

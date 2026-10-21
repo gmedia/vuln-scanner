@@ -448,6 +448,31 @@ function Subscription() {
                 </div>
               </div>
 
+              {data.capabilities.read_only ? (
+                <WorkspaceNotice
+                  tone={
+                    data.capabilities.read_only_reason === "subscription_canceled"
+                      ? "danger"
+                      : "warn"
+                  }
+                  role="status"
+                >
+                  <div data-testid="subscription-read-only">
+                    <p className="text-sm font-medium text-foreground">
+                      {t("readOnlyTitle")}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {data.capabilities.read_only_reason === "subscription_canceled"
+                        ? t("readOnlyCanceled")
+                        : t("readOnlyOverdue")}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {t("readOnlyBilling")}
+                    </p>
+                  </div>
+                </WorkspaceNotice>
+              ) : null}
+
               {plan.billing_status === "past_due" ? (
                 <WorkspaceNotice
                   tone={plan.status === "expired" ? "danger" : "warn"}

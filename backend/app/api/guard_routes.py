@@ -24,6 +24,7 @@ from app.schemas.guard import (
     GuardSyncResponse,
 )
 from app.services.auth import get_active_org_id, get_current_user
+from app.services.billing_access import BILLING_WRITE
 from app.services.guard import GuardService
 
 router = APIRouter(prefix="/guard", tags=["guard"])
@@ -41,7 +42,7 @@ async def guard_status(
     return GuardStatusResponse.model_validate(data)
 
 
-@router.post("/enable", response_model=GuardStatusResponse)
+@router.post("/enable", response_model=GuardStatusResponse, dependencies=BILLING_WRITE)
 async def guard_enable(
     request: Request,
     current_user: User = Depends(get_current_user),
@@ -99,7 +100,7 @@ async def list_alerts(
     return [GuardAlertResponse.model_validate(r) for r in rows]
 
 
-@router.patch("/agents/{agent_id}/asset", response_model=GuardAgentResponse)
+@router.patch("/agents/{agent_id}/asset", response_model=GuardAgentResponse, dependencies=BILLING_WRITE)
 async def link_agent_asset(
     agent_id: UUID,
     body: GuardAgentAssetLink,
@@ -132,7 +133,7 @@ async def link_agent_asset(
     )
 
 
-@router.post("/agents/{agent_id}/disable", status_code=204)
+@router.post("/agents/{agent_id}/disable", status_code=204, dependencies=BILLING_WRITE)
 async def disable_agent(
     agent_id: UUID,
     request: Request,
@@ -150,6 +151,7 @@ async def disable_agent(
     "/agents/{agent_id}/host-token",
     response_model=GuardHostAgentTokenCreated,
     status_code=201,
+    dependencies=BILLING_WRITE,
 )
 async def issue_host_agent_token(
     agent_id: UUID,
@@ -165,7 +167,7 @@ async def issue_host_agent_token(
     return GuardHostAgentTokenCreated(agent_id=agent.id, token=raw)
 
 
-@router.post("/enroll-tokens", response_model=GuardEnrollTokenCreated, status_code=201)
+@router.post("/enroll-tokens", response_model=GuardEnrollTokenCreated, status_code=201, dependencies=BILLING_WRITE)
 async def create_enroll_token(
     request: Request,
     body: GuardEnrollTokenCreate,
@@ -196,7 +198,7 @@ async def list_enroll_tokens(
     return [GuardEnrollTokenMeta.model_validate(r) for r in rows]
 
 
-@router.delete("/enroll-tokens/{token_id}", status_code=204)
+@router.delete("/enroll-tokens/{token_id}", status_code=204, dependencies=BILLING_WRITE)
 async def revoke_enroll_token(
     token_id: UUID,
     request: Request,
@@ -219,7 +221,7 @@ async def enroll_agent(
     return GuardEnrollResponse.model_validate(data)
 
 
-@router.post("/sync", response_model=GuardSyncResponse)
+@router.post("/sync", response_model=GuardSyncResponse, dependencies=BILLING_WRITE)
 async def sync_guard(
     request: Request,
     current_user: User = Depends(get_current_user),

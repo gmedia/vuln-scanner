@@ -116,5 +116,9 @@
   "attemptStatus_refunded": "Refunded",
   "attemptRef": "Ref",
   "attemptMethod": "Method",
-  "usageOver": "Over by {{over}} — Wazuh sync can exceed the seat"
+  "usageOver": "Over by {{over}} — Wazuh sync can exceed the seat",
+  "readOnlyTitle": "This workspace is read-only",
+  "readOnlyOverdue": "The invoice is overdue. Dashboards, history, exports, and billing stay available; new scans, sites, monitors, agents, and invites are paused.",
+  "readOnlyCanceled": "The subscription has ended. Renew to create scans, sites, monitors, or agents.",
+  "readOnlyBilling": "Billing stays open so you can settle the invoice or request a plan change."
 }

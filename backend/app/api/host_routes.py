@@ -23,6 +23,7 @@ from app.schemas.host_protect import (
 )
 from app.schemas.host_waf import MAX_AGENT_WAF_EVENTS, HostAgentWafEventsIngest, HostAgentWafEventsResponse
 from app.services.auth import get_active_org_id, get_current_user
+from app.services.billing_access import BILLING_WRITE
 from app.services.host_agent_ingest import (
     ack_agent_command,
     ingest_agent_results,
@@ -45,7 +46,7 @@ async def list_sites(
     return await HostProtectService(db).list_sites(current_user, get_active_org_id(request))
 
 
-@router.post("/sites", response_model=HostSiteResponse, status_code=201)
+@router.post("/sites", response_model=HostSiteResponse, status_code=201, dependencies=BILLING_WRITE)
 async def create_site(
     request: Request,
     body: HostSiteCreate,
@@ -65,7 +66,7 @@ async def get_site(
     return await HostProtectService(db).get_site(current_user, get_active_org_id(request), site_id)
 
 
-@router.patch("/sites/{site_id}", response_model=HostSiteResponse)
+@router.patch("/sites/{site_id}", response_model=HostSiteResponse, dependencies=BILLING_WRITE)
 async def update_site(
     request: Request,
     site_id: UUID,
@@ -76,7 +77,7 @@ async def update_site(
     return await HostProtectService(db).update_site(current_user, get_active_org_id(request), site_id, body)
 
 
-@router.delete("/sites/{site_id}", status_code=204)
+@router.delete("/sites/{site_id}", status_code=204, dependencies=BILLING_WRITE)
 async def delete_site(
     request: Request,
     site_id: UUID,
@@ -86,7 +87,7 @@ async def delete_site(
     await HostProtectService(db).delete_site(current_user, get_active_org_id(request), site_id)
 
 
-@router.post("/sites/{site_id}/scan", response_model=HostScanResponse, status_code=201)
+@router.post("/sites/{site_id}/scan", response_model=HostScanResponse, status_code=201, dependencies=BILLING_WRITE)
 async def enqueue_scan(
     request: Request,
     site_id: UUID,
@@ -124,7 +125,7 @@ async def list_hits(
     )
 
 
-@router.post("/hits/{hit_id}/quarantine", response_model=HostHitResponse)
+@router.post("/hits/{hit_id}/quarantine", response_model=HostHitResponse, dependencies=BILLING_WRITE)
 async def quarantine_hit(
     request: Request,
     hit_id: UUID,
@@ -134,7 +135,7 @@ async def quarantine_hit(
     return await HostProtectService(db).quarantine_hit(current_user, get_active_org_id(request), hit_id)
 
 
-@router.post("/hits/{hit_id}/restore", response_model=HostHitResponse)
+@router.post("/hits/{hit_id}/restore", response_model=HostHitResponse, dependencies=BILLING_WRITE)
 async def restore_hit(
     request: Request,
     hit_id: UUID,
@@ -220,7 +221,7 @@ async def ack_host_agent_command(
     return await ack_agent_command(db, x_host_agent_token, body)
 
 
-@router.post("/hits/{hit_id}/ignore", response_model=HostHitResponse)
+@router.post("/hits/{hit_id}/ignore", response_model=HostHitResponse, dependencies=BILLING_WRITE)
 async def ignore_hit(
     request: Request,
     hit_id: UUID,

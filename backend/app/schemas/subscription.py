@@ -68,6 +68,8 @@ class SubscriptionCapabilities(BaseModel):
     can_request_change: bool
     can_view_invoices: bool
     can_self_serve: bool = False
+    read_only: bool = False
+    read_only_reason: str | None = None
 
 
 class SubscriptionRequestItem(BaseModel):

@@ -42,6 +42,7 @@ from app.schemas.subscription import (
     SubscriptionUsageItem,
     WorkspaceSeats,
 )
+from app.services.billing_access import billing_write_block
 from app.services.invoice import InvoiceService
 from app.services.organization import role_at_least
 
@@ -365,6 +366,7 @@ class SubscriptionService:
         usage, seats = await self._usage(org.id, org.sku or "basic")
         catalog, bundles = await self._catalog()
         can_manage = role_at_least(role, "admin")
+        read_only_reason = await billing_write_block(self.db, org.id)
         return SubscriptionOverviewResponse(
             organization_id=org.id,
             organization_name=org.name,
@@ -383,6 +385,8 @@ class SubscriptionService:
                 can_request_change=can_manage,
                 can_view_invoices=can_manage,
                 can_self_serve=False,
+                read_only=read_only_reason is not None,
+                read_only_reason=read_only_reason,
             ),
             pending_request=await self._pending_request(org.id),
             recent_attempts=(

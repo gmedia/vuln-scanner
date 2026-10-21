@@ -27,6 +27,7 @@ from app.schemas.organization import (
     OrgUpdateRequest,
 )
 from app.services.auth import create_access_token, create_refresh_token, get_current_user
+from app.services.billing_access import BILLING_WRITE
 from app.services.email import send_invite_email
 from app.services.invoice import InvoiceService, invoice_pdf_response, to_item
 from app.services.organization import OrganizationService, require_membership
@@ -66,7 +67,7 @@ async def get_org(
     return OrgDetailResponse.model_validate(org)
 
 
-@router.patch("/orgs/{org_id}", response_model=OrgDetailResponse)
+@router.patch("/orgs/{org_id}", response_model=OrgDetailResponse, dependencies=BILLING_WRITE)
 async def update_org(
     org_id: UUID,
     body: OrgUpdateRequest,
@@ -131,7 +132,7 @@ async def list_members(
     return out
 
 
-@router.patch("/orgs/{org_id}/members/{user_id}", response_model=MemberResponse)
+@router.patch("/orgs/{org_id}/members/{user_id}", response_model=MemberResponse, dependencies=BILLING_WRITE)
 async def change_member_role(
     org_id: UUID,
     user_id: UUID,
@@ -148,7 +149,7 @@ async def change_member_role(
     )
 
 
-@router.delete("/orgs/{org_id}/members/{user_id}", status_code=204)
+@router.delete("/orgs/{org_id}/members/{user_id}", status_code=204, dependencies=BILLING_WRITE)
 async def remove_member(
     org_id: UUID,
     user_id: UUID,
@@ -161,7 +162,7 @@ async def remove_member(
         await OrganizationService(db).remove_member(org_id, current_user, user_id)
 
 
-@router.post("/orgs/{org_id}/invites", response_model=InviteResponse, status_code=201)
+@router.post("/orgs/{org_id}/invites", response_model=InviteResponse, status_code=201, dependencies=BILLING_WRITE)
 async def create_invite(
     org_id: UUID,
     body: InviteCreateRequest,
@@ -204,7 +205,7 @@ async def list_invites(
     return [InviteResponse.model_validate(i) for i in invites]
 
 
-@router.delete("/orgs/{org_id}/invites/{invite_id}", status_code=204)
+@router.delete("/orgs/{org_id}/invites/{invite_id}", status_code=204, dependencies=BILLING_WRITE)
 async def revoke_invite(
     org_id: UUID,
     invite_id: UUID,

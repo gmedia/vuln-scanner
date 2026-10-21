@@ -56,6 +56,7 @@ All status colours route through `components/subscription/subscriptionChrome.ts`
 | Primitive | Anatomy | States |
 |---|---|---|
 | Plan summary (`subscription-summary`) | `WorkspaceShell` + head + plan name/price/period + status badge | active / grace / pending_payment / draft / expired / unbilled / enterprise |
+| Read-only notice (`subscription-read-only`) | `WorkspaceNotice` above every other notice; `tone="warn"` for overdue, `tone="danger"` for ended | overdue / canceled |
 | Billing notice (`subscription-past-due` / `-cancel-scheduled` / `-grace`) | `WorkspaceNotice tone="warn"` above the pending-request notice; only one renders | past_due / cancel-at-period-end / grace |
 | Payment history (`subscription-attempts`) | bordered rows under the invoice list, manager-only | empty / list |
 | Capacity tile (`subscription-usage-*`) | `StatTile` + `Progress` + quota label | ok / warn ≥80% / cap 100% / **over seat** (`used > limit`) / custom limit |
@@ -66,7 +67,7 @@ All status colours route through `components/subscription/subscriptionChrome.ts`
 | Request dialog | controlled `AlertDialog` + `Textarea` + submit | idle / pending / error |
 | FAQ | `Accordion` | collapsed / expanded |
 
-Notice precedence: `past_due` → `cancel_at_period_end` → `grace`. Never stack them.
+Notice precedence: `read_only` → `past_due` → `cancel_at_period_end` → `grace`. The read-only notice is informational and may stack with a plan notice; the other three never stack.
 
 Over-seat precedence: `used > limit` renders "Over by N" instead of "Capacity full". The bar stays capped at 100%.
 

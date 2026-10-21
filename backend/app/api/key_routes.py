@@ -14,6 +14,7 @@ from app.schemas.api_key import (
     KeyRevokeResponse,
 )
 from app.services.auth import get_current_admin
+from app.services.billing_access import BILLING_WRITE
 from app.utils import hash_key
 
 router = APIRouter(prefix="/keys", tags=["keys"])
@@ -25,7 +26,7 @@ def _generate_key() -> str:
     return API_KEY_PREFIX + secrets.token_hex(32)
 
 
-@router.post("/generate", response_model=KeyResponse, status_code=201)
+@router.post("/generate", response_model=KeyResponse, status_code=201, dependencies=BILLING_WRITE)
 async def generate_key(
     req: KeyCreateRequest,
     current_admin: User = Depends(get_current_admin),
@@ -55,7 +56,7 @@ async def generate_key(
     )
 
 
-@router.post("/revoke/{key_id}", response_model=KeyRevokeResponse)
+@router.post("/revoke/{key_id}", response_model=KeyRevokeResponse, dependencies=BILLING_WRITE)
 async def revoke_key(
     key_id: str,
     current_admin: User = Depends(get_current_admin),
@@ -96,7 +97,7 @@ async def list_keys(
     )
 
 
-@router.delete("/{key_id}", status_code=204)
+@router.delete("/{key_id}", status_code=204, dependencies=BILLING_WRITE)
 async def delete_key(
     key_id: str,
     current_admin: User = Depends(get_current_admin),

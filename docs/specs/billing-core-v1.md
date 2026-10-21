@@ -211,3 +211,42 @@ A future Midtrans/Xendit adapter translates its native event into this payload b
 - Cancel at period end then immediate; second cancel 409.
 - Admin list + role gate.
 - Invalid transition raises.
+
+## 9. Read-only gate
+
+A lapsed workspace becomes **read-only**, never locked. The customer keeps visibility and billing so they can see what they owe and settle it.
+
+`app/services/billing_access.py` resolves the active org's subscription:
+
+| Subscription state | Writes | Reads / exports / billing |
+|---|---|---|
+| `active`, `trialing`, `incomplete` | allowed | allowed |
+| `past_due`, `unpaid` | **403** (`payment_overdue`) | allowed |
+| `canceled` | **403** (`subscription_canceled`) | allowed |
+| no row | allowed | allowed |
+| org `sku = enterprise` | allowed | allowed |
+
+The two "allow" escape hatches are deliberate:
+
+- **No row** must never lock an org. The lifecycle beat creates rows; backfill only covers orgs that paid. A missing row is missing data, not evidence of non-payment.
+- **Enterprise** is a custom contract. Self-serve status must not override it.
+
+Enforced via the `BILLING_WRITE` dependency on write routes:
+
+| Area | Blocked writes |
+|---|---|
+| Scans | `POST /scan/ip`, `/scan/domain`, `/scan/mobile` |
+| Assets | create, update, delete, tag colors, asset schedule |
+| Schedules | create, update, delete |
+| Uptime | create, update, pause, delete, rotate heartbeat token |
+| Host Protect | create/update/delete site, enqueue scan, quarantine, restore, ignore |
+| Guard | enable, link asset, disable agent, host token, enroll token create/revoke, sync |
+| API keys | generate, revoke, delete |
+| AI keys | create, delete |
+| Workspace | update org, change role, remove member, create/revoke invite |
+
+Never blocked: all GET routes, exports, invoice/billing endpoints, subscription overview, and plan-change requests. A read-only customer must be able to pay or upgrade without contacting support.
+
+Deliberately **not** gated: agent-token ingest routes (`/agent/results`, `/agent/waf-events`, `/heartbeat/{token}`, `/enroll`) and org creation/join. Those are not customer-initiated spend.
+
+`GET /api/orgs/{org_id}/subscription` exposes `capabilities.read_only` and `capabilities.read_only_reason` so the SPA can explain the state instead of only surfacing a 403.

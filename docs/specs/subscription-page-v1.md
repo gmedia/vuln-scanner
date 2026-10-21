@@ -65,6 +65,8 @@ Out:
 
 `recent_attempts` (last 5 `payment_attempts`) is populated only for owner/admin; viewers always receive `[]`.
 
+`capabilities.read_only` / `read_only_reason` mirror the billing access gate (`billing-core-v1.md` §2.5). When true, the page renders one banner (`subscription-read-only`) above the plan notices explaining that dashboards, history, exports, and billing stay available while writes are paused. Reason `subscription_canceled` uses the "ended" copy; `payment_overdue` uses the overdue copy.
+
 ### Capacity meters
 
 - Scale: `quotaState()` (`frontend/src/lib/quota.ts`) — warn at 80%, cap at 100%.
