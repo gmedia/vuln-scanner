@@ -68,6 +68,8 @@ HPP overlay `_SCAN_LIST_IDR` / `_HOST_LIST_IDR` **read from catalog** (fallback 
 | sku | basic\|pro\|multi |
 | amount_idr | int ≥ 0 (snapshot of catalog at create) |
 | period_start / period_end | timestamptz UTC month bounds |
+| due_date | timestamptz; defaults to `period_start` (`INVOICE_DEFAULT_TERM_DAYS`, default 0); overridable per invoice |
+| sent_at | timestamptz nullable; stamped on `draft → sent` |
 | status | `draft` \| `sent` \| `paid` \| `void` |
 | bank_ref | varchar 64 nullable (ops paste) |
 | notes | varchar 500 default '' |
@@ -101,7 +103,7 @@ Admin (`get_current_admin` + existing limiter):
 | GET | `/api/admin/sku-prices` | read-only list price for **all four** services × basic/pro/multi (added 2026-10-13). All four read from `sku_catalog`; the locked constants are fallbacks when a row is missing. Also returns `bundles` (locked bundle vs derived à-la-carte sum + saving) and `annual` (P2 policy), added 2026-10-14. Single source for the `/admin/simulator` prefill. |
 | PUT | `/api/admin/sku-catalog/{product}/{sku}` | `{ list_idr, invoicable? }`; seats immutable in v1; records `updated_by` |
 | GET | `/api/admin/invoices` | filter `status`, `organization_id`; page |
-| POST | `/api/admin/invoices` | `{ organization_id, sku, product?, period_start? }` `product` = `scan` (default) \| `host` \| `uptime` \| `guard`; amount from catalog |
+| POST | `/api/admin/invoices` | `{ organization_id, sku, product?, period_start?, due_date? }` `product` = `scan` (default) \| `host` \| `uptime` \| `guard`; amount from catalog; `due_date` defaults to `period_start` + `INVOICE_DEFAULT_TERM_DAYS` |
 | POST | `/api/admin/invoices/{id}/send` | draft→sent |
 | POST | `/api/admin/invoices/{id}/paid` | `{ bank_ref? }` → paid; apply `org.sku` only when `product=scan` |
 | POST | `/api/admin/invoices/{id}/void` | draft\|sent → void |

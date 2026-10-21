@@ -20,5 +20,6 @@
   "status_draft": "Draft",
   "status_sent": "Sent",
   "status_paid": "Paid",
-  "status_void": "Void"
+  "status_void": "Void",
+  "dueDate": "Due"
 }

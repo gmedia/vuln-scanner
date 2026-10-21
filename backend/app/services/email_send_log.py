@@ -30,6 +30,7 @@ _LABEL_TO_KIND = {
     "Host Protect": "host_protect",
     "Host WAF": "host_waf",
     "Invite": "invite",
+    "Billing reminder": "billing_reminder",
 }
 
 _engine = None

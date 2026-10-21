@@ -20,6 +20,7 @@ BILLING_STATUSES = ("incomplete", "trialing", "active", "past_due", "unpaid", "c
 BILLING_CYCLES = ("monthly", "annual")
 PAYMENT_ATTEMPT_STATUSES = ("pending", "succeeded", "failed", "expired", "refunded")
 PAYMENT_EVENT_STATUSES = ("received", "processed", "ignored", "failed")
+BILLING_REMINDER_STAGES = ("due_soon", "due_today", "overdue_1", "overdue_2", "final", "suspend_notice")
 
 
 class Subscription(Base):
@@ -136,4 +137,46 @@ class PaymentEvent(Base):
         UniqueConstraint("provider", "event_id", name="uq_payment_event_provider_event"),
         CheckConstraint(f"status IN {PAYMENT_EVENT_STATUSES}", name="ck_payment_event_status"),
         Index("ix_payment_events_received_at", "received_at"),
+    )
+
+
+class BillingReminder(Base):
+    """One sent (or attempted) reminder stage per invoice.
+
+    ``stage`` is idempotency: the unique key stops an hourly sweep from
+    emailing the same stage twice. ``stage_rank`` lets the sweep skip stages
+    that were overtaken while the worker was down.
+    """
+
+    __tablename__ = "billing_reminders"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    invoice_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("org_invoices.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    stage: Mapped[str] = mapped_column(String(32), nullable=False)
+    stage_rank: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    sent_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    failed_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    last_error: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+
+    __table_args__ = (
+        UniqueConstraint("invoice_id", "stage", name="uq_billing_reminder_invoice_stage"),
+        CheckConstraint(f"stage IN {BILLING_REMINDER_STAGES}", name="ck_billing_reminder_stage"),
     )

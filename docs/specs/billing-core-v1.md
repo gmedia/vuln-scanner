@@ -71,9 +71,33 @@ It uses `ON CONFLICT (organization_id) DO NOTHING`, so it is idempotent and neve
 `workers/tasks/billing.py::finalize_periods` runs hourly on the `ip_scan` queue:
 
 1. `cancel_at_period_end = true` and `current_period_end <= now` → `canceled`, `ended_at = now`, flag cleared.
-2. `status = 'active'` and `current_period_end + grace <= now` → `past_due`.
+2. The latest non-void **Scan** invoice is `sent` and `due_date + grace <= now` → `past_due`.
 
-Grace is `BILLING_PAST_DUE_GRACE_DAYS` (default **7**). The job never revokes access, never deletes data, and never marks `unpaid`; access enforcement and dunning remain product decisions.
+Grace is `BILLING_PAST_DUE_GRACE_DAYS` (default **7**). `past_due` keys off the invoice **due date**, not `current_period_end`: a net-30 invoice must not be chased on day 7 after the service period. The job never revokes access, never deletes data, and never marks `unpaid`; access enforcement remains a product decision.
+
+## 2.4 Invoice reminders
+
+`workers/tasks/billing.py::send_due_reminders` runs hourly on `ip_scan` and scans invoices with `status='sent'`, `paid_at IS NULL`, and a `due_date`.
+
+| Stage | Offset from `due_date` |
+|---|---|
+| `due_soon` | −3 days |
+| `due_today` | 0 |
+| `overdue_1` | +3 |
+| `overdue_2` | +7 |
+| `final` | +14 |
+| `suspend_notice` | +30 |
+
+- The sweep sends only the **latest** stage that has come due, so a worker outage does not emit a burst of old reminders.
+- `billing_reminders` is unique on `(invoice_id, stage)`; `stage_rank` prevents re-sending an earlier stage.
+- Recipients: verified `owner`/`admin` members of the organization, deduped by email, localized from `users.locale`.
+- `attempts` stops at 3 when no recipient accepted the mail; `sent_count`/`failed_count`/`last_error` are recorded for ops.
+- A stage that fails to send is **retried** on the next sweep while it is still the current stage (up to 3 attempts), instead of being suppressed by the ledger.
+- If an invoice is sent **after** its due date, the first contact is capped at `overdue_1` (`first_contact_stage`) so a late-sent invoice never opens with a "final notice".
+- `suspend_notice` is a **conditional escalation**, not an automatic suspension: access enforcement is still a separate product decision. Copy says non-payment "may lead to" suspension and asks the customer to contact their account manager.
+- Email kind `billing_reminder` is written to `email_send_logs`; it is intentionally **not** in `INBOX_KINDS` (it is addressed to billing contacts, not the in-app inbox).
+
+`due_date` defaults to `period_start` (`INVOICE_DEFAULT_TERM_DAYS`, default 0) and can be overridden per invoice. `sent_at` is stamped when the invoice moves `draft → sent`.
 
 ## 3. State machine
 

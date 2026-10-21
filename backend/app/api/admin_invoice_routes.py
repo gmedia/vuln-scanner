@@ -225,6 +225,7 @@ async def create_invoice(
         actor=current_admin,
         product=body.product,
         period_start=body.period_start,
+        due_date=body.due_date,
         notes=body.notes,
     )
     return InvoiceItem.model_validate(to_item(inv, org_name=None, include_bank=False))

@@ -45,6 +45,7 @@ celery_app.conf.update(
         "host_protect.run_scan": {"queue": "ip_scan"},
         "host_protect.run_due": {"queue": "ip_scan"},
         "billing.finalize_periods": {"queue": "ip_scan"},
+        "billing.send_reminders": {"queue": "ip_scan"},
     },
     task_annotations={
         "ip_scan.run": {"rate_limit": "10/m"},
@@ -86,6 +87,10 @@ celery_app.conf.update(
         },
         "billing-finalize-periods-hourly": {
             "task": "billing.finalize_periods",
+            "schedule": 3600.0,
+        },
+        "billing-send-reminders-hourly": {
+            "task": "billing.send_reminders",
             "schedule": 3600.0,
         },
     },

@@ -1,7 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -75,6 +75,8 @@ class OrgInvoice(Base):
     amount_idr: Mapped[int] = mapped_column(Integer, nullable=False)
     period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     period_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    due_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft")
     bank_ref: Mapped[str | None] = mapped_column(String(64), nullable=True)
     notes: Mapped[str] = mapped_column(String(500), nullable=False, default="")
@@ -93,4 +95,5 @@ class OrgInvoice(Base):
         CheckConstraint("status IN ('draft', 'sent', 'paid', 'void')", name="ck_org_invoices_status"),
         CheckConstraint("amount_idr >= 0", name="ck_org_invoices_amount"),
         UniqueConstraint("number", name="uq_org_invoices_number"),
+        Index("ix_org_invoices_status_due_date", "status", "due_date"),
     )

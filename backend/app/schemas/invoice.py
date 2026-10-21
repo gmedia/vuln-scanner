@@ -72,6 +72,7 @@ class InvoiceCreateRequest(BaseModel):
     sku: str = Field(..., pattern=r"^(basic|pro|multi)$")
     product: str = Field(default="scan", pattern=r"^(scan|host|uptime|guard)$")
     period_start: datetime | None = None
+    due_date: datetime | None = None
     notes: str = Field(default="", max_length=500)
 
 
@@ -97,6 +98,8 @@ class InvoiceItem(BaseModel):
     amount_idr: int
     period_start: datetime
     period_end: datetime
+    due_date: datetime
+    sent_at: datetime | None = None
     status: str
     bank_ref: str | None = None
     notes: str = ""

@@ -154,6 +154,8 @@ export interface OrgInvoiceItem {
   amount_idr: number;
   period_start: string;
   period_end: string;
+  due_date?: string;
+  sent_at?: string | null;
   status: string;
   bank_ref: string | null;
   notes: string;

@@ -1,0 +1,20 @@
+{
+  "heading": "Invoice {number}",
+  "subject_due_soon": "Invoice {number} is due on {due_date}",
+  "subject_due_today": "Invoice {number} is due today",
+  "subject_overdue_1": "Invoice {number} is overdue",
+  "subject_overdue_2": "Second notice: invoice {number} is overdue",
+  "subject_final": "Final notice: invoice {number} is overdue",
+  "subject_suspend_notice": "Action needed: invoice {number} is still unpaid",
+  "intro_due_soon": "The invoice for {org} ({amount}) is due on {due_date}. Paying before the due date keeps the workspace active.",
+  "intro_due_today": "The invoice for {org} ({amount}) is due today.",
+  "intro_overdue_1": "The invoice for {org} ({amount}) was due on {due_date} and is now overdue.",
+  "intro_overdue_2": "The invoice for {org} ({amount}) is still unpaid. Access becomes read-only after the grace period.",
+  "intro_final": "This is the final reminder for invoice {number} ({amount}). The workspace will be suspended if payment is not received.",
+  "intro_suspend_notice": "Invoice {number} ({amount}) remains unpaid. Please contact your account manager; continued non-payment may lead to suspension of new scans, sites, monitors, and agents.",
+  "period": "Service period: {start} – {end}",
+  "open": "View subscription",
+  "or_copy": "Or open this link:",
+  "footer": "This is an automated billing reminder from Sinexis. Reply to your account manager if you have already paid.",
+  "preheader": "Invoice {number} · {amount} · due {due_date}"
+}

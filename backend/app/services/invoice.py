@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from calendar import monthrange
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, Response, status
 from sqlalchemy import func, select
@@ -15,6 +15,10 @@ from app.models.organization import Organization
 from app.models.user import User
 from app.services.invoice_html import render_invoice_html
 from app.services.scan_pdf import ScanPdfUnavailableError, render_scan_pdf
+
+
+def _as_utc(value: datetime) -> datetime:
+    return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
 
 
 def month_bounds_utc(when: datetime | None = None) -> tuple[datetime, datetime]:
@@ -54,6 +58,8 @@ def to_item(inv: OrgInvoice, *, org_name: str | None, include_bank: bool) -> dic
         "amount_idr": inv.amount_idr,
         "period_start": inv.period_start,
         "period_end": inv.period_end,
+        "due_date": inv.due_date,
+        "sent_at": inv.sent_at,
         "status": inv.status,
         "bank_ref": inv.bank_ref,
         "notes": inv.notes,
@@ -131,6 +137,7 @@ class InvoiceService:
         actor: User,
         product: str = "scan",
         period_start: datetime | None = None,
+        due_date: datetime | None = None,
         notes: str = "",
     ) -> OrgInvoice:
         org = await self.db.get(Organization, organization_id)
@@ -141,6 +148,11 @@ class InvoiceService:
         if cat is None or not cat.invoicable:
             raise HTTPException(status_code=400, detail="SKU is not invoicable")
         start, end = month_bounds_utc(period_start)
+        due = (
+            _as_utc(due_date)
+            if due_date is not None
+            else start + timedelta(days=max(0, settings.invoice_default_term_days))
+        )
         clash = await self.db.execute(
             select(OrgInvoice.id).where(
                 OrgInvoice.organization_id == organization_id,
@@ -163,6 +175,7 @@ class InvoiceService:
             amount_idr=int(cat.list_idr),
             period_start=start,
             period_end=end,
+            due_date=due,
             status="draft",
             notes=(notes or "")[:500],
             created_by_user_id=actor.id,
@@ -183,6 +196,7 @@ class InvoiceService:
         if inv.status != "draft":
             raise HTTPException(status_code=409, detail="Only draft invoices can be sent")
         inv.status = "sent"
+        inv.sent_at = inv.sent_at or datetime.now(UTC)
         inv.updated_at = datetime.now(UTC)
         await self.db.commit()
         await self.db.refresh(inv)
