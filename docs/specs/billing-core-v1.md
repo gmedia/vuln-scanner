@@ -127,6 +127,12 @@ Billing recipients deliberately receive the same dunning mail as the primary. Sp
 
 **Due date precedence:** explicit `due_date` on the invoice > `org_billing_profiles.payment_terms_days` > `INVOICE_DEFAULT_TERM_DAYS`.
 
+## 2.7 Customer cancellation
+
+`POST /api/orgs/{org_id}/subscription/cancel` always schedules **at period end** and stores `cancel_note`. `POST .../resume` clears both. Immediate cancellation remains an admin action (`POST /api/admin/subscriptions/{org_id}/cancel` with `at_period_end=false`), because it can require refunds or invoice adjustments.
+
+The hourly beat closes scheduled cancellations once `current_period_end <= now` (§2.3 step 1).
+
 ## 3. State machine
 
 Statuses: `incomplete`, `active`, `past_due`, `canceled`.

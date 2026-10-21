@@ -93,6 +93,13 @@ Admin (`get_current_admin`):
 `POST` body: `{ target_sku: basic|pro|multi, cycle: monthly|annual, note?: string }`.
 Approve/reject body: `{ note?: string }`.
 
+### Cancel and resume (owner/admin)
+
+- `POST /api/orgs/{org_id}/subscription/cancel` `{note?}` sets `cancel_at_period_end`. Access continues to `current_period_end`; there is no refund for the running period.
+- `POST /api/orgs/{org_id}/subscription/resume` clears the flag and the note. It is rejected with 409 if no cancellation is scheduled or the subscription already ended.
+- Immediate cancellation stays admin-only (`/admin/subscriptions`); it can imply refund/proration and is not exposed to customers.
+- The note is persisted on `subscriptions.cancel_note` so ops can see why the customer left.
+
 ### Billing details (owner/admin)
 
 `BillingProfileCard` on `/settings/subscription` edits the buyer identity and reminder recipients:
