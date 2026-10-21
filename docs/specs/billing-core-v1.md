@@ -263,6 +263,18 @@ A future Midtrans/Xendit adapter translates its native event into this payload b
 - Admin list + role gate.
 - Invalid transition raises.
 
+## 8.1 Billing motion (decision)
+
+Sinexis bills **invoice-per-period**, not auto-charge:
+
+- Every renewal is an invoice with a due date and the reminder cadence in §2.4.
+- No card is stored and no debit is attempted. There is no payment gateway in this phase.
+- "Auto-renew" means the next period is invoiced automatically; it does **not** mean an automatic charge.
+- PO buyers are not renewed without a PO: if `po_required` is set and no PO is on file before the renewal window, ops must hold the renewal rather than invoice silently.
+- Card auto-collection, if ever added, is a separate motion for self-serve SMB only; it would reintroduce `trialing`/`unpaid` with real producers.
+
+**Deferred:** a dedicated `billing` role so finance can edit the billing profile without product-admin rights. The current role ladder is linear (`owner > admin > member > viewer`), and billing-only access is a permission, not a rank; adding it needs an explicit permission model rather than another level.
+
 ## 9. Read-only gate
 
 A lapsed workspace becomes **read-only**, never locked. The customer keeps visibility and billing so they can see what they owe and settle it.
