@@ -7,9 +7,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Subscription from "@/pages/Subscription";
 import { useAuthStore } from "@/store/authStore";
 import {
+  cancelSubscription,
   cancelSubscriptionRequest,
   createSubscriptionRequest,
   getSubscription,
+  resumeSubscription,
   type SubscriptionOverview,
 } from "@/api/subscription";
 import { listOrgInvoices } from "@/api/orgs";
@@ -24,6 +26,8 @@ vi.mock("@/api/subscription", async () => {
     getSubscription: vi.fn(),
     createSubscriptionRequest: vi.fn(),
     cancelSubscriptionRequest: vi.fn(),
+    cancelSubscription: vi.fn(),
+    resumeSubscription: vi.fn(),
   };
 });
 
@@ -159,6 +163,8 @@ describe("Subscription page", () => {
     vi.mocked(getSubscription).mockReset();
     vi.mocked(createSubscriptionRequest).mockReset();
     vi.mocked(cancelSubscriptionRequest).mockReset();
+    vi.mocked(cancelSubscription).mockReset();
+    vi.mocked(resumeSubscription).mockReset();
     vi.mocked(listOrgInvoices).mockReset();
     vi.mocked(listOrgInvoices).mockResolvedValue({ items: [], total: 0 });
     setRole("owner");
@@ -253,6 +259,8 @@ describe("Subscription billing truth", () => {
     vi.mocked(getSubscription).mockReset();
     vi.mocked(createSubscriptionRequest).mockReset();
     vi.mocked(cancelSubscriptionRequest).mockReset();
+    vi.mocked(cancelSubscription).mockReset();
+    vi.mocked(resumeSubscription).mockReset();
     vi.mocked(listOrgInvoices).mockReset();
     vi.mocked(listOrgInvoices).mockResolvedValue({ items: [], total: 0 });
     setRole("owner");
@@ -446,5 +454,97 @@ describe("Subscription billing truth", () => {
     await screen.findByTestId("subscription-summary");
     expect(screen.queryByTestId("subscription-attempts")).toBeNull();
     expect(screen.queryByTestId("subscription-attempts-empty")).toBeNull();
+  });
+});
+
+
+describe("Subscription cancel and resume", () => {
+  beforeEach(() => {
+    vi.mocked(getSubscription).mockReset();
+    vi.mocked(cancelSubscription).mockReset();
+    vi.mocked(resumeSubscription).mockReset();
+    vi.mocked(listOrgInvoices).mockReset();
+    vi.mocked(listOrgInvoices).mockResolvedValue({ items: [], total: 0 });
+    setRole("owner");
+    vi.mocked(cancelSubscription).mockResolvedValue({
+      id: "sub-1",
+      organization_id: "org-a",
+      sku: "pro",
+      status: "active",
+      cycle: "monthly",
+      current_period_start: "2026-10-01T00:00:00Z",
+      current_period_end: "2026-10-31T23:59:59Z",
+      cancel_at_period_end: true,
+      cancel_note: "Budget",
+    });
+    vi.mocked(resumeSubscription).mockResolvedValue({
+      id: "sub-1",
+      organization_id: "org-a",
+      sku: "pro",
+      status: "active",
+      cycle: "monthly",
+      current_period_start: "2026-10-01T00:00:00Z",
+      current_period_end: "2026-10-31T23:59:59Z",
+      cancel_at_period_end: false,
+      cancel_note: "",
+    });
+  });
+
+  it("schedules a cancellation at period end", async () => {
+    const user = userEvent.setup();
+    vi.mocked(getSubscription).mockResolvedValue(overview());
+    renderPage();
+
+    await screen.findByTestId("subscription-summary");
+    await user.click(screen.getByTestId("subscription-cancel-action"));
+    expect(
+      await screen.findByText("Cancel this subscription?"),
+    ).toBeInTheDocument();
+    await user.type(
+      screen.getByTestId("subscription-cancel-note"),
+      "Budget",
+    );
+    await user.click(screen.getByTestId("subscription-cancel-confirm"));
+
+    await waitFor(() =>
+      expect(cancelSubscription).toHaveBeenCalledWith("org-a", "Budget"),
+    );
+  });
+
+  it("withdraws a scheduled cancellation", async () => {
+    const user = userEvent.setup();
+    vi.mocked(getSubscription).mockResolvedValue(
+      overview({
+        plan: { ...overview().plan, cancel_at_period_end: true },
+      }),
+    );
+    renderPage();
+
+    await screen.findByTestId("subscription-cancel-scheduled");
+    await user.click(screen.getByTestId("subscription-resume"));
+
+    await waitFor(() =>
+      expect(resumeSubscription).toHaveBeenCalledWith("org-a"),
+    );
+  });
+
+  it("hides the cancel action from viewers", async () => {
+    setRole("viewer");
+    vi.mocked(getSubscription).mockResolvedValue(
+      overview({
+        capabilities: {
+          can_manage: false,
+          can_request_change: false,
+          can_view_invoices: false,
+          can_self_serve: false,
+          read_only: false,
+          read_only_reason: null,
+        },
+      }),
+    );
+    renderPage();
+
+    await screen.findByTestId("subscription-summary");
+    expect(screen.queryByTestId("subscription-cancel-action")).toBeNull();
   });
 });

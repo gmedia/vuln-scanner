@@ -8,12 +8,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.organization import Organization
 from app.models.user import User
+from app.schemas.billing import SubscriptionCancelRequest, SubscriptionItem
 from app.schemas.subscription import (
     SubscriptionOverviewResponse,
     SubscriptionRequestCreate,
     SubscriptionRequestItem,
 )
 from app.services.auth import get_current_user
+from app.services.billing import BillingService
 from app.services.organization import require_membership
 from app.services.subscription import SubscriptionService
 
@@ -69,3 +71,26 @@ async def cancel_subscription_request(
 ) -> None:
     await require_membership(db, org_id, current_user.id, min_role="admin")
     await SubscriptionService(db).cancel_request(org_id, request_id)
+
+
+@router.post("/orgs/{org_id}/subscription/cancel", response_model=SubscriptionItem)
+async def cancel_subscription(
+    org_id: UUID,
+    body: SubscriptionCancelRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> SubscriptionItem:
+    await require_membership(db, org_id, current_user.id, min_role="admin")
+    sub = await BillingService(db).request_cancellation(org_id, body.note)
+    return SubscriptionItem.model_validate(sub)
+
+
+@router.post("/orgs/{org_id}/subscription/resume", response_model=SubscriptionItem)
+async def resume_subscription(
+    org_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> SubscriptionItem:
+    await require_membership(db, org_id, current_user.id, min_role="admin")
+    sub = await BillingService(db).resume(org_id)
+    return SubscriptionItem.model_validate(sub)

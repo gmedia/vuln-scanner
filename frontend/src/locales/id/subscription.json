@@ -155,5 +155,16 @@
   "recipientRemoved": "Penerima dihapus",
   "recipientRemoveFail": "Gagal menghapus penerima",
   "saveBilling": "Simpan detail billing",
-  "recipientEmail": "Email penerima"
+  "recipientEmail": "Email penerima",
+  "cancelSubscription": "Batalkan langganan",
+  "cancelSubscriptionTitle": "Batalkan langganan ini?",
+  "cancelSubscriptionBody": "Akses berlanjut sampai akhir periode yang sudah dibayar. Tidak ada refund untuk periode berjalan.",
+  "cancelSubscriptionNote": "Alasan (opsional)",
+  "cancelReasonPlaceholder": "Beri tahu kami alasan Anda berhenti",
+  "cancelSubscriptionConfirm": "Berhenti di akhir periode",
+  "cancelSubscriptionDone": "Pembatalan dijadwalkan",
+  "cancelSubscriptionFail": "Gagal menjadwalkan pembatalan",
+  "resumeSubscription": "Pertahankan langganan",
+  "resumeDone": "Pembatalan dibatalkan",
+  "resumeFail": "Gagal melanjutkan langganan"
 }
