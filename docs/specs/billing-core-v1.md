@@ -40,11 +40,11 @@ Out:
 
 | Subscription status | Plan status shown |
 |---|---|
-| `active` / `trialing`, `period_end >= now` | `active` |
-| `active` / `trialing`, `period_end < now` | `grace` (inside the grace window) |
+| `active`, `period_end >= now` | `active` |
+| `active`, `period_end < now` | `grace` (inside the grace window) |
 | `past_due`, `period_end >= now` | `pending_payment` |
 | `past_due`, `period_end < now` | `expired` |
-| `unpaid` / `canceled` | `expired` |
+| `canceled` | `expired` |
 | `incomplete` + invoice `sent` | `pending_payment` |
 | `incomplete` + invoice `draft` | `draft` |
 | `incomplete`, no invoice | `unbilled` |
@@ -72,8 +72,9 @@ It uses `ON CONFLICT (organization_id) DO NOTHING`, so it is idempotent and neve
 
 1. `cancel_at_period_end = true` and `current_period_end <= now` → `canceled`, `ended_at = now`, flag cleared.
 2. The latest non-void **Scan** invoice is `sent` and `due_date + grace <= now` → `past_due`.
+3. The same invoice is still `sent` and `due_date + terminal <= now` → `canceled` (terminal deadline, `BILLING_PAST_DUE_CANCEL_DAYS`, default **45**). This is what stops a `past_due` row from living forever.
 
-Grace is `BILLING_PAST_DUE_GRACE_DAYS` (default **7**). `past_due` keys off the invoice **due date**, not `current_period_end`: a net-30 invoice must not be chased on day 7 after the service period. The job never revokes access, never deletes data, and never marks `unpaid`; access enforcement remains a product decision.
+Grace is `BILLING_PAST_DUE_GRACE_DAYS` (default **7**) and the terminal deadline is `BILLING_PAST_DUE_CANCEL_DAYS` (default **45**). `past_due` keys off the invoice **due date**, not `current_period_end`: a net-30 invoice must not be chased on day 7 after the service period. The job never deletes data. Write access is enforced separately by the read-only gate (§9).
 
 ## 2.4 Invoice reminders
 
@@ -101,16 +102,16 @@ Grace is `BILLING_PAST_DUE_GRACE_DAYS` (default **7**). `past_due` keys off the 
 
 ## 3. State machine
 
-Statuses: `incomplete`, `trialing`, `active`, `past_due`, `unpaid`, `canceled`.
+Statuses: `incomplete`, `active`, `past_due`, `canceled`.
+
+`trialing` and `unpaid` were removed: no code path ever produced them, and both were behaviourally redundant (`trialing` behaved as `active`; `unpaid` behaved as `past_due` in the gate). A trial, if ever needed, is a contract/pilot field, not a lifecycle state; a write-off is an invoice state, not a subscription state.
 
 | From | Allowed to |
 |---|---|
 | `incomplete` | `active`, `canceled` |
-| `trialing` | `active`, `past_due`, `canceled` |
-| `active` | `past_due`, `unpaid`, `canceled` |
-| `past_due` | `active`, `unpaid`, `canceled` |
-| `unpaid` | `active`, `canceled` |
-| `canceled` | `active` |
+| `active` | `past_due`, `canceled` |
+| `past_due` | `active`, `canceled` |
+| `canceled` | `active` (reactivation by paying a new Scan invoice) |
 
 Invalid transitions raise `BillingTransitionError` (service-level; API surfaces 409 where applicable).
 
@@ -220,8 +221,8 @@ A lapsed workspace becomes **read-only**, never locked. The customer keeps visib
 
 | Subscription state | Writes | Reads / exports / billing |
 |---|---|---|
-| `active`, `trialing`, `incomplete` | allowed | allowed |
-| `past_due`, `unpaid` | **403** (`payment_overdue`) | allowed |
+| `active`, `incomplete` | allowed | allowed |
+| `past_due` | **403** (`payment_overdue`) | allowed |
 | `canceled` | **403** (`subscription_canceled`) | allowed |
 | no row | allowed | allowed |
 | org `sku = enterprise` | allowed | allowed |

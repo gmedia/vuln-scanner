@@ -11,6 +11,7 @@ import pytest
 
 from tasks.billing import (
     MAX_REMINDER_ATTEMPTS,
+    PAST_DUE_CANCEL_DAYS,
     PAST_DUE_GRACE_DAYS,
     finalize_periods,
     send_due_reminders,
@@ -30,6 +31,9 @@ class TestFinalizePeriodsMeta:
     def test_default_grace_is_seven_days(self):
         assert PAST_DUE_GRACE_DAYS == 7
 
+    def test_default_terminal_deadline_is_forty_five_days(self):
+        assert PAST_DUE_CANCEL_DAYS == 45
+
 
 class TestFinalizePeriodsRun:
     @pytest.fixture(autouse=True)
@@ -40,7 +44,9 @@ class TestFinalizePeriodsRun:
             cancel_result.all.return_value = [SimpleNamespace(id="a"), SimpleNamespace(id="b")]
             past_due_result = MagicMock()
             past_due_result.all.return_value = [SimpleNamespace(id="c")]
-            mock_session.execute.side_effect = [cancel_result, past_due_result]
+            terminal_result = MagicMock()
+            terminal_result.all.return_value = [SimpleNamespace(id="d")]
+            mock_session.execute.side_effect = [cancel_result, past_due_result, terminal_result]
             mock_get_session.return_value = mock_session
             self.mock_get_session = mock_get_session
             self.mock_session = mock_session
@@ -48,11 +54,15 @@ class TestFinalizePeriodsRun:
 
     def test_returns_counts(self):
         result = finalize_periods()
-        assert result == {"canceled_count": 2, "past_due_count": 1}
+        assert result == {
+            "canceled_count": 2,
+            "past_due_count": 1,
+            "terminal_count": 1,
+        }
 
-    def test_runs_two_updates(self):
+    def test_runs_three_updates(self):
         finalize_periods()
-        assert self.mock_session.execute.call_count == 2
+        assert self.mock_session.execute.call_count == 3
 
     def test_passes_grace_days(self):
         finalize_periods()
@@ -67,6 +77,15 @@ class TestFinalizePeriodsRun:
         assert "cancel_at_period_end = true" in first_sql
         assert "status = 'past_due'" in second_sql
         assert "status = 'active'" in second_sql
+
+    def test_terminal_past_due_uses_its_own_deadline(self):
+        finalize_periods()
+        terminal_sql = str(self.mock_session.execute.call_args_list[2][0][0])
+        params = self.mock_session.execute.call_args_list[2][0][1]
+        assert "status = 'past_due'" in terminal_sql
+        assert "status = 'canceled'" in terminal_sql
+        assert params["terminal_days"] == PAST_DUE_CANCEL_DAYS
+        assert params["terminal_days"] != params["grace_days"] if "grace_days" in params else True
 
     def test_past_due_reads_the_invoice_due_date(self):
         finalize_periods()

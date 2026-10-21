@@ -16,7 +16,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
 
-BILLING_STATUSES = ("incomplete", "trialing", "active", "past_due", "unpaid", "canceled")
+BILLING_STATUSES = ("incomplete", "active", "past_due", "canceled")
 BILLING_CYCLES = ("monthly", "annual")
 PAYMENT_ATTEMPT_STATUSES = ("pending", "succeeded", "failed", "expired", "refunded")
 PAYMENT_EVENT_STATUSES = ("received", "processed", "ignored", "failed")

@@ -58,9 +58,7 @@ import { cn, type ApiError } from "@/lib/utils";
 const STATUSES: AdminBillingStatus[] = [
   "active",
   "past_due",
-  "trialing",
   "incomplete",
-  "unpaid",
   "canceled",
 ];
 
@@ -90,9 +88,9 @@ function formatDate(value: string | null, locale: string): string {
 function statusVariant(
   status: AdminBillingStatus,
 ): "success" | "pending" | "failed" | "info" | "default" {
-  if (status === "active" || status === "trialing") return "success";
+  if (status === "active") return "success";
   if (status === "past_due") return "pending";
-  if (status === "unpaid" || status === "canceled") return "failed";
+  if (status === "canceled") return "failed";
   if (status === "incomplete") return "info";
   return "default";
 }

@@ -2,10 +2,8 @@ import api from "@/api/scans";
 
 export type AdminBillingStatus =
   | "incomplete"
-  | "trialing"
   | "active"
   | "past_due"
-  | "unpaid"
   | "canceled";
 
 export type AdminBillingCycle = "monthly" | "annual";

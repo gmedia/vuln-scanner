@@ -200,13 +200,13 @@ class SubscriptionService:
         lifecycle truth (past_due from a failed renewal, cancel-at-period-end,
         immediate cancel). Period end still decides whether access is current.
         """
-        if subscription.status in ("canceled", "unpaid"):
+        if subscription.status == "canceled":
             return "expired"
         if subscription.status == "past_due":
             if period_end is not None and period_end >= now:
                 return "pending_payment"
             return "expired"
-        if subscription.status in ("active", "trialing"):
+        if subscription.status == "active":
             if period_end is None:
                 return "active"
             # The lifecycle beat only flips to past_due after the grace window,
