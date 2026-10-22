@@ -127,6 +127,29 @@ Billing recipients deliberately receive the same dunning mail as the primary. Sp
 
 **Due date precedence:** explicit `due_date` on the invoice > `org_billing_profiles.payment_terms_days` > `INVOICE_DEFAULT_TERM_DAYS`.
 
+## 2.7 Customer cancellation
+
+`POST /api/orgs/{org_id}/subscription/cancel` always schedules **at period end** and stores `cancel_note`. `POST .../resume` clears both. Immediate cancellation remains an admin action (`POST /api/admin/subscriptions/{org_id}/cancel` with `at_period_end=false`), because it can require refunds or invoice adjustments.
+
+The hourly beat closes scheduled cancellations once `current_period_end <= now` (§2.3 step 1).
+
+## 2.8 Invoice tax breakdown
+
+`org_invoices` stores four amounts alongside `amount_idr` (the catalog list price):
+
+| Column | Meaning |
+|---|---|
+| `dpp_idr` | DPP nilai lain: `amount × 11/12` for a PKP buyer, else `amount` |
+| `ppn_idr` | PPN: `12% × dpp` for a PKP buyer, else 0 |
+| `total_idr` | Amount payable: `amount + ppn` |
+| `pph23_idr` | Informational: `2% × amount` (buyer withholds; not added to total) |
+
+Computation happens at invoice creation from `org_billing_profiles.pkp_status`. Rounding is half-up to the rupiah. Existing invoices are backfilled with `dpp = total = amount` and zero tax, so the pay loop and historical documents are unchanged.
+
+`PaymentAttempt.amount_idr` records `total_idr`, because that is what the customer actually transfers. The PDF and the SPA card/print sheet show Subtotal, DPP, PPN, and Total when `ppn_idr > 0`.
+
+PPh 23 is stored but **not** printed on the invoice: it is withheld by the buyer, and showing it as a deduction from the invoice total would be wrong. Faktur pajak XML/PJAP export is not implemented yet; this slice captures the fields and math.
+
 ## 3. State machine
 
 Statuses: `incomplete`, `active`, `past_due`, `canceled`.
@@ -239,6 +262,18 @@ A future Midtrans/Xendit adapter translates its native event into this payload b
 - Cancel at period end then immediate; second cancel 409.
 - Admin list + role gate.
 - Invalid transition raises.
+
+## 8.1 Billing motion (decision)
+
+Sinexis bills **invoice-per-period**, not auto-charge:
+
+- Every renewal is an invoice with a due date and the reminder cadence in §2.4.
+- No card is stored and no debit is attempted. There is no payment gateway in this phase.
+- "Auto-renew" means the next period is invoiced automatically; it does **not** mean an automatic charge.
+- PO buyers are not renewed without a PO: if `po_required` is set and no PO is on file before the renewal window, ops must hold the renewal rather than invoice silently.
+- Card auto-collection, if ever added, is a separate motion for self-serve SMB only; it would reintroduce `trialing`/`unpaid` with real producers.
+
+**Deferred:** a dedicated `billing` role so finance can edit the billing profile without product-admin rights. The current role ladder is linear (`owner > admin > member > viewer`), and billing-only access is a permission, not a rank; adding it needs an explicit permission model rather than another level.
 
 ## 9. Read-only gate
 

@@ -194,3 +194,36 @@ export async function rejectAdminSubscriptionRequest(
   );
   return data;
 }
+
+
+export interface SubscriptionLifecycle {
+  id: string;
+  organization_id: string;
+  sku: string;
+  status: string;
+  cycle: string;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  cancel_note: string;
+}
+
+export async function cancelSubscription(
+  orgId: string,
+  note = "",
+): Promise<SubscriptionLifecycle> {
+  const { data } = await api.post<SubscriptionLifecycle>(
+    `/api/orgs/${orgId}/subscription/cancel`,
+    { note },
+  );
+  return data;
+}
+
+export async function resumeSubscription(
+  orgId: string,
+): Promise<SubscriptionLifecycle> {
+  const { data } = await api.post<SubscriptionLifecycle>(
+    `/api/orgs/${orgId}/subscription/resume`,
+  );
+  return data;
+}

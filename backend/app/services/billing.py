@@ -167,7 +167,7 @@ class BillingService:
             provider="manual",
             provider_ref=reference,
             created_by_user_id=actor.id,
-            amount_idr=inv.amount_idr,
+            amount_idr=inv.total_idr or inv.amount_idr,
             currency="IDR",
             status="succeeded",
             method=method,
@@ -229,7 +229,7 @@ class BillingService:
                 invoice_id=inv.id,
                 provider=provider,
                 provider_ref=ref,
-                amount_idr=inv.amount_idr,
+                amount_idr=inv.total_idr or inv.amount_idr,
                 status="pending",
                 method=str(data.get("method") or "") or None,
             )
@@ -460,11 +460,51 @@ class BillingService:
                     detail="An incomplete subscription has no period to finish",
                 )
             sub.cancel_at_period_end = True
+            sub.cancel_note = (note or "").strip()[:500]
         else:
             self._transition(sub, "canceled")
             sub.cancel_at_period_end = False
+            sub.cancel_note = (note or "").strip()[:500]
             sub.canceled_at = _now()
             sub.ended_at = _now()
+        sub.updated_at = _now()
+        await self.db.commit()
+        await self.db.refresh(sub)
+        return sub
+
+
+    async def request_cancellation(self, org_id: UUID, note: str = "") -> Subscription:
+        """Customer-initiated cancel. Always at period end."""
+        sub = await self.get_subscription(org_id)
+        if sub is None:
+            raise HTTPException(status_code=404, detail="Subscription not found")
+        if sub.status == "canceled":
+            raise HTTPException(status_code=409, detail="Subscription is already canceled")
+        if sub.status == "incomplete" or sub.current_period_end is None:
+            raise HTTPException(
+                status_code=409,
+                detail="There is no paid period to finish",
+            )
+        sub.cancel_at_period_end = True
+        sub.cancel_note = (note or "").strip()[:500]
+        sub.updated_at = _now()
+        await self.db.commit()
+        await self.db.refresh(sub)
+        return sub
+
+    async def resume(self, org_id: UUID) -> Subscription:
+        sub = await self.get_subscription(org_id)
+        if sub is None:
+            raise HTTPException(status_code=404, detail="Subscription not found")
+        if sub.status == "canceled":
+            raise HTTPException(
+                status_code=409,
+                detail="This subscription has ended; renew to start a new period",
+            )
+        if not sub.cancel_at_period_end:
+            raise HTTPException(status_code=409, detail="Cancellation is not scheduled")
+        sub.cancel_at_period_end = False
+        sub.cancel_note = ""
         sub.updated_at = _now()
         await self.db.commit()
         await self.db.refresh(sub)

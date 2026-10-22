@@ -54,9 +54,11 @@ import { useAuthStore } from "@/store/authStore";
 import { cn, type ApiError } from "@/lib/utils";
 import { quotaRailClass, quotaState } from "@/lib/quota";
 import {
+  cancelSubscription,
   cancelSubscriptionRequest,
   createSubscriptionRequest,
   getSubscription,
+  resumeSubscription,
   type SubscriptionCycle,
   type SubscriptionOverview,
   type SubscriptionTier,
@@ -272,6 +274,8 @@ function Subscription() {
   const [requestTarget, setRequestTarget] = useState<SubscriptionTier | null>(null);
   const [requestNote, setRequestNote] = useState("");
   const [invoiceStatus, setInvoiceStatus] = useState("all");
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelNote, setCancelNote] = useState("");
   const { printing, startPrint } = useInvoicePrint();
 
   const subscriptionQuery = useQuery({
@@ -314,6 +318,30 @@ function Subscription() {
     },
     onError: (err: unknown) => {
       toast.error(apiDetail(err, t("pendingCancelFail")));
+    },
+  });
+
+  const cancelPlanMut = useMutation({
+    mutationFn: () => cancelSubscription(orgId!, cancelNote.trim()),
+    onSuccess: () => {
+      toast.success(t("cancelSubscriptionDone"));
+      setCancelOpen(false);
+      setCancelNote("");
+      void qc.invalidateQueries({ queryKey: ["org-subscription", orgId] });
+    },
+    onError: (err: unknown) => {
+      toast.error(apiDetail(err, t("cancelSubscriptionFail")));
+    },
+  });
+
+  const resumeMut = useMutation({
+    mutationFn: () => resumeSubscription(orgId!),
+    onSuccess: () => {
+      toast.success(t("resumeDone"));
+      void qc.invalidateQueries({ queryKey: ["org-subscription", orgId] });
+    },
+    onError: (err: unknown) => {
+      toast.error(apiDetail(err, t("resumeFail")));
     },
   });
 
@@ -369,10 +397,32 @@ function Subscription() {
         description={t("description")}
         actions={
           data ? (
-            <Button type="button" onClick={scrollToPlans} data-testid="subscription-change-plan">
-              {t("changePlan")}
-              <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              {canManage &&
+              !plan?.cancel_at_period_end &&
+              plan?.status !== "expired" &&
+              plan?.status !== "enterprise" ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setCancelOpen(true);
+                    setCancelNote("");
+                  }}
+                  data-testid="subscription-cancel-action"
+                >
+                  {t("cancelSubscription")}
+                </Button>
+              ) : null}
+              <Button
+                type="button"
+                onClick={scrollToPlans}
+                data-testid="subscription-change-plan"
+              >
+                {t("changePlan")}
+                <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
+              </Button>
+            </div>
           ) : null
         }
       />
@@ -496,15 +546,39 @@ function Subscription() {
                 </WorkspaceNotice>
               ) : plan.cancel_at_period_end ? (
                 <WorkspaceNotice tone="warn" role="status">
-                  <div data-testid="subscription-cancel-scheduled">
-                    <p className="text-sm font-medium text-foreground">
-                      {t("cancelScheduledTitle", {
-                        date: formatDate(plan.period_end, dateLocale),
-                      })}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {t("cancelScheduledBody")}
-                    </p>
+                  <div
+                    data-testid="subscription-cancel-scheduled"
+                    className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        {t("cancelScheduledTitle", {
+                          date: formatDate(plan.period_end, dateLocale),
+                        })}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("cancelScheduledBody")}
+                      </p>
+                    </div>
+                    {canManage ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="min-h-11 sm:min-h-10"
+                        disabled={resumeMut.isPending}
+                        onClick={() => resumeMut.mutate()}
+                        data-testid="subscription-resume"
+                      >
+                        {resumeMut.isPending ? (
+                          <Loader2
+                            className="mr-1 h-3.5 w-3.5 animate-spin"
+                            aria-hidden
+                          />
+                        ) : null}
+                        {t("resumeSubscription")}
+                      </Button>
+                    ) : null}
                   </div>
                 </WorkspaceNotice>
               ) : plan.status === "grace" ? (
@@ -939,6 +1013,53 @@ function Subscription() {
                 <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" aria-hidden />
               ) : null}
               {t("requestSubmit")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={cancelOpen}
+        onOpenChange={(open) => {
+          setCancelOpen(open);
+          if (!open) setCancelNote("");
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("cancelSubscriptionTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("cancelSubscriptionBody")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Label htmlFor="subscription-cancel-note">
+              {t("cancelSubscriptionNote")}
+            </Label>
+            <Textarea
+              id="subscription-cancel-note"
+              value={cancelNote}
+              maxLength={500}
+              placeholder={t("cancelReasonPlaceholder")}
+              onChange={(event) => setCancelNote(event.target.value)}
+              data-testid="subscription-cancel-note"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel type="button">{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              type="button"
+              disabled={cancelPlanMut.isPending}
+              onClick={(event) => {
+                event.preventDefault();
+                cancelPlanMut.mutate();
+              }}
+              data-testid="subscription-cancel-confirm"
+            >
+              {cancelPlanMut.isPending ? (
+                <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" aria-hidden />
+              ) : null}
+              {t("cancelSubscriptionConfirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

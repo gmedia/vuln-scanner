@@ -93,11 +93,18 @@ Admin (`get_current_admin`):
 `POST` body: `{ target_sku: basic|pro|multi, cycle: monthly|annual, note?: string }`.
 Approve/reject body: `{ note?: string }`.
 
+### Cancel and resume (owner/admin)
+
+- `POST /api/orgs/{org_id}/subscription/cancel` `{note?}` sets `cancel_at_period_end`. Access continues to `current_period_end`; there is no refund for the running period.
+- `POST /api/orgs/{org_id}/subscription/resume` clears the flag and the note. It is rejected with 409 if no cancellation is scheduled or the subscription already ended.
+- Immediate cancellation stays admin-only (`/admin/subscriptions`); it can imply refund/proration and is not exposed to customers.
+- The note is persisted on `subscriptions.cancel_note` so ops can see why the customer left.
+
 ### Billing details (owner/admin)
 
 `BillingProfileCard` on `/settings/subscription` edits the buyer identity and reminder recipients:
 
-- Legal name, NPWP (16 digits), billing email, payment terms (0/14/30/45), PO required + PO number.
+- Legal name, NPWP (16 digits), billing email, payment terms (0/14/30/45), PO required + PO number, PKP status (drives DPP/PPN on new invoices).
 - Recipient list with add/remove; recipients are email-only and get no product access.
 - Saving payment terms changes the default `due_date` for **new** invoices only; existing invoices keep their snapshot.
 

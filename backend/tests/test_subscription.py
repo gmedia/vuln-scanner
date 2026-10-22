@@ -573,3 +573,119 @@ async def test_recent_attempts_only_visible_to_managers(db_session, ctx):
             assert viewer_view.json()["recent_attempts"] == []
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_owner_can_schedule_cancellation_and_resume(db_session, ctx):
+    db_session.add(
+        Subscription(
+            organization_id=ctx["org"].id,
+            sku="pro",
+            status="active",
+            cycle="monthly",
+            provider="manual",
+            current_period_start=datetime(2026, 10, 1, tzinfo=UTC),
+            current_period_end=datetime(2026, 10, 31, tzinfo=UTC),
+        )
+    )
+    await db_session.commit()
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            canceled = await client.post(
+                f"/api/orgs/{ctx['org'].id}/subscription/cancel",
+                headers=_auth(ctx["owner"], ctx["org"].id),
+                json={"note": "Budget review"},
+            )
+            assert canceled.status_code == 200, canceled.text
+            assert canceled.json()["cancel_at_period_end"] is True
+            assert canceled.json()["status"] == "active"
+
+            stored = (
+                await db_session.execute(
+                    select(Subscription).where(
+                        Subscription.organization_id == ctx["org"].id
+                    )
+                )
+            ).scalar_one()
+            await db_session.refresh(stored)
+            assert stored.cancel_note == "Budget review"
+
+            resumed = await client.post(
+                f"/api/orgs/{ctx['org'].id}/subscription/resume",
+                headers=_auth(ctx["owner"], ctx["org"].id),
+            )
+            assert resumed.status_code == 200, resumed.text
+            assert resumed.json()["cancel_at_period_end"] is False
+            await db_session.refresh(stored)
+            assert stored.cancel_note == ""
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_resume_without_a_scheduled_cancel_is_rejected(db_session, ctx):
+    db_session.add(
+        Subscription(
+            organization_id=ctx["org"].id,
+            sku="pro",
+            status="active",
+            cycle="monthly",
+            provider="manual",
+        )
+    )
+    await db_session.commit()
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                f"/api/orgs/{ctx['org'].id}/subscription/resume",
+                headers=_auth(ctx["owner"], ctx["org"].id),
+            )
+            assert response.status_code == 409
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_viewer_cannot_cancel_the_subscription(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                f"/api/orgs/{ctx['org'].id}/subscription/cancel",
+                headers=_auth(ctx["viewer"], ctx["org"].id),
+                json={},
+            )
+            assert response.status_code == 403
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_cancel_without_a_period_is_rejected(db_session, ctx):
+    db_session.add(
+        Subscription(
+            organization_id=ctx["org"].id,
+            sku="basic",
+            status="incomplete",
+            cycle="monthly",
+            provider="manual",
+        )
+    )
+    await db_session.commit()
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                f"/api/orgs/{ctx['org'].id}/subscription/cancel",
+                headers=_auth(ctx["owner"], ctx["org"].id),
+                json={},
+            )
+            assert response.status_code == 409
+    finally:
+        app.dependency_overrides.clear()

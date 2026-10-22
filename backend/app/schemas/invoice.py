@@ -96,6 +96,10 @@ class InvoiceItem(BaseModel):
     sku: str
     seats: int
     amount_idr: int
+    dpp_idr: int = 0
+    ppn_idr: int = 0
+    pph23_idr: int = 0
+    total_idr: int = 0
     period_start: datetime
     period_end: datetime
     due_date: datetime

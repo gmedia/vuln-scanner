@@ -21,5 +21,7 @@
   "status_sent": "Sent",
   "status_paid": "Paid",
   "status_void": "Void",
-  "dueDate": "Due"
+  "dueDate": "Due",
+  "dpp": "DPP (11/12)",
+  "ppn": "PPN 12%"
 }

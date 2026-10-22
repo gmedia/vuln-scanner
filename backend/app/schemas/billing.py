@@ -77,6 +77,10 @@ class CancelSubscriptionRequest(BaseModel):
     note: str = Field(default="", max_length=500)
 
 
+class SubscriptionCancelRequest(BaseModel):
+    note: str = Field(default="", max_length=500)
+
+
 class PaymentEventIn(BaseModel):
     id: str = Field(..., min_length=1, max_length=128)
     type: str = Field(..., min_length=1, max_length=64)
