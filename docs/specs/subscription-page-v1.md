@@ -93,6 +93,16 @@ Admin (`get_current_admin`):
 `POST` body: `{ target_sku: basic|pro|multi, cycle: monthly|annual, note?: string }`.
 Approve/reject body: `{ note?: string }`.
 
+### Billing details (owner/admin)
+
+`BillingProfileCard` on `/settings/subscription` edits the buyer identity and reminder recipients:
+
+- Legal name, NPWP (16 digits), billing email, payment terms (0/14/30/45), PO required + PO number.
+- Recipient list with add/remove; recipients are email-only and get no product access.
+- Saving payment terms changes the default `due_date` for **new** invoices only; existing invoices keep their snapshot.
+
+API: `GET/PUT /api/orgs/{org_id}/billing-profile`, `POST /api/orgs/{org_id}/billing-recipients`, `DELETE /api/orgs/{org_id}/billing-recipients/{id}`. All require admin or owner.
+
 ## 5. Data
 
 `subscription_requests`:

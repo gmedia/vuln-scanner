@@ -100,6 +100,33 @@ Grace is `BILLING_PAST_DUE_GRACE_DAYS` (default **7**) and the terminal deadline
 
 `due_date` defaults to `period_start` (`INVOICE_DEFAULT_TERM_DAYS`, default 0) and can be overridden per invoice. `sent_at` is stamped when the invoice moves `draft → sent`.
 
+## 2.6 Billing profile and recipients
+
+`org_billing_profiles` (one row per org) holds the buyer identity used on invoices and the payment term:
+
+| Field | Purpose |
+|---|---|
+| `legal_name` | "Bill to" name; falls back to `organizations.name` when empty |
+| `tax_id` | NPWP, 16 digits, stored as a string |
+| `nitku` | 22 digits for branch buyers |
+| `address_line1/2`, `city`, `province`, `postal_code`, `country` | Registered address |
+| `billing_email` | Primary "To" address for reminders |
+| `po_required`, `po_number` | PO gate + default PO |
+| `payment_terms_days` | 0–180; drives `due_date = period_start + N` |
+| `pkp_status` | `unknown` / `pkp` / `non_pkp` |
+
+`billing_recipients` holds email-only contacts. They never grant product access and do not need a user account. One row per org may be `is_primary` (partial unique index). Removing the primary promotes the next active billing recipient.
+
+**Recipient resolution for reminders** (`workers/tasks/billing.py::_recipients`):
+
+1. `org_billing_profiles.billing_email`, then
+2. active `billing_recipients` (`kind='billing'`) ordered primary-first, deduped case-insensitively, then
+3. fallback to verified `owner`/`admin` users.
+
+Billing recipients deliberately receive the same dunning mail as the primary. Splitting invoice copies from dunning (the Paddle pattern) leaves AP unaware that payment is late.
+
+**Due date precedence:** explicit `due_date` on the invoice > `org_billing_profiles.payment_terms_days` > `INVOICE_DEFAULT_TERM_DAYS`.
+
 ## 3. State machine
 
 Statuses: `incomplete`, `active`, `past_due`, `canceled`.

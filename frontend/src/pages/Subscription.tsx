@@ -37,6 +37,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { EmptyState } from "@/components/patterns/EmptyState";
 import { StatGrid, StatTile } from "@/components/patterns/StatTile";
+import BillingProfileCard from "@/components/subscription/BillingProfileCard";
 import { WorkspaceInvoiceCard } from "@/components/invoice/WorkspaceInvoiceCard";
 import { InvoicePrintSheet, useInvoicePrint } from "@/components/invoice/InvoicePrintSheet";
 import {
@@ -587,6 +588,8 @@ function Subscription() {
               />
             </StatGrid>
           </section>
+
+          {canManage ? <BillingProfileCard orgId={orgId} /> : null}
 
           <section id="subscription-plans" className="scroll-mt-6 space-y-3">
             <WorkspaceShell testid="subscription-plans">

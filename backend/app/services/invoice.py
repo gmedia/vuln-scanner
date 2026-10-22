@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.i18n import DEFAULT_LOCALE, AppLocale
+from app.models.billing import OrgBillingProfile
 from app.models.invoice import PRODUCT_SEATS, OrgInvoice, SkuCatalog
 from app.models.organization import Organization
 from app.models.user import User
@@ -148,11 +149,16 @@ class InvoiceService:
         if cat is None or not cat.invoicable:
             raise HTTPException(status_code=400, detail="SKU is not invoicable")
         start, end = month_bounds_utc(period_start)
-        due = (
-            _as_utc(due_date)
-            if due_date is not None
-            else start + timedelta(days=max(0, settings.invoice_default_term_days))
-        )
+        if due_date is not None:
+            due = _as_utc(due_date)
+        else:
+            profile = await self.db.get(OrgBillingProfile, organization_id)
+            term_days = (
+                profile.payment_terms_days
+                if profile is not None
+                else settings.invoice_default_term_days
+            )
+            due = start + timedelta(days=max(0, term_days))
         clash = await self.db.execute(
             select(OrgInvoice.id).where(
                 OrgInvoice.organization_id == organization_id,
