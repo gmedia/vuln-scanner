@@ -261,3 +261,59 @@ async def test_viewer_cannot_read_billing_profile(db_session, ctx):
             assert response.status_code == 403
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_pkp_buyer_invoice_splits_dpp_and_ppn(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            await client.put(
+                f"/api/orgs/{ctx['org'].id}/billing-profile",
+                headers=_auth(ctx["owner"], ctx["org"].id),
+                json={"pkp_status": "pkp"},
+            )
+            created = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={
+                    "organization_id": str(ctx["org"].id),
+                    "sku": "pro",
+                    "period_start": "2026-09-01T00:00:00Z",
+                },
+            )
+            assert created.status_code == 201, created.text
+            body = created.json()
+            assert body["amount_idr"] == 650_000
+            assert body["dpp_idr"] == 595_833
+            assert body["ppn_idr"] == 71_500
+            assert body["total_idr"] == 721_500
+            assert body["pph23_idr"] == 13_000
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_non_pkp_invoice_has_no_tax_split(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            created = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={
+                    "organization_id": str(ctx["org"].id),
+                    "sku": "pro",
+                    "period_start": "2026-09-01T00:00:00Z",
+                },
+            )
+            assert created.status_code == 201, created.text
+            body = created.json()
+            assert body["dpp_idr"] == body["amount_idr"]
+            assert body["ppn_idr"] == 0
+            assert body["total_idr"] == body["amount_idr"]
+            assert body["pph23_idr"] == 0
+    finally:
+        app.dependency_overrides.clear()

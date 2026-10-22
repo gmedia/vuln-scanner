@@ -104,7 +104,7 @@ Approve/reject body: `{ note?: string }`.
 
 `BillingProfileCard` on `/settings/subscription` edits the buyer identity and reminder recipients:
 
-- Legal name, NPWP (16 digits), billing email, payment terms (0/14/30/45), PO required + PO number.
+- Legal name, NPWP (16 digits), billing email, payment terms (0/14/30/45), PO required + PO number, PKP status (drives DPP/PPN on new invoices).
 - Recipient list with add/remove; recipients are email-only and get no product access.
 - Saving payment terms changes the default `due_date` for **new** invoices only; existing invoices keep their snapshot.
 

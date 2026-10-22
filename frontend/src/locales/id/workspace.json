@@ -121,5 +121,7 @@
   "invoicePrintFooter_uptime": "Terima kasih. Sinexis Uptime — transfer bank, tanpa upgrade mandiri.",
   "invoicePrintFooter_guard": "Terima kasih. Sinexis Guard — transfer bank, tanpa upgrade mandiri.",
   "subscriptionLink": "Langganan",
-  "invoicePrintDue": "Jatuh tempo"
+  "invoicePrintDue": "Jatuh tempo",
+  "invoicePrintDpp": "DPP (11/12)",
+  "invoicePrintPpn": "PPN 12%"
 }

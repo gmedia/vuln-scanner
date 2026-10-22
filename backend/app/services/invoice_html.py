@@ -46,6 +46,15 @@ def render_invoice_html(
     number = _esc(inv.number)
     bill_to = _esc(org_name or "—")
     amount = _esc(_idr(inv.amount_idr))
+    total = _esc(_idr(inv.total_idr or inv.amount_idr))
+    tax_rows = ""
+    if inv.ppn_idr:
+        tax_rows = (
+            f'<p class="inv-totals-row"><span>{label("dpp")}</span>'
+            f'<span class="num">{_esc(_idr(inv.dpp_idr))}</span></p>'
+            f'<p class="inv-totals-row"><span>{label("ppn")}</span>'
+            f'<span class="num">{_esc(_idr(inv.ppn_idr))}</span></p>'
+        )
     period = _esc(f"{_day(inv.period_start)} – {_day(inv.period_end)}")
     issued = _esc(_day(inv.created_at))
     due = _esc(_day(inv.due_date))
@@ -171,8 +180,9 @@ def render_invoice_html(
     </table>
     <section class="inv-totals" aria-label="{label("total")}">
       <p class="inv-totals-row"><span>{label("subtotal")}</span><span class="num">{amount}</span></p>
-      <p class="inv-totals-row inv-totals-grand"><span>{label("total")}</span><span class="num">{amount}</span></p>
-      <p class="inv-totals-row"><span>{due_label}</span><span class="num">{amount}</span></p>
+      {tax_rows}
+      <p class="inv-totals-row inv-totals-grand"><span>{label("total")}</span><span class="num">{total}</span></p>
+      <p class="inv-totals-row"><span>{due_label}</span><span class="num">{total}</span></p>
       {ref_line}
     </section>
     {bank_block}

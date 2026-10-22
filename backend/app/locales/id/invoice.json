@@ -21,5 +21,7 @@
   "status_sent": "Terkirim",
   "status_paid": "Lunas",
   "status_void": "Batal",
-  "dueDate": "Jatuh tempo"
+  "dueDate": "Jatuh tempo",
+  "dpp": "DPP (11/12)",
+  "ppn": "PPN 12%"
 }
