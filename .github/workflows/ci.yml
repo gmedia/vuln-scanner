@@ -1022,6 +1022,73 @@ jobs:
               sys.exit(1)
           PY
 
+  publish-images:
+    name: publish-images
+    # Publish immutable images only from main (or a manual dispatch that did not
+    # skip the build). PRs never push.
+    if: ${{ !cancelled()
+            && github.ref_name == 'main'
+            && needs.ci-ok.result == 'success'
+            && (needs.docker-scan-backend.result == 'success' || needs.docker-scan-backend.result == 'skipped')
+            && (needs.docker-scan-workers.result == 'success' || needs.docker-scan-workers.result == 'skipped')
+            && (needs.docker-scan-frontend.result == 'success' || needs.docker-scan-frontend.result == 'skipped')
+            && (github.event_name == 'push'
+                || (github.event_name == 'workflow_dispatch'
+                    && !inputs.skip_build)) }}
+    needs: [ci-ok, docker-scan-backend, docker-scan-workers, docker-scan-frontend]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - name: backend
+            context: backend
+            file: backend/Dockerfile
+            target: runtime
+            build_args: ""
+          - name: workers
+            context: .
+            file: workers/Dockerfile
+            target: runtime
+            build_args: "INSTALL_BUNDLETOOL=0"
+          - name: workers-mobile
+            context: .
+            file: workers/Dockerfile
+            target: runtime
+            build_args: "INSTALL_BUNDLETOOL=1"
+          - name: frontend
+            context: frontend
+            file: frontend/Dockerfile
+            target: production
+            build_args: ""
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push ${{ matrix.name }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          target: ${{ matrix.target }}
+          build-args: ${{ matrix.build_args }}
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/vuln-scanner-${{ matrix.name }}:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=buildkit-${{ matrix.name }}
+          cache-to: type=gha,scope=buildkit-${{ matrix.name }},mode=max
+
   deploy:
     if: ${{ github.ref_name == 'main'
             && needs.ci-ok.result == 'success'
