@@ -129,5 +129,6 @@ jobs:
             ENVEOF
             fi
 
+            sed -i 's/[[:space:]]*$//' .env
             chmod 600 .env
             echo "role=${{ inputs.role }} path=$(pwd)/.env lines=$(wc -l < .env) mode=$(stat -c '%a' .env)"
