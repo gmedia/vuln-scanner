@@ -1,0 +1,17 @@
+# Publish Postgres and Redis on the mesh interface only.
+#
+# On the data host:
+#   MESH_IP=$(tailscale ip -4) docker compose \
+#     -f docker-compose.prod.yml -f docker-compose.data.yml up -d postgres redis
+#
+# MESH_IP must be the host's Tailscale address. Binding to it keeps the data
+# ports off the public interface even though Docker writes its own iptables rules.
+
+services:
+  postgres:
+    ports:
+      - "${MESH_IP:?set MESH_IP}:5432:5432"
+
+  redis:
+    ports:
+      - "${MESH_IP:?set MESH_IP}:6379:6379"
