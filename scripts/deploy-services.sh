@@ -21,6 +21,7 @@
 #   DEPLOY_PATH=/path/to/vuln-scanner ./scripts/deploy-services.sh --all
 #   ./scripts/deploy-services.sh --no-cache backend
 #   ./scripts/deploy-services.sh --skip-migrate backend
+#   PULL_ONLY=1 REGISTRY=ghcr.io/owner IMAGE_TAG=sha-<commit> ./scripts/deploy-services.sh backend frontend
 #
 # Compose project name (important):
 #   Default COMPOSE_PROJECT_NAME is "vuln" if unset. Existing stacks often use
@@ -69,6 +70,7 @@ DEPLOY_PATH="${DEPLOY_PATH:-$REPO_ROOT}"
 SERVICES=()
 NO_CACHE=0
 SKIP_MIGRATE=0
+PULL_ONLY="${PULL_ONLY:-0}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -123,6 +125,18 @@ if [[ "${REMOTE_DATA:-}" == "1" || "${REMOTE_DATA:-}" == "true" ]]; then
   echo "NOTE: REMOTE_DATA=1 — local postgres/redis containers disabled"
 fi
 
+if [[ "$PULL_ONLY" == "1" ]]; then
+  if [[ ! -f docker-compose.images.yml ]]; then
+    echo "error: PULL_ONLY=1 but docker-compose.images.yml is missing" >&2
+    exit 1
+  fi
+  : "${REGISTRY:?PULL_ONLY=1 requires REGISTRY (e.g. ghcr.io/owner)}"
+  : "${IMAGE_TAG:?PULL_ONLY=1 requires IMAGE_TAG (e.g. sha-<commit>)}"
+  COMPOSE+=(-f docker-compose.images.yml)
+  export REGISTRY IMAGE_TAG
+  echo "NOTE: PULL_ONLY=1 — pulling $REGISTRY images at $IMAGE_TAG"
+fi
+
 # Capture once. Avoid `cmd | grep -q` under `set -o pipefail`: when grep -q
 # exits early on a match, the producer gets SIGPIPE and the pipeline fails
 # even though the service name is valid.
@@ -164,34 +178,42 @@ echo "project:  $COMPOSE_PROJECT_NAME"
 echo "services: ${SERVICES[*]}"
 echo "NOTE:     postgres/redis volumes are NOT touched"
 
-tag_previous() {
-  local svc="$1"
-  local img="vuln-${svc}"
-  if docker image inspect "${img}:latest" >/dev/null 2>&1; then
-    docker tag "${img}:latest" "${img}:previous" 2>/dev/null || true
+if [[ "$PULL_ONLY" == "1" ]]; then
+  echo "=== pull: ${SERVICES[*]} ==="
+  "${COMPOSE[@]}" pull "${SERVICES[@]}"
+
+  echo "=== recreate (no-deps, force): ${SERVICES[*]} ==="
+  "${COMPOSE[@]}" up -d --no-deps --force-recreate "${SERVICES[@]}"
+else
+  tag_previous() {
+    local svc="$1"
+    local img="vuln-${svc}"
+    if docker image inspect "${img}:latest" >/dev/null 2>&1; then
+      docker tag "${img}:latest" "${img}:previous" 2>/dev/null || true
+    fi
+  }
+
+  for svc in "${SERVICES[@]}"; do
+    tag_previous "$svc"
+  done
+
+  echo "=== build: ${SERVICES[*]} ==="
+  BUILD_ARGS=()
+  if [[ "$NO_CACHE" -eq 1 ]]; then
+    BUILD_ARGS+=(--no-cache)
   fi
-}
+  "${COMPOSE[@]}" build "${BUILD_ARGS[@]}" "${SERVICES[@]}"
 
-for svc in "${SERVICES[@]}"; do
-  tag_previous "$svc"
-done
+  echo "=== recreate (no-deps, force): ${SERVICES[*]} ==="
+  "${COMPOSE[@]}" up -d --no-deps --force-recreate "${SERVICES[@]}"
 
-echo "=== build: ${SERVICES[*]} ==="
-BUILD_ARGS=()
-if [[ "$NO_CACHE" -eq 1 ]]; then
-  BUILD_ARGS+=(--no-cache)
+  for svc in "${SERVICES[@]}"; do
+    img="vuln-${svc}"
+    if docker image inspect "${img}:latest" >/dev/null 2>&1; then
+      docker tag "${img}:latest" "${img}:${SHA}" 2>/dev/null || true
+    fi
+  done
 fi
-"${COMPOSE[@]}" build "${BUILD_ARGS[@]}" "${SERVICES[@]}"
-
-echo "=== recreate (no-deps, force): ${SERVICES[*]} ==="
-"${COMPOSE[@]}" up -d --no-deps --force-recreate "${SERVICES[@]}"
-
-for svc in "${SERVICES[@]}"; do
-  img="vuln-${svc}"
-  if docker image inspect "${img}:latest" >/dev/null 2>&1; then
-    docker tag "${img}:latest" "${img}:${SHA}" 2>/dev/null || true
-  fi
-done
 
 contains() {
   local needle=$1
