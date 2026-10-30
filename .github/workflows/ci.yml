@@ -1097,7 +1097,7 @@ jobs:
                 || (github.event_name == 'workflow_dispatch'
                     && !inputs.skip_deploy
                     && !inputs.skip_tests)) }}
-    needs: [ci-ok]
+    needs: [ci-ok, publish-images]
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -1241,5 +1241,5 @@ jobs:
             -o "ProxyCommand=${PROXY_CMD}" \
             -p "${DEPLOY_PORT}" \
             "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "cd '${DEPLOY_PATH}' && git fetch origin main && git reset --hard origin/main && COMPOSE_PROJECT_NAME=vuln-scanner REMOTE_DATA=1 ./scripts/deploy-services.sh backend frontend celery_beat"
+            "cd '${DEPLOY_PATH}' && git fetch origin main && git reset --hard origin/main && COMPOSE_PROJECT_NAME=vuln-scanner REMOTE_DATA=1 PULL_ONLY=1 REGISTRY=ghcr.io/${{ github.repository_owner }} IMAGE_TAG=sha-${{ github.sha }} ./scripts/deploy-services.sh backend frontend celery_beat"
           rm -f ~/.ssh/deploy_key ~/.ssh/jump_key
