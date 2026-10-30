@@ -1243,3 +1243,41 @@ jobs:
             "${DEPLOY_USER}@${DEPLOY_HOST}" \
             "cd '${DEPLOY_PATH}' && git fetch origin main && git reset --hard origin/main && COMPOSE_PROJECT_NAME=vuln-scanner REMOTE_DATA=1 PULL_ONLY=1 REGISTRY=ghcr.io/${{ github.repository_owner }} IMAGE_TAG=sha-${{ github.sha }} ./scripts/deploy-services.sh backend frontend celery_beat"
           rm -f ~/.ssh/deploy_key ~/.ssh/jump_key
+
+  deploy-workers:
+    name: deploy-workers
+    if: ${{ vars.SKIP_DEPLOY != 'true'
+            && github.ref_name == 'main'
+            && needs.ci-ok.result == 'success'
+            && (github.event_name == 'push'
+                || (github.event_name == 'workflow_dispatch'
+                    && !inputs.skip_deploy
+                    && !inputs.skip_tests)) }}
+    needs: [ci-ok, publish-images]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Pull and recreate workers on gm-s1
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          umask 077
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          printf '%s\n' "${{ secrets.DEPLOY_JUMP_SSH_KEY }}" > ~/.ssh/jump_key
+          chmod 600 ~/.ssh/deploy_key ~/.ssh/jump_key
+          JUMP_HOST="${{ secrets.DEPLOY_JUMP_HOST }}"
+          JUMP_USER="${{ secrets.DEPLOY_JUMP_USER }}"
+          JUMP_PORT="${{ secrets.DEPLOY_JUMP_PORT || 22 }}"
+          WORKER_HOST="${{ secrets.DEPLOY_WORKER_HOST }}"
+          WORKER_USER="${{ secrets.DEPLOY_WORKER_USER }}"
+          WORKER_PORT="${{ secrets.DEPLOY_WORKER_PORT || 22 }}"
+          WORKER_PATH="${{ secrets.DEPLOY_WORKER_PATH }}"
+          PROXY_CMD="ssh -i $HOME/.ssh/jump_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p ${JUMP_PORT} -W %h:%p ${JUMP_USER}@${JUMP_HOST}"
+          ssh -i ~/.ssh/deploy_key \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            -o "ProxyCommand=${PROXY_CMD}" \
+            -p "${WORKER_PORT}" \
+            "${WORKER_USER}@${WORKER_HOST}" \
+            "cd '${WORKER_PATH}' && git fetch origin main && git reset --hard origin/main && COMPOSE_PROJECT_NAME=vuln-scanner REMOTE_DATA=1 PULL_ONLY=1 REGISTRY=ghcr.io/${{ github.repository_owner }} IMAGE_TAG=sha-${{ github.sha }} ./scripts/deploy-services.sh worker_ip worker_domain worker_mobile worker_uptime worker_dead_letter"
+          rm -f ~/.ssh/deploy_key ~/.ssh/jump_key
