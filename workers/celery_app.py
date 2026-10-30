@@ -5,6 +5,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
 
 from celery import Celery
+from celery.schedules import crontab
 
 from utils.redis_helpers import build_redis_url
 
@@ -46,6 +47,7 @@ celery_app.conf.update(
         "host_protect.run_due": {"queue": "ip_scan"},
         "billing.finalize_periods": {"queue": "ip_scan"},
         "billing.send_reminders": {"queue": "ip_scan"},
+        "ai_fx.refresh": {"queue": "ip_scan"},
     },
     task_annotations={
         "ip_scan.run": {"rate_limit": "10/m"},
@@ -93,6 +95,10 @@ celery_app.conf.update(
             "task": "billing.send_reminders",
             "schedule": 3600.0,
         },
+        "ai-fx-refresh-daily": {
+            "task": "ai_fx.refresh",
+            "schedule": crontab(minute=10, hour=1),
+        },
     },
 )
 
@@ -108,5 +114,6 @@ celery_app.autodiscover_tasks(
         "tasks.uptime",
         "tasks.host_protect",
         "tasks.billing",
+        "tasks.ai_fx",
     ]
 )

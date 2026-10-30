@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
@@ -6,6 +6,18 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AdminAi from "@/pages/admin/AdminAi";
 import * as adminApi from "@/api/admin";
 import { toast } from "sonner";
+
+beforeAll(() => {
+  if (!Element.prototype.hasPointerCapture) {
+    Element.prototype.hasPointerCapture = () => false;
+  }
+  if (!Element.prototype.releasePointerCapture) {
+    Element.prototype.releasePointerCapture = () => {};
+  }
+  if (!Element.prototype.scrollIntoView) {
+    Element.prototype.scrollIntoView = () => {};
+  }
+});
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
@@ -25,6 +37,9 @@ vi.mock("@/api/admin", async () => {
     deleteAiModel: vi.fn(),
     topupAiWallet: vi.fn(),
     adminAiChat: vi.fn(),
+    getAiFx: vi.fn(),
+    refreshAiFx: vi.fn(),
+    setAiFxManual: vi.fn(),
   };
 });
 
@@ -44,6 +59,16 @@ function renderPage() {
 describe("AdminAi", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(adminApi.getAiFx).mockResolvedValue({
+      rate: 16300,
+      source: "api.frankfurter.app",
+      effective_date: "2026-10-30",
+      fetched_at: "2026-10-30T01:10:00Z",
+      using_env_fallback: false,
+      env_rate: 16000,
+      auto_fetch_enabled: true,
+      history: [],
+    });
   });
 
   it("renders heading and empty providers", async () => {
@@ -163,6 +188,50 @@ describe("AdminAi", () => {
     ).toBeInTheDocument();
     expect(screen.getAllByText("Rp 1").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Rp 2").length).toBeGreaterThan(0);
+  });
+
+  it("switches the models price unit to USD / 1M tokens", async () => {
+    const user = userEvent.setup();
+    window.localStorage.clear();
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [],
+      total: 0,
+    });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({
+      items: [
+        {
+          id: "m1",
+          provider_id: "p1",
+          public_id: "sinexis/demo",
+          upstream_id: "gpt",
+          hpp_usd_per_1k_in: 0,
+          hpp_usd_per_1k_out: 0,
+          price_idr_per_1k_in: 1000,
+          price_idr_per_1k_out: 2000,
+          max_ctx: 1,
+          max_tokens_cap: 1,
+          enabled: true,
+          created_at: "",
+          updated_at: "",
+        },
+      ],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    renderPage();
+    await user.click(await screen.findByRole("tab", { name: "Models" }));
+    await screen.findByTestId("admin-ai-model-card-m1");
+    const unitSelect = await screen.findByRole("combobox", {
+      name: "Price unit",
+    });
+    await waitFor(() => expect(unitSelect).toBeEnabled());
+    await user.click(unitSelect);
+    await user.click(await screen.findByRole("option", { name: "USD / 1M tokens" }));
+    expect(await screen.findAllByText("$61.35")).not.toHaveLength(0);
+    expect(screen.queryByText("Rp 1.000")).not.toBeInTheDocument();
+    expect(window.localStorage.getItem("sinexis.admin.aiPriceUnit")).toBe(
+      "usd_1m",
+    );
   });
 
   it("asks before deleting an AI model", async () => {

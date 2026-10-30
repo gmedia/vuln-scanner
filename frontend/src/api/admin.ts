@@ -257,6 +257,43 @@ export async function adminAiChat(body: {
   return data;
 }
 
+export interface AiFxRate {
+  id: string;
+  base: string;
+  quote: string;
+  rate: number;
+  source: string;
+  effective_date: string;
+  fetched_at: string;
+  created_by: string | null;
+}
+
+export interface AiFxStatus {
+  rate: number;
+  source: string;
+  effective_date: string | null;
+  fetched_at: string | null;
+  using_env_fallback: boolean;
+  env_rate: number;
+  auto_fetch_enabled: boolean;
+  history: AiFxRate[];
+}
+
+export async function getAiFx(): Promise<AiFxStatus> {
+  const { data } = await api.get<AiFxStatus>("/api/admin/ai/fx");
+  return data;
+}
+
+export async function refreshAiFx(): Promise<AiFxRate> {
+  const { data } = await api.post<AiFxRate>("/api/admin/ai/fx/refresh");
+  return data;
+}
+
+export async function setAiFxManual(rate: number): Promise<AiFxRate> {
+  const { data } = await api.put<AiFxRate>("/api/admin/ai/fx/manual", { rate });
+  return data;
+}
+
 export async function listBlogPosts(): Promise<{
   items: BlogPostAdmin[];
   total: number;
@@ -674,6 +711,9 @@ export const adminApi = {
   listAiUsage,
   topupAiWallet,
   adminAiChat,
+  getAiFx,
+  refreshAiFx,
+  setAiFxManual,
   listBlogPosts,
   createBlogPost,
   updateBlogPost,
