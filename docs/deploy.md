@@ -37,6 +37,33 @@ Scripts derive the repo root from their own location, so they work from any chec
 
 `workflow_dispatch` with **`skip_deploy`** skips the job. Manual dispatch also **does not** rewrite app-host `.env` (that overwrite is **`push` to `main` only**).
 
+### 2.1) Pull-only images from GHCR (multi-host)
+
+After `ci-ok`, `main` CI publishes four immutable images:
+
+| Image | Built from | Notes |
+|---|---|---|
+| `ghcr.io/<owner>/vuln-scanner-backend:sha-<commit>` | `backend/Dockerfile` (`runtime`) | |
+| `ghcr.io/<owner>/vuln-scanner-workers:sha-<commit>` | `workers/Dockerfile` (`runtime`) | ip/domain/uptime/dead-letter/beat |
+| `ghcr.io/<owner>/vuln-scanner-workers-mobile:sha-<commit>` | `workers/Dockerfile` + `INSTALL_BUNDLETOOL=1` | mobile only |
+| `ghcr.io/<owner>/vuln-scanner-frontend:sha-<commit>` | `frontend/Dockerfile` (`production`) | |
+
+On a host that must not build:
+
+```bash
+export REGISTRY=ghcr.io/<owner>
+export IMAGE_TAG=sha-<commit>
+docker login ghcr.io            # token with read:packages
+docker compose -f docker-compose.prod.yml \
+  -f docker-compose.prod.remote-data.yml \
+  -f docker-compose.images.yml pull
+docker compose -f docker-compose.prod.yml \
+  -f docker-compose.prod.remote-data.yml \
+  -f docker-compose.images.yml up -d --no-build
+```
+
+`docker-compose.images.yml` pins `image:` and `pull_policy: always`; the base file keeps `build:` for local/dev. Always pass `--no-build` so Compose cannot fall back to building. `deploy-services.sh` still builds by design — use the raw compose commands above on pull-only hosts.
+
 ---
 
 ## 3) CI deploy vs Alembic (do not confuse)
