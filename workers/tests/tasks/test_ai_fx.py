@@ -1,6 +1,9 @@
 import sys
+from pathlib import Path
 
-sys.path.insert(0, "/home/ubuntu/vuln-scanner/workers")
+_WORKERS = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(_WORKERS))
+sys.path.insert(0, str(_WORKERS.parent / "backend"))
 
 from datetime import date  # noqa: E402
 from decimal import Decimal  # noqa: E402
