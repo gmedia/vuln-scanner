@@ -1,0 +1,134 @@
+name: Provision env
+
+on:
+  workflow_dispatch:
+    inputs:
+      role:
+        description: "Target role"
+        type: choice
+        required: true
+        options:
+          - app
+          - data
+          - worker
+
+concurrency:
+  group: provision-env-${{ inputs.role }}
+  cancel-in-progress: false
+
+jobs:
+  provision:
+    name: provision-${{ inputs.role }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve target host
+        id: target
+        run: |
+          case "${{ inputs.role }}" in
+            app)    host="${{ secrets.PROVISION_HOST_APP }}" ;;
+            data)   host="${{ secrets.PROVISION_HOST_DATA }}" ;;
+            worker) host="${{ secrets.PROVISION_HOST_WORKER }}" ;;
+            *) echo "unknown role: ${{ inputs.role }}" >&2; exit 1 ;;
+          esac
+          if [ -z "$host" ]; then
+            echo "missing PROVISION_HOST for role ${{ inputs.role }}" >&2
+            exit 1
+          fi
+          echo "host=$host" >> "$GITHUB_OUTPUT"
+
+      - name: Write .env
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ steps.target.outputs.host }}
+          username: ${{ secrets.PROVISION_USER }}
+          key: ${{ secrets.PROVISION_SSH_KEY }}
+          port: 22
+          proxy_host: ${{ secrets.PROVISION_JUMP_HOST }}
+          proxy_username: ${{ secrets.PROVISION_JUMP_USER }}
+          proxy_key: ${{ secrets.PROVISION_JUMP_SSH_KEY }}
+          proxy_port: 22
+          proxy_timeout: 60s
+          command_timeout: 5m
+          script: |
+            set -euo pipefail
+            mkdir -p "${{ secrets.PROVISION_PATH }}"
+            cd "${{ secrets.PROVISION_PATH }}"
+
+            REDIS_URL_IN='${{ secrets.REDIS_URL }}'
+            REDIS_PASSWORD=$(printf '%s' "$REDIS_URL_IN" | sed -n 's|.*://[^:]*:\([^@]*\)@.*|\1|p')
+            if [ -z "$REDIS_PASSWORD" ]; then
+            echo "REDIS_URL secret has no embedded password" >&2
+            exit 1
+            fi
+
+            PG_USER='${{ secrets.POSTGRES_USER }}'
+            PG_DB='${{ secrets.POSTGRES_DB }}'
+            PG_PASS='${{ secrets.POSTGRES_PASSWORD }}'
+            DATA_HOST='${{ secrets.PROVISION_DATA_HOST }}'
+
+            if [ "${{ inputs.role }}" = "data" ]; then
+            cat > .env <<ENVEOF
+            POSTGRES_USER=${PG_USER}
+            POSTGRES_DB=${PG_DB}
+            POSTGRES_PASSWORD=${PG_PASS}
+            REDIS_PASSWORD=${REDIS_PASSWORD}
+            OBJECT_STORAGE_BACKEND=${{ secrets.OBJECT_STORAGE_BACKEND || 'cos' }}
+            COS_SECRET_ID=${{ secrets.COS_SECRET_ID }}
+            COS_SECRET_KEY=${{ secrets.COS_SECRET_KEY }}
+            COS_REGION=${{ secrets.COS_REGION }}
+            COS_BUCKET=${{ secrets.COS_BUCKET }}
+            COS_APP_ID=${{ secrets.COS_APP_ID }}
+            COS_ENDPOINT=${{ secrets.COS_ENDPOINT }}
+            COS_PREFIX=${{ secrets.COS_PREFIX || 'scans/' }}
+            ENVEOF
+            else
+            cat > .env <<ENVEOF
+            DATABASE_URL=postgresql+asyncpg://${PG_USER}:${PG_PASS}@${DATA_HOST}:5432/${PG_DB}
+            DATABASE_URL_SYNC=postgresql://${PG_USER}:${PG_PASS}@${DATA_HOST}:5432/${PG_DB}
+            POSTGRES_USER=${PG_USER}
+            POSTGRES_DB=${PG_DB}
+            POSTGRES_PASSWORD=${PG_PASS}
+            REDIS_URL=redis://:${REDIS_PASSWORD}@${DATA_HOST}:6379/0
+            CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@${DATA_HOST}:6379/0
+            CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@${DATA_HOST}:6379/1
+            REDIS_PASSWORD=${REDIS_PASSWORD}
+            REMOTE_DATA=1
+            API_KEY=${{ secrets.API_KEY }}
+            SECRET_KEY=${{ secrets.SECRET_KEY }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+            CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
+            COOKIE_SECURE=${{ secrets.COOKIE_SECURE || 'true' }}
+            SMTP_HOST=${{ secrets.SMTP_HOST }}
+            SMTP_PORT=${{ secrets.SMTP_PORT }}
+            SMTP_USER=${{ secrets.SMTP_USER }}
+            SMTP_PASS=${{ secrets.SMTP_PASS }}
+            SMTP_FROM="${{ secrets.SMTP_FROM }}"
+            ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
+            ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
+            E2E_EMAIL=${{ secrets.E2E_EMAIL }}
+            E2E_PASSWORD=${{ secrets.E2E_PASSWORD }}
+            DEFAULT_REGISTER_CREDITS=${{ secrets.DEFAULT_REGISTER_CREDITS }}
+            NVD_API_KEY=${{ secrets.NVD_API_KEY }}
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            OBJECT_STORAGE_BACKEND=${{ secrets.OBJECT_STORAGE_BACKEND || 'cos' }}
+            COS_SECRET_ID=${{ secrets.COS_SECRET_ID }}
+            COS_SECRET_KEY=${{ secrets.COS_SECRET_KEY }}
+            COS_REGION=${{ secrets.COS_REGION }}
+            COS_BUCKET=${{ secrets.COS_BUCKET }}
+            COS_APP_ID=${{ secrets.COS_APP_ID }}
+            COS_ENDPOINT=${{ secrets.COS_ENDPOINT }}
+            COS_PREFIX=${{ secrets.COS_PREFIX || 'scans/' }}
+            GUARD_ENABLED=${{ secrets.GUARD_ENABLED || 'true' }}
+            GUARD_MOCK_WAZUH=${{ secrets.GUARD_MOCK_WAZUH || 'true' }}
+            GUARD_ALERT_MIN_LEVEL=${{ secrets.GUARD_ALERT_MIN_LEVEL || '12' }}
+            WAZUH_VERIFY_TLS=${{ secrets.WAZUH_VERIFY_TLS || 'true' }}
+            SIEM_ENABLED=${{ secrets.SIEM_ENABLED || 'false' }}
+            HOST_PROTECT_ENABLED=${{ secrets.HOST_PROTECT_ENABLED || 'false' }}
+            AI_GATEWAY_ENABLED=${{ secrets.AI_GATEWAY_ENABLED || 'false' }}
+            ENVEOF
+            fi
+
+            sed -i 's/[[:space:]]*$//' .env
+            chmod 600 .env
+            echo "role=${{ inputs.role }} path=$(pwd)/.env lines=$(wc -l < .env) mode=$(stat -c '%a' .env)"

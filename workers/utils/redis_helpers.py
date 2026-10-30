@@ -6,8 +6,11 @@ import redis
 def build_redis_url() -> str:
     """Build Redis connection URL from environment variables.
 
-    Uses REDIS_PASSWORD if set, otherwise connects without auth.
+    Prefers REDIS_URL; falls back to REDIS_PASSWORD against the compose service.
     """
+    explicit = os.getenv("REDIS_URL", "").strip()
+    if explicit:
+        return explicit
     password = os.getenv("REDIS_PASSWORD", "")
     if password:
         return f"redis://:{password}@redis:6379/0"
