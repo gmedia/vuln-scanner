@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
@@ -168,3 +168,31 @@ class AiKeyOut(BaseModel):
 class AiKeyList(BaseModel):
     items: list[AiKeyOut]
     total: int
+
+
+class AiFxRateOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    base: str
+    quote: str
+    rate: float
+    source: str
+    effective_date: date
+    fetched_at: datetime
+    created_by: uuid.UUID | None = None
+
+
+class AiFxStatusOut(BaseModel):
+    rate: float
+    source: str
+    effective_date: date | None
+    fetched_at: datetime | None
+    using_env_fallback: bool
+    env_rate: int
+    auto_fetch_enabled: bool
+    history: list[AiFxRateOut]
+
+
+class AiFxManualIn(BaseModel):
+    rate: float = Field(gt=0, le=1_000_000)

@@ -69,7 +69,7 @@ Prod nginx (`nginx/sinexis.app.conf`) proxies `/api/` and `/ws/` to FastAPI; **`
 | **Payer** | **Organization AI wallet** (not `users.credits`) |
 | **Motion** | **Prepaid IDR** top-up by admin/ops until finance adds `service_id` |
 | **Unit** | Bill **IDR per 1K prompt + 1K completion** from model row (wholesale USD × FX snapshot × markup). Round **up** to whole IDR. |
-| **FX** | Admin-set `AI_USD_IDR` (or per-day table later); no silent live FX |
+| **FX** | Daily `ai_fx_rates` snapshot (Celery beat 01:10 UTC) with **visible** source + effective date, plus an admin **manual override**. `AI_USD_IDR` stays the COGS fallback. No silent live FX. |
 | **Catalog** | **Named aliases only** (`sinexis/…`); reject unknown `model` |
 | **Auth `/v1`** | Customer `Authorization: Bearer sx-…` only. **Never** platform `X-API-Key` / `settings.api_key`. JWT **not** for SDK `/v1`. |
 | **Playground / trial** | JWT **admin** → internal `/api/admin/ai/chat`; same proxy; `source=admin_trial`; **platform wallet + monthly IDR cap** |
@@ -143,6 +143,7 @@ SPA /admin/ai                  -- admin --> /api/admin/ai/*
 | `upstream_id` | string sent upstream |
 | `hpp_usd_per_1k_in` / `hpp_usd_per_1k_out` | wholesale |
 | `markup_bps` | basis points over FX’d HPP, or explicit `price_idr_per_1k_*` — pick one in S1 (prefer **explicit IDR sell prices** + HPP for margin reports) |
+| `price_idr_per_1k_in/out` | sell price, **integer IDR per 1K tokens**. The admin SPA may *display and enter* USD/1M (unit toggle), but storage stays IDR/1K → 1 IDR/1K ≈ $0.06/1M at 16,300, so the form shows the value that will actually be stored |
 | `max_ctx` / `max_tokens_cap` | |
 | `enabled` | |
 
@@ -202,6 +203,25 @@ Platform trial: a **synthetic org** or `ai_platform_wallet` row with monthly cap
 
 HPP AI **must not** reuse `hpp_rates` scan-job rows. Optional later: `/admin/hpp` tab or `/admin/ai` only.
 
+### 7.7 `ai_fx_rates` (one row per pair per day)
+
+| Column | Notes |
+|--------|-------|
+| `id` | UUID |
+| `base` / `quote` | `USD` / `IDR` |
+| `rate` | `NUMERIC(18,6)` — IDR per 1 USD |
+| `source` | provider hostname (e.g. `api.frankfurter.app`) or `manual` |
+| `effective_date` | date published by the source (or the day of a manual entry) |
+| `fetched_at` | when we stored it |
+| `created_by` | admin user for manual rows; `NULL` for the beat fetch |
+
+Unique `(base, quote, effective_date)`; a same-day re-fetch or override updates the row instead of appending. **Billing COGS keeps using `AI_USD_IDR`** — the table only feeds the admin price display/entry, so a daily FX change can never silently reprice settled usage.
+
+| Env | Default | Notes |
+|-----|---------|-------|
+| `AI_FX_AUTO_FETCH` | `true` | beat task skips entirely when false |
+| `AI_FX_SOURCE_URL` | `https://api.frankfurter.app/latest?from=USD&to=IDR` | frankfurter (ECB, no key) shape; `open.er-api` shape also parsed |
+
 ---
 
 ## 8. HTTP surface
@@ -234,6 +254,9 @@ Response shape: OpenAI chat completions (including `usage`). Errors: OpenAI-styl
 | POST | `/api/admin/ai/wallets/{org_id}/topup` | |
 | GET | `/api/admin/ai/usage` | all orgs |
 | POST | `/api/admin/ai/chat` | trial; cap |
+| GET | `/api/admin/ai/fx` | effective rate + source + date + 30-row history |
+| POST | `/api/admin/ai/fx/refresh` | fetch from `AI_FX_SOURCE_URL` now; `502` when the source is down |
+| PUT | `/api/admin/ai/fx/manual` | upsert today's rate with `source=manual` |
 
 ---
 

@@ -2,7 +2,10 @@ import { useState } from "react";
 import { MoreHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AiModelAdmin } from "@/api/admin";
-import { formatIdr } from "@/components/admin/aiFormat";
+import {
+  formatPricePerTokens,
+  type AiPriceUnit,
+} from "@/components/admin/aiFormat";
 import { AdminAiField } from "@/components/admin/AdminAiField";
 import { Button } from "@/components/ui/Button";
 import { buttonVariants } from "@/components/ui/buttonVariants";
@@ -35,6 +38,10 @@ import {
 
 export function AdminAiModelList({
   models,
+  unit,
+  usdIdr,
+  priceLabelIn,
+  priceLabelOut,
   editingModel,
   editPublicId,
   editUpstreamId,
@@ -51,6 +58,10 @@ export function AdminAiModelList({
   onDelete,
 }: {
   readonly models: readonly AiModelAdmin[];
+  readonly unit: AiPriceUnit;
+  readonly usdIdr: number;
+  readonly priceLabelIn: string;
+  readonly priceLabelOut: string;
   readonly editingModel: AiModelAdmin | null;
   readonly editPublicId: string;
   readonly editUpstreamId: string;
@@ -96,13 +107,13 @@ export function AdminAiModelList({
                 />
                 <AdminAiField
                   id={`ai-m-edit-in-${m.id}`}
-                  label={t("aiPriceIn")}
+                  label={priceLabelIn}
                   value={editPriceIn}
                   onChange={onEditPriceIn}
                 />
                 <AdminAiField
                   id={`ai-m-edit-out-${m.id}`}
-                  label={t("aiPriceOut")}
+                  label={priceLabelOut}
                   value={editPriceOut}
                   onChange={onEditPriceOut}
                 />
@@ -124,8 +135,9 @@ export function AdminAiModelList({
                   {m.upstream_id}
                 </p>
                 <p className="mt-1 font-mono text-xs tabular-nums text-muted-foreground">
-                  {t("aiPriceIn")}: {formatIdr(m.price_idr_per_1k_in)} · {t("aiPriceOut")}:{" "}
-                  {formatIdr(m.price_idr_per_1k_out)}
+                  {priceLabelIn}: {formatPricePerTokens(m.price_idr_per_1k_in, unit, usdIdr)} ·{" "}
+                  {priceLabelOut}:{" "}
+                  {formatPricePerTokens(m.price_idr_per_1k_out, unit, usdIdr)}
                 </p>
                 <div className="mt-2 flex flex-wrap justify-end gap-2">
                   <DropdownMenu>
@@ -170,8 +182,8 @@ export function AdminAiModelList({
             <TableRow>
               <TableHead>{t("aiPublicId")}</TableHead>
               <TableHead>{t("aiUpstreamId")}</TableHead>
-              <TableHead>{t("aiPriceIn")}</TableHead>
-              <TableHead>{t("aiPriceOut")}</TableHead>
+              <TableHead>{priceLabelIn}</TableHead>
+              <TableHead>{priceLabelOut}</TableHead>
               <TableHead className="text-right">{t("colActions")}</TableHead>
             </TableRow>
           </TableHeader>
@@ -199,13 +211,13 @@ export function AdminAiModelList({
                       />
                       <AdminAiField
                         id={`ai-m-edit-in-${m.id}`}
-                        label={t("aiPriceIn")}
+                        label={priceLabelIn}
                         value={editPriceIn}
                         onChange={onEditPriceIn}
                       />
                       <AdminAiField
                         id={`ai-m-edit-out-${m.id}`}
-                        label={t("aiPriceOut")}
+                        label={priceLabelOut}
                         value={editPriceOut}
                         onChange={onEditPriceOut}
                       />
@@ -215,10 +227,10 @@ export function AdminAiModelList({
                   )}
                 </TableCell>
                 <TableCell className="tabular-nums">
-                  {formatIdr(m.price_idr_per_1k_in)}
+                  {formatPricePerTokens(m.price_idr_per_1k_in, unit, usdIdr)}
                 </TableCell>
                 <TableCell className="tabular-nums">
-                  {formatIdr(m.price_idr_per_1k_out)}
+                  {formatPricePerTokens(m.price_idr_per_1k_out, unit, usdIdr)}
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-right">
                   {editingModel?.id === m.id ? (

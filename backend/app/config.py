@@ -150,6 +150,9 @@ class Settings(BaseSettings):
     siem_enabled: bool = False
     ai_gateway_enabled: bool = False
     ai_usd_idr: int = 16000
+    ai_fx_auto_fetch: bool = True
+    ai_fx_source_url: str = "https://api.frankfurter.app/latest?from=USD&to=IDR"
+    ai_fx_timeout_seconds: float = 8.0
     ai_store_prompts: bool = False
     ai_trial_monthly_cap_idr: int = 500_000
     host_protect_enabled: bool = False
