@@ -369,9 +369,13 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.txt pytest-timeout==2.4.0
       - name: Run tests with coverage
-        run: python -m pytest tests/ -v --tb=short --cov-report=xml
+        # --timeout turns an intermittent hang (observed 36-50 min vs a ~10 min
+        # baseline) into a named failure. The step timeout is a backstop for the
+        # rare case where the plugin cannot interrupt a C-level block.
+        timeout-minutes: 25
+        run: python -m pytest tests/ -v --tb=short --cov-report=xml --timeout=300 --timeout-method=signal
       - name: Upload coverage report
         uses: actions/upload-artifact@v6
         with:
@@ -398,9 +402,13 @@ jobs:
           cache: pip
           cache-dependency-path: workers/requirements.txt
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.txt pytest-timeout==2.4.0
       - name: Run tests with coverage
-        run: python -m pytest tests/ -v --tb=short --cov-report=xml
+        # --timeout turns an intermittent hang (observed 36-50 min vs a ~10 min
+        # baseline) into a named failure. The step timeout is a backstop for the
+        # rare case where the plugin cannot interrupt a C-level block.
+        timeout-minutes: 25
+        run: python -m pytest tests/ -v --tb=short --cov-report=xml --timeout=300 --timeout-method=signal
       - name: Upload coverage report
         uses: actions/upload-artifact@v6
         with:
