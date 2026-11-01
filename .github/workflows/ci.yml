@@ -29,7 +29,11 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Cancel superseded PR runs (developers push often), but never cancel a run on
+  # `main`: it may be mid-deploy, and killing `up -d --force-recreate` can leave
+  # containers half-recreated. A newer main push replaces the *pending* run, so
+  # the running deploy finishes and the latest commit deploys next.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   API_KEY: e2e-test-api-key
