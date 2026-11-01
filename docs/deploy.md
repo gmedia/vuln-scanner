@@ -134,8 +134,9 @@ docker ps --filter name=vuln- --format '{{.Names}} {{.Status}}'
 docker exec vuln-backend alembic current        # only if you need to confirm head; not a second migrate
 ```
 
-`/api/health` also reports `sha` — the commit the backend image was deployed from
-(`GIT_SHA`, written into `.env` by the CI deploy job). Compare it with `main`:
+`/api/health` also reports `sha` — the commit the backend image was deployed from.
+The CI deploy job passes `GIT_SHA` in the deploy environment, and
+`docker-compose.prod.yml` forwards it to the backend container. Compare it with `main`:
 
 ```bash
 curl -sS "$PUBLIC_BASE_URL/api/health" | jq -r .sha
