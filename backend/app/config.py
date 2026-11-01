@@ -128,6 +128,7 @@ class Settings(BaseSettings):
     jwt_rate_limit: int = 300  # requests per hour per IP for JWT-authenticated endpoints
     jwt_rate_limit_window: int = 3600  # seconds (1 hour)
     invoice_default_term_days: int = 0  # days after period_start before an invoice is due
+    git_sha: str = ""  # build revision written by deploy; surfaced on /health for drift checks
     admin_rate_limit: int = 60  # requests per minute per IP for admin endpoints
     admin_rate_limit_window: int = 60  # seconds
     scan_submit_limit: int = 30  # scan submissions per hour per IP

@@ -1,0 +1,70 @@
+name: Prod drift
+
+# Detects the failure mode that went unnoticed for ~50 hours: `main` is green
+# and merging, but the deploy job has been failing, so production is stale.
+#
+# Requires GET /api/health to report `sha` (shipped with the GIT_SHA change).
+# Until that deploy lands, this job fails with an explicit "unknown" message —
+# which is the correct signal, not a false alarm.
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prod-drift
+  cancel-in-progress: true
+
+jobs:
+  drift:
+    name: Compare deployed SHA with main
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Compare
+        env:
+          BASE_URL: ${{ vars.PROD_BASE_URL || 'https://sinexis.app' }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          main_sha=$(
+            curl -fsS --max-time 15 \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/commits/main" \
+              | jq -r '.sha'
+          )
+
+          health=$(
+            curl -fsS --max-time 15 "${BASE_URL%/}/api/health" || {
+              echo "::error::Production health endpoint did not respond (${BASE_URL%/}/api/health)."
+              exit 1
+            }
+          )
+          deployed_sha=$(printf '%s' "$health" | jq -r '.sha // "unknown"')
+
+          {
+            echo "### Production drift"
+            echo ""
+            echo "| | SHA |"
+            echo "|---|---|"
+            echo "| main | \`${main_sha}\` |"
+            echo "| deployed | \`${deployed_sha}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$deployed_sha" = "unknown" ]; then
+            echo "::error::Production does not report a build SHA. The GIT_SHA deploy has not landed yet."
+            exit 1
+          fi
+
+          if [ "$deployed_sha" != "$main_sha" ]; then
+            echo "::error::Production is running ${deployed_sha}, but main is ${main_sha}. The deploy job is failing or has not run."
+            exit 1
+          fi
+
+          echo "Production matches main (${main_sha})."

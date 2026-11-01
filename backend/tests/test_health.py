@@ -101,3 +101,36 @@ class TestHealthEndpoint:
         assert data["database"] == "connected"
         assert data["redis"] == "connected"
         assert data["status"] == "ok"
+
+    def test_health_reports_the_build_sha(self, client, monkeypatch):
+        from app.config import settings
+
+        monkeypatch.setattr(settings, "git_sha", "deadbeefcafe")
+        mock_conn = AsyncMock()
+        connect_cm = AsyncMock()
+        connect_cm.__aenter__.return_value = mock_conn
+        mock_engine = MagicMock()
+        mock_engine.connect.return_value = connect_cm
+        mock_redis = AsyncMock()
+
+        with patch("app.database.engine", mock_engine), patch("redis.asyncio.from_url", return_value=mock_redis):
+            resp = client.get("/health")
+
+        assert resp.status_code == 200
+        assert resp.json()["sha"] == "deadbeefcafe"
+
+    def test_health_reports_unknown_sha_when_unset(self, client, monkeypatch):
+        from app.config import settings
+
+        monkeypatch.setattr(settings, "git_sha", "")
+        mock_conn = AsyncMock()
+        connect_cm = AsyncMock()
+        connect_cm.__aenter__.return_value = mock_conn
+        mock_engine = MagicMock()
+        mock_engine.connect.return_value = connect_cm
+        mock_redis = AsyncMock()
+
+        with patch("app.database.engine", mock_engine), patch("redis.asyncio.from_url", return_value=mock_redis):
+            resp = client.get("/health")
+
+        assert resp.json()["sha"] == "unknown"

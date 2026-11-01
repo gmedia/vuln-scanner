@@ -134,6 +134,24 @@ docker ps --filter name=vuln- --format '{{.Names}} {{.Status}}'
 docker exec vuln-backend alembic current        # only if you need to confirm head; not a second migrate
 ```
 
+`/api/health` also reports `sha` — the commit the backend image was deployed from
+(`GIT_SHA`, written into `.env` by the CI deploy job). Compare it with `main`:
+
+```bash
+curl -sS "$PUBLIC_BASE_URL/api/health" | jq -r .sha
+git ls-remote origin refs/heads/main | cut -c1-40
+```
+
+The scheduled **`Prod drift`** workflow (`.github/workflows/prod-drift.yml`)
+does this every 6 hours and fails when production does not match `main`, or when
+production reports `unknown` (i.e. the `GIT_SHA` deploy has not landed). This is
+the alarm for "CI green but deploy red" — the mode that went unnoticed for ~50
+hours on 2026-10-20/22.
+
+The `deploy` job also has a **preflight** step that retries TCP reachability to
+the jump host three times before any SSH work, plus a 20-minute job timeout, so
+a dead bastion fails in minutes instead of hanging for hours.
+
 ---
 
 ## 6) Flags ops actually cares about
