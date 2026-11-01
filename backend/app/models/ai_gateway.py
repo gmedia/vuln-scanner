@@ -3,6 +3,7 @@ from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
+import sqlalchemy as sa
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
@@ -15,6 +16,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -68,6 +70,10 @@ class AiModel(Base):
     hpp_usd_per_1k_out: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     price_idr_per_1k_in: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     price_idr_per_1k_out: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    price_usd_per_1m_in: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    price_usd_per_1m_out: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    hpp_usd_per_1m_in: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    hpp_usd_per_1m_out: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
     max_ctx: Mapped[int] = mapped_column(Integer, nullable=False, default=8192)
     max_tokens_cap: Mapped[int] = mapped_column(Integer, nullable=False, default=4096)
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
@@ -79,6 +85,25 @@ class AiModel(Base):
     )
 
     provider: Mapped[AiProvider] = relationship(back_populates="models")
+
+    __table_args__ = (
+        CheckConstraint(
+            "price_usd_per_1m_in IS NULL OR price_usd_per_1m_in >= 0",
+            name="ck_ai_models_price_usd_in_nonnegative",
+        ),
+        CheckConstraint(
+            "price_usd_per_1m_out IS NULL OR price_usd_per_1m_out >= 0",
+            name="ck_ai_models_price_usd_out_nonnegative",
+        ),
+        CheckConstraint(
+            "hpp_usd_per_1m_in IS NULL OR hpp_usd_per_1m_in >= 0",
+            name="ck_ai_models_hpp_usd_in_nonnegative",
+        ),
+        CheckConstraint(
+            "hpp_usd_per_1m_out IS NULL OR hpp_usd_per_1m_out >= 0",
+            name="ck_ai_models_hpp_usd_out_nonnegative",
+        ),
+    )
 
 
 class AiApiKey(Base):
@@ -132,6 +157,54 @@ class AiWallet(Base):
     organization: Mapped["Organization"] = relationship()
 
 
+class AiWalletLedger(Base):
+    __tablename__ = "ai_wallet_ledger"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("ai_wallets.organization_id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    delta_idr: Mapped[int] = mapped_column(Integer, nullable=False)
+    balance_after_idr: Mapped[int] = mapped_column(Integer, nullable=False)
+    reservation_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("ai_reservations.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    usage_event_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("ai_usage_events.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    actor_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    note: Mapped[str | None] = mapped_column(String(256))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+
+    __table_args__ = (
+        CheckConstraint(
+            "kind IN ('topup','reserve','settle_adjust','release','manual_adjust')",
+            name="ck_ai_wallet_ledger_kind",
+        ),
+        CheckConstraint("balance_after_idr >= 0", name="ck_ai_wallet_ledger_balance_nonnegative"),
+        Index(
+            "uq_ai_wallet_ledger_kind_reservation",
+            "kind",
+            "reservation_id",
+            unique=True,
+            postgresql_where=text("reservation_id IS NOT NULL"),
+            sqlite_where=text("reservation_id IS NOT NULL"),
+        ),
+    )
+
+
 class AiReservation(Base):
     __tablename__ = "ai_reservations"
 
@@ -147,11 +220,24 @@ class AiReservation(Base):
         ForeignKey("ai_api_keys.id", ondelete="SET NULL"),
         nullable=True,
     )
+    model_public_id: Mapped[str | None] = mapped_column(String(128))
+    price_usd_per_1m_in: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    price_usd_per_1m_out: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    hpp_usd_per_1m_in: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    hpp_usd_per_1m_out: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    fx_rate: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    fx_source: Mapped[str | None] = mapped_column(String(64))
+    fx_effective_date: Mapped[date | None] = mapped_column(Date)
+    prompt_tokens_est: Mapped[int | None] = mapped_column(Integer)
+    completion_tokens_max: Mapped[int | None] = mapped_column(Integer)
     hold_idr: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="open")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
-    __table_args__ = (CheckConstraint(f"status IN {RESERVATION_STATUSES}", name="ck_ai_reservation_status"),)
+    __table_args__ = (
+        CheckConstraint(f"status IN {RESERVATION_STATUSES}", name="ck_ai_reservation_status"),
+        CheckConstraint("fx_rate IS NULL OR fx_rate > 0", name="ck_ai_reservations_fx_rate_positive"),
+    )
 
 
 class AiUsageEvent(Base):
@@ -185,6 +271,18 @@ class AiUsageEvent(Base):
     completion_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     billed_idr: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     cogs_idr: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    billed_usd: Mapped[Decimal | None] = mapped_column(Numeric(24, 12))
+    cogs_usd: Mapped[Decimal | None] = mapped_column(Numeric(24, 12))
+    fx_rate: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    fx_source: Mapped[str | None] = mapped_column(String(64))
+    fx_effective_date: Mapped[date | None] = mapped_column(Date)
+    price_usd_per_1m_in: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    price_usd_per_1m_out: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    hpp_usd_per_1m_in: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    hpp_usd_per_1m_out: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    shortfall_idr: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    usage_missing: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa.false())
+    billed_estimated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa.false())
     latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     http_status: Mapped[int | None] = mapped_column(Integer, nullable=True)
     finish_reason: Mapped[str | None] = mapped_column(String(32), nullable=True)
@@ -198,7 +296,16 @@ class AiUsageEvent(Base):
     response_payload: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
-    __table_args__ = (CheckConstraint(f"source IN {USAGE_SOURCES}", name="ck_ai_usage_source"),)
+    __table_args__ = (
+        CheckConstraint(f"source IN {USAGE_SOURCES}", name="ck_ai_usage_source"),
+        CheckConstraint("shortfall_idr >= 0", name="ck_ai_usage_events_shortfall_nonnegative"),
+        CheckConstraint(
+            "billed_idr >= 0 AND cogs_idr >= 0",
+            name="ck_ai_usage_events_amounts_nonnegative",
+        ),
+        Index("uq_ai_usage_events_reservation_id", "reservation_id", unique=True),
+        Index("ix_ai_usage_events_provider_request", "provider_id", "provider_request_id"),
+    )
 
 
 class AiFxRate(Base):
