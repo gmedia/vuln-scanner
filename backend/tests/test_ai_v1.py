@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from unittest.mock import AsyncMock, patch
 
@@ -483,3 +483,119 @@ async def test_legacy_sk_sx_prefix_still_authenticates(db_session: AsyncSession,
     await db_session.commit()
     row = await authenticate_customer_key(db_session, plain)
     assert row.name == "legacy"
+
+
+@pytest.mark.asyncio
+async def test_public_catalog_returns_usd_and_env_fx(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            response = await ac.get("/api/ai/models", headers=_auth(owner, org.id))
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert response.status_code == 200, response.text
+    item = response.json()["items"][0]
+    assert item["price_usd_per_1m_in"] == 62.5
+    assert item["price_usd_per_1m_out"] == 125.0
+    assert item["price_idr_per_1k_in"] == 1000
+    assert item["price_idr_per_1k_out"] == 2000
+    assert item["fx_rate"] == float(settings.ai_usd_idr)
+    assert item["fx_source"] == "env"
+    assert item["fx_effective_date"] is None
+    assert item["fx_stale"] is True
+
+
+@pytest.mark.asyncio
+async def test_public_catalog_uses_stored_rate_and_marks_fresh(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+    model = ctx["model"]
+    model.price_usd_per_1m_in = Decimal("1.5")
+    model.price_usd_per_1m_out = Decimal("2.5")
+    db_session.add(
+        AiFxRate(
+            base="USD",
+            quote="IDR",
+            rate=Decimal("16300"),
+            source="manual",
+            effective_date=date.today(),
+        )
+    )
+    await db_session.commit()
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            response = await ac.get("/api/ai/models", headers=_auth(owner, org.id))
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert response.status_code == 200, response.text
+    item = response.json()["items"][0]
+    assert item["price_usd_per_1m_in"] == 1.5
+    assert item["price_usd_per_1m_out"] == 2.5
+    assert item["price_idr_per_1k_in"] == 24
+    assert item["price_idr_per_1k_out"] == 41
+    assert item["fx_rate"] == 16300.0
+    assert item["fx_source"] == "manual"
+    assert item["fx_effective_date"] == date.today().isoformat()
+    assert item["fx_stale"] is False
+
+
+@pytest.mark.asyncio
+async def test_customer_usage_hides_cogs_hpp_and_fx(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+    db_session.add(
+        AiUsageEvent(
+            organization_id=org.id,
+            source="customer",
+            model_public_id="sinexis/test",
+            prompt_tokens=10,
+            completion_tokens=5,
+            billed_idr=10,
+            cogs_idr=4,
+            billed_usd=Decimal("0.001000000000"),
+            cogs_usd=Decimal("0.000400000000"),
+            fx_rate=Decimal("16000"),
+            fx_source="env",
+            price_usd_per_1m_in=Decimal("0.15"),
+            price_usd_per_1m_out=Decimal("0.60"),
+            hpp_usd_per_1m_in=Decimal("0.075"),
+            hpp_usd_per_1m_out=Decimal("0.30"),
+            created_at=datetime.now(UTC),
+        )
+    )
+    await db_session.commit()
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            response = await ac.get("/api/ai/usage", headers=_auth(owner, org.id))
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert response.status_code == 200, response.text
+    item = response.json()["items"][0]
+    assert item["billed_idr"] == 10
+    for leaked in ("cogs_idr", "cogs_usd", "billed_usd", "hpp_usd_per_1m_in", "hpp_usd_per_1m_out", "margin_idr"):
+        assert leaked not in item
+    assert "fx_rate" not in item
+    assert "fx_source" not in item
+    assert "fx_effective_date" not in item

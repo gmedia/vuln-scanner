@@ -12,13 +12,7 @@ import {
   type AiModelAdmin,
   type AiProviderAdmin,
 } from "@/api/admin";
-import {
-  formatIdr,
-  idrPer1kToUsdPer1m,
-  parsePriceInput,
-  usdPer1mToIdrPer1k,
-  type AiPriceUnit,
-} from "@/components/admin/aiFormat";
+import { parsePriceInput, type AiPriceUnit } from "@/components/admin/aiFormat";
 import { Boxes } from "lucide-react";
 import { AdminAiField } from "@/components/admin/AdminAiField";
 import { AdminAiFxCard } from "@/components/admin/AdminAiFxCard";
@@ -62,23 +56,13 @@ function writeStoredPriceUnit(unit: AiPriceUnit): void {
   }
 }
 
-function formatUsdDraft(idrPer1k: number, usdIdr: number): string {
-  return String(Number(idrPer1kToUsdPer1m(idrPer1k, usdIdr).toFixed(4)));
+function usdDraft(usd: number | null | undefined): string {
+  if (usd == null) return "";
+  return String(Number(usd.toFixed(4)));
 }
 
-/** Re-expresses an in-progress draft in the newly selected unit; invalid input becomes empty. */
-function convertDraft(
-  raw: string,
-  from: AiPriceUnit,
-  to: AiPriceUnit,
-  usdIdr: number,
-): string {
-  if (from === to) return raw;
-  const parsed = parsePriceInput(raw);
-  if (parsed == null) return "";
-  return to === "usd_1m"
-    ? formatUsdDraft(parsed, usdIdr)
-    : String(usdPer1mToIdrPer1k(parsed, usdIdr));
+function usdInput(raw: string): number {
+  return parsePriceInput(raw) ?? 0;
 }
 
 export function AdminAiModelsTab({
@@ -94,23 +78,23 @@ export function AdminAiModelsTab({
   const [publicId, setPublicId] = useState("sinexis/demo");
   const [upstreamId, setUpstreamId] = useState("openai/gpt-4o-mini");
   const [providerId, setProviderId] = useState("");
-  // A persisted USD unit has no FX rate at mount yet, so start those drafts empty
-  // instead of showing IDR defaults under a USD label.
-  const [priceIn, setPriceIn] = useState(() => (unit === "usd_1m" ? "" : "1000"));
-  const [priceOut, setPriceOut] = useState(() => (unit === "usd_1m" ? "" : "3000"));
+  const [priceIn, setPriceIn] = useState("0.15");
+  const [priceOut, setPriceOut] = useState("0.60");
+  const [hppIn, setHppIn] = useState("0");
+  const [hppOut, setHppOut] = useState("0");
   const [editingModel, setEditingModel] = useState<AiModelAdmin | null>(null);
   const [editPublicId, setEditPublicId] = useState("");
   const [editUpstreamId, setEditUpstreamId] = useState("");
   const [editPriceIn, setEditPriceIn] = useState("");
   const [editPriceOut, setEditPriceOut] = useState("");
+  const [editHppIn, setEditHppIn] = useState("");
+  const [editHppOut, setEditHppOut] = useState("");
 
   const fxQ = useQuery({
     queryKey: ["admin-ai-fx"],
     queryFn: getAiFx,
     retry: false,
   });
-  const usdIdr = fxQ.data?.rate ?? 0;
-  const fxReady = usdIdr > 0;
 
   const refreshFx = useMutation({
     mutationFn: () => refreshAiFx(),
@@ -129,36 +113,10 @@ export function AdminAiModelsTab({
     onError: () => toast.error(t("aiFxManualFail")),
   });
 
-  /** Storage is integer IDR per 1K, so a USD draft is converted (and rounded) before it is sent. */
-  const toStoredPrice = (raw: string): number => {
-    if (unit !== "usd_1m") return Number(raw);
-    const parsed = parsePriceInput(raw);
-    return parsed == null ? 0 : usdPer1mToIdrPer1k(parsed, usdIdr);
-  };
-  const toDisplayDraft = (idrPer1k: number): string => {
-    if (unit !== "usd_1m") return String(idrPer1k);
-    if (!fxReady) return "";
-    return formatUsdDraft(idrPer1k, usdIdr);
-  };
-  const savedAsHint = (raw: string): string | null => {
-    if (unit !== "usd_1m" || !fxReady) return null;
-    const parsed = parsePriceInput(raw);
-    if (parsed == null) return null;
-    return t("aiFxSavedAs", {
-      idr: formatIdr(usdPer1mToIdrPer1k(parsed, usdIdr)),
-    });
-  };
   const changeUnit = (next: AiPriceUnit) => {
     if (next === unit) return;
-    const previous = unit;
     setUnit(next);
     writeStoredPriceUnit(next);
-    if (!fxReady) return;
-    const convert = (raw: string) => convertDraft(raw, previous, next, usdIdr);
-    setPriceIn(convert(priceIn));
-    setPriceOut(convert(priceOut));
-    setEditPriceIn(convert(editPriceIn));
-    setEditPriceOut(convert(editPriceOut));
   };
 
   const addModel = useMutation({
@@ -167,8 +125,10 @@ export function AdminAiModelsTab({
         provider_id: providerId,
         public_id: publicId,
         upstream_id: upstreamId,
-        price_idr_per_1k_in: toStoredPrice(priceIn),
-        price_idr_per_1k_out: toStoredPrice(priceOut),
+        price_usd_per_1m_in: usdInput(priceIn),
+        price_usd_per_1m_out: usdInput(priceOut),
+        hpp_usd_per_1m_in: usdInput(hppIn),
+        hpp_usd_per_1m_out: usdInput(hppOut),
       }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["admin-ai-models"] }),
   });
@@ -178,8 +138,10 @@ export function AdminAiModelsTab({
       return updateAiModel(editingModel.id, {
         public_id: editPublicId,
         upstream_id: editUpstreamId,
-        price_idr_per_1k_in: toStoredPrice(editPriceIn),
-        price_idr_per_1k_out: toStoredPrice(editPriceOut),
+        price_usd_per_1m_in: usdInput(editPriceIn),
+        price_usd_per_1m_out: usdInput(editPriceOut),
+        hpp_usd_per_1m_in: usdInput(editHppIn),
+        hpp_usd_per_1m_out: usdInput(editHppOut),
       });
     },
     onSuccess: () => {
@@ -194,8 +156,6 @@ export function AdminAiModelsTab({
 
   const priceLabelIn = t(unit === "usd_1m" ? "aiPriceInUsd" : "aiPriceIn");
   const priceLabelOut = t(unit === "usd_1m" ? "aiPriceOutUsd" : "aiPriceOut");
-  const savedHintIn = savedAsHint(priceIn);
-  const savedHintOut = savedAsHint(priceOut);
 
   return (
     <AdminShell tone="primary">
@@ -235,7 +195,6 @@ export function AdminAiModelsTab({
               onValueChange={(value) => {
                 if (isAiPriceUnit(value)) changeUnit(value);
               }}
-              disabled={!fxReady}
             >
               <SelectTrigger id="ai-m-unit" className="h-10 min-h-10">
                 <SelectValue />
@@ -249,25 +208,22 @@ export function AdminAiModelsTab({
           <div className="flex min-w-0 flex-col gap-1.5">
             <AdminAiField
               id="ai-m-in"
-              label={priceLabelIn}
+              label={t("aiPriceInUsd")}
               value={priceIn}
               onChange={setPriceIn}
             />
-            {savedHintIn ? (
-              <p className="text-xs text-muted-foreground">{savedHintIn}</p>
-            ) : null}
+            <p className="text-xs text-muted-foreground">{t("aiFxChargeFollowsRate")}</p>
           </div>
           <div className="flex min-w-0 flex-col gap-1.5">
             <AdminAiField
               id="ai-m-out"
-              label={priceLabelOut}
+              label={t("aiPriceOutUsd")}
               value={priceOut}
               onChange={setPriceOut}
             />
-            {savedHintOut ? (
-              <p className="text-xs text-muted-foreground">{savedHintOut}</p>
-            ) : null}
           </div>
+          <AdminAiField id="ai-m-hpp-in" label={t("aiHppInUsd")} value={hppIn} onChange={setHppIn} />
+          <AdminAiField id="ai-m-hpp-out" label={t("aiHppOutUsd")} value={hppOut} onChange={setHppOut} />
         </div>
         <Button
           type="button"
@@ -280,7 +236,6 @@ export function AdminAiModelsTab({
         <AdminAiModelList
           models={models}
           unit={unit}
-          usdIdr={usdIdr}
           priceLabelIn={priceLabelIn}
           priceLabelOut={priceLabelOut}
           editingModel={editingModel}
@@ -288,17 +243,23 @@ export function AdminAiModelsTab({
           editUpstreamId={editUpstreamId}
           editPriceIn={editPriceIn}
           editPriceOut={editPriceOut}
+          editHppIn={editHppIn}
+          editHppOut={editHppOut}
           savePending={saveModel.isPending}
           onEditPublicId={setEditPublicId}
           onEditUpstreamId={setEditUpstreamId}
           onEditPriceIn={setEditPriceIn}
           onEditPriceOut={setEditPriceOut}
+          onEditHppIn={setEditHppIn}
+          onEditHppOut={setEditHppOut}
           onStartEdit={(m) => {
             setEditingModel(m);
             setEditPublicId(m.public_id);
             setEditUpstreamId(m.upstream_id);
-            setEditPriceIn(toDisplayDraft(m.price_idr_per_1k_in));
-            setEditPriceOut(toDisplayDraft(m.price_idr_per_1k_out));
+            setEditPriceIn(usdDraft(m.price_usd_per_1m_in));
+            setEditPriceOut(usdDraft(m.price_usd_per_1m_out));
+            setEditHppIn(usdDraft(m.hpp_usd_per_1m_in));
+            setEditHppOut(usdDraft(m.hpp_usd_per_1m_out));
           }}
           onCancelEdit={() => setEditingModel(null)}
           onSave={() => saveModel.mutate()}

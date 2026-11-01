@@ -114,6 +114,10 @@ export interface AiModelAdmin {
   hpp_usd_per_1k_out: number;
   price_idr_per_1k_in: number;
   price_idr_per_1k_out: number;
+  price_usd_per_1m_in: number;
+  price_usd_per_1m_out: number;
+  hpp_usd_per_1m_in: number;
+  hpp_usd_per_1m_out: number;
   max_ctx: number;
   max_tokens_cap: number;
   enabled: boolean;
@@ -177,8 +181,12 @@ export async function createAiModel(body: {
   provider_id: string;
   public_id: string;
   upstream_id: string;
-  price_idr_per_1k_in: number;
-  price_idr_per_1k_out: number;
+  price_usd_per_1m_in?: number;
+  price_usd_per_1m_out?: number;
+  hpp_usd_per_1m_in?: number;
+  hpp_usd_per_1m_out?: number;
+  price_idr_per_1k_in?: number;
+  price_idr_per_1k_out?: number;
   hpp_usd_per_1k_in?: number;
   hpp_usd_per_1k_out?: number;
   max_ctx?: number;
@@ -194,6 +202,10 @@ export async function updateAiModel(
   body: Partial<{
     public_id: string;
     upstream_id: string;
+    price_usd_per_1m_in: number;
+    price_usd_per_1m_out: number;
+    hpp_usd_per_1m_in: number;
+    hpp_usd_per_1m_out: number;
     price_idr_per_1k_in: number;
     price_idr_per_1k_out: number;
     hpp_usd_per_1k_in: number;
@@ -220,6 +232,16 @@ export interface AiUsageAdmin {
   completion_tokens: number;
   billed_idr: number;
   cogs_idr: number;
+  margin_idr?: number;
+  billed_usd?: number | null;
+  cogs_usd?: number | null;
+  fx_rate?: number | null;
+  fx_source?: string | null;
+  fx_effective_date?: string | null;
+  price_usd_per_1m_in?: number | null;
+  price_usd_per_1m_out?: number | null;
+  hpp_usd_per_1m_in?: number | null;
+  hpp_usd_per_1m_out?: number | null;
   http_status: number | null;
   created_at: string;
   request_payload?: Record<string, unknown> | null;
