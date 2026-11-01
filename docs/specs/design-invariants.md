@@ -51,6 +51,7 @@ If a lower layer contradicts a higher layer, the higher layer wins and the lower
 | 25 | Railed surfaces use `RailedShell` (or `RAILED_CARD_CLASS` / `RAILED_ROW_CLASS` / `RAILED_NOTICE_CLASS`) from `components/patterns/RailedShell.tsx`. Do not hand-write `relative overflow-hidden … pl-4`. | Machine: `designInvariants.test.ts` |
 | 26 | `docs/**/*.md` and `frontend/AGENTS.md` may only reference `components/` `pages/` `lib/` `hooks/` `theme/` source paths that exist, and must not name a retired primitive. | Machine: `scripts/check-design-docs.mjs` |
 | 27 | The invariant registry stays consistent: ids are unique and run 1..N, every `Machine:` claim cites a test or delegates to another invariant, and every cited test/script exists and is wired into CI. | Machine: `scripts/check-invariant-registry.mjs` |
+| 28 | Page-nav tab strips stay on the shared chrome and inside the budget: every `<TabsList variant="line">` under `src/pages/**` carries `w-full flex-wrap justify-start sm:flex-nowrap`, never a `min-w-max`/`w-max`/`overflow-x-auto`/`snap-x` strip, and has at most 5 triggers — a 6th tab moves to a section, a header action, or its own route. | Machine: `pageNavTabs.test.ts` |
 
 ### Adding to the allowlist
 
@@ -97,6 +98,7 @@ npm run lint
 ./node_modules/.bin/tsc --noEmit
 ./node_modules/.bin/vitest run \
   src/test/designInvariants.test.ts \
+  src/test/pageNavTabs.test.ts \
   src/test/themeTokens.test.ts \
   src/test/toneColors.test.ts \
   src/test/e2eSelectors.test.ts \
@@ -117,3 +119,4 @@ Then run the tests for the pages you touched. CI also runs `frontend-design-inva
 - Using `sm:` to switch row-action density when a `desktop` prop is available.
 - Adding a second palette for charts, print, or an HTML island.
 - Bypassing a failing invariant by widening the allowlist.
+- Adding a page-nav tab instead of a section or header action when the tab strip is already at its 5-tab budget.
