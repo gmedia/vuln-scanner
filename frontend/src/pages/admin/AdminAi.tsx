@@ -98,7 +98,7 @@ export default function AdminAi() {
     <div className="w-full space-y-6">
       <Head />
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList variant="line" className="w-full justify-start">
+        <TabsList variant="line" className="w-full flex-wrap justify-start sm:flex-nowrap">
           <TabsTrigger value="providers" className="gap-1.5">
             <Server aria-hidden />
             {t("aiTabProviders")}
