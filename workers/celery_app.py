@@ -48,6 +48,7 @@ celery_app.conf.update(
         "billing.finalize_periods": {"queue": "ip_scan"},
         "billing.send_reminders": {"queue": "ip_scan"},
         "ai_fx.refresh": {"queue": "ip_scan"},
+        "ai_reservations.reap": {"queue": "ip_scan"},
     },
     task_annotations={
         "ip_scan.run": {"rate_limit": "10/m"},
@@ -99,6 +100,10 @@ celery_app.conf.update(
             "task": "ai_fx.refresh",
             "schedule": crontab(minute=10, hour=1),
         },
+        "ai-reservations-reap-every-5m": {
+            "task": "ai_reservations.reap",
+            "schedule": 300.0,
+        },
     },
 )
 
@@ -115,5 +120,6 @@ celery_app.autodiscover_tasks(
         "tasks.host_protect",
         "tasks.billing",
         "tasks.ai_fx",
+        "tasks.ai_reservations",
     ]
 )

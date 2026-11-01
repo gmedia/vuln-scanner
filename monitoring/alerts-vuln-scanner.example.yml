@@ -15,3 +15,28 @@ groups:
           description: >-
             vuln_maintenance_auto_failed_jobs is {{ $value }} (pending+running).
             Check celery beat logs, /health/queues auto_failed, and dead_letter depth.
+      - alert: VulnScannerAiFxRateStale
+        expr: vuln_ai_fx_rate_age_days > 2
+        for: 1h
+        labels:
+          severity: warning
+          service: vuln-scanner
+        annotations:
+          summary: "AI USD->IDR FX rate is stale"
+          description: >-
+            vuln_ai_fx_rate_age_days is {{ $value }}. ai_fx.refresh runs daily at
+            01:10 UTC on the ip_scan worker. Check its logs and the worker env
+            (DB / FX source credentials). The admin FX card offers a manual override
+            (Refresh now or a manually entered rate) while the fetch is broken.
+      - alert: VulnScannerAiBillingShortfall
+        expr: vuln_ai_usage_shortfall_idr_24h > 0
+        for: 15m
+        labels:
+          severity: warning
+          service: vuln-scanner
+        annotations:
+          summary: "AI billing settled with an uncollected shortfall"
+          description: >-
+            vuln_ai_usage_shortfall_idr_24h is {{ $value }} IDR. A settle could not
+            collect the full amount because the org wallet was exhausted. Inspect the
+            wallet balance and the corresponding ai_usage_events.shortfall_idr rows.
