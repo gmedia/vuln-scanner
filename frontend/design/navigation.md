@@ -69,6 +69,7 @@ Tabular numerals on every count, time, and IDR. Body copy stays i18n `ai` catalo
 
 - **stack** — page sections (`space-y-6`).
 - **scroll-body-shell** — AppShell owns document scroll. Tab list is `w-full flex-wrap justify-start sm:flex-nowrap`, wrapping to a second row below `sm` (5 icon+label tabs do not fit 360px), and still forbids `min-w-max` / horizontal scroll strips.
+- **Budget:** at most 5 tabs. A 6th tab is an information-architecture change — move it to a section, a header action, or its own route. Adding one to the bar is a review reject. Check the strip at 360px in the longest locale (`id`); wrap (not scroll) is the only allowed overflow behaviour.
 - **list-detail** — **not** used. Each tab is a single panel.
 
 `TabsList variant="line"`: `h-auto justify-start gap-1 rounded-none border-b border-border bg-transparent p-0`. Page passes `className="w-full flex-wrap justify-start sm:flex-nowrap"`.
