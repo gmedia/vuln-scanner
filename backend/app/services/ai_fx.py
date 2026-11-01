@@ -1,8 +1,8 @@
-"""Daily USD/IDR FX-rate store and fetch service (admin display/entry only).
+"""Daily USD/IDR FX-rate store and fetch service.
 
-COGS and billing keep using ``settings.ai_usd_idr``; nothing here changes billed
-or cost math. The admin model editor reads ``effective_rate`` to show prices in
-USD per 1M tokens and ``refresh`` / ``set_manual`` write the snapshot rows.
+Wallet pricing resolves the newest stored rate at or before today via
+``effective_rate`` and locks it onto each reservation; ``AI_USD_IDR`` is the
+fallback when no stored row exists. The admin editor reads the same snapshot.
 """
 
 from __future__ import annotations
@@ -189,7 +189,10 @@ def upsert_rate_sync(
 
 async def latest(db: AsyncSession) -> AiFxRate | None:
     result = await db.execute(
-        select(AiFxRate).order_by(AiFxRate.effective_date.desc(), AiFxRate.fetched_at.desc()).limit(1)
+        select(AiFxRate)
+        .where(AiFxRate.effective_date <= date.today())
+        .order_by(AiFxRate.effective_date.desc(), AiFxRate.fetched_at.desc())
+        .limit(1)
     )
     return result.scalars().first()
 

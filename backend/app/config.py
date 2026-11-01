@@ -1,5 +1,6 @@
 import logging
 import os
+from decimal import Decimal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -155,6 +156,8 @@ class Settings(BaseSettings):
     ai_fx_source_url: str = "https://api.frankfurter.app/latest?from=USD&to=IDR"
     ai_fx_timeout_seconds: float = 8.0
     ai_store_prompts: bool = False
+    ai_trial_monthly_cap_usd: Decimal = Decimal("30")
+    # Deprecated: legacy IDR cap, used only when AI_TRIAL_MONTHLY_CAP_USD is absent.
     ai_trial_monthly_cap_idr: int = 500_000
     host_protect_enabled: bool = False
     host_protect_allow_mock: bool = False

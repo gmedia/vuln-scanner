@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -275,6 +276,8 @@ def test_admin_trial_chat_stream_rejected_and_ok(client, ai_on) -> None:
             "upstream_id": "hidden-up",
             "price_idr_per_1k_in": 100,
             "price_idr_per_1k_out": 200,
+            "hpp_usd_per_1k_in": 1,
+            "hpp_usd_per_1k_out": 2,
         },
     ).json()["id"]
     stream = client.post(
@@ -345,3 +348,114 @@ async def test_admin_usage_paginated(client, db_session, ai_on) -> None:
     assert page_two["total"] == 3
     assert len(page_two["items"]) == 1
     assert page_two["items"][0]["model_public_id"] == "sinexis/page-0"
+
+
+def _trial_model(client, public_id: str) -> str:
+    pid = client.post(
+        "/api/admin/ai/providers",
+        headers=API_HEADERS,
+        json={"name": "Trial", "base_url": "https://openrouter.ai/api/v1", "credential": "sk-or-v1-secret"},
+    ).json()["id"]
+    return client.post(
+        "/api/admin/ai/models",
+        headers=API_HEADERS,
+        json={
+            "provider_id": pid,
+            "public_id": public_id,
+            "upstream_id": "hidden-up",
+            "price_idr_per_1k_in": 100,
+            "price_idr_per_1k_out": 200,
+            "hpp_usd_per_1k_in": 1,
+            "hpp_usd_per_1k_out": 2,
+        },
+    ).json()["id"]
+
+
+@pytest.mark.asyncio
+async def test_admin_trial_cap_uses_cogs_usd(client, db_session, ai_on) -> None:
+    _trial_model(client, "sinexis/trial-usd")
+    db_session.add(
+        AiUsageEvent(
+            source="admin_trial",
+            model_public_id="sinexis/old",
+            prompt_tokens=0,
+            completion_tokens=0,
+            billed_idr=0,
+            cogs_idr=0,
+            cogs_usd=Decimal("40"),
+            created_at=datetime.now(UTC),
+        )
+    )
+    await db_session.commit()
+
+    blocked = client.post(
+        "/api/admin/ai/chat",
+        headers=API_HEADERS,
+        json={"model": "sinexis/trial-usd", "messages": [{"role": "user", "content": "x"}]},
+    )
+    assert blocked.status_code == 402
+
+
+@pytest.mark.asyncio
+async def test_admin_trial_cap_uses_legacy_cogs_idr_fallback(client, db_session, ai_on) -> None:
+    _trial_model(client, "sinexis/trial-legacy")
+    db_session.add(
+        AiUsageEvent(
+            source="admin_trial",
+            model_public_id="sinexis/old",
+            prompt_tokens=0,
+            completion_tokens=0,
+            billed_idr=0,
+            cogs_idr=600_000,
+            created_at=datetime.now(UTC),
+        )
+    )
+    await db_session.commit()
+
+    blocked = client.post(
+        "/api/admin/ai/chat",
+        headers=API_HEADERS,
+        json={"model": "sinexis/trial-legacy", "messages": [{"role": "user", "content": "x"}]},
+    )
+    assert blocked.status_code == 402
+
+
+@pytest.mark.asyncio
+async def test_admin_trial_post_response_over_cap_bills_zero_but_records_cost(
+    client, db_session, ai_on, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    mid = _trial_model(client, "sinexis/trial-zero")
+    monkeypatch.setattr("app.services.ai_proxy.trial_cap_usd", lambda: Decimal("0.0000001"))
+
+    class _Resp:
+        status_code = 200
+
+        def json(self):
+            return {
+                "id": "chatcmpl-over",
+                "choices": [{"finish_reason": "stop", "message": {"role": "assistant", "content": "pong"}}],
+                "usage": {"prompt_tokens": 1, "completion_tokens": 1},
+            }
+
+    mock_client = AsyncMock()
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+    mock_client.post = AsyncMock(return_value=_Resp())
+    with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+        ok = client.post(
+            "/api/admin/ai/chat",
+            headers=API_HEADERS,
+            json={"model": "sinexis/trial-zero", "messages": [{"role": "user", "content": "ping"}]},
+        )
+    assert ok.status_code == 200, ok.text
+
+    from sqlalchemy import select
+
+    event = (
+        await db_session.execute(select(AiUsageEvent).where(AiUsageEvent.model_public_id == "sinexis/trial-zero"))
+    ).scalar_one()
+    assert event.billed_idr == 0
+    assert event.billed_usd is not None and event.billed_usd > 0
+    assert event.cogs_usd is not None and event.cogs_usd > 0
+    assert event.cogs_idr > 0
+    assert client.delete(f"/api/admin/ai/models/{mid}", headers=API_HEADERS).status_code == 204
