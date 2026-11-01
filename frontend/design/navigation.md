@@ -68,10 +68,10 @@ Tabular numerals on every count, time, and IDR. Body copy stays i18n `ai` catalo
 **Primitives** (`layout-skill`):
 
 - **stack** — page sections (`space-y-6`).
-- **scroll-body-shell** — AppShell owns document scroll. Tab list is `w-full justify-start`, **not** `min-w-max` (no overflow strip).
+- **scroll-body-shell** — AppShell owns document scroll. Tab list is `w-full flex-wrap justify-start sm:flex-nowrap`, wrapping to a second row below `sm` (5 icon+label tabs do not fit 360px), and still forbids `min-w-max` / horizontal scroll strips.
 - **list-detail** — **not** used. Each tab is a single panel.
 
-`TabsList variant="line"`: `h-auto justify-start gap-1 rounded-none border-b border-border bg-transparent p-0`. Page passes `className="w-full justify-start"`.
+`TabsList variant="line"`: `h-auto justify-start gap-1 rounded-none border-b border-border bg-transparent p-0`. Page passes `className="w-full flex-wrap justify-start sm:flex-nowrap"`.
 
 URL `?tab=` (`replace: true`). Default tab **deletes** the param. Unknown `?tab` → default. ScanDetail patches `tab` through existing `patchFindingsParams` so `page`/`severity`/`sort`/`dir`/`q` are not clobbered.
 
@@ -93,13 +93,13 @@ URL `?tab=` (`replace: true`). Default tab **deletes** the param. Unknown `?tab`
 
 #### Page-nav callers
 
-Shared chrome: `TabsList variant="line" className="w-full justify-start"`. Icons `aria-hidden`. Counts via kit `TabCount` (null when `value <= 0`). Duplicate in-panel `CardTitle` matching the tab label is dropped.
+Shared chrome: `TabsList variant="line" className="w-full flex-wrap justify-start sm:flex-nowrap"`. Icons `aria-hidden`. Counts via kit `TabCount` (null when `value <= 0`). Duplicate in-panel `CardTitle` matching the tab label is dropped.
 
 - **`/ai`**: Wallet / Keys / Usage / Catalog. Frozen testids `ai-tab-wallet` … `ai-tab-catalog`. EN role names frozen. Counts: Keys = active keys; Usage = `items.length`.
 - **Host Protect**: Malware / WAF. Frozen `host-tab-waf`. Icons `Bug` / `Shield`. Count: `overviewNeedsDecision` on Malware.
 - **SIEM**: Search events / Cases (EN roles frozen). Icons `Search` / `FolderOpen`. Count: open cases on Cases. Search `CardTitle` and cases CardHeader title dropped.
 - **ScanDetail**: Findings / Diff / Export (EN roles frozen). Icons `Crosshair` / `GitCompare` / `Download`. Count: `findingsCount` on Findings.
-- **Admin AI**: Providers / Models / Usage / Top-up / Trial. Icons `Server` / `Boxes` / `ScrollText` / `Wallet` / `MessageSquare`. No `min-w-max` overflow strip. Usage CardTitle dropped.
+- **Admin AI**: Providers / Models / Usage / Top-up / Trial. Icons `Server` / `Boxes` / `ScrollText` / `Wallet` / `MessageSquare`. Below `sm` the 5 tabs wrap to two rows (no `min-w-max` overflow strip). Usage CardTitle dropped.
 
 #### AiWalletPanel
 

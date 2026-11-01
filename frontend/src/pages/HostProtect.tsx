@@ -371,7 +371,7 @@ export default function HostProtect() {
       />
 
       <Tabs value={hostTab} onValueChange={setHostTab}>
-        <TabsList variant="line" className="w-full justify-start">
+        <TabsList variant="line" className="w-full flex-wrap justify-start sm:flex-nowrap">
           <TabsTrigger
             value="malware"
             data-testid="host-tab-malware"

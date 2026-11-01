@@ -676,7 +676,7 @@ function Subscription() {
                     value={cycle}
                     onValueChange={(value) => setCycle(value as SubscriptionCycle)}
                   >
-                    <TabsList variant="line" className="w-full justify-start">
+                    <TabsList variant="line" className="w-full flex-wrap justify-start sm:flex-nowrap">
                       <TabsTrigger value="monthly">{t("monthly")}</TabsTrigger>
                       <TabsTrigger value="annual">{t("annual")}</TabsTrigger>
                     </TabsList>

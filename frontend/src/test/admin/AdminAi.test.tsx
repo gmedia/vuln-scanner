@@ -86,6 +86,8 @@ describe("AdminAi", () => {
     expect(list).toHaveAttribute("data-variant", "line");
     expect(list.className).toMatch(/\bw-full\b/);
     expect(list.className).not.toMatch(/min-w-max/);
+    expect(list.className).toMatch(/\bflex-wrap\b/);
+    expect(list.className).toMatch(/\bsm:flex-nowrap\b/);
   });
 
   it("lists provider and model with edit and delete", async () => {

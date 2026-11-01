@@ -113,6 +113,8 @@ describe("AI Gateway page", () => {
     expect(list).toHaveAttribute("data-variant", "line");
     expect(list.className).toMatch(/\bw-full\b/);
     expect(list.className).not.toMatch(/min-w-max/);
+    expect(list.className).toMatch(/\bflex-wrap\b/);
+    expect(list.className).toMatch(/\bsm:flex-nowrap\b/);
     expect(screen.getByTestId("ai-tab-wallet")).toBeInTheDocument();
     expect(screen.getByTestId("ai-tab-keys")).toBeInTheDocument();
     expect(screen.getByTestId("ai-tab-usage")).toBeInTheDocument();
