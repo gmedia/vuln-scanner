@@ -52,6 +52,37 @@ export function formatPricePerTokens(
   return formatUsdPer1m(Math.round(usd * 100) / 100);
 }
 
+/** A stored FX snapshot older than this many UTC days is stale for pricing. */
+export const FX_STALE_DAYS = 7;
+
+const FX_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Whole UTC days between `effectiveDate` (YYYY-MM-DD) and `now`; null when unparseable. */
+export function fxRateAgeDays(
+  effectiveDate: string | null | undefined,
+  now: Date = new Date(),
+): number | null {
+  if (effectiveDate == null || !FX_DATE_RE.test(effectiveDate)) return null;
+  const year = Number(effectiveDate.slice(0, 4));
+  const month = Number(effectiveDate.slice(5, 7));
+  const day = Number(effectiveDate.slice(8, 10));
+  const dateUtc = Date.UTC(year, month - 1, day);
+  const roundTrip = new Date(dateUtc);
+  if (
+    roundTrip.getUTCFullYear() !== year ||
+    roundTrip.getUTCMonth() !== month - 1 ||
+    roundTrip.getUTCDate() !== day
+  ) {
+    return null;
+  }
+  const todayUtc = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+  );
+  return Math.max(Math.floor((todayUtc - dateUtc) / 86_400_000), 0);
+}
+
 /** Parses a price input string; returns null for "", whitespace, NaN, Infinity or negative values. */
 export function parsePriceInput(raw: string): number | null {
   const trimmed = raw.trim();

@@ -215,7 +215,7 @@ HPP AI **must not** reuse `hpp_rates` scan-job rows. Optional later: `/admin/hpp
 | `fetched_at` | when we stored it |
 | `created_by` | admin user for manual rows; `NULL` for the beat fetch |
 
-Unique `(base, quote, effective_date)`; a same-day re-fetch or override updates the row instead of appending. **Billing COGS keeps using `AI_USD_IDR`** — the table only feeds the admin price display/entry, so a daily FX change can never silently reprice settled usage.
+Unique `(base, quote, effective_date)`; a same-day re-fetch or override updates the row instead of appending. **Billing COGS keeps using `AI_USD_IDR`** — the table only feeds the admin price display/entry, so a daily FX change can never silently reprice settled usage. The admin FX card warns when the stored snapshot is older than 7 UTC days, and because the table only feeds price display, a stale rate can never silently reprice billing.
 
 | Env | Default | Notes |
 |-----|---------|-------|

@@ -241,6 +241,7 @@
   "aiFxManualSave": "Simpan kurs",
   "aiFxFallbackNote": "Belum ada kurs tersimpan — memakai AI_USD_IDR dari env.",
   "aiFxAutoOff": "Pengambilan otomatis harian nonaktif; hanya update manual.",
+  "aiFxStale": "Kurs ini berumur {{days}} hari — perbarui sebelum mengatur harga.",
   "aiFxSavedAs": "Tersimpan: {{idr}} / 1K",
   "aiFxRefreshOk": "Kurs diperbarui.",
   "aiFxRefreshFail": "Gagal mengambil kurs. Coba lagi nanti.",
