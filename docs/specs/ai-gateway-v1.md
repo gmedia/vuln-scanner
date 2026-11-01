@@ -189,7 +189,7 @@ Platform trial: a **synthetic org** or `ai_platform_wallet` row with a monthly c
 | `fx_rate`, `fx_source`, `fx_effective_date` | **locked** rate for this request |
 | `prompt_tokens_est`, `completion_tokens_max` | what the hold assumed |
 | `status` | `open` \| `settled` \| `released` |
-| `created_at` | a reaper for stale `open` rows is **not implemented yet** (phase 6); until then a crashed stream keeps its hold |
+| `created_at` | beat task `ai_reservations.reap` releases `open` rows older than 20 minutes and refunds the hold with a `release` ledger row |
 
 ### 7.6 `ai_usage_events` (append-only)
 

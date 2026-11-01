@@ -46,6 +46,27 @@ Stored on `ai_api_keys`. 429 details: `rate_limit_rpm` / `rate_limit_tpm` / `rat
 
 Prepaid **org** IDR. Reserve before upstream; settle/release after. Insufficient → **402**. Admin trial chat uses platform cap, not the customer org wallet.
 
+## Monitoring
+
+Both gauges are on `/metrics` (API-key protected) and ignore scrape failures: if the DB read fails, the sample is **omitted** rather than reported as `0`.
+
+| Metric | Type | Meaning |
+|--------|------|---------|
+| `vuln_ai_fx_rate_age_days` | gauge | Age in days of the newest stored `USD -> IDR` rate (`ai_fx_rates.effective_date`). `+Inf` means no matching row exists yet. |
+| `vuln_ai_usage_shortfall_idr_24h` | gauge | Sum of `ai_usage_events.shortfall_idr` for rows created in the last 24h — IDR billed but not collected. |
+
+| Alert | Expression | For | Severity |
+|-------|------------|-----|----------|
+| `VulnScannerAiFxRateStale` | `vuln_ai_fx_rate_age_days > 2` | 1h | warning |
+| `VulnScannerAiBillingShortfall` | `vuln_ai_usage_shortfall_idr_24h > 0` | 15m | warning |
+
+First response:
+
+- **FX stale** — check `ai_fx.refresh` logs (runs daily at 01:10 UTC on the `ip_scan` worker) and the worker env (DB / FX source credentials). Then use the admin FX card **Refresh now**, or enter a manual rate, to unblock billing until the fetch is fixed.
+- **Shortfall** — a settle could not collect the full amount because the org wallet was exhausted. Inspect the wallet balance and the matching `ai_usage_events` row (`shortfall_idr`), then top up the wallet / reconcile with the customer.
+
+Rules template: [`monitoring/alerts-vuln-scanner.example.yml`](../monitoring/alerts-vuln-scanner.example.yml).
+
 ## Secrets
 
 Provider credentials live encrypted in DB (or env per provider). Never commit wholesale URLs with keys, customer `sx-` plaintext, or host SSH details.
