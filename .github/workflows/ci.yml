@@ -1100,8 +1100,31 @@ jobs:
     needs: [ci-ok, publish-images]
     runs-on: ubuntu-latest
     environment: production
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
+
+      - name: Preflight - deploy jump host reachable
+        timeout-minutes: 5
+        env:
+          JUMP_HOST: ${{ secrets.DEPLOY_JUMP_HOST }}
+          JUMP_PORT: ${{ secrets.DEPLOY_JUMP_PORT || 22 }}
+        run: |
+          set -euo pipefail
+          if ! command -v nc >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq netcat-openbsd
+          fi
+          for attempt in 1 2 3; do
+            if nc -z -w 10 "$JUMP_HOST" "$JUMP_PORT"; then
+              echo "jump host reachable (attempt ${attempt})"
+              exit 0
+            fi
+            echo "attempt ${attempt}/3 failed; retrying in 15s"
+            sleep 15
+          done
+          echo "::error::Cannot reach the deploy jump host after 3 attempts. Check bastion health and the runner IP allowlist."
+          exit 1
 
       - name: Write .env on server
         if: ${{ vars.WRITE_ENV_ON_DEPLOY == 'true' }}
@@ -1146,6 +1169,7 @@ jobs:
             POSTGRES_DB=${{ secrets.POSTGRES_DB || 'vuln_scanner' }}
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             REDIS_PASSWORD=${REDIS_PASSWORD}
+            GIT_SHA=${{ github.sha }}
             API_KEY=${{ secrets.API_KEY }}
             SENTRY_DSN=${{ secrets.SENTRY_DSN }}
             SECRET_KEY=${{ secrets.SECRET_KEY }}
@@ -1256,7 +1280,30 @@ jobs:
     needs: [ci-ok, publish-images]
     runs-on: ubuntu-latest
     environment: production
+    timeout-minutes: 20
     steps:
+      - name: Preflight - deploy jump host reachable
+        timeout-minutes: 5
+        env:
+          JUMP_HOST: ${{ secrets.DEPLOY_JUMP_HOST }}
+          JUMP_PORT: ${{ secrets.DEPLOY_JUMP_PORT || 22 }}
+        run: |
+          set -euo pipefail
+          if ! command -v nc >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq netcat-openbsd
+          fi
+          for attempt in 1 2 3; do
+            if nc -z -w 10 "$JUMP_HOST" "$JUMP_PORT"; then
+              echo "jump host reachable (attempt ${attempt})"
+              exit 0
+            fi
+            echo "attempt ${attempt}/3 failed; retrying in 15s"
+            sleep 15
+          done
+          echo "::error::Cannot reach the deploy jump host after 3 attempts. Check bastion health and the runner IP allowlist."
+          exit 1
+
       - name: Pull and recreate workers on gm-s1
         run: |
           set -euo pipefail

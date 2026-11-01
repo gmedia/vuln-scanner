@@ -81,6 +81,7 @@ services:
       redis:
         condition: service_healthy
     environment:
+      GIT_SHA: ${GIT_SHA:-unknown}
       DATABASE_URL: ${DATABASE_URL}
       DATABASE_URL_SYNC: ${DATABASE_URL_SYNC}
       REDIS_URL: ${REDIS_URL}
