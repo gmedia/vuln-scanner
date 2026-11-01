@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
 import httpx
@@ -225,3 +225,21 @@ def test_upsert_rate_sync_same_date_keeps_one_row_with_newer_values() -> None:
         assert second.source == "manual"
 
     engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_effective_rate_ignores_future_rows(db_session) -> None:
+    await upsert_rate(db_session, rate=Decimal("16300"), source="api", effective_date=date.today())
+    await upsert_rate(
+        db_session,
+        rate=Decimal("30000"),
+        source="manual",
+        effective_date=date.today() + timedelta(days=1),
+    )
+
+    rate, source, row = await effective_rate(db_session)
+
+    assert rate == Decimal("16300")
+    assert source == "api"
+    assert row is not None
+    assert row.effective_date == date.today()
