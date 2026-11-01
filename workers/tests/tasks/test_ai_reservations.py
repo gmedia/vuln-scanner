@@ -25,15 +25,16 @@ from tasks.ai_reservations import reap_stale_reservations  # noqa: E402
 
 
 class _UUIDType(TypeDecorator):
-    impl = String(32)
+    # 36-char dashed form on purpose: the ORM mapper caches this bind format for the
+    # whole process, and the other worker integration tests store UUIDs as dashed
+    # strings via raw SQL. A hex-32 variant makes their rows unmatchable afterwards.
+    impl = String(36)
     cache_ok = True
 
     def process_bind_param(self, value, dialect):
         if value is None:
             return None
-        if isinstance(value, uuid.UUID):
-            return value.hex
-        return str(value).replace("-", "")
+        return str(value)
 
     def process_result_value(self, value, dialect):
         if value is None:
@@ -60,20 +61,41 @@ class _JSONBType(TypeDecorator):
         return value
 
 
-for _table in Base.metadata.tables.values():
-    for _column in _table.columns:
-        if isinstance(_column.type, PG_UUID):
-            _column.type = _UUIDType()
-        elif isinstance(_column.type, PG_JSONB):
-            _column.type = _JSONBType()
+def _swap_sqlite_types() -> dict[tuple[str, str], object]:
+    """Swap PG-only column types for the duration of one test, returning the originals.
+
+    `Base.metadata` is process-global; leaving the swap in place breaks every later
+    test that imports the real models, so the fixture restores it.
+    """
+    originals: dict[tuple[str, str], object] = {}
+    for table in Base.metadata.tables.values():
+        for column in table.columns:
+            is_uuid = isinstance(column.type, PG_UUID)
+            is_jsonb = isinstance(column.type, PG_JSONB)
+            if not (is_uuid or is_jsonb):
+                continue
+            originals[(table.name, column.name)] = column.type
+            column.type = _UUIDType() if is_uuid else _JSONBType()
+    return originals
+
+
+def _restore_sqlite_types(originals: dict[tuple[str, str], object]) -> None:
+    for (table_name, column_name), column_type in originals.items():
+        Base.metadata.tables[table_name].columns[column_name].type = column_type
 
 
 @pytest.fixture
 def session() -> Iterator[Session]:
+    originals = _swap_sqlite_types()
     engine = create_engine("sqlite://")
-    Base.metadata.create_all(engine)
-    with sessionmaker(bind=engine)() as db:
-        yield db
+    try:
+        Base.metadata.create_all(engine)
+        with sessionmaker(bind=engine)() as db:
+            yield db
+        Base.metadata.drop_all(engine)
+    finally:
+        _restore_sqlite_types(originals)
+        engine.dispose()
     Base.metadata.drop_all(engine)
     engine.dispose()
 

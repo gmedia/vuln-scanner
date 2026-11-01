@@ -38,7 +38,7 @@ def reap_stale_reservations(
 ) -> tuple[int, int]:
     """Release stale open reservations; returns (released_count, refunded_idr)."""
     cutoff = (now or datetime.now(UTC)) - timedelta(minutes=stale_minutes)
-    stale_rows = (
+    stale_rows: list[AiReservation] = list(
         session.execute(
             select(AiReservation)
             .where(AiReservation.status == "open", AiReservation.created_at < cutoff)
