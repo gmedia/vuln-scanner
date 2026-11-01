@@ -214,6 +214,10 @@ services:
       HOST_PROTECT_ENABLED: ${HOST_PROTECT_ENABLED:-true}
       HOST_PROTECT_ALLOW_MOCK: ${HOST_PROTECT_ALLOW_MOCK:-false}
       HOST_PROTECT_ALLOW_LOCAL_WALK: ${HOST_PROTECT_ALLOW_LOCAL_WALK:-false}
+      AI_GATEWAY_ENABLED: ${AI_GATEWAY_ENABLED:-false}
+      AI_USD_IDR: ${AI_USD_IDR:-16000}
+      AI_FX_AUTO_FETCH: ${AI_FX_AUTO_FETCH:-true}
+      AI_FX_SOURCE_URL: ${AI_FX_SOURCE_URL:-https://api.frankfurter.app/latest?from=USD&to=IDR}
     volumes:
       - scan_data:/tmp/scans
       # Lab-only local walk (S6). Host dir is empty unless ops plants a fixture.
@@ -437,6 +441,10 @@ services:
       HOST_PROTECT_ENABLED: ${HOST_PROTECT_ENABLED:-true}
       HOST_PROTECT_ALLOW_MOCK: ${HOST_PROTECT_ALLOW_MOCK:-false}
       HOST_PROTECT_ALLOW_LOCAL_WALK: ${HOST_PROTECT_ALLOW_LOCAL_WALK:-false}
+      AI_GATEWAY_ENABLED: ${AI_GATEWAY_ENABLED:-false}
+      AI_USD_IDR: ${AI_USD_IDR:-16000}
+      AI_FX_AUTO_FETCH: ${AI_FX_AUTO_FETCH:-true}
+      AI_FX_SOURCE_URL: ${AI_FX_SOURCE_URL:-https://api.frankfurter.app/latest?from=USD&to=IDR}
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import os; os.stat('/tmp/celerybeat-schedule')\""]
       interval: 30s
