@@ -124,6 +124,13 @@ export COMPOSE_PROJECT_NAME=vuln   # or vuln-scanner — match inspect
 
 `deploy-services.sh` **never** rebuilds postgres/redis. Default service list is in the script header (backend, frontend, workers, beat — **not** `worker_ip`/`worker_domain` when those live on **tc4**).
 
+When `backend` is in the service list and `--skip-migrate` is unset, the script now runs
+`alembic upgrade head` **in a one-off container before** `up -d --force-recreate`.
+`backend/prestart.sh` also migrates, but only after the old container has been removed — a
+failing migration there leaves the API crash-looping. Pre-migrating means a failure aborts the
+deploy while the previous backend keeps serving. `--skip-migrate` skips both the pre-run and the
+post-recreate health gate, as before.
+
 ### Verify (public URL — do not hardcode hosts in tickets)
 
 ```bash

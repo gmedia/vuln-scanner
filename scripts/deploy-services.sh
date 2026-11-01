@@ -181,9 +181,6 @@ echo "NOTE:     postgres/redis volumes are NOT touched"
 if [[ "$PULL_ONLY" == "1" ]]; then
   echo "=== pull: ${SERVICES[*]} ==="
   "${COMPOSE[@]}" pull "${SERVICES[@]}"
-
-  echo "=== recreate (no-deps, force): ${SERVICES[*]} ==="
-  "${COMPOSE[@]}" up -d --no-deps --force-recreate "${SERVICES[@]}"
 else
   tag_previous() {
     local svc="$1"
@@ -204,9 +201,6 @@ else
   fi
   "${COMPOSE[@]}" build "${BUILD_ARGS[@]}" "${SERVICES[@]}"
 
-  echo "=== recreate (no-deps, force): ${SERVICES[*]} ==="
-  "${COMPOSE[@]}" up -d --no-deps --force-recreate "${SERVICES[@]}"
-
   for svc in "${SERVICES[@]}"; do
     img="vuln-${svc}"
     if docker image inspect "${img}:latest" >/dev/null 2>&1; then
@@ -221,6 +215,25 @@ contains() {
   for x in "$@"; do [[ "$x" == "$needle" ]] && return 0; done
   return 1
 }
+
+# Migrate BEFORE recreating the backend.
+#
+# backend/prestart.sh also runs `alembic upgrade head`, but by then
+# `--force-recreate` has already removed the old container: a failing migration
+# leaves the API crash-looping with nothing to serve. Running the migration in a
+# one-off container first means a failure aborts the deploy while the previous
+# backend keeps running.
+if contains backend "${SERVICES[@]}" && [[ "$SKIP_MIGRATE" -eq 0 ]]; then
+  echo "=== migrate (before recreate): alembic upgrade head ==="
+  "${COMPOSE[@]}" run --rm -T --no-deps --entrypoint alembic backend upgrade head || {
+    rc=$?
+    echo "error: alembic exited $rc — existing containers left running" >&2
+    exit $rc
+  }
+fi
+
+echo "=== recreate (no-deps, force): ${SERVICES[*]} ==="
+"${COMPOSE[@]}" up -d --no-deps --force-recreate "${SERVICES[@]}"
 
 if contains backend "${SERVICES[@]}" && [[ "$SKIP_MIGRATE" -eq 0 ]]; then
   echo "=== wait for backend health ==="
@@ -238,13 +251,6 @@ if contains backend "${SERVICES[@]}" && [[ "$SKIP_MIGRATE" -eq 0 ]]; then
     sleep 2
   done
 
-  echo "=== alembic upgrade head ==="
-  docker exec vuln-backend alembic upgrade head || {
-    rc=$?
-    echo "error: alembic exited $rc" >&2
-    docker logs vuln-backend --tail=80 2>&1 || true
-    exit $rc
-  }
   echo "migration: $(docker exec vuln-backend alembic current 2>/dev/null | tail -1)"
   echo "=== upsert ADMIN_/E2E_ users from env ==="
   docker exec vuln-backend python -m scripts.upsert_secret_users
