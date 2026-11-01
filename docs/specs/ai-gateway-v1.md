@@ -68,14 +68,14 @@ Prod nginx (`nginx/sinexis.app.conf`) proxies `/api/` and `/ws/` to FastAPI; **`
 |-------|---------|
 | **Payer** | **Organization AI wallet** (not `users.credits`) |
 | **Motion** | **Prepaid IDR** top-up by admin/ops until finance adds `service_id` |
-| **Unit** | Bill **IDR per 1K prompt + 1K completion** from model row (wholesale USD × FX snapshot × markup). Round **up** to whole IDR. |
-| **FX** | Daily `ai_fx_rates` snapshot (Celery beat 01:10 UTC) with **visible** source + effective date, plus an admin **manual override**. `AI_USD_IDR` stays the COGS fallback. No silent live FX. |
+| **Unit** | Sell prices are **USD per 1M tokens** (`price_usd_per_1m_*`). The IDR charge is the combined prompt+completion total converted **once** at the request's locked FX and rounded **up** to whole IDR. `price_idr_per_1k_*` is a derived display/rollback value, never the source of truth. |
+| **FX** | Daily `ai_fx_rates` snapshot (Celery beat 01:10 UTC, `ai_fx.refresh` on the `ip_scan` worker) with **visible** source + effective date and an admin **manual override**. The rate is resolved **once at reserve**, stored on the reservation, and prices both the customer charge and COGS, so a later change cannot reprice a request. `AI_USD_IDR` is only the fallback when the table is empty. |
 | **Catalog** | **Named aliases only** (`sinexis/…`); reject unknown `model` |
 | **Auth `/v1`** | Customer `Authorization: Bearer sx-…` only. **Never** platform `X-API-Key` / `settings.api_key`. JWT **not** for SDK `/v1`. |
-| **Playground / trial** | JWT **admin** → internal `/api/admin/ai/chat`; same proxy; `source=admin_trial`; **platform wallet + monthly IDR cap** |
+| **Playground / trial** | JWT **admin** → internal `/api/admin/ai/chat`; same proxy; `source=admin_trial`; **platform cap in USD** (`AI_TRIAL_MONTHLY_CAP_USD`, default 30) measured on COGS |
 | **Org roles** | Owner/admin: mint/revoke keys, read usage, spend. Member: use existing keys if issued to them. **Viewer: no mint, no spend.** |
 | **Prompt retention** | **Metadata only**. `AI_STORE_PROMPTS=false`. If later true: ≤14d, hashed/redact, admin trial included. |
-| **Failure billing** | Never charge **above** provider-reported usage. Missing usage / transport fail / 4xx before tokens → **charge 0**, release hold, log. Partial stream: settle on last usage chunk if present else 0. |
+| **Failure billing** | Transport fail / 4xx / 5xx before tokens → **charge 0**, release the hold, still stamp the usage row with the snapshot. A 200 with missing or zero `usage` is **estimated** (prompt from the request, completion from returned text at `chars // 4`) and marked `billed_estimated` + `usage_missing`; bill 0 only when there is no content at all. Never charge above provider-reported usage. |
 | **Limits (v1 defaults)** | Per-key RPM **60**, TPM **100_000**, concurrent streams **2**; `max_tokens` cap per model row; org daily IDR cap optional |
 | **Public URL** | `https://<public-origin>/v1` (nginx). CORS: SDK server-side default; browser CORS only if a later SPA playground for customers needs it. |
 | **Process** | Same FastAPI image V1; **timeouts** on `/v1` (e.g. 120s) + consider dedicated uvicorn workers in ops — do not hold scan pool unbounded |
@@ -141,9 +141,11 @@ SPA /admin/ai                  -- admin --> /api/admin/ai/*
 | `provider_id` | FK |
 | `public_id` | unique alias `sinexis/qwen-72b` |
 | `upstream_id` | string sent upstream |
-| `hpp_usd_per_1k_in` / `hpp_usd_per_1k_out` | wholesale |
-| `markup_bps` | basis points over FX’d HPP, or explicit `price_idr_per_1k_*` — pick one in S1 (prefer **explicit IDR sell prices** + HPP for margin reports) |
-| `price_idr_per_1k_in/out` | sell price, **integer IDR per 1K tokens**. The admin SPA may *display and enter* USD/1M (unit toggle), but storage stays IDR/1K → 1 IDR/1K ≈ $0.06/1M at 16,300, so the form shows the value that will actually be stored |
+| `hpp_usd_per_1m_in` / `hpp_usd_per_1m_out` | wholesale, `NUMERIC(18,6)` **USD per 1M** — canonical for COGS |
+| `hpp_usd_per_1k_in` / `hpp_usd_per_1k_out` | **legacy** integer, dual-written as `round(usd_per_1m / 1000)`; dropped after one release |
+| `price_usd_per_1m_in/out` | sell price, `NUMERIC(18,6)` **USD per 1M** — the source of truth |
+| `price_idr_per_1k_in/out` | **derived** display/rollback value: `round(usd * fx / 1000)` at the current effective rate; never the source of truth |
+| `markup_bps` | unused in v1; explicit USD sell prices win |
 | `max_ctx` / `max_tokens_cap` | |
 | `enabled` | |
 
@@ -173,7 +175,7 @@ SPA /admin/ai                  -- admin --> /api/admin/ai/*
 | `currency` | `IDR` v1 |
 | `updated_at` | |
 
-Platform trial: a **synthetic org** or `ai_platform_wallet` row with monthly cap.
+Platform trial: a **synthetic org** or `ai_platform_wallet` row with a monthly cap. `balance_idr` is a cache of the ledger sum in §7.8; every mutation writes a ledger row in the same transaction.
 
 ### 7.5 `ai_reservations`
 
@@ -182,9 +184,12 @@ Platform trial: a **synthetic org** or `ai_platform_wallet` row with monthly cap
 | `id` | UUID |
 | `wallet_id` / `organization_id` | |
 | `key_id` | nullable for admin trial |
-| `hold_idr` | conservative cap (`max_tokens` × sell price) |
+| `hold_idr` | conservative cap at the locked snapshot (`prompt_est` + `max_tokens`), one combined ceil |
+| `price_usd_per_1m_*`, `hpp_usd_per_1m_*` | **snapshot** of the model prices taken at reserve |
+| `fx_rate`, `fx_source`, `fx_effective_date` | **locked** rate for this request |
+| `prompt_tokens_est`, `completion_tokens_max` | what the hold assumed |
 | `status` | `open` \| `settled` \| `released` |
-| `created_at` | TTL job releases stale `open` |
+| `created_at` | a reaper for stale `open` rows is **not implemented yet** (phase 6); until then a crashed stream keeps its hold |
 
 ### 7.6 `ai_usage_events` (append-only)
 
@@ -195,10 +200,15 @@ Platform trial: a **synthetic org** or `ai_platform_wallet` row with monthly cap
 | `source` | `customer` \| `admin_trial` |
 | `model_public_id`, `provider_id` |
 | `prompt_tokens`, `completion_tokens` |
-| `billed_idr`, `cogs_idr` |
+| `billed_idr`, `cogs_idr` | IDR amounts actually applied |
+| `billed_usd`, `cogs_usd` | `NUMERIC(24,12)` exact pre-FX amount |
+| `fx_rate`, `fx_source`, `fx_effective_date` | rate actually applied (from the reservation) |
+| `price_usd_per_1m_*`, `hpp_usd_per_1m_*` | price snapshots used |
+| `shortfall_idr` | billed but not collected because the balance ran out; recorded, never silently forgiven |
+| `usage_missing`, `billed_estimated` | estimation flags for a 200 without usage |
 | `latency_ms`, `http_status`, `finish_reason` |
-| `provider_request_id` | if any |
-| `reservation_id` | |
+| `provider_request_id` | indexed, **not** unique (providers can repeat ids) |
+| `reservation_id` | **unique** — one usage event per reservation, the double-settle guard |
 | **no** prompt/completion text v1 |
 
 HPP AI **must not** reuse `hpp_rates` scan-job rows. Optional later: `/admin/hpp` tab or `/admin/ai` only.
@@ -215,12 +225,28 @@ HPP AI **must not** reuse `hpp_rates` scan-job rows. Optional later: `/admin/hpp
 | `fetched_at` | when we stored it |
 | `created_by` | admin user for manual rows; `NULL` for the beat fetch |
 
-Unique `(base, quote, effective_date)`; a same-day re-fetch or override updates the row instead of appending. **Billing COGS keeps using `AI_USD_IDR`** — the table only feeds the admin price display/entry, so a daily FX change can never silently reprice settled usage. The admin FX card warns when the stored snapshot is older than 7 UTC days, and because the table only feeds price display, a stale rate can never silently reprice billing.
+Unique `(base, quote, effective_date)`; a same-day re-fetch or override updates the row instead of appending. The newest row at or before today is resolved **once per request at reserve** and stored on the reservation; it prices both the customer charge and COGS, so settled amounts never change retroactively. `AI_USD_IDR` is the fallback when the table is empty. The admin FX card warns when the stored snapshot is older than 7 UTC days; a stale rate is still used (never block a request) and the public catalog exposes `fx_stale`.
 
 | Env | Default | Notes |
 |-----|---------|-------|
 | `AI_FX_AUTO_FETCH` | `true` | beat task skips entirely when false |
 | `AI_FX_SOURCE_URL` | `https://api.frankfurter.app/latest?from=USD&to=IDR` | frankfurter (ECB, no key) shape; `open.er-api` shape also parsed |
+| `AI_TRIAL_MONTHLY_CAP_USD` | `30` | admin-trial cap on COGS USD; the deprecated IDR cap applies only when this is unset |
+
+### 7.8 `ai_wallet_ledger` (append-only)
+
+| Column | Notes |
+|--------|-------|
+| `id` | UUID |
+| `organization_id` | FK `ai_wallets.organization_id`, indexed |
+| `kind` | `topup` \| `reserve` \| `settle_adjust` \| `release` \| `manual_adjust` |
+| `delta_idr` | signed IDR change |
+| `balance_after_idr` | post-change balance, `>= 0` |
+| `reservation_id`, `usage_event_id`, `actor_user_id` | nullable links |
+| `note` | optional |
+| `created_at` | |
+
+Partial unique `(kind, reservation_id)`; every balance mutation writes exactly one row in the same transaction as the wallet update, so `sum(delta_idr)` equals `balance_idr`.
 
 ---
 
@@ -264,10 +290,10 @@ Response shape: OpenAI chat completions (including `usage`). Errors: OpenAI-styl
 
 1. Authenticate `sx-`; load org + wallet; enforce RPM/TPM/concurrent.
 2. Resolve `model` → enabled `ai_models`; reject tools/images/`n!=1`.
-3. Compute **hold_idr** as `billed_idr(prompt_est, max_tokens)` (same ceil-per-1k as settle — **not** a full 1k-in floor). `max_tokens` = min(request `max_tokens`/`max_completion_tokens`, model cap, affordable_max_tokens(balance, prompt_est)). If wallet cannot cover 1 in + 1 out token → 402. Coding agents omit `max_tokens` or send 8k–128k.
+3. Resolve the FX snapshot once (newest stored rate at or before today, else `AI_USD_IDR`) and compute **hold_idr** from `prompt_est` + `max_tokens` at that snapshot — one combined total, rounded up once. `max_tokens` = min(request `max_tokens`/`max_completion_tokens`, model cap, affordable_max_tokens(balance, prompt_est)). If wallet cannot cover 1 in + 1 out token → 402. Coding agents omit `max_tokens` or send 8k–128k. The snapshot (price, HPP, FX) is stored on the reservation and is authoritative at settle.
 4. Strip customer auth; set wholesale header; POST upstream (timeout).
 5. Stream or JSON to client; parse usage from final chunk / body.
-6. `billed_idr` from actual tokens; `cogs_idr` from HPP×FX; settle: credit back `hold - billed` (or full release if 0); write usage event.
+6. `billed_idr`/`cogs_idr` from actual tokens at the **reservation snapshot** (a price or FX edit mid-request cannot change them); settle refunds `hold - billed`, or debits the shortfall up to the available balance and records `shortfall_idr`; write the usage event and one ledger row.
 7. Upstream 401/403: generic 502; **never** echo wholesale host or key. Sentry via `log_sanitizer`.
 
 ---
@@ -287,7 +313,7 @@ Response shape: OpenAI chat completions (including `usage`). Errors: OpenAI-styl
 | Path | Who | Notes |
 |------|-----|-------|
 | `/ai` | JWT org | Keys, usage, wallet, copy `base_url` — **AppShell**, kit only (`Button`/`Input`/`Select`), filter bar like Credit History |
-| `/admin/ai` | Admin | Providers, models, usage, trial chat |
+| `/admin/ai` | Admin | Providers, models (USD per 1M + HPP), usage, trial chat |
 
 Register both in `App.tsx` + [`AGENT_PAGE_REGISTRY.md`](../AGENT_PAGE_REGISTRY.md) **in the same implementation PR**. Sidebar distinct from Scan/Guard. Flag-off: route may exist; API 404 + empty copy (SIEM pattern).
 
@@ -303,6 +329,7 @@ Register both in `App.tsx` + [`AGENT_PAGE_REGISTRY.md`](../AGENT_PAGE_REGISTRY.m
 | **S3** | `/v1` + nginx location + customer keys; one wholesaler | S2 |
 | **S4** | SPA `/ai` + `/admin/ai` trial chat + i18n | **done** |
 | **S5** | Limits, sanitizer tests, ops notes, Playwright smoke flag-off | **done** |
+| **S6** | USD-per-1M canonical prices, reservation-locked daily FX for charge + COGS, `ai_wallet_ledger`, admin USD inputs, catalog USD + derived IDR | **done** |
 
 Default order **S1 → S5**. Do not combine with Host Protect / Guard PRs.
 
@@ -315,6 +342,9 @@ Default order **S1 → S5**. Do not combine with Host Protect / Guard PRs.
 - Two concurrent streams cannot drive wallet negative.
 - Revoked key 401; other org key IDOR 404.
 - Usage row has no prompt fields.
+- Usage row snapshots price, HPP and FX; a mid-request model or rate change cannot alter the settled amounts.
+- Wallet ledger sum equals `balance_idr`; a shortfall is recorded and the balance never goes negative.
+- Customer usage JSON exposes only `billed_idr` — no COGS, HPP, margin or FX rate; admin usage exposes them.
 - Admin trial counts against platform cap, not customer org.
 - Upstream error body does not contain `base_url` or secret fragments.
 - Stream: client receives SSE; reservation settled after complete.
