@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import uuid
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, model_validator
 
 
 class AiProviderCreate(BaseModel):
@@ -48,18 +49,35 @@ class AiModelCreate(BaseModel):
     provider_id: uuid.UUID
     public_id: str = Field(..., min_length=3, max_length=128)
     upstream_id: str = Field(..., min_length=1, max_length=256)
+    price_usd_per_1m_in: Decimal | None = Field(default=None, ge=0)
+    price_usd_per_1m_out: Decimal | None = Field(default=None, ge=0)
+    hpp_usd_per_1m_in: Decimal | None = Field(default=None, ge=0)
+    hpp_usd_per_1m_out: Decimal | None = Field(default=None, ge=0)
+    # Legacy integer fields: accepted for one release and converted to USD.
     hpp_usd_per_1k_in: int = Field(default=0, ge=0)
     hpp_usd_per_1k_out: int = Field(default=0, ge=0)
-    price_idr_per_1k_in: int = Field(..., ge=0)
-    price_idr_per_1k_out: int = Field(..., ge=0)
+    price_idr_per_1k_in: int | None = Field(default=None, ge=0)
+    price_idr_per_1k_out: int | None = Field(default=None, ge=0)
     max_ctx: int = Field(default=8192, ge=1)
     max_tokens_cap: int = Field(default=4096, ge=1)
     enabled: bool = True
+
+    @model_validator(mode="after")
+    def _require_price_pairs(self) -> AiModelCreate:
+        if self.price_usd_per_1m_in is None and self.price_idr_per_1k_in is None:
+            raise ValueError("price_usd_per_1m_in or price_idr_per_1k_in is required")
+        if self.price_usd_per_1m_out is None and self.price_idr_per_1k_out is None:
+            raise ValueError("price_usd_per_1m_out or price_idr_per_1k_out is required")
+        return self
 
 
 class AiModelUpdate(BaseModel):
     public_id: str | None = Field(default=None, min_length=3, max_length=128)
     upstream_id: str | None = Field(default=None, min_length=1, max_length=256)
+    price_usd_per_1m_in: Decimal | None = Field(default=None, ge=0)
+    price_usd_per_1m_out: Decimal | None = Field(default=None, ge=0)
+    hpp_usd_per_1m_in: Decimal | None = Field(default=None, ge=0)
+    hpp_usd_per_1m_out: Decimal | None = Field(default=None, ge=0)
     hpp_usd_per_1k_in: int | None = Field(default=None, ge=0)
     hpp_usd_per_1k_out: int | None = Field(default=None, ge=0)
     price_idr_per_1k_in: int | None = Field(default=None, ge=0)
@@ -80,6 +98,10 @@ class AiModelOut(BaseModel):
     hpp_usd_per_1k_out: int
     price_idr_per_1k_in: int
     price_idr_per_1k_out: int
+    price_usd_per_1m_in: float
+    price_usd_per_1m_out: float
+    hpp_usd_per_1m_in: float
+    hpp_usd_per_1m_out: float
     max_ctx: int
     max_tokens_cap: int
     enabled: bool
@@ -108,6 +130,12 @@ class AiPublicModelOut(BaseModel):
     public_id: str
     price_idr_per_1k_in: int
     price_idr_per_1k_out: int
+    price_usd_per_1m_in: float
+    price_usd_per_1m_out: float
+    fx_rate: float
+    fx_source: str
+    fx_effective_date: date | None
+    fx_stale: bool
     max_ctx: int
     max_tokens_cap: int
 
@@ -141,6 +169,22 @@ class AiUsageList(BaseModel):
 class AiAdminUsageOut(AiUsageOut):
     request_payload: dict[str, Any] | None = None
     response_payload: dict[str, Any] | None = None
+    cogs_idr: int = 0
+    billed_usd: float | None = None
+    cogs_usd: float | None = None
+    fx_rate: float | None = None
+    fx_source: str | None = None
+    fx_effective_date: date | None = None
+    price_usd_per_1m_in: float | None = None
+    price_usd_per_1m_out: float | None = None
+    hpp_usd_per_1m_in: float | None = None
+    hpp_usd_per_1m_out: float | None = None
+    margin_idr: int = 0
+
+    @model_validator(mode="after")
+    def _derive_margin(self) -> AiAdminUsageOut:
+        self.margin_idr = self.billed_idr - self.cogs_idr
+        return self
 
 
 class AiAdminUsageList(BaseModel):

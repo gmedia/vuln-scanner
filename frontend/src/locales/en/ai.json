@@ -30,8 +30,8 @@
   "colTokens": "Tokens",
   "colBilled": "Billed (IDR)",
   "colTime": "Time",
-  "colIn": "IDR / 1K in",
-  "colOut": "IDR / 1K out",
+  "colIn": "USD / 1M in",
+  "colOut": "USD / 1M out",
   "walletEmpty": "AI wallet is empty (IDR prepaid, not scan credits). Top up the org wallet to use the gateway.",
   "walletTopUp": "Top up IDR wallet",
   "usageEmptyHint": "See catalog",
@@ -49,5 +49,6 @@
   "neverUsed": "Never",
   "sourceSdk": "SDK",
   "sourceTrial": "Trial",
-  "ctxMeta": "{{ctx}} ctx · {{cap}} max tokens"
+  "ctxMeta": "{{ctx}} ctx · {{cap}} max tokens",
+  "fxStaleNote": "IDR shown at an older daily rate."
 }

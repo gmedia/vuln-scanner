@@ -30,8 +30,8 @@
   "colTokens": "Token",
   "colBilled": "Tagihan (IDR)",
   "colTime": "Waktu",
-  "colIn": "IDR / 1K in",
-  "colOut": "IDR / 1K out",
+  "colIn": "USD / 1M in",
+  "colOut": "USD / 1M out",
   "walletEmpty": "Wallet AI kosong (prepaid IDR, bukan kredit scan). Isi wallet org untuk memakai gateway.",
   "walletTopUp": "Isi saldo IDR",
   "usageEmptyHint": "Lihat katalog",
@@ -49,5 +49,6 @@
   "neverUsed": "Belum",
   "sourceSdk": "SDK",
   "sourceTrial": "Uji",
-  "ctxMeta": "{{ctx}} ctx · {{cap}} token maks"
+  "ctxMeta": "{{ctx}} ctx · {{cap}} token maks",
+  "fxStaleNote": "IDR memakai kurs harian yang lebih lama."
 }

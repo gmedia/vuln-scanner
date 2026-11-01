@@ -1,16 +1,17 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from unittest.mock import AsyncMock, patch
+from uuid import UUID
 
 import pytest
 import pytest_asyncio
-from sqlalchemy import event
+from sqlalchemy import event, select
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.config import settings
-from app.models.ai_gateway import AiUsageEvent
+from app.models.ai_gateway import AiModel, AiUsageEvent
 from app.services.ai_crypto import decrypt_credential, encrypt_credential
 
 API_HEADERS = {"X-API-Key": settings.api_key, "X-E2E-Test": "1"}
@@ -449,8 +450,6 @@ async def test_admin_trial_post_response_over_cap_bills_zero_but_records_cost(
         )
     assert ok.status_code == 200, ok.text
 
-    from sqlalchemy import select
-
     event = (
         await db_session.execute(select(AiUsageEvent).where(AiUsageEvent.model_public_id == "sinexis/trial-zero"))
     ).scalar_one()
@@ -459,3 +458,183 @@ async def test_admin_trial_post_response_over_cap_bills_zero_but_records_cost(
     assert event.cogs_usd is not None and event.cogs_usd > 0
     assert event.cogs_idr > 0
     assert client.delete(f"/api/admin/ai/models/{mid}", headers=API_HEADERS).status_code == 204
+
+
+def _provider(client) -> str:
+    return client.post(
+        "/api/admin/ai/providers",
+        headers=API_HEADERS,
+        json={"name": "USD", "base_url": "https://usd.example/v1", "credential": "k"},
+    ).json()["id"]
+
+
+@pytest.mark.asyncio
+async def test_create_model_with_usd_writes_canonical_and_derived_legacy(client, db_session, ai_on) -> None:
+    pid = _provider(client)
+    response = client.post(
+        "/api/admin/ai/models",
+        headers=API_HEADERS,
+        json={
+            "provider_id": pid,
+            "public_id": "sinexis/usd-create",
+            "upstream_id": "usd-up",
+            "price_usd_per_1m_in": 0.15,
+            "price_usd_per_1m_out": 0.6,
+            "hpp_usd_per_1m_in": 0.075,
+            "hpp_usd_per_1m_out": 0.3,
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert body["price_usd_per_1m_in"] == 0.15
+    assert body["price_usd_per_1m_out"] == 0.6
+    assert body["price_idr_per_1k_in"] == 2
+    assert body["price_idr_per_1k_out"] == 10
+    assert body["hpp_usd_per_1m_in"] == 0.075
+    assert body["hpp_usd_per_1m_out"] == 0.3
+
+    row = (await db_session.execute(select(AiModel).where(AiModel.id == UUID(body["id"])))).scalar_one()
+    assert row.price_usd_per_1m_in == Decimal("0.150000")
+    assert row.price_usd_per_1m_out == Decimal("0.600000")
+    assert row.price_idr_per_1k_in == 2
+    assert row.price_idr_per_1k_out == 10
+
+
+@pytest.mark.asyncio
+async def test_create_model_legacy_only_is_converted_to_usd(client, db_session, ai_on) -> None:
+    pid = _provider(client)
+    response = client.post(
+        "/api/admin/ai/models",
+        headers=API_HEADERS,
+        json={
+            "provider_id": pid,
+            "public_id": "sinexis/legacy-create",
+            "upstream_id": "legacy-up",
+            "price_idr_per_1k_in": 1000,
+            "price_idr_per_1k_out": 2000,
+            "hpp_usd_per_1k_in": 1,
+            "hpp_usd_per_1k_out": 2,
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert body["price_usd_per_1m_in"] == 62.5
+    assert body["price_usd_per_1m_out"] == 125.0
+    assert body["price_idr_per_1k_in"] == 1000
+    assert body["price_idr_per_1k_out"] == 2000
+    assert body["hpp_usd_per_1m_in"] == 1000.0
+    assert body["hpp_usd_per_1m_out"] == 2000.0
+
+    row = (await db_session.execute(select(AiModel).where(AiModel.id == UUID(body["id"])))).scalar_one()
+    assert row.price_usd_per_1m_in == Decimal("62.500000")
+    assert row.hpp_usd_per_1k_in == 1
+
+
+@pytest.mark.asyncio
+async def test_create_model_both_shapes_prefers_usd(client, ai_on) -> None:
+    pid = _provider(client)
+    response = client.post(
+        "/api/admin/ai/models",
+        headers=API_HEADERS,
+        json={
+            "provider_id": pid,
+            "public_id": "sinexis/both",
+            "upstream_id": "both-up",
+            "price_usd_per_1m_in": 1,
+            "price_usd_per_1m_out": 2,
+            "price_idr_per_1k_in": 99999,
+            "price_idr_per_1k_out": 99999,
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert body["price_usd_per_1m_in"] == 1.0
+    assert body["price_usd_per_1m_out"] == 2.0
+    assert body["price_idr_per_1k_in"] == 16
+    assert body["price_idr_per_1k_out"] == 32
+
+
+@pytest.mark.asyncio
+async def test_update_model_partial_usd_keeps_other_leg(client, ai_on) -> None:
+    pid = _provider(client)
+    created = client.post(
+        "/api/admin/ai/models",
+        headers=API_HEADERS,
+        json={
+            "provider_id": pid,
+            "public_id": "sinexis/partial",
+            "upstream_id": "partial-up",
+            "price_usd_per_1m_in": 1,
+            "price_usd_per_1m_out": 2,
+            "hpp_usd_per_1m_in": 0.1,
+            "hpp_usd_per_1m_out": 0.2,
+        },
+    ).json()
+    mid = created["id"]
+
+    patched = client.patch(
+        f"/api/admin/ai/models/{mid}",
+        headers=API_HEADERS,
+        json={"price_usd_per_1m_out": 3},
+    )
+
+    assert patched.status_code == 200, patched.text
+    body = patched.json()
+    assert body["price_usd_per_1m_in"] == 1.0
+    assert body["price_usd_per_1m_out"] == 3.0
+    assert body["price_idr_per_1k_in"] == 16
+    assert body["price_idr_per_1k_out"] == 48
+
+    hpp_patched = client.patch(
+        f"/api/admin/ai/models/{mid}",
+        headers=API_HEADERS,
+        json={"hpp_usd_per_1m_in": 0.25},
+    )
+
+    assert hpp_patched.status_code == 200, hpp_patched.text
+    assert hpp_patched.json()["hpp_usd_per_1m_in"] == 0.25
+    assert hpp_patched.json()["hpp_usd_per_1m_out"] == 0.2
+
+
+@pytest.mark.asyncio
+async def test_admin_usage_exposes_cogs_margin_and_fx(client, db_session, ai_on) -> None:
+    db_session.add(
+        AiUsageEvent(
+            source="admin_trial",
+            model_public_id="sinexis/cogs",
+            prompt_tokens=10,
+            completion_tokens=5,
+            billed_idr=100,
+            cogs_idr=40,
+            billed_usd=Decimal("0.006250000000"),
+            cogs_usd=Decimal("0.002500000000"),
+            fx_rate=Decimal("16000"),
+            fx_source="env",
+            fx_effective_date=date.today(),
+            price_usd_per_1m_in=Decimal("0.15"),
+            price_usd_per_1m_out=Decimal("0.60"),
+            hpp_usd_per_1m_in=Decimal("0.075"),
+            hpp_usd_per_1m_out=Decimal("0.30"),
+            created_at=datetime.now(UTC),
+        )
+    )
+    await db_session.commit()
+
+    response = client.get("/api/admin/ai/usage", headers=API_HEADERS)
+
+    assert response.status_code == 200, response.text
+    item = response.json()["items"][0]
+    assert item["billed_idr"] == 100
+    assert item["cogs_idr"] == 40
+    assert item["margin_idr"] == item["billed_idr"] - item["cogs_idr"]
+    assert item["margin_idr"] == 60
+    assert item["billed_usd"] == 0.00625
+    assert item["cogs_usd"] == 0.0025
+    assert item["fx_rate"] == 16000.0
+    assert item["fx_source"] == "env"
+    assert item["fx_effective_date"] == date.today().isoformat()
+    assert item["price_usd_per_1m_in"] == 0.15
+    assert item["hpp_usd_per_1m_in"] == 0.075

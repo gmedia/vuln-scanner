@@ -32,6 +32,12 @@ const model = {
   public_id: "sinexis-small",
   price_idr_per_1k_in: 500,
   price_idr_per_1k_out: 1500,
+  price_usd_per_1m_in: 8,
+  price_usd_per_1m_out: 24,
+  fx_rate: 16000,
+  fx_source: "env",
+  fx_effective_date: null,
+  fx_stale: true,
   max_ctx: 128000,
   max_tokens_cap: 4096,
 };
