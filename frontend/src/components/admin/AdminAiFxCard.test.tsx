@@ -77,4 +77,41 @@ describe("AdminAiFxCard", () => {
     await user.click(save);
     expect(onSaveManual).toHaveBeenCalledWith(16500);
   });
+
+  it("warns when the stored rate is older than 7 UTC days", () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date("2026-11-09T12:00:00Z"));
+      renderCard(makeFx({ effective_date: "2026-10-30" }));
+      expect(screen.getByTestId("admin-ai-fx-stale")).toHaveTextContent(
+        "This rate is 10 days old — refresh before setting prices.",
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("hides the warning when the stored rate is fresh", () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date("2026-11-09T12:00:00Z"));
+      renderCard(makeFx({ effective_date: "2026-11-09" }));
+      expect(screen.queryByTestId("admin-ai-fx-stale")).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("hides the warning when the env fallback rate is in use", () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date("2026-11-09T12:00:00Z"));
+      renderCard(
+        makeFx({ effective_date: null, using_env_fallback: true }),
+      );
+      expect(screen.queryByTestId("admin-ai-fx-stale")).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

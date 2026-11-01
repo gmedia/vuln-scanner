@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   formatPricePerTokens,
   formatUsdPer1m,
+  fxRateAgeDays,
   idrPer1kToUsdPer1m,
   parsePriceInput,
   usdPer1mToIdrPer1k,
@@ -73,5 +74,49 @@ describe("parsePriceInput", () => {
 
   it("rejects Infinity", () => {
     expect(parsePriceInput("Infinity")).toBeNull();
+  });
+});
+
+describe("fxRateAgeDays", () => {
+  it("counts whole UTC days between the snapshot and now", () => {
+    expect(fxRateAgeDays("2026-10-30", new Date("2026-11-01T12:00:00Z"))).toBe(
+      2,
+    );
+  });
+
+  it("returns 0 for a snapshot on the same UTC day", () => {
+    expect(fxRateAgeDays("2026-11-01", new Date("2026-11-01T23:59:59Z"))).toBe(
+      0,
+    );
+  });
+
+  it("clamps future snapshots to 0", () => {
+    expect(fxRateAgeDays("2026-11-05", new Date("2026-11-01T00:00:00Z"))).toBe(
+      0,
+    );
+  });
+
+  it("returns null for missing or empty input", () => {
+    expect(fxRateAgeDays(null)).toBeNull();
+    expect(fxRateAgeDays(undefined)).toBeNull();
+    expect(fxRateAgeDays("")).toBeNull();
+  });
+
+  it("returns null for ISO datetimes instead of plain dates", () => {
+    expect(
+      fxRateAgeDays("2026-10-30T00:00:00Z", new Date("2026-11-01T00:00:00Z")),
+    ).toBeNull();
+  });
+
+  it("returns null for impossible calendar dates", () => {
+    expect(
+      fxRateAgeDays("2026-02-31", new Date("2026-03-01T00:00:00Z")),
+    ).toBeNull();
+  });
+
+  it("uses UTC midnight, not local time", () => {
+    expect(fxRateAgeDays("2026-10-30", new Date("2026-11-01T23:30:00Z"))).toBe(
+      2,
+    );
   });
 });

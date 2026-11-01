@@ -241,6 +241,7 @@
   "aiFxManualSave": "Save rate",
   "aiFxFallbackNote": "No stored rate yet — using AI_USD_IDR from env.",
   "aiFxAutoOff": "Automatic daily fetch is disabled; only manual updates apply.",
+  "aiFxStale": "This rate is {{days}} days old — refresh before setting prices.",
   "aiFxSavedAs": "Stored: {{idr}} / 1K",
   "aiFxRefreshOk": "Rate updated.",
   "aiFxRefreshFail": "Could not fetch the rate. Try again later.",

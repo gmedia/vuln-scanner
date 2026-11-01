@@ -1,9 +1,17 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { TriangleAlert } from "lucide-react";
 import type { AiFxStatus } from "@/api/admin";
 import { AdminAiField } from "@/components/admin/AdminAiField";
-import { formatIdr, parsePriceInput } from "@/components/admin/aiFormat";
+import {
+  FX_STALE_DAYS,
+  formatIdr,
+  fxRateAgeDays,
+  parsePriceInput,
+} from "@/components/admin/aiFormat";
 import { Button } from "@/components/ui/Button";
+import { toneText } from "@/lib/toneMap";
+import { cn } from "@/lib/utils";
 
 export function AdminAiFxCard({
   fx,
@@ -26,6 +34,12 @@ export function AdminAiFxCard({
   const [manual, setManual] = useState("");
   const manualRate = parsePriceInput(manual);
   const history = fx?.history.slice(0, 5) ?? [];
+  const ageDays = fxRateAgeDays(fx?.effective_date);
+  const showStale =
+    fx !== undefined &&
+    !fx.using_env_fallback &&
+    ageDays !== null &&
+    ageDays > FX_STALE_DAYS;
 
   return (
     <section
@@ -69,6 +83,16 @@ export function AdminAiFxCard({
           </dd>
         </div>
       </dl>
+
+      {showStale ? (
+        <p
+          data-testid="admin-ai-fx-stale"
+          className={cn("mt-2 flex items-start gap-1.5 text-xs", toneText("warn"))}
+        >
+          <TriangleAlert aria-hidden className="mt-0.5 size-3.5 shrink-0" />
+          <span>{t("aiFxStale", { days: ageDays })}</span>
+        </p>
+      ) : null}
 
       {fx?.using_env_fallback ? (
         <p className="mt-2 text-xs text-muted-foreground">{t("aiFxFallbackNote")}</p>
