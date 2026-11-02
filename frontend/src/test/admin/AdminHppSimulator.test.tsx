@@ -28,6 +28,7 @@ vi.mock("@/api/admin", () => ({
 
 import { useQuery } from "@tanstack/react-query";
 import { adminApi, type HppReportResponse, type SkuPriceItem } from "@/api/admin";
+import { tierFixtures } from "@/test/fixtures/skuTiers";
 
 const prices: SkuPriceItem[] = [
   { service: "scan", sku: "basic", list_idr: 300000, invoicable: true },
@@ -75,9 +76,15 @@ beforeEach(() => {
   currentReport = report;
   vi.mocked(adminApi.getSkuPrices).mockResolvedValue(prices);
   vi.mocked(adminApi.getHppReport).mockResolvedValue(report);
-  vi.mocked(useQuery).mockImplementation((options) => ({
-    data: options.queryKey[0] === "admin-hpp-report" ? currentReport : currentPrices,
-  }) as never);
+  vi.mocked(useQuery).mockImplementation((options) => {
+    if (options.queryKey[0] === "sku-tiers") return { data: tierFixtures } as never;
+    return {
+      data:
+        options.queryKey[0] === "admin-hpp-report"
+          ? currentReport
+          : currentPrices,
+    } as never;
+  });
 });
 
 describe("AdminHppSimulator", () => {

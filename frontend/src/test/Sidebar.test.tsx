@@ -133,6 +133,13 @@ describe("Sidebar", () => {
       "href",
       "/admin/subscriptions",
     );
+    expect(screen.getByTestId("nav-admin-skus")).toHaveAttribute(
+      "href",
+      "/admin/skus",
+    );
+    expect(screen.getByTestId("nav-admin-skus")).toHaveTextContent(
+      "SKUs, Tiers & Pricing",
+    );
   });
 
   it("shows active scan section when activeJobId is set", () => {

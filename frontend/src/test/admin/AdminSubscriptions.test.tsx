@@ -82,6 +82,7 @@ vi.mock("@/components/ui/Select", () => {
 });
 
 import AdminSubscriptions from "@/pages/admin/AdminSubscriptions";
+import { tierFixtures } from "@/test/fixtures/skuTiers";
 import { listAdminInvoices } from "@/api/admin";
 import {
   cancelAdminSubscription,
@@ -89,6 +90,17 @@ import {
   recordAdminSubscriptionPayment,
   type AdminSubscriptionItem,
 } from "@/api/adminBilling";
+
+vi.mock("@/api/subscription", async () => {
+  const actual =
+    await vi.importActual<typeof import("@/api/subscription")>(
+      "@/api/subscription",
+    );
+  return {
+    ...actual,
+    getSkuTiers: vi.fn(async () => tierFixtures),
+  };
+});
 
 vi.mock("@/api/admin", async () => {
   const actual = await vi.importActual<typeof import("@/api/admin")>("@/api/admin");
@@ -208,7 +220,7 @@ describe("AdminSubscriptions", () => {
     const table = await screen.findByTestId("admin-subscriptions-table");
     expect(within(table).getByText("Org A")).toBeInTheDocument();
     expect(within(table).getByText("Past due")).toBeInTheDocument();
-    expect(within(table).getByText("pro · Monthly")).toBeInTheDocument();
+    expect(within(table).getByText("Pro · Monthly")).toBeInTheDocument();
     expect(within(table).getByText(/Ends/)).toBeInTheDocument();
   });
 

@@ -112,7 +112,7 @@ vi.mock("@/components/ui/Select", () => {
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-const catalog = [
+const catalog = ([
   {
     product: "scan",
     sku: "basic",
@@ -161,7 +161,11 @@ const catalog = [
     invoicable: true,
     updated_at: "",
   },
-];
+] as { product: string; sku: string; list_idr: number; seats: number; invoicable: boolean; updated_at: string; label?: string; active?: boolean }[]).map((row) => ({
+  ...row,
+  label: row.sku.charAt(0).toUpperCase() + row.sku.slice(1),
+  active: true,
+}));
 
 function changeSelect(trigger: HTMLElement, value: string) {
   const root = trigger.closest("[data-testid=select-root]");
@@ -585,4 +589,32 @@ describe("AdminInvoices", () => {
     expect(island.className).toMatch(/bg-muted\/40/);
     expect(island.className).toMatch(/rounded-xl/);
   });
+  it("uses API labels and excludes retired tiers from new invoices", () => {
+    const retiredCatalog = catalog.map((row) =>
+      row.product === "scan" && row.sku === "pro"
+        ? { ...row, label: "Pro Legacy", active: false }
+        : row,
+    );
+    vi.mocked(useQuery).mockImplementation(((opts: { queryKey: unknown[] }) => {
+      const key = String(opts.queryKey[0]);
+      if (key === "admin-sku-catalog") {
+        return { data: retiredCatalog, isLoading: false };
+      }
+      if (key === "admin-orgs") {
+        return { data: { items: [], total: 0 }, isLoading: false };
+      }
+      return { data: { items: invoices, total: 1 }, isLoading: false };
+    }) as typeof useQuery);
+    render(<AdminInvoices />);
+
+    expect(screen.getByTestId("invoice-catalog-desktop")).toHaveTextContent(
+      "Pro Legacy",
+    );
+    const skuRoot = screen
+      .getByTestId("invoice-sku")
+      .closest("[data-testid=select-root]");
+    expect(skuRoot?.querySelector("[data-value=pro]")).toBeFalsy();
+    expect(skuRoot?.querySelector("[data-value=basic]")).toBeTruthy();
+  });
+
 });

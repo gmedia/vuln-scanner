@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import AdminSkuCatalog from "@/pages/admin/AdminSkuCatalog";
 import { adminApi, type SkuCatalogItem, type SkuPricingResponse } from "@/api/admin";
+import { tierFixtures } from "@/test/fixtures/skuTiers";
 
 vi.mock("@tanstack/react-query", () => ({
   useQuery: vi.fn(),
@@ -15,14 +16,26 @@ vi.mock("@/api/admin", () => ({
     getSkuCatalog: vi.fn(),
     getSkuPricing: vi.fn(),
     updateSkuCatalog: vi.fn(),
+    getAdminSkuTiers: vi.fn(async () => []),
+    createSkuTier: vi.fn(),
+    updateSkuTier: vi.fn(),
+    deactivateSkuTier: vi.fn(),
+    reactivateSkuTier: vi.fn(),
+    deleteSkuTier: vi.fn(),
   },
+  getAdminSkuTiers: vi.fn(async () => tierFixtures),
+  createSkuTier: vi.fn(),
+  updateSkuTier: vi.fn(),
+  deactivateSkuTier: vi.fn(),
+  reactivateSkuTier: vi.fn(),
+  deleteSkuTier: vi.fn(),
 }));
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-const catalog: SkuCatalogItem[] = [
+const catalog: SkuCatalogItem[] = ([
   {
     product: "scan",
     sku: "basic",
@@ -75,7 +88,11 @@ const catalog: SkuCatalogItem[] = [
   },
   { product: "uptime", sku: "basic", list_idr: 75000, seats: 10, invoicable: true, updated_at: "" },
   { product: "guard", sku: "basic", list_idr: 100000, seats: 1, invoicable: true, updated_at: "" },
-];
+] as Omit<SkuCatalogItem, "label" | "active">[]).map((row) => ({
+  ...row,
+  label: row.sku.charAt(0).toUpperCase() + row.sku.slice(1),
+  active: true,
+}));
 
 const pricing: SkuPricingResponse = {
   items: [
@@ -104,7 +121,12 @@ beforeEach(() => {
   vi.mocked(adminApi.getSkuPricing).mockResolvedValue(pricing);
   vi.mocked(adminApi.updateSkuCatalog).mockResolvedValue(catalog[0]);
   vi.mocked(useQuery).mockImplementation((options) => {
-    return { data: options.queryKey[0] === "admin-sku-pricing" ? pricing : catalog } as never;
+    if (options.queryKey[0] === "admin-sku-tiers") {
+      return { data: tierFixtures } as never;
+    }
+    return {
+      data: options.queryKey[0] === "admin-sku-pricing" ? pricing : catalog,
+    } as never;
   });
   vi.mocked(useQueryClient).mockReturnValue({
     invalidateQueries: vi.fn(),
@@ -124,6 +146,45 @@ beforeEach(() => {
 });
 
 describe("AdminSkuCatalog", () => {
+  it("renders the pricing and tier tabs without a second page", async () => {
+    const user = userEvent.setup();
+    render(<AdminSkuCatalog />);
+    expect(screen.getByRole("tab", { name: "Pricing" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("tab", { name: "Tiers & features" }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "Tiers & features" }));
+    expect(await screen.findByTestId("sku-tier-table")).toBeInTheDocument();
+    expect(screen.getByTestId("sku-tier-row-basic")).toHaveTextContent(
+      "Basic",
+    );
+  });
+
+  it("labels catalog rows from the API and flags retired tiers", () => {
+    const retired = catalog.map((row) =>
+      row.sku === "multi" ? { ...row, active: false } : row,
+    );
+    vi.mocked(useQuery).mockImplementation(((options: { queryKey: unknown[] }) => {
+      if (options.queryKey[0] === "admin-sku-tiers") {
+        return { data: tierFixtures } as never;
+      }
+      return {
+        data:
+          options.queryKey[0] === "admin-sku-pricing" ? pricing : retired,
+      } as never;
+    }) as typeof useQuery);
+    render(<AdminSkuCatalog />);
+    expect(screen.getByTestId("sku-catalog-row-scan-pro")).toHaveTextContent(
+      "Pro",
+    );
+    expect(
+      screen.getByTestId("sku-catalog-retired-scan-multi"),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("sku-catalog-row-scan-pro")).toHaveTextContent(
+      "3",
+    );
+  });
+
   it("renders a collapsible usage guide", async () => {
     const user = userEvent.setup();
     render(<AdminSkuCatalog />);
@@ -137,7 +198,7 @@ describe("AdminSkuCatalog", () => {
     ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Limits" }));
     expect(
-      await screen.findByText("Seats are read-only here; they follow the tier cap and are set elsewhere."),
+      await screen.findByText("Seats follow the tier cap and cannot be edited here. Open the tier to change them."),
     ).toBeInTheDocument();
   });
 

@@ -18,6 +18,15 @@ import { deleteMonitor } from "@/api/uptime";
 const mockList = vi.fn();
 const mockSamples = vi.fn();
 
+vi.mock("@/api/subscription", async () => {
+  const actual =
+    await vi.importActual<typeof import("@/api/subscription")>(
+      "@/api/subscription",
+    );
+  const { tierFixtures } = await import("@/test/fixtures/skuTiers");
+  return { ...actual, getSkuTiers: vi.fn(async () => tierFixtures) };
+});
+
 vi.mock("@/api/uptime", async () => {
   const actual = await vi.importActual<typeof import("@/api/uptime")>("@/api/uptime");
   return {
