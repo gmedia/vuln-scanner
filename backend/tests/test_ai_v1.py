@@ -9,6 +9,7 @@ import httpx
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from prometheus_client.registry import REGISTRY
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -743,6 +744,14 @@ async def _usage_events(db: AsyncSession, org_id: uuid.UUID) -> list[AiUsageEven
     return list((await db.execute(select(AiUsageEvent).where(AiUsageEvent.organization_id == org_id))).scalars().all())
 
 
+def _attempt_total(model: str, outcome: str, reason: str) -> float:
+    value = REGISTRY.get_sample_value(
+        "vuln_ai_upstream_attempts_total",
+        {"model": model, "outcome": outcome, "reason": reason},
+    )
+    return float(value or 0.0)
+
+
 @pytest.mark.asyncio
 async def test_v1_failover_on_5xx_serves_secondary(db_session: AsyncSession, ctx) -> None:
     owner = ctx["owner"]
@@ -1146,3 +1155,117 @@ async def test_v1_insufficient_balance_402_no_ledger(db_session: AsyncSession, c
     assert chat.status_code == 402, chat.text
     assert await _ledger_rows(db_session, org.id) == []
     assert await _usage_events(db_session, org.id) == []
+
+
+@pytest.mark.asyncio
+async def test_v1_failover_metric_records_served_and_retried(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+    public_id = ctx["model"].public_id
+    await _add_fallback(db_session, ctx["model"])
+    mock_client = _post_client(_UpstreamResponse(503), _UpstreamResponse(200, _chat_payload()))
+    served_before = _attempt_total(public_id, "served", "none")
+    retried_before = _attempt_total(public_id, "retried", "server_error")
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            plain = await _create_key(ac, owner, org.id)
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                chat = await ac.post(CHAT_PATH, headers=_key_headers(plain), json=_chat_body())
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert chat.status_code == 200, chat.text
+    assert _attempt_total(public_id, "served", "none") - served_before == pytest.approx(1.0)
+    assert _attempt_total(public_id, "retried", "server_error") - retried_before == pytest.approx(1.0)
+
+
+@pytest.mark.asyncio
+async def test_v1_failover_metric_records_failed_when_all_candidates_fail(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+    public_id = ctx["model"].public_id
+    await _add_fallback(db_session, ctx["model"])
+    mock_client = _post_client(_UpstreamResponse(503), _UpstreamResponse(503))
+    failed_before = _attempt_total(public_id, "failed", "server_error")
+    retried_before = _attempt_total(public_id, "retried", "server_error")
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            plain = await _create_key(ac, owner, org.id)
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                chat = await ac.post(CHAT_PATH, headers=_key_headers(plain), json=_chat_body())
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert chat.status_code == 502, chat.text
+    assert _attempt_total(public_id, "failed", "server_error") - failed_before == pytest.approx(1.0)
+    assert _attempt_total(public_id, "retried", "server_error") - retried_before == pytest.approx(1.0)
+
+
+@pytest.mark.asyncio
+async def test_v1_metric_records_rejected_on_client_error(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+    public_id = ctx["model"].public_id
+    await _add_fallback(db_session, ctx["model"])
+    mock_client = _post_client(_UpstreamResponse(400), _UpstreamResponse(200, _chat_payload()))
+    rejected_before = _attempt_total(public_id, "rejected", "client_error")
+    retried_before = _attempt_total(public_id, "retried", "client_error")
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            plain = await _create_key(ac, owner, org.id)
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                chat = await ac.post(CHAT_PATH, headers=_key_headers(plain), json=_chat_body())
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert chat.status_code == 400, chat.text
+    assert _attempt_total(public_id, "rejected", "client_error") - rejected_before == pytest.approx(1.0)
+    assert _attempt_total(public_id, "retried", "client_error") - retried_before == pytest.approx(0.0)
+
+
+@pytest.mark.asyncio
+async def test_v1_stream_metric_records_served_after_failover(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+    public_id = ctx["model"].public_id
+    await _add_fallback(db_session, ctx["model"])
+    chunk = b'data: {"id":"s1","choices":[{"delta":{"content":"hello"}}]}\n\n'
+    mock_client = _stream_client(_FakeStreamResponse(503), _FakeStreamResponse(200, [chunk]))
+    served_before = _attempt_total(public_id, "served", "none")
+    retried_before = _attempt_total(public_id, "retried", "server_error")
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            plain = await _create_key(ac, owner, org.id)
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                chat = await ac.post(CHAT_PATH, headers=_key_headers(plain), json=_chat_body(stream=True))
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert chat.status_code == 200, chat.text
+    assert "hello" in chat.text
+    assert _attempt_total(public_id, "served", "none") - served_before == pytest.approx(1.0)
+    assert _attempt_total(public_id, "retried", "server_error") - retried_before == pytest.approx(1.0)

@@ -330,6 +330,12 @@ Response shape: OpenAI chat completions (including `usage`). Errors: OpenAI-styl
 - Flag default **false** in git compose (local/CI/prod until ops).
 - Secrets: provider creds in DB envelope or env per provider — **not** in git.
 - Do not enqueue chat through Celery scan queues.
+- `/metrics` exposes `vuln_ai_upstream_attempts_total{model,outcome,reason}` where `outcome` is
+  `served` / `retried` / `failed` / `rejected` and `reason` is `none` / `transport` / `auth` /
+  `rate_limit` / `server_error` / `client_error`. Failover is silent by design, so this counter plus
+  the four `VulnScannerAiUpstream*` rules in `monitoring/alerts-vuln-scanner.example.yml` are the only
+  signal that a wholesale provider is degraded. `rejected` is never retried: it means the alias points
+  at an upstream model id that refuses the request.
 
 ---
 

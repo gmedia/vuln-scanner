@@ -68,3 +68,62 @@ groups:
             20 minutes. A sustained count means beat or its worker is not consuming,
             so customer funds stay locked. Check the beat schedule and worker logs,
             then run the task manually if needed.
+      - alert: VulnScannerAiUpstreamAuthRejected
+        expr: sum(rate(vuln_ai_upstream_attempts_total{reason="auth"}[5m])) > 0
+        for: 5m
+        labels:
+          severity: critical
+          service: vuln-scanner
+        annotations:
+          summary: "AI upstream rejected our credentials"
+          description: >-
+            sum(rate(vuln_ai_upstream_attempts_total{reason="auth"}[5m])) is
+            {{ $value }}/s. At least one wholesale provider answered 401/403, so its
+            API key is expired or revoked. Every request routed to it fails over to
+            the next candidate and pays double COGS. Check the provider row in
+            /admin/ai?tab=providers and rotate the credential.
+      - alert: VulnScannerAiUpstreamFailedRequests
+        expr: sum(rate(vuln_ai_upstream_attempts_total{outcome="failed"}[10m])) > 0
+        for: 10m
+        labels:
+          severity: critical
+          service: vuln-scanner
+        annotations:
+          summary: "AI requests are failing after every upstream candidate"
+          description: >-
+            sum(rate(vuln_ai_upstream_attempts_total{outcome="failed"}[10m])) is
+            {{ $value }}/s. All candidates for a model failed, so customers received
+            an upstream error and their hold was released. Check provider status in
+            /admin/ai?tab=providers and the ai_upstream_attempt_failed log lines for
+            the failing model and reason.
+      - alert: VulnScannerAiUpstreamFailoverRate
+        expr: >-
+          sum(rate(vuln_ai_upstream_attempts_total{outcome=~"retried|failed"}[15m]))
+          /
+          sum(rate(vuln_ai_upstream_attempts_total[15m]))
+          > 0.2
+        for: 15m
+        labels:
+          severity: warning
+          service: vuln-scanner
+        annotations:
+          summary: "More than 20% of AI upstream attempts need a retry"
+          description: >-
+            The retry share is {{ $value }} (0.2 = 20%). A primary provider is
+            degraded but failover is hiding it from customers. Sustained retries cost
+            duplicate COGS because the failed attempt may already have generated
+            tokens. Inspect the `reason` label and the provider's status.
+      - alert: VulnScannerAiUpstreamRejectedRequests
+        expr: sum(rate(vuln_ai_upstream_attempts_total{outcome="rejected"}[30m])) > 0
+        for: 30m
+        labels:
+          severity: warning
+          service: vuln-scanner
+        annotations:
+          summary: "AI upstream rejected a request as invalid"
+          description: >-
+            sum(rate(vuln_ai_upstream_attempts_total{outcome="rejected"}[30m])) is
+            {{ $value }}/s. The provider answered a non-retryable 4xx, which means the
+            alias points at an upstream model id that does not accept this request
+            (renamed or retired model, or an unsupported parameter). Failover does not
+            retry these by design. Check the model's primary and fallback upstream ids.

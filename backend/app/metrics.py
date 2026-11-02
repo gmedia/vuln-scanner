@@ -6,7 +6,7 @@ from datetime import UTC, date, datetime, timedelta
 from functools import lru_cache
 from typing import TYPE_CHECKING
 
-from prometheus_client.core import GaugeMetricFamily, Metric
+from prometheus_client.core import Counter, GaugeMetricFamily, Metric
 from prometheus_client.registry import REGISTRY
 
 if TYPE_CHECKING:
@@ -27,6 +27,20 @@ STALE_OPEN_RESERVATIONS_NAME = "vuln_ai_stale_open_reservations"
 STALE_RESERVATION_MINUTES = 20
 
 _collector_registered = False
+
+_UPSTREAM_ATTEMPTS = Counter(
+    "vuln_ai_upstream_attempts_total",
+    "AI gateway upstream attempts by outcome (served/retried/failed/rejected) and reason",
+    ["model", "outcome", "reason"],
+)
+
+
+def record_upstream_attempt(*, model: str, outcome: str, reason: str) -> None:
+    """Count one upstream attempt. Never raises: metrics must not break a billed request."""
+    try:
+        _UPSTREAM_ATTEMPTS.labels(model=model, outcome=outcome, reason=reason).inc()
+    except Exception:
+        logger.debug("ai upstream attempt metric increment failed", exc_info=True)
 
 
 def _read_auto_fail_counts() -> dict[str, int]:
