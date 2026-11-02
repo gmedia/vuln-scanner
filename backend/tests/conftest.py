@@ -172,6 +172,21 @@ def _reset_redis_counters():
     _incr_counters.clear()
 
 
+@pytest.fixture(autouse=True)
+def _stub_sync_redis(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep decode_token's sync revocation check off the network.
+
+    decode_token() performs a best-effort *blocking* Redis GET. In a test run
+    with no Redis, a failing DNS lookup can block the event loop for minutes
+    (observed as a 25-minute CI hang), so tests get an in-memory miss instead.
+    """
+    import app.services.auth as auth_mod
+
+    fake = MagicMock()
+    fake.get.return_value = None
+    monkeypatch.setattr(auth_mod, "_sync_redis", fake)
+
+
 @pytest_asyncio.fixture
 async def engine():
     test_engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
