@@ -1278,7 +1278,7 @@ jobs:
             -o "ProxyCommand=${PROXY_CMD}" \
             -p "${DEPLOY_PORT}" \
             "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "cd '${DEPLOY_PATH}' && git fetch origin main && git reset --hard origin/main && COMPOSE_PROJECT_NAME=vuln-scanner REMOTE_DATA=1 PULL_ONLY=1 REGISTRY=ghcr.io/${{ github.repository_owner }} GIT_SHA=${{ github.sha }} IMAGE_TAG=sha-${{ github.sha }} ./scripts/deploy-services.sh backend frontend celery_beat"
+            "cd '${DEPLOY_PATH}' && git fetch origin ${{ github.sha }} && git reset --hard ${{ github.sha }} && COMPOSE_PROJECT_NAME=vuln-scanner REMOTE_DATA=1 PULL_ONLY=1 REGISTRY=ghcr.io/${{ github.repository_owner }} GIT_SHA=${{ github.sha }} IMAGE_TAG=sha-${{ github.sha }} ./scripts/deploy-services.sh backend frontend celery_beat"
           rm -f ~/.ssh/deploy_key ~/.ssh/jump_key
 
   deploy-workers:
@@ -1339,5 +1339,5 @@ jobs:
             -o "ProxyCommand=${PROXY_CMD}" \
             -p "${WORKER_PORT}" \
             "${WORKER_USER}@${WORKER_HOST}" \
-            "cd '${WORKER_PATH}' && git fetch origin main && git reset --hard origin/main && COMPOSE_PROJECT_NAME=vuln-scanner REMOTE_DATA=1 PULL_ONLY=1 REGISTRY=ghcr.io/${{ github.repository_owner }} IMAGE_TAG=sha-${{ github.sha }} ./scripts/deploy-services.sh worker_ip worker_domain worker_mobile worker_uptime worker_dead_letter"
+            "cd '${WORKER_PATH}' && git fetch origin ${{ github.sha }} && git reset --hard ${{ github.sha }} && COMPOSE_PROJECT_NAME=vuln-scanner REMOTE_DATA=1 PULL_ONLY=1 REGISTRY=ghcr.io/${{ github.repository_owner }} IMAGE_TAG=sha-${{ github.sha }} ./scripts/deploy-services.sh worker_ip worker_domain worker_mobile worker_uptime worker_dead_letter"
           rm -f ~/.ssh/deploy_key ~/.ssh/jump_key
