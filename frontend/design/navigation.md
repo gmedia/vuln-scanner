@@ -90,6 +90,7 @@ URL `?tab=` (`replace: true`). Default tab **deletes** the param. Unknown `?tab`
 
 - **Default** (`variant` omitted): pill list `h-10 rounded-md bg-muted p-1`; active trigger `data-[state=active]:bg-background` + shadow. Uptime range (`uptime-range-tabs`) and in-card pills stay here.
 - **Line** (`variant="line"`): hairline list + `data-variant="line"`. Active trigger underline via `group-data-[variant=line]/tabs-list:data-[state=active]:after:opacity-100` (`after:h-0.5 after:bg-foreground`). Line mode kills pill wash (`bg-transparent`, `shadow-none`).
+- **Both variants:** the ring is keyboard-only — a primary-button press sets `data-pointer-focus` and zeroes it, keyboard focus keeps `ring-2 ring-ring` with a `--color-background` offset (§8).
 - Do **not** restyle kit files to match one screenshot. Frozen default tests: `bg-muted`, `data-variant="default"`. Frozen line tests: `bg-transparent`, `border-b`, `after:bg-foreground`, not `after:bg-primary`.
 
 #### Page-nav callers
@@ -139,6 +140,7 @@ Shared chrome: `TabsList variant="line" className="w-full flex-wrap justify-star
 
 - WCAG 2.2 AA contrast on SPA tokens. Underline is redundant with `data-state="active"` + `text-foreground`.
 - Radix Tabs: keyboard arrows, `role="tablist"` / `tab` / `tabpanel`.
+- Focus ring is keyboard-only. Radix focuses the trigger on mouse-down, and Chrome treats that scripted focus as keyboard-ish until it has seen a pointer gesture, so the ring used to flash on the first click after a reload. `TabsTrigger` sets `data-pointer-focus` on a primary-button `mousedown` and clears it on `keydown`/`blur`; the `data-[pointer-focus=true]` classes zero the ring. The ring offset colour is `--color-background` (`focus-visible:ring-offset-[var(--color-background)]`), so dark mode gets a background gap instead of a white halo.
 - Icons `aria-hidden`. Visible labels from i18n (`tabWallet` …).
 - Heading remains PageHeader `h2` "AI Gateway".
 - `prefers-reduced-motion` kills underline opacity transition.

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
 
 describe("Tabs", () => {
@@ -110,5 +110,64 @@ describe("Tabs", () => {
     expect(active.className).toMatch(/after:bg-foreground/);
     expect(active.className).toMatch(/after:h-0\.5/);
     expect(active.className).not.toMatch(/after:bg-primary/);
+  });
+});
+
+describe("Tabs focus ring modality", () => {
+  function renderTabs() {
+    render(
+      <Tabs defaultValue="tab1">
+        <TabsList variant="line">
+          <TabsTrigger value="tab1">Tab 1</TabsTrigger>
+          <TabsTrigger value="tab2">Tab 2</TabsTrigger>
+        </TabsList>
+        <TabsContent value="tab1">Content 1</TabsContent>
+      </Tabs>,
+    );
+    return screen.getByRole("tab", { name: "Tab 2" });
+  }
+
+  it("marks a pointer press so the ring is suppressed", () => {
+    const trigger = renderTabs();
+    expect(trigger).not.toHaveAttribute("data-pointer-focus");
+    fireEvent.mouseDown(trigger, { button: 0 });
+    expect(trigger).toHaveAttribute("data-pointer-focus", "true");
+  });
+
+  it("does not mark a non-primary pointer button", () => {
+    const trigger = renderTabs();
+    fireEvent.mouseDown(trigger, { button: 2 });
+    expect(trigger).not.toHaveAttribute("data-pointer-focus");
+  });
+
+  it("clears the pointer mark on keydown so keyboard focus keeps the ring", () => {
+    const trigger = renderTabs();
+    fireEvent.mouseDown(trigger, { button: 0 });
+    expect(trigger).toHaveAttribute("data-pointer-focus", "true");
+    fireEvent.keyDown(trigger, { key: "ArrowRight" });
+    expect(trigger).not.toHaveAttribute("data-pointer-focus");
+  });
+
+  it("clears the pointer mark on blur", () => {
+    const trigger = renderTabs();
+    fireEvent.mouseDown(trigger, { button: 0 });
+    expect(trigger).toHaveAttribute("data-pointer-focus", "true");
+    fireEvent.blur(trigger);
+    expect(trigger).not.toHaveAttribute("data-pointer-focus");
+  });
+
+  it("paints the ring offset in the page background colour, not white", () => {
+    const trigger = renderTabs();
+    expect(trigger.className).toMatch(/focus-visible:ring-offset-\[var\(--color-background\)\]/);
+    expect(trigger.className).toMatch(/data-\[pointer-focus=true\]:focus-visible:ring-0/);
+    expect(trigger.className).toMatch(
+      /data-\[pointer-focus=true\]:focus-visible:ring-offset-0/,
+    );
+  });
+
+  it("gives the tabpanel the same ring offset colour", () => {
+    renderTabs();
+    const panel = screen.getByRole("tabpanel");
+    expect(panel.className).toMatch(/focus-visible:ring-offset-\[var\(--color-background\)\]/);
   });
 });
