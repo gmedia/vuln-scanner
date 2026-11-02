@@ -1,4 +1,5 @@
 import axios from "axios";
+import type { SkuTierFeatures, SkuTierWorkspaceLimits } from "@/api/subscription";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
@@ -73,6 +74,9 @@ export interface OrgSummary {
   role: "owner" | "admin" | "member" | "viewer";
   kind?: string;
   sku?: string;
+  sku_label?: string;
+  sku_features?: SkuTierFeatures;
+  workspace_seats_limits?: SkuTierWorkspaceLimits;
 }
 
 export interface UserResponse {

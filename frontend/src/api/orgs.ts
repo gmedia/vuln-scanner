@@ -1,4 +1,8 @@
 import api from "@/api/scans";
+import type {
+  SkuTierFeatures,
+  SkuTierWorkspaceLimits,
+} from "@/api/subscription";
 
 export type OrgRole = "owner" | "admin" | "member" | "viewer";
 
@@ -13,6 +17,9 @@ export interface OrgMembershipSummary {
   role: OrgRole;
   kind?: OrgKind;
   sku?: string;
+  sku_label?: string;
+  sku_features?: SkuTierFeatures;
+  workspace_seats_limits?: SkuTierWorkspaceLimits;
 }
 
 export interface OrganizationDetail {

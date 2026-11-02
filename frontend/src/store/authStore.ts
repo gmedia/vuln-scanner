@@ -34,6 +34,9 @@ function mapOrgs(
     role: o.role as OrgRole,
     kind: o.kind,
     sku: o.sku,
+    sku_label: o.sku_label,
+    sku_features: o.sku_features,
+    workspace_seats_limits: o.workspace_seats_limits,
   }));
 }
 
