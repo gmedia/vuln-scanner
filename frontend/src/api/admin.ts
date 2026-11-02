@@ -105,11 +105,26 @@ export interface AiProviderAdmin {
   updated_at: string;
 }
 
+export interface AiModelUpstreamAdmin {
+  id: string;
+  provider_id: string;
+  provider_name: string;
+  provider_status: string;
+  provider_enabled: boolean;
+  upstream_id: string;
+  hpp_usd_per_1m_in: number | null;
+  hpp_usd_per_1m_out: number | null;
+  max_tokens_cap: number | null;
+  rank: number;
+  enabled: boolean;
+}
+
 export interface AiModelAdmin {
   id: string;
   provider_id: string;
   public_id: string;
   upstream_id: string;
+  upstreams?: AiModelUpstreamAdmin[];
   hpp_usd_per_1k_in: number;
   hpp_usd_per_1k_out: number;
   price_idr_per_1k_in: number;
@@ -200,6 +215,7 @@ export async function createAiModel(body: {
 export async function updateAiModel(
   id: string,
   body: Partial<{
+    provider_id: string;
     public_id: string;
     upstream_id: string;
     price_usd_per_1m_in: number;
@@ -221,6 +237,54 @@ export async function updateAiModel(
 
 export async function deleteAiModel(id: string): Promise<void> {
   await api.delete(`/api/admin/ai/models/${id}`);
+}
+
+export async function createAiModelUpstream(
+  modelId: string,
+  body: {
+    provider_id: string;
+    upstream_id: string;
+    hpp_usd_per_1m_in?: number | null;
+    hpp_usd_per_1m_out?: number | null;
+    max_tokens_cap?: number | null;
+    rank?: number;
+  },
+): Promise<AiModelAdmin> {
+  const { data } = await api.post(
+    `/api/admin/ai/models/${modelId}/upstreams`,
+    body,
+  );
+  return data;
+}
+
+export async function updateAiModelUpstream(
+  modelId: string,
+  upstreamId: string,
+  body: Partial<{
+    provider_id: string;
+    upstream_id: string;
+    hpp_usd_per_1m_in: number | null;
+    hpp_usd_per_1m_out: number | null;
+    max_tokens_cap: number | null;
+    enabled: boolean;
+    rank: number;
+  }>,
+): Promise<AiModelAdmin> {
+  const { data } = await api.patch(
+    `/api/admin/ai/models/${modelId}/upstreams/${upstreamId}`,
+    body,
+  );
+  return data;
+}
+
+export async function deleteAiModelUpstream(
+  modelId: string,
+  upstreamId: string,
+): Promise<AiModelAdmin> {
+  const { data } = await api.delete(
+    `/api/admin/ai/models/${modelId}/upstreams/${upstreamId}`,
+  );
+  return data;
 }
 
 export interface AiUsageAdmin {
