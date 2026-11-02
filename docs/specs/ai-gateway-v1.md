@@ -130,8 +130,8 @@ SPA /admin/ai                  -- admin --> /api/admin/ai/*
 | `base_url` | e.g. `https://api.example/v1` — **never** return to customers |
 | `auth_header` | default `Authorization: Bearer` |
 | `credential_enc` | envelope-encrypted; never log |
-| `enabled` | bool |
-| `status` | `ok` \| `degraded` \| `disabled` |
+| `enabled` | bool; `false` removes the provider from routing entirely |
+| `status` | `ok` \| `degraded` \| `disabled`. **`disabled`** = admin-only, not routed. **`degraded`** = still routed but ordered **last** behind healthy providers. Unreachable providers are marked `degraded` by `ai_providers.probe`; only a human marks `disabled`. |
 
 ### 7.2 `ai_models`
 
@@ -316,7 +316,9 @@ Response shape: OpenAI chat completions (including `usage`). Errors: OpenAI-styl
    on `400/404/409/413/422` or on a non-JSON `200`. Stop at
    `AI_UPSTREAM_FAILOVER_DEADLINE_SECONDS`, at `AI_UPSTREAM_MAX_CANDIDATES`, or (streaming) once a
    byte has been sent. A disabled provider (`enabled=false` or `status='disabled'`) is skipped,
-   including when it is the primary.
+   including when it is the primary; a `degraded` provider is still used but ordered last; a
+   provider whose circuit breaker is open is skipped, unless that would leave no candidate at all
+   (fail open).
 5. Stream or JSON to client; parse usage from final chunk / body.
 6. `billed_idr`/`cogs_idr` from actual tokens at the **reservation snapshot** (a price or FX edit mid-request cannot change them); settle refunds `hold - billed`, or debits the shortfall up to the available balance and records `shortfall_idr`; write the usage event and one ledger row.
 7. Upstream 401/403: generic 502; **never** echo wholesale host or key. Sentry via `log_sanitizer`.
@@ -332,6 +334,13 @@ Response shape: OpenAI chat completions (including `usage`). Errors: OpenAI-styl
 - Flag default **false** in git compose (local/CI/prod until ops).
 - Secrets: provider creds in DB envelope or env per provider — **not** in git.
 - Do not enqueue chat through Celery scan queues.
+- Circuit breaker (Redis): `ai:cb:{provider_id}:fails` counts retryable failures inside
+  `AI_BREAKER_WINDOW_SECONDS`; at `AI_BREAKER_FAILURE_THRESHOLD` the key `ai:cb:{provider_id}:open`
+  is set for `AI_BREAKER_COOLDOWN_SECONDS`. Any Redis error disables the breaker instead of the
+  traffic: it fails open, and an all-open candidate list falls back to the original order.
+- `ai_providers.probe` runs every 5 minutes on the worker queue and GETs `{base_url}/models` per
+  enabled provider: 2xx → `ok`, 401/403/5xx/transport → `degraded`, any other `4xx` → untouched
+  (some vendors have no `/models`).
 - `/metrics` exposes `vuln_ai_upstream_attempts_total{model,outcome,reason}` where `outcome` is
   `served` / `retried` / `failed` / `rejected` and `reason` is `none` / `transport` / `auth` /
   `rate_limit` / `server_error` / `client_error`. Failover is silent by design, so this counter plus
@@ -364,6 +373,9 @@ Register both in `App.tsx` + [`AGENT_PAGE_REGISTRY.md`](../AGENT_PAGE_REGISTRY.m
 | **S5** | Limits, sanitizer tests, ops notes, Playwright smoke flag-off | **done** |
 | **S6** | USD-per-1M canonical prices, reservation-locked daily FX for charge + COGS, `ai_wallet_ledger`, admin USD inputs, catalog USD + derived IDR | **done** |
 | **S7** | Ordered fallback upstreams per model: `ai_model_upstreams`, pre-first-byte failover, served-provider attribution, per-candidate HPP, admin upstream CRUD + Models-tab sheet | S6 |
+| **S7.1** | Upstream attempt counter + four failover alert rules | **done** |
+| **S7.2** | Attempt timeout clamped to the request budget; connect + stream idle timeouts | **done** |
+| **S7.3** | Provider health probe (`ai_providers.probe`) + Redis circuit breaker; `degraded` ordered last | S7.2 |
 
 Default order **S1 → S5**. Do not combine with Host Protect / Guard PRs.
 
@@ -389,6 +401,10 @@ Default order **S1 → S5**. Do not combine with Host Protect / Guard PRs.
 - Failover: no candidate, host, or credential appears in the customer body; a model whose every
   candidate is unusable returns 404 `model_not_found`.
 - Streaming: no failover after the first byte; the client gets one error event and one `[DONE]`.
+- Breaker: an open breaker skips a provider but never produces a 404 on its own; a client-error
+  `4xx` never opens it; one success closes it.
+- Probe: an unreachable provider becomes `degraded` and is ordered last; a probe never writes
+  `disabled`, and a `disabled` provider is never probed or re-enabled.
 
 ---
 
