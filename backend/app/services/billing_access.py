@@ -9,8 +9,8 @@ The gate is deliberately conservative:
 
 * No subscription row -> allow. A missing row must never lock an org; the
   lifecycle beat creates rows, and backfill only covers orgs that paid.
-* ``enterprise`` -> allow. Enterprise is a custom contract, not a self-serve
-  plan.
+* ``billing_unrestricted`` tier -> allow. Sales-led (enterprise) contracts are
+  not self-serve plans.
 * ``incomplete`` -> allow. A brand-new org has not been invoiced yet.
 """
 
@@ -27,6 +27,7 @@ from app.models.billing import Subscription
 from app.models.organization import Organization
 from app.models.user import User
 from app.services.auth import get_active_org_id, get_current_user
+from app.services.sku_tier import SkuFeatures, SkuTierService
 
 READ_ONLY_STATUSES = ("past_due", "canceled")
 
@@ -39,7 +40,8 @@ async def billing_write_block(db: AsyncSession, org_id: UUID) -> str | None:
     org = await db.get(Organization, org_id)
     if org is None:
         return None
-    if (org.sku or "basic") == "enterprise":
+    tier = await SkuTierService(db).get(org.sku)
+    if SkuFeatures.from_tier(tier).billing_unrestricted:
         return None
 
     sub = (

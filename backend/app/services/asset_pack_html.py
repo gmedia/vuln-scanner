@@ -7,12 +7,14 @@ from app.i18n import AppLocale, normalize_lang, t
 from app.schemas.asset import AssetPackResponse
 
 
-def render_asset_pack_html(pack: AssetPackResponse, *, lang: str | None = None) -> str:
+def render_asset_pack_html(
+    pack: AssetPackResponse, *, lang: str | None = None, sku_label: str | None = None
+) -> str:
     locale: AppLocale = normalize_lang(lang)
     exported = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
     html_lang = html.escape(t(locale, "asset_pack", "html_lang"))
     page_title = html.escape(t(locale, "asset_pack", "title"))
-    sku = html.escape(pack.sku or "—")
+    sku = html.escape(sku_label or pack.sku or "—")
     org_id = html.escape(str(pack.organization_id))
     count = html.escape(str(pack.count))
     limit = html.escape(str(pack.sku_limit))

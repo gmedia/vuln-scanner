@@ -18,6 +18,7 @@ from app.models.guard import GuardAgent
 from app.models.host_protect import HostCommand, HostHit, HostQuarantineEvent, HostScan, HostSite
 from app.models.organization import Organization, OrganizationMembership
 from app.models.siem import SiemCase
+from app.models.sku_tier import SkuTier
 from app.models.user import User
 from app.schemas.host_protect import MAX_AGENT_FINDINGS
 from app.services.auth import create_access_token, hash_password
@@ -1654,3 +1655,35 @@ def test_compose_files_default_local_walk_off():
         for line in lines:
             assert "${HOST_PROTECT_ALLOW_LOCAL_WALK:-false}" in line, (rel, line)
     assert settings.host_protect_allow_local_walk is False
+
+
+@pytest.mark.asyncio
+async def test_site_limit_comes_from_tier_row(db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch):
+    tier = await db_session.get(SkuTier, "multi")
+    assert tier is not None
+    tier.limit_host = 1
+    await db_session.commit()
+    _bind_db(db_session)
+    org = ctx["org"]
+    owner: User = ctx["owner"]
+    agent: GuardAgent = ctx["agent"]
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            first = await client.post(
+                "/api/host/sites",
+                headers=_auth(owner, org.id),
+                json={"name": "One", "guard_agent_id": str(agent.id), "root_path": "/var/www/one"},
+            )
+            assert first.status_code == 201, first.text
+            assert first.json()["sku_limit"] == 1
+            second = await client.post(
+                "/api/host/sites",
+                headers=_auth(owner, org.id),
+                json={"name": "Two", "guard_agent_id": str(agent.id), "root_path": "/var/www/two"},
+            )
+            assert second.status_code == 400
+            assert "limit" in second.json()["detail"].lower()
+            listed = await client.get("/api/host/sites", headers=_auth(owner, org.id))
+            assert listed.json()[0]["sku_limit"] == 1
+    finally:
+        app.dependency_overrides.clear()

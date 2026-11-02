@@ -15,9 +15,8 @@ from app.models.siem import CASE_STATUSES, SiemCase, SiemCaseEvent, SiemCaseNote
 from app.models.user import User
 from app.services.organization import get_membership, require_membership
 from app.services.siem_query import SiemQueryError, search_org_events
+from app.services.sku_tier import SkuFeatures, SkuTierService
 from app.services.wazuh_client import WazuhClient, WazuhClientError, get_wazuh_client
-
-ENTERPRISE_ONLY_DETAIL = "SIEM is available on the Enterprise plan only."
 
 
 def _sanitize_error(exc: BaseException) -> str:
@@ -42,10 +41,24 @@ class SiemService:
         if not settings.siem_enabled:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
-    async def _require_enterprise(self, org_id: UUID) -> None:
+    async def _require_siem(self, org_id: UUID) -> None:
         result = await self.db.execute(select(Organization.sku).where(Organization.id == org_id))
-        if result.scalar_one_or_none() != "enterprise":
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ENTERPRISE_ONLY_DETAIL)
+        sku = result.scalar_one_or_none()
+        if sku is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
+        service = SkuTierService(self.db)
+        tier = await service.get(sku)
+        if SkuFeatures.from_tier(tier).allow_siem:
+            return
+        allowed = next(
+            (candidate for candidate in await service.list(include_inactive=True) if candidate.allow_siem),
+            None,
+        )
+        label = allowed.label if allowed is not None else "Enterprise"
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"SIEM is available on the {label} plan only.",
+        )
 
     async def _require_org(
         self,
@@ -57,7 +70,7 @@ class SiemService:
         if organization_id is None:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Active organization required")
         await require_membership(self.db, organization_id, user.id, min_role=min_role)
-        await self._require_enterprise(organization_id)
+        await self._require_siem(organization_id)
         return organization_id
 
     async def _agent_ids(self, org_id: UUID) -> list[str]:

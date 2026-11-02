@@ -8,7 +8,7 @@ from fastapi import HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.asset import ASSET_SKU_LIMITS, ScanAsset
+from app.models.asset import ScanAsset
 from app.models.guard import GuardAgent
 from app.models.organization import Organization
 from app.models.scan_schedule import ScanSchedule
@@ -26,10 +26,7 @@ from app.schemas.asset import (
 from app.schemas.schedule import ScheduleCreate, ScheduleResponse
 from app.services.organization import get_membership, require_membership, role_at_least
 from app.services.schedule import ScheduleService
-
-
-def sku_asset_limit(sku: str | None) -> int:
-    return ASSET_SKU_LIMITS.get(sku or "multi", ASSET_SKU_LIMITS["multi"])
+from app.services.sku_tier import SkuTierService
 
 
 class AssetService:
@@ -59,6 +56,7 @@ class AssetService:
         asset: ScanAsset,
         *,
         sku: str | None,
+        sku_limit: int,
         schedule_id: UUID | None = None,
         guard_agent_id: UUID | None = None,
         guard_agent_name: str | None = None,
@@ -76,7 +74,7 @@ class AssetService:
             updated_at=asset.updated_at,
             schedule_id=schedule_id,
             sku=sku,
-            sku_limit=sku_asset_limit(sku),
+            sku_limit=sku_limit,
             guard_agent_id=guard_agent_id,
             guard_agent_name=guard_agent_name,
         )
@@ -88,6 +86,7 @@ class AssetService:
             raise HTTPException(status_code=400, detail="Active organization required")
         await require_membership(self.db, organization_id, user.id, min_role="viewer")
         org = await self._org(organization_id)
+        scan_limit = (await SkuTierService(self.db).limits(org.sku))["scan"]
         result = await self.db.execute(
             select(ScanAsset).where(ScanAsset.organization_id == organization_id).order_by(ScanAsset.created_at.desc())
         )
@@ -110,6 +109,7 @@ class AssetService:
                 self._to_response(
                     a,
                     sku=org.sku,
+                    sku_limit=scan_limit,
                     schedule_id=sid,
                     guard_agent_id=linked[0] if linked else None,
                     guard_agent_name=linked[1] if linked else None,
@@ -122,7 +122,7 @@ class AssetService:
             raise HTTPException(status_code=400, detail="Active organization required")
         await require_membership(self.db, organization_id, user.id, min_role="member")
         org = await self._org(organization_id)
-        limit = sku_asset_limit(org.sku)
+        limit = (await SkuTierService(self.db).limits(org.sku))["scan"]
         count_result = await self.db.execute(
             select(func.count()).select_from(ScanAsset).where(ScanAsset.organization_id == organization_id)
         )
@@ -154,7 +154,7 @@ class AssetService:
         self.db.add(asset)
         await self.db.commit()
         await self.db.refresh(asset)
-        return self._to_response(asset, sku=org.sku, schedule_id=None)
+        return self._to_response(asset, sku=org.sku, sku_limit=limit, schedule_id=None)
 
     async def _get_in_org(self, asset_id: UUID, organization_id: UUID | None, user_id: UUID) -> ScanAsset:
         result = await self.db.execute(select(ScanAsset).where(ScanAsset.id == asset_id))
@@ -173,7 +173,15 @@ class AssetService:
         org = await self._org(asset.organization_id)
         sid = await self._schedule_id(asset.id)
         gid, gname = await self._guard_link(asset.id)
-        return self._to_response(asset, sku=org.sku, schedule_id=sid, guard_agent_id=gid, guard_agent_name=gname)
+        scan_limit = (await SkuTierService(self.db).limits(org.sku))["scan"]
+        return self._to_response(
+            asset,
+            sku=org.sku,
+            sku_limit=scan_limit,
+            schedule_id=sid,
+            guard_agent_id=gid,
+            guard_agent_name=gname,
+        )
 
     async def update(
         self, user: User, organization_id: UUID | None, asset_id: UUID, body: AssetUpdate
@@ -194,7 +202,15 @@ class AssetService:
         org = await self._org(asset.organization_id)
         sid = await self._schedule_id(asset.id)
         gid, gname = await self._guard_link(asset.id)
-        return self._to_response(asset, sku=org.sku, schedule_id=sid, guard_agent_id=gid, guard_agent_name=gname)
+        scan_limit = (await SkuTierService(self.db).limits(org.sku))["scan"]
+        return self._to_response(
+            asset,
+            sku=org.sku,
+            sku_limit=scan_limit,
+            schedule_id=sid,
+            guard_agent_id=gid,
+            guard_agent_name=gname,
+        )
 
     async def delete(self, user: User, organization_id: UUID | None, asset_id: UUID) -> None:
         asset = await self._get_in_org(asset_id, organization_id, user.id)
@@ -214,7 +230,7 @@ class AssetService:
         return AssetPackResponse(
             organization_id=organization_id,
             sku=org.sku,
-            sku_limit=sku_asset_limit(org.sku),
+            sku_limit=(await SkuTierService(self.db).limits(org.sku))["scan"],
             count=len(items),
             assets=[
                 AssetPackItem(

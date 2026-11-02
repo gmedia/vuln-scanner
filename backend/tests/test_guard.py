@@ -565,14 +565,29 @@ async def test_disable_agent_authz_and_sync(db_session: AsyncSession, guard_ws):
 @pytest.mark.asyncio
 async def test_guard_seat_cap_locked_and_enforced(db_session: AsyncSession, guard_ws):
     """Guard agent caps are the owner-locked 1/3/10 (2026-10-12) and are enforced on enroll."""
-    from app.database import get_db
-    from app.services.guard import sku_guard_limit
+    from fastapi import HTTPException
 
-    assert sku_guard_limit("basic") == 1
-    assert sku_guard_limit("pro") == 3
-    assert sku_guard_limit("multi") == 10
-    assert sku_guard_limit(None) == 10  # unknown falls back to the most generous tier
-    assert sku_guard_limit("enterprise") == 10
+    from app.database import get_db
+    from app.models.sku_tier import SkuTier
+    from app.services.sku_tier import SkuTierService
+
+    service = SkuTierService(db_session)
+    assert (await service.limits("basic"))["guard"] == 1
+    assert (await service.limits("pro"))["guard"] == 3
+    assert (await service.limits("multi"))["guard"] == 10
+    assert (await service.limits("enterprise"))["guard"] == 10
+    with pytest.raises(HTTPException) as missing:
+        await service.limits("does_not_exist")
+    assert missing.value.status_code == 404
+
+    # Prove the read path uses the row, not a Python constant.
+    tier = await db_session.get(SkuTier, "basic")
+    assert tier is not None
+    tier.limit_guard = 2
+    await db_session.commit()
+    assert (await service.limits("basic"))["guard"] == 2
+    tier.limit_guard = 1
+    await db_session.commit()
 
     owner, org = guard_ws["owner"], guard_ws["org"]  # fixture org sku defaults to "basic"
 

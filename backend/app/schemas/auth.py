@@ -5,6 +5,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
+from app.schemas.sku_tier import SkuTierFeatures, SkuTierWorkspaceLimits
+
 _SPECIAL_CHARS = "!@#$%^&*()-_=+[]{}|;:',.<>?/~`\""
 
 
@@ -64,6 +66,9 @@ class OrgSummary(BaseModel):
     kind: str
     role: str
     sku: str = "basic"
+    sku_label: str | None = None
+    sku_features: SkuTierFeatures | None = None
+    workspace_seats_limits: SkuTierWorkspaceLimits | None = None
 
 
 class UserResponse(BaseModel):

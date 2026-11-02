@@ -14,7 +14,6 @@ from app.config import settings
 from app.models.asset import ScanAsset
 from app.models.guard import GuardAgent
 from app.models.host_protect import (
-    HOST_SITE_SKU_LIMITS,
     HostCommand,
     HostHit,
     HostQuarantineEvent,
@@ -32,6 +31,7 @@ from app.services.host_path import (
     restore_from_quarantine,
 )
 from app.services.organization import get_membership, require_membership, role_at_least
+from app.services.sku_tier import SkuTierService
 
 _celery = Celery(
     "vuln_scanner",
@@ -47,9 +47,6 @@ _celery.conf.update(
     broker_connection_retry_on_startup=True,
 )
 
-
-def sku_site_limit(sku: str | None) -> int:
-    return HOST_SITE_SKU_LIMITS.get(sku or "multi", HOST_SITE_SKU_LIMITS["multi"])
 
 
 class HostProtectService:
@@ -73,7 +70,7 @@ class HostProtectService:
         await require_membership(self.db, organization_id, user.id, min_role=min_role)
         return organization_id
 
-    def _to_site(self, site: HostSite, *, sku: str | None) -> HostSiteResponse:
+    def _to_site(self, site: HostSite, *, sku: str | None, host_limit: int) -> HostSiteResponse:
         return HostSiteResponse(
             id=site.id,
             organization_id=site.organization_id,
@@ -90,23 +87,24 @@ class HostProtectService:
             created_at=site.created_at,
             updated_at=site.updated_at,
             sku=sku,
-            sku_limit=sku_site_limit(sku),
+            sku_limit=host_limit,
         )
 
     async def list_sites(self, user: User, organization_id: UUID | None) -> list[HostSiteResponse]:
         self._require_feature()
         org_id = await self._require_org(user, organization_id, min_role="viewer")
         org = await self._org(org_id)
+        host_limit = (await SkuTierService(self.db).limits(org.sku))["host"]
         result = await self.db.execute(
             select(HostSite).where(HostSite.organization_id == org_id).order_by(HostSite.created_at.desc())
         )
-        return [self._to_site(s, sku=org.sku) for s in result.scalars().all()]
+        return [self._to_site(s, sku=org.sku, host_limit=host_limit) for s in result.scalars().all()]
 
     async def create_site(self, user: User, organization_id: UUID | None, body: HostSiteCreate) -> HostSiteResponse:
         self._require_feature()
         org_id = await self._require_org(user, organization_id, min_role="admin")
         org = await self._org(org_id)
-        limit = sku_site_limit(org.sku)
+        limit = (await SkuTierService(self.db).limits(org.sku))["host"]
         count_result = await self.db.execute(
             select(func.count()).select_from(HostSite).where(HostSite.organization_id == org_id)
         )
@@ -157,7 +155,7 @@ class HostProtectService:
         self.db.add(site)
         await self.db.commit()
         await self.db.refresh(site)
-        return self._to_site(site, sku=org.sku)
+        return self._to_site(site, sku=org.sku, host_limit=limit)
 
     async def _get_site(self, site_id: UUID, organization_id: UUID | None, user_id: UUID) -> HostSite:
         result = await self.db.execute(select(HostSite).where(HostSite.id == site_id))
@@ -175,7 +173,8 @@ class HostProtectService:
         self._require_feature()
         site = await self._get_site(site_id, organization_id, user.id)
         org = await self._org(site.organization_id)
-        return self._to_site(site, sku=org.sku)
+        host_limit = (await SkuTierService(self.db).limits(org.sku))["host"]
+        return self._to_site(site, sku=org.sku, host_limit=host_limit)
 
     async def update_site(
         self, user: User, organization_id: UUID | None, site_id: UUID, body: HostSiteUpdate
@@ -193,7 +192,8 @@ class HostProtectService:
         await self.db.commit()
         await self.db.refresh(site)
         org = await self._org(site.organization_id)
-        return self._to_site(site, sku=org.sku)
+        host_limit = (await SkuTierService(self.db).limits(org.sku))["host"]
+        return self._to_site(site, sku=org.sku, host_limit=host_limit)
 
     async def delete_site(self, user: User, organization_id: UUID | None, site_id: UUID) -> None:
         self._require_feature()

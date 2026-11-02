@@ -15,7 +15,6 @@ from app.config import settings
 from app.models.organization import Organization
 from app.models.uptime import (
     DEFAULT_INTERVAL_SECONDS,
-    UPTIME_SKU_LIMITS,
     UptimeEvent,
     UptimeMonitor,
     UptimeSample,
@@ -30,14 +29,12 @@ from app.schemas.uptime import (
     mint_heartbeat_token,
 )
 from app.services.organization import get_membership, require_membership, role_at_least
+from app.services.sku_tier import SkuTierService
 from app.services.uptime_apply import apply_probe as persist_probe
 from app.services.uptime_probe import ProbeResult
 
 logger = logging.getLogger(__name__)
 
-
-def sku_uptime_limit(sku: str | None) -> int:
-    return UPTIME_SKU_LIMITS.get(sku or "multi", UPTIME_SKU_LIMITS["multi"])
 
 
 def _aware(dt: datetime) -> datetime:
@@ -105,7 +102,12 @@ class UptimeService:
         return round(100.0 * ok_n / total, 2)
 
     def _to_response(
-        self, m: UptimeMonitor, *, sku: str | None, uptime_24h: float | None = None
+        self,
+        m: UptimeMonitor,
+        *,
+        sku: str | None,
+        sku_limit: int,
+        uptime_24h: float | None = None,
     ) -> UptimeMonitorResponse:
         return UptimeMonitorResponse(
             id=m.id,
@@ -138,7 +140,7 @@ class UptimeService:
             created_at=m.created_at,
             updated_at=m.updated_at,
             sku=sku,
-            sku_limit=sku_uptime_limit(sku),
+            sku_limit=sku_limit,
             uptime_24h=uptime_24h,
         )
 
@@ -148,6 +150,7 @@ class UptimeService:
             raise HTTPException(status_code=400, detail="Active organization required")
         await require_membership(self.db, organization_id, user.id, min_role="viewer")
         org = await self._org(organization_id)
+        sku_limit = (await SkuTierService(self.db).limits(org.sku))["uptime"]
         result = await self.db.execute(
             select(UptimeMonitor)
             .where(UptimeMonitor.organization_id == organization_id)
@@ -157,7 +160,7 @@ class UptimeService:
         out: list[UptimeMonitorResponse] = []
         for m in items:
             pct = await self._uptime_24h(m.id)
-            out.append(self._to_response(m, sku=org.sku, uptime_24h=pct))
+            out.append(self._to_response(m, sku=org.sku, sku_limit=sku_limit, uptime_24h=pct))
         return out
 
     async def create(
@@ -168,7 +171,7 @@ class UptimeService:
             raise HTTPException(status_code=400, detail="Active organization required")
         await require_membership(self.db, organization_id, user.id, min_role="member")
         org = await self._org(organization_id)
-        limit = sku_uptime_limit(org.sku)
+        limit = (await SkuTierService(self.db).limits(org.sku))["uptime"]
         count_result = await self.db.execute(
             select(func.count())
             .select_from(UptimeMonitor)
@@ -229,7 +232,7 @@ class UptimeService:
         await self.db.refresh(monitor)
         if monitor.enabled:
             enqueue_uptime_check(monitor.id)
-        resp = self._to_response(monitor, sku=org.sku)
+        resp = self._to_response(monitor, sku=org.sku, sku_limit=limit)
         if token:
             resp.heartbeat_token = token
             resp.heartbeat_url = f"{settings.frontend_url.rstrip('/')}/api/uptime/heartbeat/{token}"
@@ -251,8 +254,9 @@ class UptimeService:
         self._enabled()
         monitor = await self._get_in_org(monitor_id, organization_id, user.id)
         org = await self._org(monitor.organization_id)
+        sku_limit = (await SkuTierService(self.db).limits(org.sku))["uptime"]
         pct = await self._uptime_24h(monitor.id)
-        return self._to_response(monitor, sku=org.sku, uptime_24h=pct)
+        return self._to_response(monitor, sku=org.sku, sku_limit=sku_limit, uptime_24h=pct)
 
     async def update(
         self, user: User, organization_id: UUID | None, monitor_id: UUID, body: UptimeMonitorUpdate
@@ -270,7 +274,7 @@ class UptimeService:
             raise HTTPException(status_code=422, detail="HTTP options apply to HTTP only")
         if data.get("enabled") is True and not monitor.enabled:
             org = await self._org(monitor.organization_id)
-            limit = sku_uptime_limit(org.sku)
+            limit = (await SkuTierService(self.db).limits(org.sku))["uptime"]
             count_result = await self.db.execute(
                 select(func.count())
                 .select_from(UptimeMonitor)
@@ -300,7 +304,10 @@ class UptimeService:
         if monitor.enabled and (not was_enabled or monitor.state == "unknown"):
             enqueue_uptime_check(monitor.id)
         org = await self._org(monitor.organization_id)
-        return self._to_response(monitor, sku=org.sku, uptime_24h=await self._uptime_24h(monitor.id))
+        sku_limit = (await SkuTierService(self.db).limits(org.sku))["uptime"]
+        return self._to_response(
+            monitor, sku=org.sku, sku_limit=sku_limit, uptime_24h=await self._uptime_24h(monitor.id)
+        )
 
     async def rotate_heartbeat(
         self, user: User, organization_id: UUID | None, monitor_id: UUID
@@ -320,7 +327,10 @@ class UptimeService:
         await self.db.commit()
         await self.db.refresh(monitor)
         org = await self._org(monitor.organization_id)
-        resp = self._to_response(monitor, sku=org.sku, uptime_24h=await self._uptime_24h(monitor.id))
+        sku_limit = (await SkuTierService(self.db).limits(org.sku))["uptime"]
+        resp = self._to_response(
+            monitor, sku=org.sku, sku_limit=sku_limit, uptime_24h=await self._uptime_24h(monitor.id)
+        )
         resp.heartbeat_token = token
         resp.heartbeat_url = f"{settings.frontend_url.rstrip('/')}/api/uptime/heartbeat/{token}"
         return resp

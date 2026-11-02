@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.main import app
 from app.models.organization import Organization, OrganizationMembership
+from app.models.sku_tier import SkuTier
 from app.models.user import User
 from app.services.auth import create_access_token, hash_password
 from app.services.organization import ensure_personal_org
@@ -288,5 +289,36 @@ async def test_tag_colors_member_patch_viewer_forbidden(db_session: AsyncSession
                 json={"colors": {"prod": "not-a-color"}},
             )
             assert bad.status_code == 422
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_asset_limit_comes_from_tier_row(db_session: AsyncSession, ctx) -> None:
+    tier = await db_session.get(SkuTier, "multi")
+    assert tier is not None
+    tier.limit_scan = 1
+    await db_session.commit()
+    _bind_db(db_session)
+    org = ctx["org"]
+    owner: User = ctx["owner"]
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            first = await client.post(
+                "/api/assets",
+                headers=_auth(owner, org.id),
+                json={"name": "One", "scan_type": "domain", "target": "one.example"},
+            )
+            assert first.status_code == 201, first.text
+            assert first.json()["sku_limit"] == 1
+            second = await client.post(
+                "/api/assets",
+                headers=_auth(owner, org.id),
+                json={"name": "Two", "scan_type": "domain", "target": "two.example"},
+            )
+            assert second.status_code == 400
+            assert "limit" in second.json()["detail"].lower()
+            listed = await client.get("/api/assets", headers=_auth(owner, org.id))
+            assert listed.json()[0]["sku_limit"] == 1
     finally:
         app.dependency_overrides.clear()

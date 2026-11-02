@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.i18n import DEFAULT_LOCALE, AppLocale
 from app.models.billing import OrgBillingProfile
-from app.models.invoice import PRODUCT_SEATS, OrgInvoice, SkuCatalog
+from app.models.invoice import OrgInvoice, SkuCatalog
 from app.models.organization import Organization
 from app.models.user import User
 from app.services.invoice_html import render_invoice_html
@@ -22,6 +22,7 @@ from app.services.invoice_math import (
     price_breakdown,
 )
 from app.services.scan_pdf import ScanPdfUnavailableError, render_scan_pdf
+from app.services.sku_tier import SkuTierService
 
 
 def bank_copy(*, include: bool) -> dict[str, str | None] | None:
@@ -42,14 +43,17 @@ async def next_invoice_number(db: AsyncSession, period_start: datetime) -> str:
     return f"{prefix}{n:04d}"
 
 
-def to_item(inv: OrgInvoice, *, org_name: str | None, include_bank: bool) -> dict[str, object]:
+async def to_item(
+    inv: OrgInvoice, *, org_name: str | None, include_bank: bool, db: AsyncSession
+) -> dict[str, object]:
+    seats = await SkuTierService(db).product_limit(inv.sku, inv.product)
     return {
         "id": inv.id,
         "organization_id": inv.organization_id,
         "number": inv.number,
         "product": inv.product,
         "sku": inv.sku,
-        "seats": PRODUCT_SEATS.get(inv.product, PRODUCT_SEATS["scan"]).get(inv.sku, 1),
+        "seats": seats,
         "amount_idr": inv.amount_idr,
         "dpp_idr": inv.dpp_idr,
         "ppn_idr": inv.ppn_idr,
@@ -70,14 +74,19 @@ def to_item(inv: OrgInvoice, *, org_name: str | None, include_bank: bool) -> dic
     }
 
 
-def invoice_pdf_response(
-    inv: OrgInvoice, *, org_name: str | None, locale: AppLocale = DEFAULT_LOCALE
+async def invoice_pdf_response(
+    inv: OrgInvoice, *, org_name: str | None, db: AsyncSession, locale: AppLocale = DEFAULT_LOCALE
 ) -> Response:
+    service = SkuTierService(db)
+    sku_label = await service.label(inv.sku)
+    seats = await service.product_limit(inv.sku, inv.product)
     html = render_invoice_html(
         inv,
         org_name=org_name,
         bank=bank_copy(include=inv.status == "sent"),
         locale=locale,
+        sku_label=sku_label,
+        seats=seats,
     )
     try:
         pdf = render_scan_pdf(html)
