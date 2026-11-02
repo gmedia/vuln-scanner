@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -35,6 +35,9 @@ vi.mock("@/api/admin", async () => {
     deleteAiProvider: vi.fn(),
     updateAiModel: vi.fn(),
     deleteAiModel: vi.fn(),
+    createAiModelUpstream: vi.fn(),
+    updateAiModelUpstream: vi.fn(),
+    deleteAiModelUpstream: vi.fn(),
     topupAiWallet: vi.fn(),
     adminAiChat: vi.fn(),
     getAiFx: vi.fn(),
@@ -54,6 +57,75 @@ function renderPage() {
       </MemoryRouter>
     </QueryClientProvider>,
   );
+}
+
+function makeProvider(id: string, name: string): adminApi.AiProviderAdmin {
+  return {
+    id,
+    name,
+    base_url: "https://openrouter.ai/api/v1",
+    auth_header: "Authorization",
+    credential_set: true,
+    enabled: true,
+    status: "ok",
+    created_at: "",
+    updated_at: "",
+  };
+}
+
+function makeUpstream(
+  overrides: Partial<adminApi.AiModelUpstreamAdmin> = {},
+): adminApi.AiModelUpstreamAdmin {
+  return {
+    id: "u1",
+    provider_id: "p1",
+    provider_name: "OpenRouter",
+    provider_status: "ok",
+    provider_enabled: true,
+    upstream_id: "gpt-fallback",
+    hpp_usd_per_1m_in: null,
+    hpp_usd_per_1m_out: null,
+    max_tokens_cap: null,
+    rank: 1,
+    enabled: true,
+    ...overrides,
+  };
+}
+
+function makeModel(
+  overrides: Partial<adminApi.AiModelAdmin> = {},
+): adminApi.AiModelAdmin {
+  return {
+    id: "m1",
+    provider_id: "p1",
+    public_id: "sinexis/demo",
+    upstream_id: "gpt",
+    hpp_usd_per_1k_in: 0,
+    hpp_usd_per_1k_out: 0,
+    price_idr_per_1k_in: 1,
+    price_idr_per_1k_out: 2,
+    price_usd_per_1m_in: 0.06135,
+    price_usd_per_1m_out: 0.1227,
+    hpp_usd_per_1m_in: 0,
+    hpp_usd_per_1m_out: 0,
+    max_ctx: 1,
+    max_tokens_cap: 4096,
+    enabled: true,
+    created_at: "",
+    updated_at: "",
+    upstreams: [],
+    ...overrides,
+  };
+}
+
+async function openUpstreamSheet(
+  user: ReturnType<typeof userEvent.setup>,
+): Promise<HTMLElement> {
+  await user.click(await screen.findByRole("tab", { name: "Models" }));
+  await screen.findByTestId("admin-ai-model-card-m1");
+  await user.click(screen.getAllByTestId("admin-ai-model-actions-m1")[0]);
+  await user.click(await screen.findByTestId("admin-ai-model-upstreams-m1"));
+  return await screen.findByTestId("admin-ai-upstream-sheet");
 }
 
 describe("AdminAi", () => {
@@ -555,5 +627,148 @@ describe("AdminAi", () => {
         ".bg-primary",
       ),
     ).toBeTruthy();
+  });
+
+  it("opens the fallback sheet with the primary and existing candidates", async () => {
+    const user = userEvent.setup();
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [makeProvider("p1", "OpenRouter"), makeProvider("p2", "Together")],
+      total: 2,
+    });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({
+      items: [
+        makeModel({
+          upstreams: [
+            makeUpstream({
+              id: "u1",
+              provider_id: "p2",
+              provider_name: "Together",
+              upstream_id: "meta/llama",
+            }),
+          ],
+        }),
+      ],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    renderPage();
+    const sheet = await openUpstreamSheet(user);
+    const scope = within(sheet);
+    expect(scope.getByText("Fallback upstreams")).toBeInTheDocument();
+    expect(scope.getByText("Primary")).toBeInTheDocument();
+    expect(scope.getByText("OpenRouter")).toBeInTheDocument();
+    expect(scope.getByText("gpt")).toBeInTheDocument();
+    expect(scope.getByDisplayValue("meta/llama")).toBeInTheDocument();
+    expect(scope.getByText("#2")).toBeInTheDocument();
+  });
+
+  it("adds a fallback upstream and updates the badge", async () => {
+    const user = userEvent.setup();
+    const saved = makeModel({
+      upstreams: [
+        makeUpstream({
+          id: "u9",
+          provider_id: "p1",
+          provider_name: "OpenRouter",
+          upstream_id: "gpt-4o-mini",
+        }),
+      ],
+    });
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [makeProvider("p1", "OpenRouter")],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({
+      items: [makeModel()],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.createAiModelUpstream).mockResolvedValue(saved);
+    renderPage();
+    const sheet = await openUpstreamSheet(user);
+    const scope = within(sheet);
+    await user.click(scope.getByTestId("ai-upstream-add"));
+    await user.click(scope.getByRole("combobox", { name: "Provider id" }));
+    await user.click(await screen.findByRole("option", { name: "OpenRouter" }));
+    await user.type(scope.getByLabelText("Upstream id"), "gpt-4o-mini");
+    await user.click(scope.getByTestId("ai-upstream-save-__new__"));
+
+    await waitFor(() =>
+      expect(adminApi.createAiModelUpstream).toHaveBeenCalledTimes(1),
+    );
+    const [modelId, body] = vi.mocked(adminApi.createAiModelUpstream).mock
+      .calls[0];
+    expect(modelId).toBe("m1");
+    expect(body).toMatchObject({
+      provider_id: "p1",
+      upstream_id: "gpt-4o-mini",
+      hpp_usd_per_1m_in: null,
+      hpp_usd_per_1m_out: null,
+      max_tokens_cap: null,
+      rank: 1,
+    });
+    const badges = await screen.findAllByTestId("ai-model-fallback-count-m1");
+    expect(badges.length).toBeGreaterThan(0);
+    expect(badges[0]).toHaveTextContent("+1 fallback");
+  });
+
+  it("disables adding a fallback at the candidate cap", async () => {
+    const user = userEvent.setup();
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [makeProvider("p1", "OpenRouter")],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({
+      items: [
+        makeModel({
+          upstreams: [
+            makeUpstream({ id: "u1", rank: 1, upstream_id: "fallback-1" }),
+            makeUpstream({ id: "u2", rank: 2, upstream_id: "fallback-2" }),
+            makeUpstream({ id: "u3", rank: 3, upstream_id: "fallback-3" }),
+          ],
+        }),
+      ],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    renderPage();
+    const sheet = await openUpstreamSheet(user);
+    const scope = within(sheet);
+    expect(scope.getByTestId("ai-upstream-add")).toBeDisabled();
+    expect(scope.getByText(/Up to 3 fallbacks/)).toBeInTheDocument();
+  });
+
+  it("confirms before deleting a fallback upstream", async () => {
+    const user = userEvent.setup();
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [makeProvider("p1", "OpenRouter")],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({
+      items: [
+        makeModel({
+          upstreams: [
+            makeUpstream({ id: "u1", upstream_id: "meta/llama" }),
+          ],
+        }),
+      ],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.deleteAiModelUpstream).mockResolvedValue(makeModel());
+    renderPage();
+    const sheet = await openUpstreamSheet(user);
+    const scope = within(sheet);
+    expect(scope.getByDisplayValue("meta/llama")).toBeInTheDocument();
+    await user.click(scope.getByTestId("ai-upstream-delete-u1"));
+    expect(await screen.findByRole("alertdialog")).toBeInTheDocument();
+    expect(adminApi.deleteAiModelUpstream).not.toHaveBeenCalled();
+    await user.click(screen.getByTestId("ai-upstream-delete-confirm"));
+    await waitFor(() =>
+      expect(adminApi.deleteAiModelUpstream).toHaveBeenCalledWith("m1", "u1"),
+    );
+    expect(
+      await screen.findByText("No fallback upstreams yet."),
+    ).toBeInTheDocument();
   });
 });
