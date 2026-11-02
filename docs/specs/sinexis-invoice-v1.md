@@ -40,7 +40,7 @@ PK `(product, sku)`. Products = `scan` + `host` (both `invoicable=true` after H9
 | Column | Type |
 |--------|------|
 | product | `scan` \| `host` \| `uptime` \| `guard` |
-| sku | `basic` \| `pro` \| `multi` |
+| sku | `varchar(20)` → FK `sku_tiers.code` (`ON DELETE CASCADE`) |
 | list_idr | int ≥ 0 |
 | seats | int ≥ 1 |
 | invoicable | bool |
@@ -51,9 +51,13 @@ Seed Scan from I2. Seed Host 150_000 / 350_000 / 900_000. Alembic `host_sku_invo
 
 **Audit trail (2026-10-13):** every `PUT` records the acting admin in `updated_by` (migration `sku_catalog_updated_by`); `GET /api/admin/sku-catalog` returns `updated_by` + `updated_by_email` and `/admin/skus` shows "by &lt;email&gt;" under the updated date. Mirrors the existing `HppRate.updated_by` pattern. No history table — last-writer only.
 
-**Uptime / Guard list prices (2026-10-13, invoicable 2026-10-14):** the owner locked à-la-carte list prices for Uptime (75_000 / 200_000 / 500_000) and Guard (100_000 / 250_000 / 600_000) in [`pricing-architecture-v1.md`](../commercial/pricing-architecture-v1.md) §4. They are **seeded as `sku_catalog` rows** with `invoicable=true` (migration `add_uptime_guard_catalog`), so `/admin/invoices` can bill them and `/admin/skus` can edit them; the code constants `UPTIME_SKU_LIST_IDR` / `GUARD_SKU_LIST_IDR` remain as fallbacks. `seats` carries the tier capacity (Uptime 10/50/200, Guard 1/3/10) for display only.
+**Tier catalogue (2026-11-02):** `sku_tiers` is now the source of truth for tier identity — `code`, `label`, `rank`, `active`, `requestable`, `sales_led`, `is_default`, `bundle_idr`, the four product caps, feature gates (`allow_status_page` / `allow_custom_host` / `allow_waf_protect` / `allow_siem` / `billing_unrestricted`) and workspace seat limits (`NULL` = unlimited). Every `sku` column (`organizations`, `subscriptions`, `org_invoices`, `subscription_requests.current_sku`/`target_sku`, `sku_catalog`) is a FK to `sku_tiers.code`; the old `sku IN (...)` CHECK constraints are gone. The Python constants (`INVOICE_SKUS`, `*_SKU_LIST_IDR`, `BUNDLE_LIST_IDR`, `*_SKU_LIMITS`, `SKU_RANK`, `SKU_LABEL`) are **seed-only** now — no runtime path reads them. A tier can be created/edited/retired from `/admin/skus` → **Tier & Fitur** without a deploy; `pro_plus` is the worked example.
 
-HPP overlay `_SCAN_LIST_IDR` / `_HOST_LIST_IDR` **read from catalog** (fallback to the same constants if a row is missing).
+**Retire vs delete (2026-11-02):** deactivate (`active=false`) is the normal "remove a plan" action. Grandfathered orgs keep their caps/features, keep receiving annual renewal drafts, and can still pay an existing invoice for that tier. New orgs and upgrade requests are rejected. Hard delete is only allowed when `organizations`, `subscriptions`, `org_invoices` and `subscription_requests` have **zero** references (the API returns `409` with per-table counts); `sku_catalog` rows are owned by the tier and cascade.
+
+**Uptime / Guard list prices (2026-10-13, invoicable 2026-10-14):** the owner locked à-la-carte list prices for Uptime (75_000 / 200_000 / 500_000) and Guard (100_000 / 250_000 / 600_000) in [`pricing-architecture-v1.md`](../commercial/pricing-architecture-v1.md) §4. They are **seeded as `sku_catalog` rows** with `invoicable=true` (migration `add_uptime_guard_catalog`), so `/admin/invoices` can bill them and `/admin/skus` can edit them. `seats` carries the tier capacity (Uptime 10/50/200, Guard 1/3/10) for display only and is synchronised from `sku_tiers.limit_*` on every tier write.
+
+HPP overlay `_SCAN_LIST_IDR` / `_HOST_LIST_IDR` **read from catalog** only; the constant fallbacks were removed on 2026-11-02. A tier with no catalog row is reported as unpriced instead of borrowing another tier's price.
 
 **Bundle + annual (2026-10-14):** the owner-locked bundle **"Sinexis Secure"** (`BUNDLE_LIST_IDR` basic 450_000 / pro 1_000_000 / multi 2_900_000) and the annual policy (`ANNUAL_MONTHS_PAID` 10 / `ANNUAL_MONTHS_SERVED` 12, P2) are now **code constants**, exposed read-only via `GET /api/admin/sku-prices` (`bundles` + `annual`) and shown on `/admin/skus`. The bundle saving is **derived** from the four à-la-carte line prices, so editing a line price changes the comparison — a test pins the locked arithmetic. The bundle is **not** an `INVOICE_PRODUCTS` member and Enterprise is **not** in the catalog (custom/quote-only per P6), so neither can be invoiced from this surface.
 
@@ -99,9 +103,15 @@ Admin (`get_current_admin` + existing limiter):
 
 | Method | Path | Notes |
 |--------|------|--------|
-| GET | `/api/admin/sku-catalog` | all rows |
-| GET | `/api/admin/sku-prices` | read-only list price for **all four** services × basic/pro/multi (added 2026-10-13). All four read from `sku_catalog`; the locked constants are fallbacks when a row is missing. Also returns `bundles` (locked bundle vs derived à-la-carte sum + saving) and `annual` (P2 policy), added 2026-10-14. Single source for the `/admin/simulator` prefill. |
-| PUT | `/api/admin/sku-catalog/{product}/{sku}` | `{ list_idr, invoicable? }`; seats immutable in v1; records `updated_by` |
+| GET | `/api/admin/sku-catalog` | all rows, each with `label` + `active` joined from `sku_tiers` |
+| GET | `/api/admin/sku-prices` | read-only list price for every **non-sales-led** tier × all four services (added 2026-10-13). Rows and bundles are built from `sku_tiers` + `sku_catalog`; a missing catalog row renders as `0` / non-invoicable rather than borrowing a fallback. Also returns `bundles` (tier `bundle_idr` vs derived à-la-carte sum + saving) and `annual` (P2 policy), added 2026-10-14. Single source for the `/admin/simulator` prefill. |
+| GET | `/api/admin/sku-tiers` | all tiers incl. inactive, with `usage` (orgs/subscriptions/invoices/requests) and `has_catalog` |
+| POST | `/api/admin/sku-tiers` | create a tier; `sales_led=false` requires prices for all four products (catalog rows are created with `seats = limit_*`) |
+| PATCH | `/api/admin/sku-tiers/{code}` | edit tier; code is immutable; catalog rows are synchronised |
+| POST | `/api/admin/sku-tiers/{code}/deactivate` | retire (default tier cannot be retired) |
+| POST | `/api/admin/sku-tiers/{code}/reactivate` | un-retire |
+| DELETE | `/api/admin/sku-tiers/{code}` | 204 only when unused; else 409 with per-table counts |
+| PUT | `/api/admin/sku-catalog/{product}/{sku}` | `{ list_idr, invoicable? }`; `seats` follows `sku_tiers.limit_*`; records `updated_by` |
 | GET | `/api/admin/invoices` | filter `status`, `organization_id`; page |
 | POST | `/api/admin/invoices` | `{ organization_id, sku, product?, period_start?, due_date? }` `product` = `scan` (default) \| `host` \| `uptime` \| `guard`; amount from catalog; `due_date` defaults to `period_start` + `INVOICE_DEFAULT_TERM_DAYS` |
 | POST | `/api/admin/invoices/{id}/send` | draft→sent |
@@ -122,12 +132,14 @@ Bank payload on customer GET when `sent`: `{ bank_name, bank_account, bank_holde
 ## 3) SPA
 
 - `/admin/invoices` — catalog table + invoice list + create/send/paid/void. Filter bar = Credit History (`gap-3`, `h-10`). `nav-admin-invoices`.
-- `/admin/skus` (added 2026-10-13) — edit catalog `list_idr` + `invoicable` per `scan|host|uptime|guard` × `basic|pro|multi`; `seats` read-only (tier cap is code-owned). Confirm-before-write; existing invoices keep their `amount_idr` snapshot. `nav-admin-skus`. Enterprise stays quote-only (no catalog row). Plus a **read-only** "Bundle & annual (locked)" card (`sku-bundle-card`, added 2026-10-14) showing the locked bundle price vs the derived à-la-carte sum.
+- `/admin/skus` (added 2026-10-13) — two tabs, `nav-admin-skus`:
+  - **Harga** — edit catalog `list_idr` + `invoicable` per `scan|host|uptime|guard` × every non-sales-led tier; `seats` read-only from `sku_tiers.limit_*`. Confirm-before-write; existing invoices keep their `amount_idr` snapshot. Plus the **read-only** "Bundle & annual (locked)" card (`sku-bundle-card`, added 2026-10-14).
+  - **Tier & Fitur** (added 2026-11-02) — create/edit/retire tiers, feature gates, product caps, workspace seat limits and prices. Delete is irreversible and only enabled for unused tiers; retire is one click. Enterprise stays `sales_led`, quote-only, no catalog row.
 - Workspace: card **Billing** (owner/admin) — list invoices; if `sent`, show bank copy. No pay button. Empty: ops-issued, no self-serve upgrade. Load error is not painted as empty. Platform admin may link to `/admin/invoices`.
 
 Do **not** restyle kit. Tokens from `:root`. `Button` / `Select` only.
 
-**Invoice document — product-aware (fixed 2026-10-14):** `services/invoice_html.py` printed `SCAN_SKU_SEATS` (1/3/10) for **every** product and had no friendly label for `uptime`/`guard`, so an **Uptime Multi** invoice told the customer "10 seats" when the locked cap is **200**. Both are now product-aware: `_PRODUCT_LABEL` covers all four (`Sinexis Scan` / `Sinexis Host Protect` / `Sinexis Uptime` / `Sinexis Guard`), and `_PRODUCT_SEATS` maps `product → {sku: capacity}` from the locked constants (`ASSET_SKU_LIMITS` / `HOST_SITE_SKU_LIMITS` / `UPTIME_SKU_LIMITS` / `GUARD_SKU_LIMITS`) — the same values the migration seeds into `sku_catalog.seats`, which is read-only, so the two cannot drift. No DB lookup and no schema change.
+**Invoice document — product-aware (fixed 2026-10-14):** `services/invoice_html.py` printed `SCAN_SKU_SEATS` (1/3/10) for **every** product and had no friendly label for `uptime`/`guard`, so an **Uptime Multi** invoice told the customer "10 seats" when the locked cap is **200**. Both are now product-aware: `_PRODUCT_LABEL` covers all four (`Sinexis Scan` / `Sinexis Host Protect` / `Sinexis Uptime` / `Sinexis Guard`), and seats/labels come from `sku_tiers` (updated 2026-11-02) — no constant lookup and no drift.
 
 **Invoice document — print contract parity:** the PDF (`render_invoice_html` → WeasyPrint) implements the same locked grammar as the SPA print sheet, [`design/foundation.md`](../../frontend/design/foundation.md) §§0–8 — header flex, two-column parties, hairline table, right-aligned totals with the 2px ink rule on the grand row, payment box only when `sent`. It is **localized server-side** via `app.i18n` (`invoice` namespace, `id`/`en`, default `id`, same wording as the `workspace` catalog), emitting `lang="{locale}"`. Medium-forced differences: inline `<style>`, system font fallback chains, no print isolation. Same behavioral contracts: bank copy only when `sent`, per-product seats/labels, `@page` A4/16mm. SPA sheet untouched.
 

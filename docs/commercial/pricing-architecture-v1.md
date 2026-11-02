@@ -120,7 +120,7 @@ One line covering all four attach products at the matching tier.
 1. **Existing Scan-locked orgs** keep A1 pricing. No forced migration.
 2. **Host working-list quotes** become **locked** at H4 from this date.
 3. **Bundle** is a **new** offer only — do not re-paper existing lines into it.
-4. `org.sku` (`basic` / `pro` / `multi` / `enterprise`) stays the single capacity source; bundle does not add a second SKU field. `enterprise` is custom/ops-set and carries **no public price card** (it is **not** in the invoice catalog).
+4. `org.sku` (`basic` / `pro` / `multi` / `enterprise`) stays the single capacity source; bundle does not add a second SKU field. Since **2026-11-02** the tier list itself is DB-backed: `sku_tiers` owns labels, rank, caps, feature gates and `sales_led`, and `org.sku` is a FK to it. New tiers (for example `pro_plus`) are added from **`/admin/skus` → Tier & Fitur** without a deploy; retiring a tier means `active=false` (grandfathered orgs keep working) and hard delete is limited to unused tiers. `enterprise` remains `sales_led`, custom/ops-set and carries **no public price card** (it is **not** in the invoice catalog).
 5. Flag-off default: `SIEM_ENABLED` false; `AI_GATEWAY_ENABLED` false. Bundle does **not** enable them.
 
 ---
