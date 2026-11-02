@@ -129,7 +129,7 @@ Minimum authenticated set (2k + mobile, light + dark) after a chrome/token chang
 5. `/schedules` `/assets` `/host`
 6. `/guard` `/siem` `/uptime` `/uptime/:id` `/uptime/status-page`
 7. `/credit-history` `/profile` `/settings/workspace` `/settings/subscription` `/guide`
-8. Admin: `/admin` `/admin/users` `/admin/hpp` `/admin/skus` `/admin/simulator` `/admin/invoices` `/admin/subscription-requests` `/admin/subscriptions` `/admin/blog`
+8. Admin: `/admin` `/admin/users` `/admin/hpp` `/admin/skus` (tabs: Harga · Tier & Fitur) `/admin/simulator` `/admin/invoices` `/admin/subscription-requests` `/admin/subscriptions` `/admin/blog`
 
 Auth for prod visual: `E2E_EMAIL` / `E2E_PASSWORD` from **tc1 env** — never commit. Do not `POST /register` for the shared mailbox.
 
