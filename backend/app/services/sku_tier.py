@@ -222,6 +222,25 @@ class SkuTierService:
         current = await self.db.scalar(select(func.max(SkuTier.rank)))
         return int(current or 0) + 1
 
+    async def _requestable_codes(self, *, exclude: str | None = None) -> set[str]:
+        stmt = select(SkuTier.code).where(
+            SkuTier.active.is_(True),
+            SkuTier.requestable.is_(True),
+        )
+        if exclude is not None:
+            stmt = stmt.where(SkuTier.code != exclude)
+        result = await self.db.execute(stmt)
+        return set(result.scalars().all())
+
+    async def _ensure_not_last_requestable(self, code: str, label: str) -> None:
+        """Keep at least one tier a customer can ask to move to."""
+        remaining = await self._requestable_codes(exclude=code)
+        if not remaining:
+            raise _conflict(
+                f"{label} is the last tier a customer can request; "
+                "make another tier requestable before retiring it"
+            )
+
     async def _demote_default(self) -> None:
         """Unset the current default in the same transaction as the promotion."""
         await self.db.execute(
@@ -403,6 +422,9 @@ class SkuTierService:
         elif tier.is_default:
             raise _bad_request("Cannot unset the default tier; promote another tier first")
 
+        if tier.active and tier.requestable and not (active and requestable):
+            await self._ensure_not_last_requestable(code, label)
+
         prices = self._catalog_prices(body)
         existing_rows: dict[str, SkuCatalog] = {}
         if not sales_led:
@@ -486,6 +508,8 @@ class SkuTierService:
         tier = await self.get(code)
         if tier.is_default:
             raise _conflict("The default tier cannot be deactivated")
+        if tier.active and tier.requestable:
+            await self._ensure_not_last_requestable(code, tier.label)
         tier.active = False
         tier.updated_at = datetime.now(UTC)
         tier.updated_by = actor.id
