@@ -42,6 +42,7 @@ import {
 } from "@/components/host/hostChrome";
 import { useAuthStore } from "@/store/authStore";
 import { RAILED_CARD_CLASS } from "@/components/patterns/RailedShell";
+import { useTierMap } from "@/hooks/useTierMap";
 import { cn } from "@/lib/utils";
 
 export default function HostWafPanel({
@@ -52,6 +53,7 @@ export default function HostWafPanel({
   agents: GuardAgent[];
 }) {
   const { t } = useTranslation("host");
+  const { features } = useTierMap();
   const qc = useQueryClient();
   const activeOrgId = useAuthStore((s) => s.activeOrgId);
   const [siteId, setSiteId] = useState(sites[0]?.id ?? "");
@@ -91,9 +93,7 @@ export default function HostWafPanel({
   const pollStale = isHelperPollStale(pollIso);
   const canProtect =
     sites.length === 0 ||
-    (selectedSite
-      ? ["pro", "multi", "enterprise"].includes(selectedSite.sku ?? "multi")
-      : true);
+    (selectedSite ? features(selectedSite.sku).allow_waf_protect : true);
   const labRoot = selectedSite?.root_path ?? "";
   const labName = (selectedSite?.name ?? "").toLowerCase();
   const isLabSite =

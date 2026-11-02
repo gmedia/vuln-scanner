@@ -59,6 +59,7 @@ import {
   createSubscriptionRequest,
   getSubscription,
   resumeSubscription,
+  type SkuTierInfo,
   type SubscriptionCycle,
   type SubscriptionOverview,
   type SubscriptionTier,
@@ -70,14 +71,7 @@ import {
   type OrgInvoiceItem,
 } from "@/api/orgs";
 
-const TIERS: SubscriptionTier[] = ["basic", "pro", "multi"];
 const PRODUCTS = ["scan", "host", "uptime", "guard"] as const;
-const SKU_RANK: Record<string, number> = {
-  basic: 1,
-  pro: 2,
-  multi: 3,
-  enterprise: 4,
-};
 
 function apiDetail(err: unknown, fallback: string): string {
   if (err && typeof err === "object" && "response" in err) {
@@ -100,10 +94,6 @@ function formatDate(value: string | null, locale: string): string {
     month: "short",
     year: "numeric",
   });
-}
-
-function tierLabel(tier: string): string {
-  return tier.charAt(0).toUpperCase() + tier.slice(1);
 }
 
 function usageTone(item: SubscriptionUsageItem): string {
@@ -156,41 +146,49 @@ function PlanCard({
   overview,
   tier,
   cycle,
+  currentRank,
   canRequest,
   onRequest,
 }: {
   readonly overview: SubscriptionOverview;
-  readonly tier: SubscriptionTier;
+  readonly tier: SkuTierInfo;
   readonly cycle: SubscriptionCycle;
+  readonly currentRank: number;
   readonly canRequest: boolean;
   readonly onRequest: (tier: SubscriptionTier) => void;
 }) {
   const { t } = useTranslation("subscription");
-  const bundle = overview.bundles.find((item) => item.tier === tier);
-  const items = overview.catalog.filter((item) => item.sku === tier);
-  const current = overview.plan.sku === tier;
-  const currentRank = SKU_RANK[overview.plan.sku] ?? 0;
-  const targetRank = SKU_RANK[tier] ?? 0;
+  const bundle = overview.bundles.find((item) => item.tier === tier.code);
+  const items = overview.catalog.filter((item) => item.sku === tier.code);
+  const current = overview.plan.sku === tier.code;
   const annual = cycle === "annual";
-  const monthlyPrice = bundle?.bundle_idr ?? 0;
+  const monthlyPrice = bundle?.bundle_idr ?? tier.bundle_idr ?? 0;
   const billed = annual
     ? monthlyPrice * overview.annual.months_paid
     : monthlyPrice;
   const cta = current
     ? t("currentPlan")
-    : targetRank > currentRank
-      ? t("upgradeTo", { tier: tierLabel(tier) })
-      : t("downgradeTo", { tier: tierLabel(tier) });
+    : tier.rank > currentRank
+      ? t("upgradeTo", { tier: tier.label })
+      : t("downgradeTo", { tier: tier.label });
+  const seats = tier.workspace_limits;
+  const seatsLabel =
+    seats.editor == null && seats.viewer == null
+      ? t("workspaceSeatsCustom")
+      : t("workspaceSeatsPlan", {
+          editor: seats.editor ?? t("unlimited"),
+          viewer: seats.viewer ?? t("unlimited"),
+        });
 
   return (
     <Card
       className={cn("flex h-full flex-col", current && "border-primary")}
-      data-testid={`subscription-plan-${tier}`}
+      data-testid={`subscription-plan-${tier.code}`}
     >
       <CardHeader className="space-y-2">
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-sm tracking-wide">
-            Sinexis Secure — {tierLabel(tier)}
+            Sinexis Secure — {tier.label}
           </CardTitle>
           {current ? (
             <Badge variant="success" className="shrink-0 text-[10px] uppercase">
@@ -229,11 +227,7 @@ function PlanCard({
             <Check className="h-3.5 w-3.5 shrink-0 text-primary-text" aria-hidden />
             <span>
               {t("workspaceSeats")}:{" "}
-              <span className="font-mono tabular-nums">
-                {tier === "basic"
-                  ? t("workspaceSeatsBasicPlan")
-                  : t("workspaceSeatsCustom")}
-              </span>
+              <span className="font-mono tabular-nums">{seatsLabel}</span>
             </span>
           </li>
         </ul>
@@ -248,11 +242,58 @@ function PlanCard({
           type="button"
           className="w-full"
           variant={current ? "outline" : "default"}
-          disabled={current || !canRequest}
-          onClick={() => onRequest(tier)}
-          data-testid={`subscription-choose-${tier}`}
+          disabled={current || !canRequest || !tier.active}
+          onClick={() => onRequest(tier.code)}
+          data-testid={`subscription-choose-${tier.code}`}
         >
           {cta}
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+}
+
+function SalesLedCard({
+  tier,
+  current,
+}: {
+  readonly tier: SkuTierInfo;
+  readonly current: boolean;
+}) {
+  const { t } = useTranslation("subscription");
+  return (
+    <Card
+      className={cn("flex h-full flex-col", current && "border-primary")}
+      data-testid={`subscription-plan-${tier.code}`}
+    >
+      <CardHeader className="space-y-2">
+        <div className="flex items-start justify-between gap-2">
+          <CardTitle className="text-sm tracking-wide">
+            Sinexis Secure — {tier.label}
+          </CardTitle>
+          {current ? (
+            <Badge variant="success" className="shrink-0 text-[10px] uppercase">
+              {t("currentPlan")}
+            </Badge>
+          ) : null}
+        </div>
+        <p className="font-mono text-2xl font-semibold text-foreground">
+          {t("enterprisePrice")}
+        </p>
+      </CardHeader>
+      <CardContent className="flex-1">
+        <p className="text-xs text-muted-foreground">{t("enterpriseHint")}</p>
+      </CardContent>
+      <CardFooter>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          disabled={current}
+          onClick={() => toast.info(t("contactSalesHint"))}
+          data-testid={`subscription-contact-sales-${tier.code}`}
+        >
+          {current ? t("currentPlan") : t("contactSales")}
         </Button>
       </CardFooter>
     </Card>
@@ -388,6 +429,20 @@ function Subscription() {
   const data = subscriptionQuery.data;
   const plan = data?.plan;
   const tone = plan ? planTone(plan.status) : "idle";
+  const allTiers = data?.tiers ?? [];
+  const currentTier = allTiers.find((tier) => tier.code === plan?.sku);
+  const currentRank = currentTier?.rank ?? 0;
+  const planTiers = allTiers.filter(
+    (tier) =>
+      !tier.sales_led &&
+      (tier.code === plan?.sku || (tier.requestable && tier.active)),
+  );
+  const salesLedTiers = allTiers.filter((tier) => tier.sales_led);
+  const catalogTiers = allTiers.filter(
+    (tier) =>
+      !tier.sales_led &&
+      (data?.catalog ?? []).some((item) => item.sku === tier.code),
+  );
 
   return (
     <div className="w-full space-y-6" data-testid="subscription-page">
@@ -401,7 +456,7 @@ function Subscription() {
               {canManage &&
               !plan?.cancel_at_period_end &&
               plan?.status !== "expired" &&
-              plan?.status !== "enterprise" ? (
+              !currentTier?.sales_led ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -606,7 +661,12 @@ function Subscription() {
                       <p className="text-xs text-muted-foreground">
                         {t("pendingBody", {
                           direction: data.pending_request.direction,
-                          tier: tierLabel(data.pending_request.target_sku),
+                          tier:
+                            allTiers.find(
+                              (tier) =>
+                                tier.code ===
+                                data.pending_request?.target_sku,
+                            )?.label ?? data.pending_request.target_sku,
                           cycle: data.pending_request.cycle,
                         })}
                       </p>
@@ -646,18 +706,20 @@ function Subscription() {
                 testid="subscription-usage-workspace"
                 label={t("workspaceSeats")}
                 value={
-                  plan.sku === "enterprise"
-                    ? t("workspaceSeatsCustom")
-                    : data.workspace_seats.editor_limit != null ||
-                        data.workspace_seats.viewer_limit != null
-                      ? t("workspaceSeatsBasic", {
-                          editors: data.workspace_seats.editors,
-                          viewers: data.workspace_seats.viewers,
-                        })
-                      : t("workspaceSeatsValue", {
-                          editors: data.workspace_seats.editors,
-                          viewers: data.workspace_seats.viewers,
-                        })
+                  data.workspace_seats.editor_limit != null ||
+                  data.workspace_seats.viewer_limit != null
+                    ? t("workspaceSeatsUsage", {
+                        editors: data.workspace_seats.editors,
+                        viewers: data.workspace_seats.viewers,
+                        editorLimit:
+                          data.workspace_seats.editor_limit ?? t("unlimited"),
+                        viewerLimit:
+                          data.workspace_seats.viewer_limit ?? t("unlimited"),
+                      })
+                    : t("workspaceSeatsValue", {
+                        editors: data.workspace_seats.editors,
+                        viewers: data.workspace_seats.viewers,
+                      })
                 }
               />
             </StatGrid>
@@ -691,42 +753,55 @@ function Subscription() {
                   })}
                 </p>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  {TIERS.map((tier) => (
+                  {planTiers.map((tier) => (
                     <PlanCard
-                      key={tier}
+                      key={tier.code}
                       overview={data}
                       tier={tier}
                       cycle={cycle}
+                      currentRank={currentRank}
                       canRequest={data.capabilities.can_request_change}
                       onRequest={setRequestTarget}
                     />
                   ))}
-                  <Card className="flex h-full flex-col" data-testid="subscription-plan-enterprise">
-                    <CardHeader className="space-y-2">
-                      <CardTitle className="text-sm tracking-wide">
-                        {t("enterpriseTitle")}
-                      </CardTitle>
-                      <p className="font-mono text-2xl font-semibold text-foreground">
-                        {t("enterprisePrice")}
-                      </p>
-                    </CardHeader>
-                    <CardContent className="flex-1">
-                      <p className="text-xs text-muted-foreground">
-                        {t("enterpriseHint")}
-                      </p>
-                    </CardContent>
-                    <CardFooter>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => toast.info(t("contactSalesHint"))}
-                        data-testid="subscription-contact-sales"
-                      >
-                        {t("contactSales")}
-                      </Button>
-                    </CardFooter>
-                  </Card>
+                  {salesLedTiers.map((tier) => (
+                    <SalesLedCard
+                      key={tier.code}
+                      tier={tier}
+                      current={plan.sku === tier.code}
+                    />
+                  ))}
+                  {salesLedTiers.length === 0 ? (
+                    <Card
+                      className="flex h-full flex-col"
+                      data-testid="subscription-plan-enterprise"
+                    >
+                      <CardHeader className="space-y-2">
+                        <CardTitle className="text-sm tracking-wide">
+                          {t("enterpriseTitle")}
+                        </CardTitle>
+                        <p className="font-mono text-2xl font-semibold text-foreground">
+                          {t("enterprisePrice")}
+                        </p>
+                      </CardHeader>
+                      <CardContent className="flex-1">
+                        <p className="text-xs text-muted-foreground">
+                          {t("enterpriseHint")}
+                        </p>
+                      </CardContent>
+                      <CardFooter>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => toast.info(t("contactSalesHint"))}
+                          data-testid="subscription-contact-sales"
+                        >
+                          {t("contactSales")}
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ) : null}
                 </div>
 
                 <div className="space-y-2">
@@ -745,15 +820,14 @@ function Subscription() {
                           <TableHead className="text-[10px] uppercase tracking-wider">
                             {t("colProduct")}
                           </TableHead>
-                          <TableHead className="text-right text-[10px] uppercase tracking-wider">
-                            {t("colBasic")}
-                          </TableHead>
-                          <TableHead className="text-right text-[10px] uppercase tracking-wider">
-                            {t("colPro")}
-                          </TableHead>
-                          <TableHead className="text-right text-[10px] uppercase tracking-wider">
-                            {t("colMulti")}
-                          </TableHead>
+                          {catalogTiers.map((tier) => (
+                            <TableHead
+                              key={tier.code}
+                              className="text-right text-[10px] uppercase tracking-wider"
+                            >
+                              {tier.label}
+                            </TableHead>
+                          ))}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -764,11 +838,13 @@ function Subscription() {
                               <TableCell className="text-sm text-foreground">
                                 {t(`product_${product}`)}
                               </TableCell>
-                              {TIERS.map((tier) => {
-                                const item = rows.find((row) => row.sku === tier);
+                              {catalogTiers.map((tier) => {
+                                const item = rows.find(
+                                  (row) => row.sku === tier.code,
+                                );
                                 return (
                                   <TableCell
-                                    key={tier}
+                                    key={tier.code}
                                     className="text-right font-mono text-xs tabular-nums text-foreground"
                                   >
                                     {item ? (
@@ -860,6 +936,10 @@ function Subscription() {
                     <WorkspaceInvoiceCard
                       key={invoice.id}
                       invoice={invoice}
+                      skuLabel={
+                        allTiers.find((tier) => tier.code === invoice.sku)
+                          ?.label ?? invoice.sku
+                      }
                       onPrint={() => startPrint(invoice)}
                       onDownload={() => void downloadPdf(invoice)}
                     />
@@ -975,7 +1055,11 @@ function Subscription() {
           <AlertDialogHeader>
             <AlertDialogTitle>
               {requestTarget
-                ? t("requestTitle", { tier: tierLabel(requestTarget) })
+                ? t("requestTitle", {
+                    tier:
+                      data?.tiers.find((tier) => tier.code === requestTarget)
+                        ?.label ?? requestTarget,
+                  })
                 : ""}
             </AlertDialogTitle>
             <AlertDialogDescription>
@@ -1065,7 +1149,15 @@ function Subscription() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <InvoicePrintSheet invoice={printing} />
+      <InvoicePrintSheet
+        invoice={printing}
+        skuLabel={
+          printing
+            ? (allTiers.find((tier) => tier.code === printing.sku)?.label ??
+              printing.sku)
+            : undefined
+        }
+      />
     </div>
   );
 }

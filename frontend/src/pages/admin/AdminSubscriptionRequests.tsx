@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { EmptyState } from "@/components/patterns/EmptyState";
+import { useTierMap } from "@/hooks/useTierMap";
 import {
   approveAdminSubscriptionRequest,
   listAdminSubscriptionRequests,
@@ -41,10 +42,6 @@ function formatDate(value: string, locale: string): string {
   });
 }
 
-function tierLabel(value: string): string {
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
-
 function statusVariant(
   status: SubscriptionRequestItem["status"],
 ): "success" | "pending" | "failed" | "default" {
@@ -56,6 +53,7 @@ function statusVariant(
 
 function AdminSubscriptionRequests() {
   const { t, i18n } = useTranslation("admin");
+  const { label: tierLabel } = useTierMap();
   const dateLocale = i18n.language === "en" ? "en-US" : "id-ID";
   const qc = useQueryClient();
   const [status, setStatus] = useState("pending");

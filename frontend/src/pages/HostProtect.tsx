@@ -132,9 +132,9 @@ export default function HostProtect() {
     enabled: !!activeOrgId && featureOn,
     refetchInterval: waitingAgent ? 4000 : false,
   });
-  const sku = items[0]?.sku ?? "multi";
-  const limit = items[0]?.sku_limit ?? 10;
-  const atCap = items.length >= limit;
+  const sku = items[0]?.sku ?? "";
+  const limit = items[0]?.sku_limit ?? 0;
+  const atCap = limit > 0 && items.length >= limit;
   const agents = agentsQ.data ?? [];
   const selectedAgentId = agentId || agents[0]?.id || "";
   const fleetPollIso = agents.reduce<string | null>((latest, a) => {

@@ -104,9 +104,9 @@ export function useAssetsPage() {
     setTypeFilter("all");
   }
 
-  const sku = items[0]?.sku ?? "multi";
-  const limit = items[0]?.sku_limit ?? 10;
-  const atCap = items.length >= limit;
+  const sku = items[0]?.sku ?? "";
+  const limit = items[0]?.sku_limit ?? 0;
+  const atCap = limit > 0 && items.length >= limit;
   const scheduled = items.filter((asset) => asset.schedule_id).length;
   const domains = items.filter((asset) => asset.scan_type === "domain").length;
   const ips = items.filter((asset) => asset.scan_type === "ip").length;

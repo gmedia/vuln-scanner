@@ -47,6 +47,7 @@ import {
   type ScenarioSku,
 } from "@/lib/hppScenario";
 import { TONE_TEXT } from "@/lib/toneColors";
+import { useTierMap } from "@/hooks/useTierMap";
 import { useTranslation } from "react-i18next";
 
 const SERVICES: readonly ScenarioService[] = [
@@ -55,8 +56,6 @@ const SERVICES: readonly ScenarioService[] = [
   "uptime",
   "guard",
 ];
-
-const SKUS: readonly ScenarioSku[] = ["basic", "pro", "multi"];
 
 interface RowDraft {
   sku: ScenarioSku | "";
@@ -67,10 +66,10 @@ interface RowDraft {
 
 function emptyRows(): Record<ScenarioService, RowDraft> {
   return {
-    scan: { sku: "basic", volume: "", unitCost: "", price: "" },
-    host: { sku: "basic", volume: "", unitCost: "", price: "" },
-    uptime: { sku: "basic", volume: "", unitCost: "", price: "" },
-    guard: { sku: "basic", volume: "", unitCost: "", price: "" },
+    scan: { sku: "", volume: "", unitCost: "", price: "" },
+    host: { sku: "", volume: "", unitCost: "", price: "" },
+    uptime: { sku: "", volume: "", unitCost: "", price: "" },
+    guard: { sku: "", volume: "", unitCost: "", price: "" },
   };
 }
 
@@ -127,6 +126,9 @@ function reportUnitCost(
 
 function AdminHppSimulator() {
   const { t } = useTranslation("admin");
+  const { tiers } = useTierMap();
+  const tierOptions = tiers.filter((tier) => !tier.sales_led);
+  const defaultSku = tierOptions[0]?.code ?? "";
   const [fixedCost, setFixedCost] = useState("");
   const [targetMargin, setTargetMargin] = useState("");
   const [rows, setRows] = useState(emptyRows);
@@ -147,11 +149,15 @@ function AdminHppSimulator() {
     return reported == null ? "" : String(reported);
   };
 
+  const selectedSku = (service: ScenarioService): string =>
+    rows[service].sku || defaultSku;
+
   const displayPrice = (service: ScenarioService): string => {
     const draft = rows[service];
     if (draft.price.trim() !== "") return draft.price;
-    if (!draft.sku) return draft.price;
-    const listed = lockedPrice(skuPrices, service, draft.sku);
+    const sku = selectedSku(service);
+    if (!sku) return draft.price;
+    const listed = lockedPrice(skuPrices, service, sku);
     return listed == null ? "" : String(listed);
   };
 
@@ -159,7 +165,7 @@ function AdminHppSimulator() {
     const draft = rows[service];
     return {
       service,
-      sku: draft.sku || undefined,
+      sku: selectedSku(service) || undefined,
       volume: toNumber(draft.volume),
       unit_cost_idr: toNumber(displayUnitCost(service)),
       price_idr: toNumber(displayPrice(service)),
@@ -182,12 +188,6 @@ function AdminHppSimulator() {
     host: t("simServiceHost"),
     uptime: t("simServiceUptime"),
     guard: t("simServiceGuard"),
-  };
-
-  const skuLabel: Record<ScenarioSku, string> = {
-    basic: t("simSkuBasic"),
-    pro: t("simSkuPro"),
-    multi: t("simSkuMulti"),
   };
 
   const patchRow = (service: ScenarioService, patch: Partial<RowDraft>) => {
@@ -373,10 +373,8 @@ function AdminHppSimulator() {
                       </TableCell>
                       <TableCell className="py-1.5">
                         <Select
-                          value={draft.sku || "basic"}
-                          onValueChange={(value) =>
-                            onSku(service, value as ScenarioSku)
-                          }
+                          value={selectedSku(service)}
+                          onValueChange={(value) => onSku(service, value)}
                         >
                           <SelectTrigger
                             data-testid={`hpp-sim-sku-${service}`}
@@ -386,9 +384,9 @@ function AdminHppSimulator() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {SKUS.map((sku) => (
-                              <SelectItem key={sku} value={sku}>
-                                {skuLabel[sku]}
+                            {tierOptions.map((tier) => (
+                              <SelectItem key={tier.code} value={tier.code}>
+                                {tier.label}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -496,7 +494,7 @@ function AdminHppSimulator() {
           </div>
 
           {SERVICES.some((service) => {
-            const sku = rows[service].sku;
+            const sku = selectedSku(service);
             return sku !== "" && lockedPrice(skuPrices, service, sku) === null;
           }) ? (
             <p

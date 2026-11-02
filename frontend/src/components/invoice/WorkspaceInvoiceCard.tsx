@@ -30,10 +30,12 @@ export function WorkspaceInvoiceCard({
   invoice,
   onPrint,
   onDownload,
+  skuLabel,
 }: {
   invoice: OrgInvoiceItem;
   onPrint: () => void;
   onDownload: () => void;
+  skuLabel?: string;
 }) {
   const { t, i18n } = useTranslation("workspace");
   const locale = i18n.language === "en" ? "en-US" : "id-ID";
@@ -42,9 +44,10 @@ export function WorkspaceInvoiceCard({
   const statusText = t(`invoicePrintStatus_${invoice.status}`, {
     defaultValue: invoice.status,
   });
+  const tierLabel = skuLabel ?? invoice.sku;
   const itemLabel = t(`invoicePrintItem_${invoice.product}`, {
-    sku: invoice.sku.toUpperCase(),
-    defaultValue: t("invoicePrintItem", { sku: invoice.sku.toUpperCase() }),
+    sku: tierLabel,
+    defaultValue: t("invoicePrintItem", { sku: tierLabel }),
   });
   const period = `${formatShortDate(invoice.period_start, locale)} – ${formatShortDate(invoice.period_end, locale)}`;
   const issued = formatShortDate(
@@ -85,7 +88,7 @@ export function WorkspaceInvoiceCard({
             {t("invoicePrintSku")}
           </dt>
           <dd className="font-mono uppercase text-foreground">
-            {invoice.sku} · {invoice.seats} {t("invoicePrintSeats")}
+            {tierLabel} · {invoice.seats} {t("invoicePrintSeats")}
           </dd>
         </div>
         <div className="col-span-2 min-w-0 space-y-0.5 sm:col-span-2">

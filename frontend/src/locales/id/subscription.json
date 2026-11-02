@@ -25,7 +25,6 @@
   "usageUnlimited": "{{used}} / custom",
   "workspaceSeats": "Kursi workspace",
   "workspaceSeatsValue": "{{editors}} editor · {{viewers}} viewer",
-  "workspaceSeatsBasic": "{{editors}} / 1 editor · {{viewers}} / 1 viewer",
   "workspaceSeatsCustom": "Tanpa batas",
   "product_scan": "Aset Scan",
   "product_host": "Site Host",
@@ -50,9 +49,6 @@
   "alacarteTitle": "Harga list à la carte",
   "alacarteDescription": "Hanya referensi. Guard gratis selama Host Protect aktif.",
   "colProduct": "Produk",
-  "colBasic": "Basic",
-  "colPro": "Pro",
-  "colMulti": "Multi",
   "colSeats": "Seat",
   "priceNote": "Harga list, belum termasuk pajak. Harga final dikonfirmasi di invoice.",
   "pendingTitle": "Permintaan perubahan paket",
@@ -97,7 +93,6 @@
   "usageFull": "Kapasitas penuh",
   "usageWarn": "Mendekati kapasitas",
   "cancel": "Batal",
-  "workspaceSeatsBasicPlan": "1 editor + 1 viewer",
   "planStatus_grace": "Masa tenggang",
   "graceTitle": "Perpanjangan jatuh tempo",
   "graceBody": "Periode berakhir pada {{date}}. Akses berlanjut selama masa tenggang sementara ops menerbitkan invoice perpanjangan.",
@@ -166,5 +161,9 @@
   "cancelSubscriptionFail": "Gagal menjadwalkan pembatalan",
   "resumeSubscription": "Pertahankan langganan",
   "resumeDone": "Pembatalan dibatalkan",
-  "resumeFail": "Gagal melanjutkan langganan"
+  "resumeFail": "Gagal melanjutkan langganan",
+  "workspaceSeatsPlan": "{{editor}} editor · {{viewer}} viewer",
+  "workspaceSeatsUsage": "{{editors}} / {{editorLimit}} editor · {{viewers}} / {{viewerLimit}} viewer",
+  "unlimited": "Tanpa batas",
+  "perTier": "Per tier"
 }

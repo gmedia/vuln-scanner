@@ -60,10 +60,10 @@ export default function Uptime() {
     },
   });
   const items = useMemo(() => list.data ?? [], [list.data]);
-  const sku = items[0]?.sku ?? "multi";
-  const limit = items[0]?.sku_limit ?? 10;
+  const sku = items[0]?.sku ?? "";
+  const limit = items[0]?.sku_limit ?? 0;
   const enabledCount = items.filter((m) => m.enabled).length;
-  const atCap = enabledCount >= limit;
+  const atCap = limit > 0 && enabledCount >= limit;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();

@@ -69,6 +69,7 @@ import { SiemRail } from "@/components/siem/siemChrome";
 import { StatTile } from "@/components/patterns/StatTile";
 import { EmptyState } from "@/components/patterns/EmptyState";
 import { useAuthStore } from "@/store/authStore";
+import { useTierMap } from "@/hooks/useTierMap";
 import {
   acceptInvite,
   canManageMembers,
@@ -320,6 +321,9 @@ function WorkspaceSettings() {
     invoicesQuery.data?.total ?? invoicesQuery.data?.items.length;
   const orgKind =
     activeOrg?.kind === "personal" ? t("kindPersonal") : t("kindTeam");
+  const { workspaceLimits, label: tierLabel } = useTierMap();
+  const seatLimits =
+    activeOrg?.workspace_seats_limits ?? workspaceLimits(activeOrg?.sku);
   const invoiceStatuses = (invoicesQuery.data?.items ?? []).map(
     (i) => i.status,
   );
@@ -329,9 +333,11 @@ function WorkspaceSettings() {
   const viewerSeatCount = (membersQuery.data ?? []).filter(
     (m) => m.role === "viewer",
   ).length;
+  const seatLimit =
+    inviteRole === "viewer" ? seatLimits.viewer : seatLimits.editor;
   const basicSeatBlocked =
-    activeOrg?.sku === "basic" &&
-    (inviteRole === "viewer" ? viewerSeatCount >= 1 : writeSeatCount >= 1);
+    seatLimit != null &&
+    (inviteRole === "viewer" ? viewerSeatCount : writeSeatCount) >= seatLimit;
 
   return (
     <div className="w-full space-y-6">
@@ -610,7 +616,7 @@ function WorkspaceSettings() {
                   <div data-testid="basic-seat-hint">
                     <WorkspaceNotice tone="warn" role="status">
                       <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                      <span>{t("basicSeatCapHint")}</span>
+                      <span>{t("seatCapHint", { limit: seatLimit })}</span>
                     </WorkspaceNotice>
                   </div>
                 )}
@@ -738,6 +744,7 @@ function WorkspaceSettings() {
                   <WorkspaceInvoiceCard
                     key={inv.id}
                     invoice={inv}
+                    skuLabel={tierLabel(inv.sku)}
                     onPrint={() => startPrint(inv)}
                     onDownload={() => void downloadPdf(inv)}
                   />
@@ -802,7 +809,11 @@ function WorkspaceSettings() {
       {!canManage && orgId && role && (
         <p className="text-xs text-muted-foreground">{t("onlyAdminsInvite")}</p>
       )}
-      <InvoicePrintSheet invoice={printing} billTo={activeOrg?.name} />
+      <InvoicePrintSheet
+        invoice={printing}
+        billTo={activeOrg?.name}
+        skuLabel={printing ? tierLabel(printing.sku) : undefined}
+      />
     </div>
   );
 }

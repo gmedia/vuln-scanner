@@ -9,6 +9,7 @@ import {
   quotaRailClass as sharedQuotaRailClass,
   quotaState,
 } from "@/lib/quota";
+import { useTierMap } from "@/hooks/useTierMap";
 
 export type HostKpiStripProps = {
   readonly sku: string;
@@ -32,6 +33,7 @@ export default function HostKpiStrip({
   featureOn,
 }: HostKpiStripProps) {
   const { t } = useTranslation("host");
+  const { label } = useTierMap();
   if (!featureOn) return null;
 
   const {
@@ -75,7 +77,7 @@ export default function HostKpiStrip({
         extra={
           <div className="space-y-1">
             <p className="text-[10px] text-muted-foreground">
-              {t("overviewSitesHint", { sku })}
+              {t("overviewSitesHint", { sku: label(sku) })}
             </p>
             <Progress
               value={quotaPct}

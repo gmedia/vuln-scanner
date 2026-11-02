@@ -33,9 +33,11 @@ export type InvoicePrintData = {
 export function InvoicePrintSheet({
   invoice,
   billTo,
+  skuLabel,
 }: {
   invoice: InvoicePrintData | null;
   billTo?: string | null;
+  skuLabel?: string;
 }) {
   const { t } = useTranslation("workspace");
   if (!invoice) return null;
@@ -43,7 +45,7 @@ export function InvoicePrintSheet({
   const showBank = invoice.status === "sent";
   const bank = showBank ? invoice.bank : null;
   const to = billTo ?? invoice.organization_name ?? "—";
-  const skuLabel = invoice.sku.toUpperCase();
+  const tierLabel = skuLabel ?? invoice.sku;
   const seats = invoice.seats;
   const amount = formatIdr(invoice.amount_idr);
   const total = formatIdr(invoice.total_idr ?? invoice.amount_idr);
@@ -111,8 +113,8 @@ export function InvoicePrintSheet({
             <td>
               <p className="item-title">
                 {t(`invoicePrintItem_${invoice.product}`, {
-                  sku: skuLabel,
-                  defaultValue: t("invoicePrintItem", { sku: skuLabel }),
+                  sku: tierLabel,
+                  defaultValue: t("invoicePrintItem", { sku: tierLabel }),
                 })}
               </p>
               <p className="item-period">{period}</p>
