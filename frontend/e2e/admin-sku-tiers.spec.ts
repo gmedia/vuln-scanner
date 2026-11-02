@@ -3,26 +3,25 @@ import { test, expect, type Page } from "./fixtures";
 const runId = Date.now().toString(36);
 const tierCode = `e2e_${runId}`;
 const tierLabel = `E2E Pro+ ${runId}`;
+const baseURL = process.env.BASE_URL || "http://localhost";
 
-async function apiStatus(
-  page: Page,
+// Captured in the first test so `afterAll` can clean up without a page fixture
+// (`context`/`page` are test-scoped and unavailable in `afterAll`).
+let accessToken: string | null = null;
+
+async function adminStatus(
   method: "POST" | "DELETE",
   path: string,
 ): Promise<number> {
-  return page.evaluate(
-    async ({ method: verb, path: target }) => {
-      const token = window.localStorage.getItem("accessToken");
-      const response = await fetch(target, {
-        method: verb,
-        headers: {
-          Authorization: `Bearer ${token ?? ""}`,
-          "X-E2E-Test": "true",
-        },
-      });
-      return response.status;
+  if (!accessToken) return 0;
+  const response = await fetch(`${baseURL}${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "X-E2E-Test": "true",
     },
-    { method, path },
-  );
+  });
+  return response.status;
 }
 
 async function openTierTab(page: Page): Promise<void> {
@@ -32,17 +31,16 @@ async function openTierTab(page: Page): Promise<void> {
 }
 
 test.describe.serial("Admin — SKU tiers @admin", () => {
-  test.afterAll(async ({ page }) => {
-    await apiStatus(
-      page,
-      "POST",
-      `/api/admin/sku-tiers/${tierCode}/deactivate`,
-    );
-    await apiStatus(page, "POST", "/api/admin/sku-tiers/multi/reactivate");
+  test.afterAll(async () => {
+    await adminStatus("POST", `/api/admin/sku-tiers/${tierCode}/deactivate`);
+    await adminStatus("POST", "/api/admin/sku-tiers/multi/reactivate");
   });
 
   test("opens the tier tab from the existing SKU page", async ({ page }) => {
     await openTierTab(page);
+    accessToken = await page.evaluate(() =>
+      window.localStorage.getItem("accessToken"),
+    );
     await expect(page.getByTestId("sku-tier-row-basic")).toBeVisible();
     await expect(page.getByTestId("sku-tier-row-enterprise")).toBeVisible();
   });
@@ -52,10 +50,10 @@ test.describe.serial("Admin — SKU tiers @admin", () => {
     await page.getByTestId("sku-tier-create").click();
     await page.locator("#tier-code").fill(tierCode);
     await page.locator("#tier-label").fill(tierLabel);
-    await page.locator("#tier-limit-scan").fill("5");
-    await page.locator("#tier-limit-host").fill("5");
-    await page.locator("#tier-limit-uptime").fill("100");
-    await page.locator("#tier-limit-guard").fill("5");
+    await page.locator("#tier-limit_scan").fill("5");
+    await page.locator("#tier-limit_host").fill("5");
+    await page.locator("#tier-limit_uptime").fill("100");
+    await page.locator("#tier-limit_guard").fill("5");
     await page.locator("#tier-price-scan").fill("1800000");
     await page.locator("#tier-price-host").fill("900000");
     await page.locator("#tier-price-uptime").fill("300000");
