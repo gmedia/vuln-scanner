@@ -1,27 +1,32 @@
-import { test, expect, type Page } from "./fixtures";
+import type { APIRequestContext, Page } from "@playwright/test";
+
+import { e2eEmail, e2ePassword } from "./credentials";
+import { test, expect } from "./fixtures";
 
 const runId = Date.now().toString(36);
 const tierCode = `e2e_${runId}`;
 const tierLabel = `E2E Pro+ ${runId}`;
+const retireCode = `e2e_ret_${runId}`;
+const retireLabel = `E2E Retire ${runId}`;
 const baseURL = process.env.BASE_URL || "http://localhost";
 
-// Captured in the first test so `afterAll` can clean up without a page fixture
-// (`context`/`page` are test-scoped and unavailable in `afterAll`).
-let accessToken: string | null = null;
+const createdCodes = [tierCode, retireCode];
 
-async function adminStatus(
-  method: "POST" | "DELETE",
-  path: string,
-): Promise<number> {
-  if (!accessToken) return 0;
-  const response = await fetch(`${baseURL}${path}`, {
-    method,
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "X-E2E-Test": "true",
+function tierBody(code: string, label: string) {
+  return {
+    code,
+    label,
+    limit_scan: 5,
+    limit_host: 5,
+    limit_uptime: 100,
+    limit_guard: 5,
+    prices: {
+      scan: { list_idr: 1_800_000, invoicable: true },
+      host: { list_idr: 900_000, invoicable: true },
+      uptime: { list_idr: 300_000, invoicable: true },
+      guard: { list_idr: 400_000, invoicable: true },
     },
-  });
-  return response.status;
+  };
 }
 
 async function openTierTab(page: Page): Promise<void> {
@@ -31,21 +36,47 @@ async function openTierTab(page: Page): Promise<void> {
 }
 
 test.describe.serial("Admin — SKU tiers @admin", () => {
+  let api: APIRequestContext;
+
+  test.beforeAll(async ({ playwright }) => {
+    const anonymous = await playwright.request.newContext({
+      baseURL,
+      extraHTTPHeaders: { "X-E2E-Test": "true" },
+    });
+    const login = await anonymous.post("/api/auth/login", {
+      data: { email: e2eEmail(), password: e2ePassword() },
+    });
+    expect(login.status()).toBe(200);
+    const { access_token: token } = (await login.json()) as {
+      access_token?: string;
+    };
+    await anonymous.dispose();
+
+    api = await playwright.request.newContext({
+      baseURL,
+      extraHTTPHeaders: {
+        "X-E2E-Test": "true",
+        Authorization: `Bearer ${token ?? ""}`,
+      },
+    });
+  });
+
   test.afterAll(async () => {
-    await adminStatus("POST", `/api/admin/sku-tiers/${tierCode}/deactivate`);
-    await adminStatus("POST", "/api/admin/sku-tiers/multi/reactivate");
+    if (!api) return;
+    for (const code of createdCodes) {
+      await api.delete(`/api/admin/sku-tiers/${code}`);
+    }
+    await api.dispose();
   });
 
   test("opens the tier tab from the existing SKU page", async ({ page }) => {
     await openTierTab(page);
-    accessToken = await page.evaluate(() =>
-      window.localStorage.getItem("accessToken"),
-    );
     await expect(page.getByTestId("sku-tier-row-basic")).toBeVisible();
     await expect(page.getByTestId("sku-tier-row-enterprise")).toBeVisible();
   });
 
   test("creates a tier with limits and prices", async ({ page }) => {
+    await api.delete(`/api/admin/sku-tiers/${tierCode}`);
     await openTierTab(page);
     await page.getByTestId("sku-tier-create").click();
     await page.locator("#tier-code").fill(tierCode);
@@ -72,25 +103,40 @@ test.describe.serial("Admin — SKU tiers @admin", () => {
     await expect(page.getByTestId(`subscription-plan-${tierCode}`)).toBeVisible();
   });
 
-  test("deactivating a tier removes it from new choices", async ({ page }) => {
+  test("retiring a tier removes it from new choices", async ({ page }) => {
+    await api.delete(`/api/admin/sku-tiers/${retireCode}`);
+    const created = await api.post("/api/admin/sku-tiers", {
+      data: tierBody(retireCode, retireLabel),
+    });
+    expect(created.status()).toBe(201);
+
+    await page.goto("/settings/subscription");
+    await expect(page.getByTestId(`subscription-plan-${retireCode}`)).toBeVisible();
+
     await openTierTab(page);
-    await page.getByTestId("sku-tier-actions-multi").click();
-    await page.getByTestId("sku-tier-deactivate-multi").click();
-    await expect(page.getByTestId("sku-tier-row-multi")).toContainText(
+    await page.getByTestId(`sku-tier-actions-${retireCode}`).click();
+    await page.getByTestId(`sku-tier-deactivate-${retireCode}`).click();
+    await expect(page.getByTestId(`sku-tier-row-${retireCode}`)).toContainText(
       /Pensiun|Retired/,
     );
 
     await page.goto("/settings/subscription");
     await expect(page.getByTestId("subscription-page")).toBeVisible();
-    const choice = page.getByTestId("subscription-choose-multi");
-    if ((await choice.count()) > 0) {
-      await expect(choice).toBeDisabled();
-    }
+    await expect(page.getByTestId(`subscription-plan-${retireCode}`)).toHaveCount(0);
   });
 
   test("deletes the unused tier and blocks deleting a used tier", async ({
     page,
   }) => {
+    const listed = await api.get("/api/admin/sku-tiers");
+    const tiers = (await listed.json()) as { code: string }[];
+    if (!tiers.some((tier) => tier.code === tierCode)) {
+      const recreated = await api.post("/api/admin/sku-tiers", {
+        data: tierBody(tierCode, tierLabel),
+      });
+      expect(recreated.status()).toBe(201);
+    }
+
     await openTierTab(page);
 
     await page.getByTestId("sku-tier-actions-basic").click();
