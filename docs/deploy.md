@@ -170,6 +170,11 @@ workspaces, overdue invoices still marked `sent` (the read-only risk), recent
 `billing_reminders` with send/failure counts, `billing_reminder` email log,
 whether PKP tax is active, and workspaces missing a billing email or recipients.
 
+The CI deploy job checks out the **exact commit it is deploying**
+(`git fetch origin $GITHUB_SHA && git reset --hard $GITHUB_SHA`), not `origin/main`.
+Compose config and `IMAGE_TAG` therefore always come from the same commit, even if
+another merge lands while the deploy is running.
+
 The `deploy` job also has a **preflight** step that retries TCP reachability to
 the jump host three times before any SSH work, plus a 20-minute job timeout, so
 a dead bastion fails in minutes instead of hanging for hours.
