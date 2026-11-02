@@ -96,10 +96,27 @@ async def _decr_side_effect(key: str) -> int:
     return _incr_counters[key]
 
 
-async def _delete_side_effect(key: str) -> int:
-    existed = 1 if key in _incr_counters else 0
-    _incr_counters.pop(key, None)
-    return existed
+async def _delete_side_effect(*keys: str) -> int:
+    removed = 0
+    for key in keys:
+        if key in _incr_counters:
+            removed += 1
+        _incr_counters.pop(key, None)
+    return removed
+
+
+class _FakePipeline:
+    """Minimal pipeline stand-in: queues EXISTS calls and answers them in order."""
+
+    def __init__(self) -> None:
+        self._queued = 0
+
+    def exists(self, *keys: str) -> "_FakePipeline":
+        self._queued += len(keys)
+        return self
+
+    async def execute(self) -> list[int]:
+        return [0] * self._queued
 
 
 _fake_redis = _AsyncMock(spec=_aioredis.Redis)
@@ -111,6 +128,8 @@ _fake_redis.expire = _AsyncMock(return_value=True)
 _fake_redis.ttl = _AsyncMock(return_value=-1)
 _fake_redis.get = _AsyncMock(return_value=None)
 _fake_redis.set = _AsyncMock(return_value=True)
+_fake_redis.exists = _AsyncMock(return_value=0)
+_fake_redis.pipeline = lambda *a, **kw: _FakePipeline()
 _fake_redis.ping = _AsyncMock(return_value=True)
 _fake_redis.aclose = _AsyncMock(return_value=None)
 _aioredis.Redis.from_url = staticmethod(lambda *a, **kw: _fake_redis)
