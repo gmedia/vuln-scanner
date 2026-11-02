@@ -162,7 +162,7 @@ P15 flatten: the KPI strip is **not** inside PageHeader and **not** inside a she
 
 Print §§0–8 and every SPA section above stay locked. This section is the **dark SPA** contract for the HPP cost surface. `/admin/pricing` is retired. It reuses the wave-1 `AdminShell` / `adminChrome` grammar verbatim — no new primitives — so only the deltas and the HPP-specific tone rules are recorded here.
 
-**Added 2026-10-13/14:** `/admin/skus` (SKU catalog editor + read-only locked bundle/annual card) and `/admin/simulator` (ephemeral what-if calculator) are admin pages that reuse this same `AdminShell` / `adminChrome` grammar — no new primitives. They are not given separate sections here; their behaviour contracts live in [`docs/specs/sinexis-invoice-v1.md`](../../docs/specs/sinexis-invoice-v1.md) and [`docs/specs/admin-hpp-v1.md`](../../docs/specs/admin-hpp-v1.md).
+**Added 2026-10-13/14:** `/admin/skus` (two tabs: pricing editor + read-only locked bundle/annual card, and tier/feature CRUD) and `/admin/simulator` (ephemeral what-if calculator) are admin pages that reuse this same `AdminShell` / `adminChrome` grammar — no new primitives. They are not given separate sections here; their behaviour contracts live in [`docs/specs/sinexis-invoice-v1.md`](../../docs/specs/sinexis-invoice-v1.md) and [`docs/specs/admin-hpp-v1.md`](../../docs/specs/admin-hpp-v1.md).
 
 ### 0. Research Log (Admin wave 2A)
 
