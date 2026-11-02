@@ -640,3 +640,46 @@ async def test_legacy_open_reservation_resolves_snapshot_at_settle(db_session: A
     assert event.price_usd_per_1m_in == Decimal("0.150000")
     assert event.billed_idr == 1
     assert event.shortfall_idr == 0
+
+
+@pytest.mark.asyncio
+async def test_record_usage_provider_override(db_session: AsyncSession, ctx) -> None:
+    org = ctx["org"]
+    model = ctx["model"]
+    owner = ctx["owner"]
+    other_provider = AiProvider(
+        name="Override",
+        base_url="https://override.example/v1",
+        credential_enc="x",
+    )
+    db_session.add(other_provider)
+    await db_session.flush()
+    snapshot = _snap()
+
+    common = {
+        "organization_id": org.id,
+        "user_id": owner.id,
+        "key_id": None,
+        "source": "customer",
+        "model": model,
+        "prompt_tokens": 1,
+        "completion_tokens": 1,
+        "billed": 1,
+        "cogs": 0,
+        "reservation_id": None,
+        "snapshot": snapshot,
+    }
+    overridden = await record_usage(db_session, provider_id=other_provider.id, **common)
+    defaulted = await record_usage(db_session, **common)
+    await db_session.commit()
+
+    rows = {
+        event.id: event
+        for event in (
+            await db_session.execute(select(AiUsageEvent).where(AiUsageEvent.id.in_([overridden.id, defaulted.id])))
+        )
+        .scalars()
+        .all()
+    }
+    assert rows[overridden.id].provider_id == other_provider.id
+    assert rows[defaulted.id].provider_id == model.provider_id

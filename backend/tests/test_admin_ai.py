@@ -638,3 +638,245 @@ async def test_admin_usage_exposes_cogs_margin_and_fx(client, db_session, ai_on)
     assert item["fx_effective_date"] == date.today().isoformat()
     assert item["price_usd_per_1m_in"] == 0.15
     assert item["hpp_usd_per_1m_in"] == 0.075
+
+
+def _make_provider(client, name: str, *, enabled: bool = True) -> str:
+    created = client.post(
+        "/api/admin/ai/providers",
+        headers=API_HEADERS,
+        json={
+            "name": name,
+            "base_url": "https://api.example/v1",
+            "credential": "k",
+            "enabled": enabled,
+        },
+    )
+    assert created.status_code == 201, created.text
+    return created.json()["id"]
+
+
+def _make_model(client, provider_id: str, public_id: str, upstream_id: str) -> str:
+    created = client.post(
+        "/api/admin/ai/models",
+        headers=API_HEADERS,
+        json={
+            "provider_id": provider_id,
+            "public_id": public_id,
+            "upstream_id": upstream_id,
+            "price_usd_per_1m_in": 1,
+            "price_usd_per_1m_out": 1,
+        },
+    )
+    assert created.status_code == 201, created.text
+    return created.json()["id"]
+
+
+def _add_upstream(client, model_id: str, provider_id: str, upstream_id: str, **extra: object):
+    payload: dict[str, object] = {
+        "provider_id": provider_id,
+        "upstream_id": upstream_id,
+        **extra,
+    }
+    return client.post(
+        f"/api/admin/ai/models/{model_id}/upstreams",
+        headers=API_HEADERS,
+        json=payload,
+    )
+
+
+def test_model_upstream_crud_and_resequence(client, ai_on) -> None:
+    provider_a = _make_provider(client, "Primary A")
+    provider_b = _make_provider(client, "Fallback B")
+    provider_c = _make_provider(client, "Fallback C")
+    provider_d = _make_provider(client, "Fallback D")
+    model_id = _make_model(client, provider_a, "sinexis/fallback-crud", "a-up")
+
+    first = _add_upstream(client, model_id, provider_b, "b-up")
+    assert first.status_code == 201, first.text
+    body = first.json()
+    assert len(body["upstreams"]) == 1
+    assert [u["rank"] for u in body["upstreams"]] == [1]
+    assert [u["provider_name"] for u in body["upstreams"]] == ["Fallback B"]
+
+    second = _add_upstream(client, model_id, provider_c, "c-up")
+    assert second.status_code == 201, second.text
+    body = second.json()
+    assert len(body["upstreams"]) == 2
+    assert [u["rank"] for u in body["upstreams"]] == [1, 2]
+    assert [u["provider_name"] for u in body["upstreams"]] == ["Fallback B", "Fallback C"]
+
+    third = _add_upstream(client, model_id, provider_d, "d-up")
+    assert third.status_code == 201, third.text
+    body = third.json()
+    assert len(body["upstreams"]) == 3
+    assert [u["rank"] for u in body["upstreams"]] == [1, 2, 3]
+    assert [u["provider_name"] for u in body["upstreams"]] == ["Fallback B", "Fallback C", "Fallback D"]
+
+    middle_id = body["upstreams"][1]["id"]
+    deleted = client.delete(f"/api/admin/ai/models/{model_id}/upstreams/{middle_id}", headers=API_HEADERS)
+    assert deleted.status_code == 200, deleted.text
+    remaining = deleted.json()["upstreams"]
+    assert len(remaining) == 2
+    assert [u["rank"] for u in remaining] == [1, 2]
+    assert [u["upstream_id"] for u in remaining] == ["b-up", "d-up"]
+
+    replacement = _add_upstream(client, model_id, provider_c, "c-up-new")
+    assert replacement.status_code == 201, replacement.text
+    rep_body = replacement.json()
+    assert [u["rank"] for u in rep_body["upstreams"]] == [1, 2, 3]
+    assert rep_body["upstreams"][2]["upstream_id"] == "c-up-new"
+    rep_id = rep_body["upstreams"][2]["id"]
+
+    moved = client.patch(
+        f"/api/admin/ai/models/{model_id}/upstreams/{rep_id}",
+        headers=API_HEADERS,
+        json={"rank": 1},
+    )
+    assert moved.status_code == 200, moved.text
+    assert [u["upstream_id"] for u in moved.json()["upstreams"]] == ["c-up-new", "b-up", "d-up"]
+    assert [u["rank"] for u in moved.json()["upstreams"]] == [1, 2, 3]
+
+    listed = client.get("/api/admin/ai/models", headers=API_HEADERS)
+    assert listed.status_code == 200
+    row = next(item for item in listed.json()["items"] if item["id"] == model_id)
+    assert [u["upstream_id"] for u in row["upstreams"]] == ["c-up-new", "b-up", "d-up"]
+    assert [u["rank"] for u in row["upstreams"]] == [1, 2, 3]
+
+
+def test_model_upstream_validation(client, ai_on) -> None:
+    provider_a = _make_provider(client, "Validation A")
+    provider_b = _make_provider(client, "Validation B")
+    disabled_provider = _make_provider(client, "Validation Disabled", enabled=False)
+    model_id = _make_model(client, provider_a, "sinexis/validation", "a-up")
+
+    missing_model = _add_upstream(client, "00000000-0000-0000-0000-000000000099", provider_b, "x")
+    assert missing_model.status_code == 404
+
+    unknown_provider = _add_upstream(client, model_id, "00000000-0000-0000-0000-000000000098", "x")
+    assert unknown_provider.status_code == 422
+
+    disabled = _add_upstream(client, model_id, disabled_provider, "x")
+    assert disabled.status_code == 422
+
+    primary = _add_upstream(client, model_id, provider_a, "a-up")
+    assert primary.status_code == 409
+    assert primary.json()["detail"] == "target is the primary upstream"
+
+    ok = _add_upstream(client, model_id, provider_b, "b-up")
+    assert ok.status_code == 201, ok.text
+    fallback_id = ok.json()["upstreams"][0]["id"]
+
+    duplicate = _add_upstream(client, model_id, provider_b, "b-up")
+    assert duplicate.status_code == 409
+    assert duplicate.json()["detail"] == "upstream target already exists"
+
+    rank_clash = _add_upstream(client, model_id, provider_b, "b-up-2", rank=1)
+    assert rank_clash.status_code == 409
+    assert rank_clash.json()["detail"] == "rank already in use"
+
+    second = _add_upstream(client, model_id, provider_b, "b-up-2")
+    assert second.status_code == 201, second.text
+    third = _add_upstream(client, model_id, provider_b, "b-up-3")
+    assert third.status_code == 201, third.text
+
+    fourth = _add_upstream(client, model_id, provider_b, "b-up-4")
+    assert fourth.status_code == 422
+    assert fourth.json()["detail"] == "candidate limit reached"
+
+    unknown_patch = client.patch(
+        f"/api/admin/ai/models/{model_id}/upstreams/{fallback_id}",
+        headers=API_HEADERS,
+        json={"provider_id": "00000000-0000-0000-0000-000000000097"},
+    )
+    assert unknown_patch.status_code == 422
+
+
+def test_model_upstream_same_provider_different_upstream_allowed(client, ai_on) -> None:
+    provider_a = _make_provider(client, "Same Provider A")
+    model_id = _make_model(client, provider_a, "sinexis/same-provider", "a-up")
+
+    same_provider = _add_upstream(client, model_id, provider_a, "a-up-alt")
+    assert same_provider.status_code == 201, same_provider.text
+    assert same_provider.json()["upstreams"][0]["provider_id"] == provider_a
+    assert same_provider.json()["upstreams"][0]["upstream_id"] == "a-up-alt"
+
+    same_target = _add_upstream(client, model_id, provider_a, "a-up")
+    assert same_target.status_code == 409
+    assert same_target.json()["detail"] == "target is the primary upstream"
+
+
+def test_model_upstreams_survive_model_patch(client, ai_on) -> None:
+    provider_a = _make_provider(client, "Survive A")
+    provider_b = _make_provider(client, "Survive B")
+    model_id = _make_model(client, provider_a, "sinexis/survive", "a-up")
+    added = _add_upstream(client, model_id, provider_b, "b-up")
+    assert added.status_code == 201, added.text
+
+    disabled = client.patch(
+        f"/api/admin/ai/models/{model_id}",
+        headers=API_HEADERS,
+        json={"enabled": False},
+    )
+    assert disabled.status_code == 200, disabled.text
+    assert disabled.json()["enabled"] is False
+    assert len(disabled.json()["upstreams"]) == 1
+    assert disabled.json()["upstreams"][0]["upstream_id"] == "b-up"
+
+    enabled = client.patch(
+        f"/api/admin/ai/models/{model_id}",
+        headers=API_HEADERS,
+        json={"enabled": True},
+    )
+    assert enabled.status_code == 200, enabled.text
+    assert len(enabled.json()["upstreams"]) == 1
+    assert enabled.json()["upstreams"][0]["upstream_id"] == "b-up"
+
+
+def test_model_primary_repoint_rejects_existing_fallback(client, ai_on) -> None:
+    provider_a = _make_provider(client, "Repoint A")
+    provider_b = _make_provider(client, "Repoint B")
+    model_id = _make_model(client, provider_a, "sinexis/repoint", "a-up")
+    added = _add_upstream(client, model_id, provider_b, "b-up")
+    assert added.status_code == 201, added.text
+
+    clash = client.patch(
+        f"/api/admin/ai/models/{model_id}",
+        headers=API_HEADERS,
+        json={"provider_id": provider_b, "upstream_id": "b-up"},
+    )
+    assert clash.status_code == 409
+    assert clash.json()["detail"] == "target already exists as a fallback upstream"
+
+    moved = client.patch(
+        f"/api/admin/ai/models/{model_id}",
+        headers=API_HEADERS,
+        json={"provider_id": provider_b, "upstream_id": "new-up"},
+    )
+    assert moved.status_code == 200, moved.text
+    assert moved.json()["provider_id"] == provider_b
+    assert moved.json()["upstream_id"] == "new-up"
+    assert len(moved.json()["upstreams"]) == 1
+    assert moved.json()["upstreams"][0]["upstream_id"] == "b-up"
+
+    unknown = client.patch(
+        f"/api/admin/ai/models/{model_id}",
+        headers=API_HEADERS,
+        json={"provider_id": "00000000-0000-0000-0000-000000000096"},
+    )
+    assert unknown.status_code == 422
+
+
+def test_provider_delete_cascades_model_upstreams(client, ai_on) -> None:
+    provider_a = _make_provider(client, "Cascade Primary")
+    provider_b = _make_provider(client, "Cascade Fallback")
+    model_id = _make_model(client, provider_a, "sinexis/cascade-upstream", "a-up")
+    added = _add_upstream(client, model_id, provider_b, "b-up")
+    assert added.status_code == 201, added.text
+
+    deleted = client.delete(f"/api/admin/ai/providers/{provider_b}", headers=API_HEADERS)
+    assert deleted.status_code == 204, deleted.text
+
+    listed = client.get("/api/admin/ai/models", headers=API_HEADERS)
+    assert listed.status_code == 200
+    row = next(item for item in listed.json()["items"] if item["id"] == model_id)
+    assert row["upstreams"] == []
