@@ -263,6 +263,19 @@ A future Midtrans/Xendit adapter translates its native event into this payload b
 - Admin list + role gate.
 - Invalid transition raises.
 
+## 8.0 Annual invoices
+
+`POST /api/admin/invoices` accepts `cycle: "monthly" | "annual"` (default `monthly`).
+
+| Cycle | Period | Base amount |
+|---|---|---|
+| `monthly` | calendar month | catalog `list_idr` |
+| `annual` | 12 months from the first of the start month | `list_idr × ANNUAL_MONTHS_PAID` (10) |
+
+That is the "10 months for 12" policy applied at invoice time. Tax (DPP/PPN/PPh 23) is computed on the **annual** base. Paying the invoice sets `subscriptions.cycle = "annual"` because the existing `_cycle_for()` detects a period longer than 40 days.
+
+Overlap is rejected, not just an exact period-start match: an annual invoice covering Sep 2026–Aug 2027 cannot coexist with a monthly invoice for Oct 2026 for the same product. Without that check, annual + monthly would double-bill.
+
 ## 8.1 Billing motion (decision)
 
 Sinexis bills **invoice-per-period**, not auto-charge:

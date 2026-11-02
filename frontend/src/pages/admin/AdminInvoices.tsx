@@ -85,6 +85,7 @@ function AdminInvoices() {
   const [orgId, setOrgId] = useState("");
   const [product, setProduct] = useState<InvoiceProduct>("scan");
   const [sku, setSku] = useState("basic");
+  const [cycle, setCycle] = useState<"monthly" | "annual">("monthly");
   const [bankRef, setBankRef] = useState("");
   const { printing, startPrint } = useInvoicePrint();
 
@@ -137,6 +138,7 @@ function AdminInvoices() {
         organization_id: orgId,
         sku: skuValue,
         product,
+        cycle,
       }),
     onSuccess: () => {
       toast.success(t("invoiceCreated"));
@@ -259,7 +261,7 @@ function AdminInvoices() {
       <AdminShell tone="primary">
         <AdminShellHead icon={Plus} title={t("invoiceCreateCard")} />
         <AdminShellBody className="space-y-3">
-          <div className="grid gap-3 sm:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-5">
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="inv-org">{t("colOrg")}</Label>
               <Select value={orgId} onValueChange={setOrgId}>
@@ -314,6 +316,27 @@ function AdminInvoices() {
                       {skuLabel(row.sku)}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="inv-cycle">{t("invoiceCycle")}</Label>
+              <Select
+                value={cycle}
+                onValueChange={(value) =>
+                  setCycle(value === "annual" ? "annual" : "monthly")
+                }
+              >
+                <SelectTrigger
+                  id="inv-cycle"
+                  className="h-10 min-h-10"
+                  data-testid="invoice-cycle"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="monthly">{t("invoiceCycleMonthly")}</SelectItem>
+                  <SelectItem value="annual">{t("invoiceCycleAnnual")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
