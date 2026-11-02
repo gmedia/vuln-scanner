@@ -72,6 +72,7 @@ class AiModelCreate(BaseModel):
 
 
 class AiModelUpdate(BaseModel):
+    provider_id: uuid.UUID | None = None
     public_id: str | None = Field(default=None, min_length=3, max_length=128)
     upstream_id: str | None = Field(default=None, min_length=1, max_length=256)
     price_usd_per_1m_in: Decimal | None = Field(default=None, ge=0)
@@ -85,6 +86,39 @@ class AiModelUpdate(BaseModel):
     max_ctx: int | None = Field(default=None, ge=1)
     max_tokens_cap: int | None = Field(default=None, ge=1)
     enabled: bool | None = None
+
+
+class AiUpstreamCreate(BaseModel):
+    provider_id: uuid.UUID
+    upstream_id: str = Field(..., min_length=1, max_length=256)
+    hpp_usd_per_1m_in: Decimal | None = Field(default=None, ge=0)
+    hpp_usd_per_1m_out: Decimal | None = Field(default=None, ge=0)
+    max_tokens_cap: int | None = Field(default=None, ge=1)
+    rank: int | None = Field(default=None, ge=1)
+
+
+class AiUpstreamUpdate(BaseModel):
+    provider_id: uuid.UUID | None = None
+    upstream_id: str | None = Field(default=None, min_length=1, max_length=256)
+    hpp_usd_per_1m_in: Decimal | None = Field(default=None, ge=0)
+    hpp_usd_per_1m_out: Decimal | None = Field(default=None, ge=0)
+    max_tokens_cap: int | None = Field(default=None, ge=1)
+    enabled: bool | None = None
+    rank: int | None = Field(default=None, ge=1)
+
+
+class AiUpstreamOut(BaseModel):
+    id: uuid.UUID
+    provider_id: uuid.UUID
+    provider_name: str
+    provider_status: str
+    provider_enabled: bool
+    upstream_id: str
+    hpp_usd_per_1m_in: float | None
+    hpp_usd_per_1m_out: float | None
+    max_tokens_cap: int | None
+    rank: int
+    enabled: bool
 
 
 class AiModelOut(BaseModel):
@@ -107,6 +141,7 @@ class AiModelOut(BaseModel):
     enabled: bool
     created_at: datetime
     updated_at: datetime
+    upstreams: list[AiUpstreamOut] = []
 
 
 class AiModelList(BaseModel):
