@@ -28,6 +28,7 @@ from app.models.ai_gateway import (
 )
 from app.models.organization import Organization, OrganizationMembership
 from app.models.user import User
+from app.services import ai_breaker
 from app.services.ai_crypto import encrypt_credential
 from app.services.ai_proxy import (
     UpstreamCandidate,
@@ -38,11 +39,19 @@ from app.services.ai_proxy import (
 from app.services.ai_wallet import hold_idr, resolve_snapshot
 from app.services.auth import create_access_token, hash_password
 from app.services.organization import ensure_personal_org
+from tests.test_ai_breaker import FakeAsyncRedis
 
 
 @pytest.fixture
 def ai_on(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(settings, "ai_gateway_enabled", True)
+
+
+@pytest.fixture(autouse=True)
+def _breaker_redis(monkeypatch: pytest.MonkeyPatch) -> FakeAsyncRedis:
+    fake = FakeAsyncRedis()
+    monkeypatch.setattr(ai_breaker, "_redis", fake)
+    return fake
 
 
 async def _make_user(db: AsyncSession, email: str) -> User:
@@ -1314,8 +1323,8 @@ def test_can_retry_requires_enough_budget_left(monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setattr(settings, "ai_upstream_failover_deadline_seconds", 100.0)
     monkeypatch.setattr(settings, "ai_upstream_min_attempt_seconds", 5.0)
     candidates = [
-        UpstreamCandidate(uuid.uuid4(), "a", "https://a/v1", "Authorization", "c", None, None, None),
-        UpstreamCandidate(uuid.uuid4(), "b", "https://b/v1", "Authorization", "c", None, None, None),
+        UpstreamCandidate(uuid.uuid4(), "a", "https://a/v1", "Authorization", "c", None, None, None, "ok"),
+        UpstreamCandidate(uuid.uuid4(), "b", "https://b/v1", "Authorization", "c", None, None, None, "ok"),
     ]
 
     assert _can_retry(0, candidates, time.monotonic()) is True
@@ -1328,7 +1337,7 @@ async def test_post_with_failover_passes_clamped_timeout(monkeypatch: pytest.Mon
     monkeypatch.setattr(settings, "ai_upstream_failover_deadline_seconds", 100.0)
     mock_client = _post_client(_UpstreamResponse(200, _chat_payload()))
     candidate = UpstreamCandidate(
-        uuid.uuid4(), "a", "https://a/v1", "Authorization", encrypt_credential("secret"), None, None, None
+        uuid.uuid4(), "a", "https://a/v1", "Authorization", encrypt_credential("secret"), None, None, None, "ok"
     )
 
     with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
@@ -1368,4 +1377,122 @@ async def test_v1_stream_failover_when_primary_stalls_before_first_byte(db_sessi
     assert mock_client.stream.call_count == 2
     events = await _usage_events(db_session, org.id)
     assert len(events) == 1
+    assert events[0].provider_id == fallback.id
+
+
+# --- AI gateway provider circuit breaker ------------------------------------
+
+
+def _breaker_key(template: str, provider_id: uuid.UUID) -> str:
+    return template.format(provider_id=provider_id)
+
+
+async def _chat_with_mock(db_session: AsyncSession, ctx, mock_client: AsyncMock, *, stream: bool = False) -> object:
+    owner = ctx["owner"]
+    org = ctx["org"]
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            plain = await _create_key(ac, owner, org.id)
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                return await ac.post(CHAT_PATH, headers=_key_headers(plain), json=_chat_body(stream=stream))
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+
+@pytest.mark.asyncio
+async def test_v1_breaker_skips_provider_after_repeated_failures(
+    db_session: AsyncSession, ctx, _breaker_redis: FakeAsyncRedis
+) -> None:
+    org = ctx["org"]
+    primary_id = ctx["model"].provider_id
+    fallback = await _add_fallback(db_session, ctx["model"])
+    for _ in range(settings.ai_breaker_failure_threshold):
+        await ai_breaker.record_failure(primary_id, "server_error")
+    mock_client = _post_client(_UpstreamResponse(200, _chat_payload()))
+
+    chat = await _chat_with_mock(db_session, ctx, mock_client)
+
+    assert chat.status_code == 200, chat.text
+    assert mock_client.post.call_count == 1
+    assert mock_client.post.call_args.args[0] == "https://fallback.example/v1/chat/completions"
+    events = await _usage_events(db_session, org.id)
+    assert events[0].provider_id == fallback.id
+
+
+@pytest.mark.asyncio
+async def test_v1_breaker_records_success_and_failure(
+    db_session: AsyncSession, ctx, _breaker_redis: FakeAsyncRedis
+) -> None:
+    primary_id = ctx["model"].provider_id
+    fallback = await _add_fallback(db_session, ctx["model"])
+    mock_client = _post_client(_UpstreamResponse(503), _UpstreamResponse(200, _chat_payload()))
+
+    chat = await _chat_with_mock(db_session, ctx, mock_client)
+
+    assert chat.status_code == 200, chat.text
+    fails_key = _breaker_key(ai_breaker.FAILS_KEY_TEMPLATE, primary_id)
+    assert int(_breaker_redis.store.get(fails_key, "0")) >= 1
+    assert _breaker_key(ai_breaker.FAILS_KEY_TEMPLATE, fallback.id) not in _breaker_redis.store
+    assert _breaker_key(ai_breaker.OPEN_KEY_TEMPLATE, fallback.id) not in _breaker_redis.store
+
+
+@pytest.mark.asyncio
+async def test_v1_client_error_does_not_open_breaker(
+    db_session: AsyncSession, ctx, _breaker_redis: FakeAsyncRedis
+) -> None:
+    primary_id = ctx["model"].provider_id
+    fallback = await _add_fallback(db_session, ctx["model"])
+    mock_client = _post_client(_UpstreamResponse(400))
+
+    chat = await _chat_with_mock(db_session, ctx, mock_client)
+
+    assert chat.status_code == 400, chat.text
+    assert mock_client.post.call_count == 1
+    for provider_id in (primary_id, fallback.id):
+        assert _breaker_key(ai_breaker.FAILS_KEY_TEMPLATE, provider_id) not in _breaker_redis.store
+        assert _breaker_key(ai_breaker.OPEN_KEY_TEMPLATE, provider_id) not in _breaker_redis.store
+
+
+@pytest.mark.asyncio
+async def test_v1_all_breakers_open_still_calls_primary(
+    db_session: AsyncSession, ctx, _breaker_redis: FakeAsyncRedis
+) -> None:
+    primary_id = ctx["model"].provider_id
+    fallback = await _add_fallback(db_session, ctx["model"])
+    for provider_id in (primary_id, fallback.id):
+        for _ in range(settings.ai_breaker_failure_threshold):
+            await ai_breaker.record_failure(provider_id, "server_error")
+    mock_client = _post_client(_UpstreamResponse(200, _chat_payload()))
+
+    chat = await _chat_with_mock(db_session, ctx, mock_client)
+
+    assert chat.status_code == 200, chat.text
+    assert mock_client.post.call_count == 1
+    assert mock_client.post.call_args.args[0] == "https://wholesale.example/v1/chat/completions"
+
+
+@pytest.mark.asyncio
+async def test_v1_degraded_primary_is_ordered_behind_healthy_fallback(
+    db_session: AsyncSession, ctx, _breaker_redis: FakeAsyncRedis
+) -> None:
+    model = ctx["model"]
+    provider = await db_session.get(AiProvider, model.provider_id)
+    assert provider is not None
+    provider.status = "degraded"
+    await db_session.commit()
+    fallback = await _add_fallback(db_session, model)
+    mock_client = _post_client(_UpstreamResponse(200, _chat_payload()))
+
+    chat = await _chat_with_mock(db_session, ctx, mock_client)
+
+    assert chat.status_code == 200, chat.text
+    assert mock_client.post.call_count == 1
+    assert mock_client.post.call_args.args[0] == "https://fallback.example/v1/chat/completions"
+    events = await _usage_events(db_session, ctx["org"].id)
     assert events[0].provider_id == fallback.id

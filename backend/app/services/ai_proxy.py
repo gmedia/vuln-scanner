@@ -20,6 +20,7 @@ from starlette.responses import JSONResponse, StreamingResponse
 from app.config import settings
 from app.metrics import record_upstream_attempt
 from app.models.ai_gateway import AiApiKey, AiModel, AiModelUpstream, AiProvider, AiUsageEvent
+from app.services.ai_breaker import filter_available, record_failure, record_success
 from app.services.ai_crypto import decrypt_credential
 from app.services.ai_limits import acquire as acquire_limits
 from app.services.ai_limits import release_concurrent
@@ -58,6 +59,7 @@ class UpstreamCandidate:
     max_tokens_cap: int | None
     hpp_in: Decimal | None
     hpp_out: Decimal | None
+    provider_status: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -190,6 +192,7 @@ def _primary_candidate(model: AiModel) -> UpstreamCandidate:
         max_tokens_cap=model.max_tokens_cap,
         hpp_in=model.hpp_usd_per_1m_in,
         hpp_out=model.hpp_usd_per_1m_out,
+        provider_status=provider.status,
     )
 
 
@@ -204,6 +207,7 @@ def _fallback_candidate(row: AiModelUpstream) -> UpstreamCandidate:
         max_tokens_cap=row.max_tokens_cap,
         hpp_in=row.hpp_usd_per_1m_in,
         hpp_out=row.hpp_usd_per_1m_out,
+        provider_status=provider.status,
     )
 
 
@@ -250,6 +254,7 @@ async def _load_candidates(db: AsyncSession, public_id: str) -> tuple[AiModel, l
                 continue
             candidates.append(_fallback_candidate(row))
 
+    candidates.sort(key=lambda c: c.provider_status == "degraded")
     candidates = candidates[: settings.ai_upstream_max_candidates]
     if not candidates:
         raise HTTPException(status_code=404, detail="model_not_found")
@@ -353,6 +358,7 @@ async def _post_with_failover(
                 )
             except httpx.TransportError:
                 retry = _can_retry(idx, candidates, started)
+                await record_failure(candidate.provider_id, _attempt_reason(None))
                 _note_attempt_failure(
                     public_id=public_id,
                     idx=idx,
@@ -365,6 +371,7 @@ async def _post_with_failover(
                 return UpstreamResult(None, candidate, "transport")
             if _retryable_status(resp.status_code):
                 retry = _can_retry(idx, candidates, started)
+                await record_failure(candidate.provider_id, _attempt_reason(resp.status_code))
                 _note_attempt_failure(
                     public_id=public_id,
                     idx=idx,
@@ -376,6 +383,8 @@ async def _post_with_failover(
                     continue
                 return UpstreamResult(resp, candidate, None)
             served = resp.status_code < 400
+            if served:
+                await record_success(candidate.provider_id)
             record_upstream_attempt(
                 model=public_id,
                 outcome="served" if served else "rejected",
@@ -420,6 +429,7 @@ async def chat_completions(
     if key.allowed_model_ids and public_id not in key.allowed_model_ids:
         raise HTTPException(status_code=404, detail="model_not_found")
     model, candidates = await _load_candidates(db, public_id)
+    candidates = await filter_available(candidates)
     snapshot = await resolve_snapshot(db, model)
     stream = bool(body.get("stream"))
     requested = _requested_max_tokens(body, model)
@@ -710,6 +720,8 @@ async def _stream_and_settle(
                     if resp.status_code >= 400:
                         upstream_fault = _retryable_status(resp.status_code)
                         retry = upstream_fault and _can_retry(idx, candidates, started)
+                        if upstream_fault:
+                            await record_failure(candidate.provider_id, _attempt_reason(resp.status_code))
                         _note_attempt_failure(
                             public_id=model.public_id,
                             idx=idx,
@@ -750,6 +762,7 @@ async def _stream_and_settle(
                             yield chunk
             except httpx.TransportError:
                 can_retry = not first_byte_sent and _can_retry(idx, candidates, started)
+                await record_failure(candidate.provider_id, _attempt_reason(None))
                 _note_attempt_failure(
                     public_id=model.public_id,
                     idx=idx,
@@ -764,6 +777,7 @@ async def _stream_and_settle(
                 retry = True
             if retry:
                 continue
+            await record_success(candidate.provider_id)
             record_upstream_attempt(model=model.public_id, outcome="served", reason="none")
             break
     finally:
@@ -868,6 +882,7 @@ async def admin_trial_chat(
     _validate_body(body)
     public_id = str(body.get("model") or "")
     model, candidates = await _load_candidates(db, public_id)
+    candidates = await filter_available(candidates)
     snapshot = await resolve_snapshot(db, model)
 
     cap_usd = trial_cap_usd()

@@ -127,3 +127,31 @@ groups:
             alias points at an upstream model id that does not accept this request
             (renamed or retired model, or an unsupported parameter). Failover does not
             retry these by design. Check the model's primary and fallback upstream ids.
+      - alert: VulnScannerAiUpstreamBreakerOpen
+        expr: vuln_ai_upstream_breakers_open > 0
+        for: 10m
+        labels:
+          severity: warning
+          service: vuln-scanner
+        annotations:
+          summary: "An AI upstream circuit breaker is open"
+          description: >-
+            vuln_ai_upstream_breakers_open is {{ $value }}. The gateway is skipping
+            a provider whose breaker opened on repeated failures. Failover hides a
+            provider that is down, so a sustained value means one provider is carrying
+            all traffic while customers never see the outage. Check the provider rows
+            in /admin/ai?tab=providers and fix its credentials or upstream status.
+      - alert: VulnScannerAiProvidersDegraded
+        expr: vuln_ai_providers_degraded > 0
+        for: 15m
+        labels:
+          severity: warning
+          service: vuln-scanner
+        annotations:
+          summary: "AI providers are marked degraded"
+          description: >-
+            vuln_ai_providers_degraded is {{ $value }}. ai_providers.probe (or an
+            admin) marked an enabled provider degraded. Degraded providers are
+            deprioritised but still used, so live traffic can still route to them.
+            Check the provider rows in /admin/ai?tab=providers, and remember that only
+            an admin should ever set a provider disabled.

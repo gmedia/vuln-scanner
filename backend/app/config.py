@@ -164,6 +164,11 @@ class Settings(BaseSettings):
     ai_upstream_stream_idle_timeout_seconds: float = 45.0
     ai_upstream_failover_deadline_seconds: float = 100.0
     ai_upstream_min_attempt_seconds: float = 5.0
+    ai_breaker_failure_threshold: int = 5
+    ai_breaker_window_seconds: float = 120.0
+    ai_breaker_cooldown_seconds: float = 60.0
+    ai_provider_probe_enabled: bool = True
+    ai_provider_probe_timeout_seconds: float = 10.0
     ai_trial_monthly_cap_usd: Decimal = Decimal("30")
     # Deprecated: legacy IDR cap, used only when AI_TRIAL_MONTHLY_CAP_USD is absent.
     ai_trial_monthly_cap_idr: int = 500_000
