@@ -156,6 +156,20 @@ production reports `unknown` (i.e. the `GIT_SHA` deploy has not landed). This is
 the alarm for "CI green but deploy red" — the mode that went unnoticed for ~50
 hours on 2026-10-20/22.
 
+### Billing healthcheck (read-only)
+
+After a deploy that touches billing, or when a customer reports a lockout:
+
+```bash
+./scripts/billing-healthcheck.sh                 # docker exec into vuln-postgres
+PG_MODE=network ./scripts/billing-healthcheck.sh # psql via DATABASE_URL_SYNC
+```
+
+It only runs `SELECT`s. It prints: subscription status counts, `past_due`/`canceled`
+workspaces, overdue invoices still marked `sent` (the read-only risk), recent
+`billing_reminders` with send/failure counts, `billing_reminder` email log,
+whether PKP tax is active, and workspaces missing a billing email or recipients.
+
 The `deploy` job also has a **preflight** step that retries TCP reachability to
 the jump host three times before any SSH work, plus a 20-minute job timeout, so
 a dead bastion fails in minutes instead of hanging for hours.
