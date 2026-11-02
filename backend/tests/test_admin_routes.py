@@ -1067,11 +1067,14 @@ class TestAdminHpp:
                 )
             )
         await db_session.commit()
-        # conftest seeds every sku_catalog row; clear it so the built-in seed
-        # constants are surfaced via catalog_seed_skus.
+        # HPP no longer falls back to code constants: seed the one price row
+        # this assertion needs and check that missing rows surface as seeds.
         from app.models.invoice import SkuCatalog
 
         await db_session.execute(delete(SkuCatalog))
+        db_session.add(
+            SkuCatalog(product="host", sku="multi", list_idr=900_000, seats=10, invoicable=True)
+        )
         await db_session.commit()
         day = datetime.now(UTC).date().isoformat()
         resp = client.get(f"/api/admin/hpp/report?from={day}&to={day}", headers=API_HEADERS)
@@ -1089,7 +1092,8 @@ class TestAdminHpp:
         assert host_margin["cogs_idr"] == 250
         assert host_margin["margin_idr"] == 899_750
         assert host_margin["unpriced_org_count"] == 0
-        assert body["catalog_seed_skus"]
+        assert "host:multi" not in body["catalog_seed_skus"]
+        assert "scan:basic" in body["catalog_seed_skus"]
 
     @pytest.mark.asyncio
     async def test_report_excludes_enterprise_org_from_margin(self, client, db_session, sample_user):
@@ -1147,6 +1151,89 @@ class TestAdminHpp:
         assert "scan:basic" not in seed
         assert "scan:pro" in seed
         assert "host:basic" in seed
+
+    @pytest.mark.asyncio
+    async def test_report_catalog_seed_skus_come_from_tier_rows(self, client, db_session):
+        from app.models.sku_tier import SkuTier
+
+        db_session.add(
+            SkuTier(
+                code="seedless",
+                label="Seedless",
+                rank=18,
+                active=True,
+                requestable=True,
+                sales_led=False,
+                limit_scan=2,
+                limit_host=2,
+                limit_uptime=20,
+                limit_guard=2,
+                bundle_idr=500_000,
+            )
+        )
+        await db_session.commit()
+        resp = client.get("/api/admin/hpp/report", headers=API_HEADERS)
+        assert resp.status_code == 200
+        seed = set(resp.json()["catalog_seed_skus"])
+        for product in ("scan", "host", "uptime", "guard"):
+            assert f"{product}:seedless" in seed
+
+    @pytest.mark.asyncio
+    async def test_report_treats_sales_led_tier_as_unpriced(self, client, db_session, sample_user):
+        from datetime import UTC, datetime
+
+        from app.models.organization import Organization, OrganizationMembership
+        from app.models.scan_schedule import ScanSchedule
+        from app.models.sku_tier import SkuTier
+
+        db_session.add(
+            SkuTier(
+                code="quoted",
+                label="Quoted",
+                rank=19,
+                active=True,
+                requestable=False,
+                sales_led=True,
+                allow_siem=True,
+                billing_unrestricted=True,
+                limit_scan=10,
+                limit_host=10,
+                limit_uptime=200,
+                limit_guard=10,
+            )
+        )
+        org = Organization(
+            id=uuid.uuid4(),
+            name="hpp-quoted-org",
+            slug=f"hpp-quoted-{uuid.uuid4().hex[:8]}",
+            kind="company",
+            sku="quoted",
+            created_by_user_id=sample_user.id,
+        )
+        db_session.add(org)
+        db_session.add(
+            OrganizationMembership(organization_id=org.id, user_id=sample_user.id, role="owner")
+        )
+        db_session.add(
+            ScanSchedule(
+                id=uuid.uuid4(),
+                user_id=sample_user.id,
+                organization_id=org.id,
+                scan_type="ip",
+                target="203.0.113.77",
+                cadence="weekly",
+                next_run_at=datetime.now(UTC),
+                enabled=True,
+            )
+        )
+        await db_session.commit()
+        resp = client.get("/api/admin/hpp/report", headers=API_HEADERS)
+        assert resp.status_code == 200
+        body = resp.json()
+        margins = {x["line"]: x for x in body["line_margins"]}
+        assert margins["scan"]["org_count"] == 0
+        assert margins["scan"]["unpriced_org_count"] == 1
+        assert "scan:quoted" not in body["catalog_seed_skus"]
 
     def test_report_bad_range(self, client):
         resp = client.get("/api/admin/hpp/report?from=2026-08-10&to=2026-08-01", headers=API_HEADERS)

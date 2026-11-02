@@ -1258,3 +1258,133 @@ async def test_paid_annual_invoice_sets_the_subscription_cycle(db_session, ctx):
             assert sub.status == "active"
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_catalog_rows_surface_label_and_active(db_session, ctx):
+    tier = await db_session.get(SkuTier, "multi")
+    assert tier is not None
+    tier.active = False
+    await db_session.commit()
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            cat = await client.get("/api/admin/sku-catalog", headers=_auth(ctx["admin"]))
+            assert cat.status_code == 200
+            rows = {(row["product"], row["sku"]): row for row in cat.json()["items"]}
+            assert rows[("scan", "multi")]["label"] == "Multi"
+            assert rows[("scan", "multi")]["active"] is False
+            assert rows[("scan", "basic")]["label"] == "Basic"
+            assert rows[("scan", "basic")]["active"] is True
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_create_invoice_rejects_retired_tier_for_another_org(db_session, ctx):
+    tier = await db_session.get(SkuTier, "pro")
+    assert tier is not None
+    tier.active = False
+    await db_session.commit()
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={"organization_id": str(ctx["org"].id), "sku": "pro"},
+            )
+            assert response.status_code == 400
+            assert response.json()["detail"] == "Tier is retired"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_create_invoice_allows_retired_tier_for_current_org(db_session, ctx):
+    org = await db_session.get(Organization, ctx["org"].id)
+    tier = await db_session.get(SkuTier, "pro")
+    assert org is not None and tier is not None
+    org.sku = "pro"
+    tier.active = False
+    await db_session.commit()
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={"organization_id": str(ctx["org"].id), "sku": "pro"},
+            )
+            assert response.status_code == 201, response.text
+            assert response.json()["sku"] == "pro"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_stale_invoice_cannot_move_another_org_to_retired_tier(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            created = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={"organization_id": str(ctx["org"].id), "sku": "pro"},
+            )
+            assert created.status_code == 201
+            inv_id = created.json()["id"]
+            tier = await db_session.get(SkuTier, "pro")
+            assert tier is not None
+            tier.active = False
+            await db_session.commit()
+            paid = await client.post(
+                f"/api/admin/invoices/{inv_id}/paid",
+                headers=_auth(ctx["admin"]),
+                json={"bank_ref": "TF-STALE-1"},
+            )
+            assert paid.status_code == 409
+            assert paid.json()["detail"] == "Tier is retired"
+            org = await db_session.get(Organization, ctx["org"].id)
+            await db_session.refresh(org)
+            assert org is not None and org.sku == "basic"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_existing_invoice_for_current_retired_tier_stays_payable(db_session, ctx):
+    org = await db_session.get(Organization, ctx["org"].id)
+    assert org is not None
+    org.sku = "pro"
+    await db_session.commit()
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            created = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={"organization_id": str(ctx["org"].id), "sku": "pro"},
+            )
+            assert created.status_code == 201
+            inv_id = created.json()["id"]
+            tier = await db_session.get(SkuTier, "pro")
+            assert tier is not None
+            tier.active = False
+            await db_session.commit()
+            paid = await client.post(
+                f"/api/admin/invoices/{inv_id}/paid",
+                headers=_auth(ctx["admin"]),
+                json={"bank_ref": "TF-GRANDFATHERED-1"},
+            )
+            assert paid.status_code == 200, paid.text
+            assert paid.json()["status"] == "paid"
+            await db_session.refresh(org)
+            assert org.sku == "pro"
+    finally:
+        app.dependency_overrides.clear()
