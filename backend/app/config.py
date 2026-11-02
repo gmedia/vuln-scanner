@@ -154,6 +154,7 @@ class Settings(BaseSettings):
     ai_usd_idr: int = 16000
     ai_fx_auto_fetch: bool = True
     ai_fx_source_url: str = "https://api.frankfurter.app/latest?from=USD&to=IDR"
+    ai_fx_fallback_url: str = "https://open.er-api.com/v6/latest/USD"
     ai_fx_timeout_seconds: float = 8.0
     ai_store_prompts: bool = False
     ai_trial_monthly_cap_usd: Decimal = Decimal("30")

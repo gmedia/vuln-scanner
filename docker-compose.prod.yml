@@ -142,6 +142,7 @@ services:
       AI_USD_IDR: ${AI_USD_IDR:-16000}
       AI_FX_AUTO_FETCH: ${AI_FX_AUTO_FETCH:-true}
       AI_FX_SOURCE_URL: ${AI_FX_SOURCE_URL:-https://api.frankfurter.app/latest?from=USD&to=IDR}
+      AI_FX_FALLBACK_URL: ${AI_FX_FALLBACK_URL:-https://open.er-api.com/v6/latest/USD}
       AI_STORE_PROMPTS: ${AI_STORE_PROMPTS:-false}
       AI_TRIAL_MONTHLY_CAP_USD: ${AI_TRIAL_MONTHLY_CAP_USD:-30}
       SIEM_SEARCH_MIN_LEVEL: ${SIEM_SEARCH_MIN_LEVEL:-7}
@@ -219,6 +220,7 @@ services:
       AI_USD_IDR: ${AI_USD_IDR:-16000}
       AI_FX_AUTO_FETCH: ${AI_FX_AUTO_FETCH:-true}
       AI_FX_SOURCE_URL: ${AI_FX_SOURCE_URL:-https://api.frankfurter.app/latest?from=USD&to=IDR}
+      AI_FX_FALLBACK_URL: ${AI_FX_FALLBACK_URL:-https://open.er-api.com/v6/latest/USD}
     volumes:
       - scan_data:/tmp/scans
       # Lab-only local walk (S6). Host dir is empty unless ops plants a fixture.
@@ -446,6 +448,7 @@ services:
       AI_USD_IDR: ${AI_USD_IDR:-16000}
       AI_FX_AUTO_FETCH: ${AI_FX_AUTO_FETCH:-true}
       AI_FX_SOURCE_URL: ${AI_FX_SOURCE_URL:-https://api.frankfurter.app/latest?from=USD&to=IDR}
+      AI_FX_FALLBACK_URL: ${AI_FX_FALLBACK_URL:-https://open.er-api.com/v6/latest/USD}
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import os; os.stat('/tmp/celerybeat-schedule')\""]
       interval: 30s

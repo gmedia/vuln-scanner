@@ -8,17 +8,13 @@ sys.path.insert(0, str(_WORKERS.parent / "backend"))
 from datetime import date  # noqa: E402
 from decimal import Decimal  # noqa: E402
 from unittest.mock import MagicMock  # noqa: E402
-from urllib.parse import urlparse  # noqa: E402
 
 from app.config import settings  # noqa: E402
+from app.services.ai_fx import FxQuote  # noqa: E402
 
 from celery_app import celery_app  # noqa: E402
 from tasks import ai_fx  # noqa: E402
 from tasks.ai_fx import refresh_ai_fx  # noqa: E402
-
-
-def _expected_source() -> str:
-    return urlparse(settings.ai_fx_source_url).hostname or "auto"
 
 
 def test_returns_skipped_when_ai_gateway_disabled(monkeypatch):
@@ -49,12 +45,17 @@ def test_returns_skipped_when_auto_fetch_disabled(monkeypatch):
 def test_stores_fetched_rate_and_returns_json_values(monkeypatch):
     rate = Decimal("16350.25")
     effective_date = date(2026, 10, 30)
+    source = "fallback.example"
     session = MagicMock()
     upsert = MagicMock()
 
     monkeypatch.setattr(settings, "ai_gateway_enabled", True)
     monkeypatch.setattr(settings, "ai_fx_auto_fetch", True)
-    monkeypatch.setattr(ai_fx, "fetch_rate_sync", MagicMock(return_value=(rate, effective_date)))
+    monkeypatch.setattr(
+        ai_fx,
+        "fetch_rate_sync",
+        MagicMock(return_value=FxQuote(rate=rate, effective_date=effective_date, source=source)),
+    )
     monkeypatch.setattr(ai_fx, "get_sync_session", MagicMock(return_value=session))
     monkeypatch.setattr(ai_fx, "upsert_rate_sync", upsert)
 
@@ -63,13 +64,13 @@ def test_stores_fetched_rate_and_returns_json_values(monkeypatch):
     assert result == {
         "rate": "16350.25",
         "effective_date": "2026-10-30",
-        "source": _expected_source(),
+        "source": source,
     }
     upsert.assert_called_once()
     assert upsert.call_args.args[0] is session
     assert upsert.call_args.kwargs == {
         "rate": rate,
-        "source": _expected_source(),
+        "source": source,
         "effective_date": effective_date,
     }
     session.commit.assert_called_once()

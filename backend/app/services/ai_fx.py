@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Mapping
+from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any
@@ -24,6 +25,15 @@ from app.models.ai_gateway import AiFxRate
 
 FX_BASE = "USD"
 FX_QUOTE = "IDR"
+
+
+@dataclass(frozen=True)
+class FxQuote:
+    """A fetched rate together with the provider that answered."""
+
+    rate: Decimal
+    effective_date: date
+    source: str
 
 
 class FxFetchError(RuntimeError):
@@ -93,26 +103,75 @@ def parse_rate_payload(payload: Mapping[str, Any]) -> tuple[Decimal, date]:
     return _parse_positive(rates[FX_QUOTE]), _payload_date(payload)
 
 
+def fx_source_urls(url: str | None = None) -> list[str]:
+    """Ordered providers to try: the explicit URL, else primary then fallback."""
+    if url is not None:
+        return [url]
+    urls: list[str] = []
+    for candidate in (settings.ai_fx_source_url, settings.ai_fx_fallback_url):
+        stripped = candidate.strip()
+        if stripped and stripped not in urls:
+            urls.append(stripped)
+    return urls
+
+
+def _failure_kind(exc: FxFetchError) -> str:
+    cause = exc.__cause__
+    return type(cause).__name__ if cause is not None else type(exc).__name__
+
+
+def _all_sources_failed(targets: list[str], failures: list[FxFetchError]) -> FxFetchError:
+    """Aggregate failure that names the attempt count and kinds, never a host."""
+    kinds = ", ".join(_failure_kind(exc) for exc in failures)
+    return FxFetchError(f"FX fetch failed after {len(targets)} source(s): {kinds}")
+
+
+async def _fetch_first_async(client: httpx.AsyncClient, targets: list[str]) -> FxQuote:
+    failures: list[FxFetchError] = []
+    for target in targets:
+        try:
+            payload = _json_object(await _async_get(client, target))
+            rate, effective_date = parse_rate_payload(payload)
+        except FxFetchError as exc:
+            failures.append(exc)
+            continue
+        return FxQuote(rate=rate, effective_date=effective_date, source=source_label(target))
+    raise _all_sources_failed(targets, failures)
+
+
+def _fetch_first_sync(client: httpx.Client, targets: list[str]) -> FxQuote:
+    failures: list[FxFetchError] = []
+    for target in targets:
+        try:
+            payload = _json_object(_sync_get(client, target))
+            rate, effective_date = parse_rate_payload(payload)
+        except FxFetchError as exc:
+            failures.append(exc)
+            continue
+        return FxQuote(rate=rate, effective_date=effective_date, source=source_label(target))
+    raise _all_sources_failed(targets, failures)
+
+
 async def fetch_rate(
     url: str | None = None,
     timeout: float | None = None,
     client: httpx.AsyncClient | None = None,
-) -> tuple[Decimal, date]:
+) -> FxQuote:
     """Fetch the current USD/IDR rate; ``client`` is reused and never closed here."""
-    target = url or settings.ai_fx_source_url
+    targets = fx_source_urls(url)
     if client is not None:
-        return parse_rate_payload(_json_object(await _async_get(client, target)))
+        return await _fetch_first_async(client, targets)
     timeout_s = settings.ai_fx_timeout_seconds if timeout is None else timeout
     async with httpx.AsyncClient(follow_redirects=True, timeout=timeout_s) as own:
-        return parse_rate_payload(_json_object(await _async_get(own, target)))
+        return await _fetch_first_async(own, targets)
 
 
-def fetch_rate_sync(url: str | None = None, timeout: float | None = None) -> tuple[Decimal, date]:
+def fetch_rate_sync(url: str | None = None, timeout: float | None = None) -> FxQuote:
     """Blocking variant for the Celery task; same contract as :func:`fetch_rate`."""
-    target = url or settings.ai_fx_source_url
+    targets = fx_source_urls(url)
     timeout_s = settings.ai_fx_timeout_seconds if timeout is None else timeout
     with httpx.Client(follow_redirects=True, timeout=timeout_s) as client:
-        return parse_rate_payload(_json_object(_sync_get(client, target)))
+        return _fetch_first_sync(client, targets)
 
 
 def source_label(url: str | None = None) -> str:
@@ -206,12 +265,12 @@ async def effective_rate(db: AsyncSession) -> tuple[Decimal, str, AiFxRate | Non
 
 
 async def refresh(db: AsyncSession, user_id: uuid.UUID | None = None) -> AiFxRate:
-    rate, effective_date = await fetch_rate()
+    quote = await fetch_rate()
     return await upsert_rate(
         db,
-        rate=rate,
-        source=source_label(),
-        effective_date=effective_date,
+        rate=quote.rate,
+        source=quote.source,
+        effective_date=quote.effective_date,
         user_id=user_id,
     )
 

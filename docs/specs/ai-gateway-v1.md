@@ -231,6 +231,7 @@ Unique `(base, quote, effective_date)`; a same-day re-fetch or override updates 
 |-----|---------|-------|
 | `AI_FX_AUTO_FETCH` | `true` | beat task skips entirely when false |
 | `AI_FX_SOURCE_URL` | `https://api.frankfurter.app/latest?from=USD&to=IDR` | frankfurter (ECB, no key) shape; `open.er-api` shape also parsed |
+| `AI_FX_FALLBACK_URL` | `https://open.er-api.com/v6/latest/USD` | tried only when the primary fails; the stored `source` records the host that answered |
 | `AI_TRIAL_MONTHLY_CAP_USD` | `30` | admin-trial cap on COGS USD; the deprecated IDR cap applies only when this is unset |
 
 ### 7.8 `ai_wallet_ledger` (append-only)
