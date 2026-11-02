@@ -47,6 +47,7 @@ jobs:
       frontend: ${{ steps.flags.outputs.frontend }}
       compose: ${{ steps.flags.outputs.compose }}
       packaging: ${{ steps.flags.outputs.packaging }}
+      observability: ${{ steps.flags.outputs.observability }}
       ci: ${{ steps.flags.outputs.ci }}
       docs_only: ${{ steps.flags.outputs.docs_only }}
       unknown: ${{ steps.flags.outputs.unknown }}
@@ -91,6 +92,9 @@ jobs:
               - 'scripts/smoke-broker.sh'
             packaging:
               - 'packaging/**'
+            observability:
+              - 'backend/app/metrics.py'
+              - 'monitoring/**'
             ci:
               - '.github/workflows/**'
               - 'Makefile'
@@ -182,6 +186,7 @@ jobs:
           FILTER_VITEST_SHARED: ${{ steps.filter.outputs.vitest_shared }}
           FILTER_COMPOSE: ${{ steps.filter.outputs.compose }}
           FILTER_PACKAGING: ${{ steps.filter.outputs.packaging }}
+          FILTER_OBSERVABILITY: ${{ steps.filter.outputs.observability }}
           FILTER_CI: ${{ steps.filter.outputs.ci }}
           FILTER_DOCS: ${{ steps.filter.outputs.docs }}
           MOD_SCAN: ${{ steps.filter.outputs.mod_scan }}
@@ -209,7 +214,7 @@ jobs:
             while IFS= read -r f; do
               [ -z "$f" ] && continue
               case "$f" in
-                backend/*|workers/*|frontend/*|packaging/*|nginx/*|docs/*)
+                backend/*|workers/*|frontend/*|packaging/*|nginx/*|docs/*|monitoring/*)
                   ;;
                 docker-compose.yml|docker-compose*.yml|.env.example|Makefile)
                   ;;
@@ -236,6 +241,7 @@ jobs:
           fi
           COMPOSE=$FILTER_COMPOSE
           PACKAGING=$FILTER_PACKAGING
+          OBSERVABILITY=${FILTER_OBSERVABILITY:-false}
           CI_OUT=$FILTER_CI
           if [ "$ALWAYS" = "true" ]; then
             BACKEND=true
@@ -243,6 +249,7 @@ jobs:
             FRONTEND=true
             COMPOSE=true
             PACKAGING=true
+            OBSERVABILITY=true
             CI_OUT=true
           fi
           DOCS_ONLY=false
@@ -337,6 +344,7 @@ jobs:
             echo "frontend=$FRONTEND"
             echo "compose=$COMPOSE"
             echo "packaging=$PACKAGING"
+            echo "observability=$OBSERVABILITY"
             echo "ci=$CI_OUT"
             echo "docs_only=$DOCS_ONLY"
             echo "unknown=$UNKNOWN"
@@ -995,6 +1003,23 @@ jobs:
       - name: Check .env inventory is complete
         run: bash scripts/check-env-inventory.sh
 
+  alert-metrics:
+    name: alert-metrics
+    needs: [changes]
+    if: ${{ (github.event_name != 'workflow_dispatch' || !inputs.skip_tests)
+            && (needs.changes.outputs.always_full == 'true'
+                || needs.changes.outputs.observability == 'true') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check rules reference metrics that metrics.py exports
+        run: node scripts/check-alert-metrics.mjs
+      - name: Validate PromQL rules
+        run: |
+          docker run --rm -v "$PWD/monitoring:/m:ro" \
+            --entrypoint promtool prom/prometheus:v2.55.1 \
+            check rules /m/alerts-vuln-scanner.example.yml
+
   ci-ok:
     name: ci-ok
     runs-on: ubuntu-latest
@@ -1013,6 +1038,7 @@ jobs:
       - frontend-lint
       - e2e-tests
       - env-inventory
+      - alert-metrics
       - deps-sync
       - deps-audit
       - deps-audit-python
