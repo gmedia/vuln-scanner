@@ -1,8 +1,8 @@
 """Daily USD/IDR FX-rate refresh (beat).
 
 Stores at most one snapshot per ``effective_date`` for the admin model editor.
-Billing and COGS keep using ``settings.ai_usd_idr``; this task never touches
-price math.
+This task only stores the daily snapshot; reservations lock the rate at reserve
+time, so later snapshots never change an already-reserved price.
 
 An unavailable upstream is logged and swallowed on purpose: a beat retry loop
 against a dead provider is worse than a stale rate, and the stale
@@ -26,7 +26,6 @@ from app.config import settings  # noqa: E402
 from app.services.ai_fx import (  # noqa: E402
     FxFetchError,
     fetch_rate_sync,
-    source_label,
     upsert_rate_sync,
 )
 
@@ -39,21 +38,20 @@ def refresh_ai_fx() -> dict[str, Any]:
     if not settings.ai_fx_auto_fetch:
         return {"skipped": "auto_fetch_disabled"}
 
-    source = source_label()
     session = get_sync_session()
     try:
-        rate, effective_date = fetch_rate_sync()
+        quote = fetch_rate_sync()
         upsert_rate_sync(
             session,
-            rate=rate,
-            source=source,
-            effective_date=effective_date,
+            rate=quote.rate,
+            source=quote.source,
+            effective_date=quote.effective_date,
         )
         session.commit()
         return {
-            "rate": str(rate),
-            "effective_date": effective_date.isoformat(),
-            "source": source,
+            "rate": str(quote.rate),
+            "effective_date": quote.effective_date.isoformat(),
+            "source": quote.source,
         }
     except FxFetchError as exc:
         session.rollback()

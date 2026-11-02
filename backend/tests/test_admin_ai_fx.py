@@ -9,6 +9,7 @@ import pytest
 from app.api import admin_ai_fx_routes
 from app.config import settings
 from app.services import ai_fx
+from app.services.ai_fx import FxQuote
 
 API_HEADERS = {"X-API-Key": settings.api_key, "X-E2E-Test": "1"}
 BASE = "/api/admin/ai/fx"
@@ -88,7 +89,13 @@ def test_refresh_stores_fetched_rate_and_get_reports_it(client, ai_on, monkeypat
     monkeypatch.setattr(
         admin_ai_fx_routes.ai_fx,
         "fetch_rate",
-        AsyncMock(return_value=(Decimal("16350.25"), date(2026, 10, 30))),
+        AsyncMock(
+            return_value=FxQuote(
+                rate=Decimal("16350.25"),
+                effective_date=date(2026, 10, 30),
+                source="fx.example.test",
+            )
+        ),
     )
 
     response = client.post(f"{BASE}/refresh", headers=API_HEADERS)

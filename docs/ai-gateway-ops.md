@@ -66,7 +66,7 @@ All four gauges are on `/metrics` (API-key protected) and ignore scrape failures
 
 First response:
 
-- **FX stale** — check `ai_fx.refresh` logs (runs daily at 01:10 UTC on the `ip_scan` worker) and the worker env (DB / FX source credentials). Then use the admin FX card **Refresh now**, or enter a manual rate, to unblock billing until the fetch is fixed.
+- **FX stale** — check `ai_fx.refresh` logs (runs daily at 01:10 UTC on the `ip_scan` worker) and the worker env (DB / FX source credentials). Check both providers (primary `AI_FX_SOURCE_URL`, then fallback `AI_FX_FALLBACK_URL`) before entering a manual rate. Then use the admin FX card **Refresh now**, or enter a manual rate, to unblock billing until the fetch is fixed.
 - **Shortfall** — a settle could not collect the full amount because the org wallet was exhausted. Inspect the wallet balance and the matching `ai_usage_events` row (`shortfall_idr`), then top up the wallet / reconcile with the customer.
 - **Wallet ledger drift** — a wallet balance no longer matches its ledger sum, which means a code path mutated the balance without a ledger row (or a manual DB edit). Inspect `ai_wallets` vs `ai_wallet_ledger` for the offending organization, and never "fix" it by editing only one side.
 - **Stale reservations** — `ai_reservations.reap` runs every 5 minutes on the `ip_scan` queue and releases holds older than 20 minutes. A sustained count means beat or its worker is not consuming, so customer funds stay locked. Check the beat schedule and worker logs, then run the task manually if needed.

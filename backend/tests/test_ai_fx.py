@@ -18,6 +18,7 @@ from app.services.ai_fx import (
     FxFetchError,
     effective_rate,
     fetch_rate,
+    fx_source_urls,
     history,
     parse_rate_payload,
     set_manual,
@@ -84,12 +85,60 @@ async def test_fetch_rate_reads_json_through_injected_client() -> None:
 
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
 
-    rate, effective_date = await fetch_rate("https://fx.invalid/latest", client=client)
+    quote = await fetch_rate("https://fx.invalid/latest", client=client)
 
-    assert rate == Decimal("16300.5")
-    assert effective_date == date(2026, 10, 30)
+    assert quote.rate == Decimal("16300.5")
+    assert quote.effective_date == date(2026, 10, 30)
+    assert quote.source == "fx.invalid"
     assert seen == ["https://fx.invalid/latest"]
     assert client.is_closed is False
+    await client.aclose()
+
+
+@pytest.mark.asyncio
+async def test_fetch_rate_falls_back_to_secondary_provider(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "ai_fx_source_url", "https://api.frankfurter.app/latest?from=USD&to=IDR")
+    monkeypatch.setattr(settings, "ai_fx_fallback_url", "https://open.er-api.com/v6/latest/USD")
+    seen: list[str] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        host = request.url.host
+        seen.append(host)
+        if host == "api.frankfurter.app":
+            return httpx.Response(500, json={"error": "boom"})
+        assert host == "open.er-api.com"
+        return httpx.Response(200, json=ER_API_PAYLOAD)
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+
+    quote = await fetch_rate(client=client)
+
+    assert quote.rate == Decimal("16250.25")
+    assert quote.effective_date == datetime.now(UTC).date()
+    assert quote.source == "open.er-api.com"
+    assert seen == ["api.frankfurter.app", "open.er-api.com"]
+    await client.aclose()
+
+
+@pytest.mark.asyncio
+async def test_fetch_rate_raises_fetch_error_when_both_providers_fail(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "ai_fx_source_url", "https://api.frankfurter.app/latest?from=USD&to=IDR")
+    monkeypatch.setattr(settings, "ai_fx_fallback_url", "https://open.er-api.com/v6/latest/USD")
+
+    async def handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(500, json={"error": "boom"})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+
+    with pytest.raises(FxFetchError) as excinfo:
+        await fetch_rate(client=client)
+
+    message = str(excinfo.value)
+    assert "2 source(s)" in message
+    assert "api.frankfurter.app" not in message
+    assert "open.er-api.com" not in message
     await client.aclose()
 
 
@@ -123,6 +172,24 @@ async def test_fetch_rate_raises_fetch_error_on_non_json_body() -> None:
 def test_source_label_uses_hostname_or_auto() -> None:
     assert source_label("https://api.frankfurter.app/latest?from=USD&to=IDR") == "api.frankfurter.app"
     assert source_label("not a url") == "auto"
+
+
+def test_fx_source_urls_uses_explicit_url_only(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "ai_fx_source_url", "https://primary.example/latest")
+    monkeypatch.setattr(settings, "ai_fx_fallback_url", "https://fallback.example/latest")
+
+    assert fx_source_urls("https://only.example/latest") == ["https://only.example/latest"]
+
+
+def test_fx_source_urls_orders_primary_then_fallback_and_dedupes(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "ai_fx_source_url", "https://primary.example/latest")
+    monkeypatch.setattr(settings, "ai_fx_fallback_url", "https://fallback.example/latest")
+
+    assert fx_source_urls() == ["https://primary.example/latest", "https://fallback.example/latest"]
+
+    monkeypatch.setattr(settings, "ai_fx_fallback_url", " https://primary.example/latest ")
+
+    assert fx_source_urls() == ["https://primary.example/latest"]
 
 
 @pytest.mark.asyncio
