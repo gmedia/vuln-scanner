@@ -18,6 +18,7 @@ from sqlalchemy.orm import selectinload
 from starlette.responses import JSONResponse, StreamingResponse
 
 from app.config import settings
+from app.metrics import record_upstream_attempt
 from app.models.ai_gateway import AiApiKey, AiModel, AiModelUpstream, AiProvider, AiUsageEvent
 from app.services.ai_crypto import decrypt_credential
 from app.services.ai_limits import acquire as acquire_limits
@@ -272,10 +273,43 @@ def _retryable_status(code: int) -> bool:
     return code in RETRYABLE_STATUS
 
 
+def _attempt_reason(status: int | None) -> str:
+    if status is None:
+        return "transport"
+    if status in (401, 403):
+        return "auth"
+    if status == 429:
+        return "rate_limit"
+    if status >= 500:
+        return "server_error"
+    return "client_error"
+
+
 def _can_retry(idx: int, candidates: Sequence[UpstreamCandidate], started: float) -> bool:
     if idx + 1 >= len(candidates):
         return False
     return (time.monotonic() - started) < settings.ai_upstream_failover_deadline_seconds
+
+
+def _note_attempt_failure(
+    *,
+    public_id: str,
+    idx: int,
+    status: int | None,
+    started: float,
+    outcome: str,
+) -> None:
+    logger.warning(
+        "ai_upstream_attempt_failed",
+        extra={
+            "model": public_id,
+            "candidate_index": idx,
+            "error_kind": "transport" if status is None else "status",
+            "status": status,
+            "latency_ms": int((time.monotonic() - started) * 1000),
+        },
+    )
+    record_upstream_attempt(model=public_id, outcome=outcome, reason=_attempt_reason(status))
 
 
 def _cogs_snapshot(candidate: UpstreamCandidate, locked: PriceSnapshot) -> PriceSnapshot:
@@ -301,33 +335,35 @@ async def _post_with_failover(
             try:
                 resp = await client.post(url, headers=headers, json=attempt_body)
             except httpx.TransportError:
-                latency_ms = int((time.monotonic() - started) * 1000)
-                logger.warning(
-                    "ai_upstream_attempt_failed",
-                    extra={
-                        "model": public_id,
-                        "candidate_index": idx,
-                        "error_kind": "transport",
-                        "status": None,
-                        "latency_ms": latency_ms,
-                    },
+                retry = _can_retry(idx, candidates, started)
+                _note_attempt_failure(
+                    public_id=public_id,
+                    idx=idx,
+                    status=None,
+                    started=started,
+                    outcome="retried" if retry else "failed",
                 )
-                if _can_retry(idx, candidates, started):
+                if retry:
                     continue
                 return UpstreamResult(None, candidate, "transport")
-            if _retryable_status(resp.status_code) and _can_retry(idx, candidates, started):
-                latency_ms = int((time.monotonic() - started) * 1000)
-                logger.warning(
-                    "ai_upstream_attempt_failed",
-                    extra={
-                        "model": public_id,
-                        "candidate_index": idx,
-                        "error_kind": "status",
-                        "status": resp.status_code,
-                        "latency_ms": latency_ms,
-                    },
+            if _retryable_status(resp.status_code):
+                retry = _can_retry(idx, candidates, started)
+                _note_attempt_failure(
+                    public_id=public_id,
+                    idx=idx,
+                    status=resp.status_code,
+                    started=started,
+                    outcome="retried" if retry else "failed",
                 )
-                continue
+                if retry:
+                    continue
+                return UpstreamResult(resp, candidate, None)
+            served = resp.status_code < 400
+            record_upstream_attempt(
+                model=public_id,
+                outcome="served" if served else "rejected",
+                reason="none" if served else "client_error",
+            )
             return UpstreamResult(resp, candidate, None)
     return UpstreamResult(None, candidates[-1] if candidates else None, "transport")
 
@@ -649,20 +685,16 @@ async def _stream_and_settle(
                 async with client.stream("POST", url, headers=headers, json=attempt_body) as resp:
                     http_status = resp.status_code
                     if resp.status_code >= 400:
-                        retry = _retryable_status(resp.status_code) and _can_retry(idx, candidates, started)
-                        if retry:
-                            latency_ms = int((time.monotonic() - started) * 1000)
-                            logger.warning(
-                                "ai_upstream_attempt_failed",
-                                extra={
-                                    "model": model.public_id,
-                                    "candidate_index": idx,
-                                    "error_kind": "status",
-                                    "status": resp.status_code,
-                                    "latency_ms": latency_ms,
-                                },
-                            )
-                        else:
+                        upstream_fault = _retryable_status(resp.status_code)
+                        retry = upstream_fault and _can_retry(idx, candidates, started)
+                        _note_attempt_failure(
+                            public_id=model.public_id,
+                            idx=idx,
+                            status=resp.status_code,
+                            started=started,
+                            outcome="retried" if retry else ("failed" if upstream_fault else "rejected"),
+                        )
+                        if not retry:
                             failed = True
                             yield STREAM_ERROR_EVENT
                             return
@@ -694,24 +726,22 @@ async def _stream_and_settle(
                                         finish = f
                             yield chunk
             except httpx.TransportError:
-                latency_ms = int((time.monotonic() - started) * 1000)
-                logger.warning(
-                    "ai_upstream_attempt_failed",
-                    extra={
-                        "model": model.public_id,
-                        "candidate_index": idx,
-                        "error_kind": "transport",
-                        "status": None,
-                        "latency_ms": latency_ms,
-                    },
+                can_retry = not first_byte_sent and _can_retry(idx, candidates, started)
+                _note_attempt_failure(
+                    public_id=model.public_id,
+                    idx=idx,
+                    status=None,
+                    started=started,
+                    outcome="retried" if can_retry else "failed",
                 )
-                if first_byte_sent or not _can_retry(idx, candidates, started):
+                if not can_retry:
                     failed = True
                     yield STREAM_ERROR_EVENT
                     return
                 retry = True
             if retry:
                 continue
+            record_upstream_attempt(model=model.public_id, outcome="served", reason="none")
             break
     finally:
         await client.aclose()
