@@ -51,7 +51,7 @@ def probe_ai_providers() -> dict[str, Any]:
     client: httpx.Client | None = None
     try:
         client = httpx.Client(timeout=settings.ai_provider_probe_timeout_seconds)
-        providers = (
+        providers: list[AiProvider] = list(
             session.execute(
                 select(AiProvider).where(
                     AiProvider.enabled.is_(True),
