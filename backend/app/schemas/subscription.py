@@ -6,6 +6,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.schemas.billing import PaymentAttemptItem
+from app.schemas.sku_tier import SkuTierItem
 
 
 class SubscriptionPlan(BaseModel):
@@ -41,6 +42,8 @@ class WorkspaceSeats(BaseModel):
 class SubscriptionCatalogItem(BaseModel):
     service: str
     sku: str
+    label: str
+    active: bool
     list_idr: int
     seats: int
     invoicable: bool
@@ -48,6 +51,8 @@ class SubscriptionCatalogItem(BaseModel):
 
 class SubscriptionBundleItem(BaseModel):
     tier: str
+    label: str
+    active: bool
     bundle_idr: int
     alacarte_idr: int
     saving_idr: int
@@ -94,6 +99,7 @@ class SubscriptionOverviewResponse(BaseModel):
     organization_id: uuid.UUID
     organization_name: str
     plan: SubscriptionPlan
+    tiers: list[SkuTierItem] = Field(default_factory=list)
     usage: list[SubscriptionUsageItem]
     workspace_seats: WorkspaceSeats
     catalog: list[SubscriptionCatalogItem]
