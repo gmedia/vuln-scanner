@@ -40,3 +40,17 @@ groups:
             vuln_ai_usage_shortfall_idr_24h is {{ $value }} IDR. A settle could not
             collect the full amount because the org wallet was exhausted. Inspect the
             wallet balance and the corresponding ai_usage_events.shortfall_idr rows.
+      - alert: VulnScannerAiWalletLedgerDrift
+        expr: vuln_ai_wallet_ledger_drift_idr > 0
+        for: 30m
+        labels:
+          severity: warning
+          service: vuln-scanner
+        annotations:
+          summary: "AI wallet balance no longer matches its ledger sum"
+          description: >-
+            vuln_ai_wallet_ledger_drift_idr is {{ $value }} IDR. A wallet balance no
+            longer matches its ledger sum, which means a code path mutated the balance
+            without a ledger row (or a manual DB edit). Inspect ai_wallets vs
+            ai_wallet_ledger for the offending organization, and never "fix" it by
+            editing only one side.

@@ -190,7 +190,7 @@ class AiWalletLedger(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "kind IN ('topup','reserve','settle_adjust','release','manual_adjust')",
+            "kind IN ('topup','reserve','settle_adjust','release','manual_adjust','opening')",
             name="ck_ai_wallet_ledger_kind",
         ),
         CheckConstraint("balance_after_idr >= 0", name="ck_ai_wallet_ledger_balance_nonnegative"),

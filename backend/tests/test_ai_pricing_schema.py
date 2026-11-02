@@ -183,6 +183,30 @@ async def test_wallet_ledger_round_trip_and_kind_check(db_session: AsyncSession)
     assert "ck_ai_wallet_ledger_kind" in constraint_names
 
 
+@pytest.mark.asyncio
+async def test_wallet_ledger_accepts_opening_kind(db_session: AsyncSession) -> None:
+    org = await _org(db_session)
+    db_session.add(AiWallet(organization_id=org.id, balance_idr=700))
+    await db_session.flush()
+
+    entry = AiWalletLedger(
+        organization_id=org.id,
+        kind="opening",
+        delta_idr=700,
+        balance_after_idr=700,
+        note="pre-ledger balance",
+    )
+    db_session.add(entry)
+    await db_session.commit()
+    await db_session.refresh(entry)
+
+    assert entry.kind == "opening"
+    assert entry.delta_idr == 700
+
+    kind_constraint = next(c for c in AiWalletLedger.__table__.constraints if c.name == "ck_ai_wallet_ledger_kind")
+    assert "'opening'" in str(kind_constraint.sqltext)
+
+
 def test_usage_reservation_unique_index_exists() -> None:
     index_names = {idx.name for idx in AiUsageEvent.__table__.indexes}
     assert "uq_ai_usage_events_reservation_id" in index_names
