@@ -650,6 +650,7 @@ export async function createAdminInvoice(body: {
   organization_id: string;
   sku: string;
   product?: InvoiceProduct;
+  cycle?: "monthly" | "annual";
   notes?: string;
 }): Promise<InvoiceItem> {
   const { data } = await api.post<InvoiceItem>("/api/admin/invoices", body);

@@ -13,7 +13,7 @@
 | **I1** | Who bills | **Sinexis** issues invoices. GMD rack/VPS invoices stay in GMD. No silent-bundle. |
 | **I2** | What is sold | **Scan SKU seats** (Basic / Pro / Multi; P0 lock 300_000 / 650_000 / 2_000_000) **and Host Protect SKU seats** (H4 **locked 2026-10-12**: 150_000 / 350_000 / 900_000). **H9 shipped:** Host catalog `invoicable=true`. Paid Host does **not** set `organizations.sku`. Unique period is per `(organization_id, product, period_start)` — Scan + Host same month OK. **Invoice-ok** for the short “ganti Imunify” line is **this Sinexis in-app path** (I1), **not** GMD `service_id` — see [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) §7.3. |
 | **I3** | Payment | **Manual bank transfer.** Admin marks `paid` after ops sees the transfer. No gateway, no auto-charge. **Updated:** DPP/PPN lines are printed for PKP buyers; non-PKP invoices keep `ppn_idr = 0`. |
-| **I4** | Period | Calendar month (UTC). One non-void invoice per `(organization_id, product, period_start)`. Scan + Host same month OK. |
+| **I4** | Period | `cycle=monthly` → calendar month (UTC). `cycle=annual` → 12 months from the first of the start month. Invoices may not **overlap** for the same `(organization_id, product)`; Scan + Host same period OK. |
 | **I5** | SKU mutation | Org admin **cannot** `PATCH /orgs/{id}` `sku` (403). Paid Scan invoice (or platform-admin set) is the gate. |
 | **I6** | New org default | `organizations.sku` default **`basic`** for **new** rows. Existing orgs unchanged. |
 | **I7** | Unpaid | Does **not** auto-downgrade `org.sku`. Void + admin set sku is ops. Seat caps still follow current `org.sku`. |

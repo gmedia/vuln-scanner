@@ -476,5 +476,8 @@
   "subscriptionAttempt_failed": "Failed",
   "subscriptionAttempt_expired": "Expired",
   "subscriptionAttempt_pending": "Pending",
-  "subscriptionAttempt_refunded": "Refunded"
+  "subscriptionAttempt_refunded": "Refunded",
+  "invoiceCycle": "Cycle",
+  "invoiceCycleMonthly": "Monthly",
+  "invoiceCycleAnnual": "Annual (10 for 12)"
 }

@@ -476,5 +476,8 @@
   "subscriptionAttempt_failed": "Gagal",
   "subscriptionAttempt_expired": "Kedaluwarsa",
   "subscriptionAttempt_pending": "Menunggu",
-  "subscriptionAttempt_refunded": "Dikembalikan"
+  "subscriptionAttempt_refunded": "Dikembalikan",
+  "invoiceCycle": "Siklus",
+  "invoiceCycleMonthly": "Bulanan",
+  "invoiceCycleAnnual": "Tahunan (10 untuk 12)"
 }

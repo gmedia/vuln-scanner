@@ -12,7 +12,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.i18n import DEFAULT_LOCALE, AppLocale
 from app.models.billing import OrgBillingProfile
-from app.models.invoice import PRODUCT_SEATS, OrgInvoice, SkuCatalog
+from app.models.invoice import (
+    ANNUAL_MONTHS_PAID,
+    PRODUCT_SEATS,
+    OrgInvoice,
+    SkuCatalog,
+)
 from app.models.organization import Organization
 from app.models.user import User
 from app.services.invoice_html import render_invoice_html
@@ -28,6 +33,25 @@ def month_bounds_utc(when: datetime | None = None) -> tuple[datetime, datetime]:
     start = datetime(now.year, now.month, 1, tzinfo=UTC)
     last = monthrange(now.year, now.month)[1]
     end = datetime(now.year, now.month, last, 23, 59, 59, 999999, tzinfo=UTC)
+    return start, end
+
+
+def period_bounds_utc(
+    when: datetime | None, cycle: str = "monthly"
+) -> tuple[datetime, datetime]:
+    """Billing period bounds for a cycle.
+
+    ``monthly`` keeps the calendar-month behaviour. ``annual`` runs from the
+    first day of the start month for 12 months (end is the last microsecond
+    before the same day next year).
+    """
+    start, end = month_bounds_utc(when)
+    if cycle == "monthly":
+        return start, end
+    if cycle != "annual":
+        raise HTTPException(status_code=400, detail="cycle must be monthly or annual")
+    next_year = start.year + 1
+    end = datetime(next_year, start.month, 1, tzinfo=UTC) - timedelta(microseconds=1)
     return start, end
 
 
@@ -144,6 +168,7 @@ class InvoiceService:
         product: str = "scan",
         period_start: datetime | None = None,
         due_date: datetime | None = None,
+        cycle: str = "monthly",
         notes: str = "",
     ) -> OrgInvoice:
         org = await self.db.get(Organization, organization_id)
@@ -153,7 +178,7 @@ class InvoiceService:
         cat = catalog.scalar_one_or_none()
         if cat is None or not cat.invoicable:
             raise HTTPException(status_code=400, detail="SKU is not invoicable")
-        start, end = month_bounds_utc(period_start)
+        start, end = period_bounds_utc(period_start, cycle)
         profile = await self.db.get(OrgBillingProfile, organization_id)
         if due_date is not None:
             due = _as_utc(due_date)
@@ -164,12 +189,15 @@ class InvoiceService:
                 else settings.invoice_default_term_days
             )
             due = start + timedelta(days=max(0, term_days))
+        # Overlap, not exact-start: an annual invoice must not coexist with a
+        # monthly invoice covering part of the same period (double billing).
         clash = await self.db.execute(
             select(OrgInvoice.id).where(
                 OrgInvoice.organization_id == organization_id,
                 OrgInvoice.product == product,
-                OrgInvoice.period_start == start,
                 OrgInvoice.status != "void",
+                OrgInvoice.period_start <= end,
+                OrgInvoice.period_end >= start,
             )
         )
         if clash.scalar_one_or_none() is not None:
@@ -177,7 +205,7 @@ class InvoiceService:
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"{product.capitalize()} invoice already exists for this period",
             )
-        base = int(cat.list_idr)
+        base = int(cat.list_idr) * (ANNUAL_MONTHS_PAID if cycle == "annual" else 1)
         if profile is not None and profile.pkp_status == "pkp":
             dpp = int(
                 (Decimal(base) * Decimal(11) / Decimal(12)).quantize(

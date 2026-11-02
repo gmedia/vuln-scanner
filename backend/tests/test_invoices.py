@@ -1047,3 +1047,171 @@ async def test_send_invoice_stamps_sent_at(db_session, ctx):
             assert body["sent_at"] is not None
     finally:
         app.dependency_overrides.clear()
+
+@pytest.mark.asyncio
+async def test_annual_invoice_covers_twelve_months_at_ten_months_price(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            created = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={
+                    "organization_id": str(ctx["org"].id),
+                    "sku": "pro",
+                    "period_start": "2026-09-01T00:00:00Z",
+                    "cycle": "annual",
+                },
+            )
+            assert created.status_code == 201, created.text
+            body = created.json()
+            assert body["period_start"].startswith("2026-09-01")
+            assert body["period_end"].startswith("2027-08-31")
+            # 10 months for 12: 650_000 x 10
+            assert body["amount_idr"] == 6_500_000
+            assert body["total_idr"] == 6_500_000
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_annual_invoice_tax_uses_the_annual_base(db_session, ctx):
+    from app.models.billing import OrgBillingProfile
+
+    db_session.add(
+        OrgBillingProfile(
+            organization_id=ctx["org"].id,
+            pkp_status="pkp",
+            payment_terms_days=30,
+        )
+    )
+    await db_session.commit()
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            created = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={
+                    "organization_id": str(ctx["org"].id),
+                    "sku": "pro",
+                    "period_start": "2026-09-01T00:00:00Z",
+                    "cycle": "annual",
+                },
+            )
+            assert created.status_code == 201, created.text
+            body = created.json()
+            # DPP = 6_500_000 * 11/12 = 5_958_333; PPN = 12% = 715_000
+            assert body["dpp_idr"] == 5_958_333
+            assert body["ppn_idr"] == 715_000
+            assert body["total_idr"] == 7_215_000
+            assert body["pph23_idr"] == 130_000
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_annual_invoice_cannot_overlap_a_monthly_invoice(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            monthly = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={
+                    "organization_id": str(ctx["org"].id),
+                    "sku": "pro",
+                    "period_start": "2026-09-01T00:00:00Z",
+                },
+            )
+            assert monthly.status_code == 201, monthly.text
+
+            annual = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={
+                    "organization_id": str(ctx["org"].id),
+                    "sku": "pro",
+                    "period_start": "2026-09-01T00:00:00Z",
+                    "cycle": "annual",
+                },
+            )
+            assert annual.status_code == 409
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_monthly_invoice_cannot_overlap_an_annual_invoice(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            annual = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={
+                    "organization_id": str(ctx["org"].id),
+                    "sku": "pro",
+                    "period_start": "2026-09-01T00:00:00Z",
+                    "cycle": "annual",
+                },
+            )
+            assert annual.status_code == 201, annual.text
+
+            monthly = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={
+                    "organization_id": str(ctx["org"].id),
+                    "sku": "pro",
+                    "period_start": "2026-10-01T00:00:00Z",
+                },
+            )
+            assert monthly.status_code == 409
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_paid_annual_invoice_sets_the_subscription_cycle(db_session, ctx):
+    from sqlalchemy import select
+
+    from app.models.billing import Subscription
+
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            created = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={
+                    "organization_id": str(ctx["org"].id),
+                    "sku": "pro",
+                    "period_start": "2026-09-01T00:00:00Z",
+                    "cycle": "annual",
+                },
+            )
+            assert created.status_code == 201, created.text
+            paid = await client.post(
+                f"/api/admin/invoices/{created.json()['id']}/paid",
+                headers=_auth(ctx["admin"]),
+                json={"bank_ref": "TF-ANNUAL-1"},
+            )
+            assert paid.status_code == 200, paid.text
+
+            sub = (
+                await db_session.execute(
+                    select(Subscription).where(
+                        Subscription.organization_id == ctx["org"].id
+                    )
+                )
+            ).scalar_one()
+            assert sub.cycle == "annual"
+            assert sub.status == "active"
+    finally:
+        app.dependency_overrides.clear()

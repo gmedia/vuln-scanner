@@ -456,7 +456,32 @@ describe("AdminInvoices", () => {
       organization_id: "org-1",
       sku: "basic",
       product: "host",
+      cycle: "monthly",
     });
+  });
+
+  it("creates an annual invoice when the cycle is switched", async () => {
+    type MutOpts = {
+      mutationFn: (...args: unknown[]) => unknown;
+      onSuccess?: (...args: unknown[]) => void;
+    };
+    vi.mocked(useMutation).mockImplementation(((opts: MutOpts) => ({
+      mutate: () => {
+        opts.mutationFn();
+        opts.onSuccess?.();
+      },
+      isPending: false,
+    })) as unknown as typeof useMutation);
+
+    render(<AdminInvoices />);
+    const orgTrigger = document.getElementById("inv-org");
+    changeSelect(orgTrigger as HTMLElement, "org-1");
+    changeSelect(screen.getByTestId("invoice-cycle"), "annual");
+    await userEvent.click(screen.getByTestId("invoice-create"));
+
+    expect(adminApi.createAdminInvoice).toHaveBeenCalledWith(
+      expect.objectContaining({ cycle: "annual" }),
+    );
   });
 
   it("toasts Host paid copy without implying Scan SKU apply", async () => {
