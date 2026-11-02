@@ -397,7 +397,7 @@ def draft_annual_renewals(self: Any) -> dict[str, int]:
     """
     from app.models.billing import Subscription  # noqa: E402
     from app.models.invoice import SkuCatalog  # noqa: E402
-    from app.services.invoice import period_bounds_utc, price_breakdown  # noqa: E402
+    from app.services.invoice_math import period_bounds_utc, price_breakdown  # noqa: E402
 
     now = datetime.now(UTC)
     horizon = now + timedelta(days=RENEWAL_DRAFT_LEAD_DAYS)
