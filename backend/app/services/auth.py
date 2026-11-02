@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import base64
 import contextlib
 import hashlib
@@ -20,6 +21,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.database import get_db
 from app.models.user import User
+
+logger = logging.getLogger(__name__)
+
+# Bound for the best-effort revocation lookup. A slow Redis must not stall an
+# async request (and therefore the whole event loop).
+_REVOCATION_TIMEOUT_S = 1.0
 
 # ---------------------------------------------------------------------------
 # Redis connection (lazy, shared across module)
@@ -146,7 +153,8 @@ def create_refresh_token(user_id: str) -> str:
     return str(jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM))
 
 
-def decode_token(token: str) -> dict[str, Any]:
+def _decode_jwt_and_cache(token: str) -> dict[str, Any]:
+    """JWT validation plus the in-memory revocation caches (no network)."""
     payload: dict[str, Any] = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
     jti = payload.get("jti")
     if jti is not None and jti in _revoked_tokens:
@@ -154,11 +162,60 @@ def decode_token(token: str) -> dict[str, Any]:
     sub = payload.get("sub")
     if sub is not None and sub in _revoked_users:
         raise jwt.PyJWTError("Token has been revoked (user logged out)")
-    # Best-effort Redis check: populate caches on miss, detect revocations that
-    # happened on another server instance (or before a restart).
-    with contextlib.suppress(Exception):
-        _check_redis_revocation_sync(jti, sub)
     return payload
+
+
+def decode_token(token: str) -> dict[str, Any]:
+    """Synchronous decode for tests and sync callers.
+
+    Production request handlers use :func:`decode_token_async`; this variant is
+    kept for compatibility and still performs the blocking best-effort check.
+    """
+    payload = _decode_jwt_and_cache(token)
+    with contextlib.suppress(Exception):
+        _check_redis_revocation_sync(payload.get("jti"), payload.get("sub"))
+    return payload
+
+
+async def decode_token_async(token: str) -> dict[str, Any]:
+    """Decode a token from an async handler.
+
+    The cross-instance revocation lookup is bounded by
+    ``_REVOCATION_TIMEOUT_S`` and **fail-open**: a slow or unreachable Redis
+    must neither stall the event loop nor reject an otherwise valid token.
+    Revocation is a best-effort defence-in-depth check; the in-memory caches
+    are always consulted first.
+    """
+    payload = _decode_jwt_and_cache(token)
+    jti = payload.get("jti")
+    sub = payload.get("sub")
+    if jti is None and sub is None:
+        return payload
+    try:
+        await asyncio.wait_for(
+            _check_redis_revocation_async(jti, sub),
+            timeout=_REVOCATION_TIMEOUT_S,
+        )
+    except jwt.PyJWTError:
+        raise
+    except (TimeoutError, redis.RedisError) as exc:
+        logger.warning("Token revocation check skipped: %s", type(exc).__name__)
+    return payload
+
+
+async def _check_redis_revocation_async(jti: str | None, sub: str | None) -> None:
+    """Async counterpart of the sync revocation check (bounded by the caller)."""
+    r = await _get_redis()
+    if jti is not None:
+        user_id = await r.get(f"revoked_tokens:{jti}")
+        if user_id is not None:
+            _revoked_tokens[jti] = user_id
+            raise jwt.PyJWTError("Token has been revoked")
+    if sub is not None:
+        found = await r.get(f"revoked_users:{sub}")
+        if found is not None:
+            _revoked_users.add(sub)
+            raise jwt.PyJWTError("Token has been revoked (user logged out)")
 
 
 def _check_redis_revocation_sync(jti: str | None, sub: str | None) -> None:
@@ -253,7 +310,7 @@ async def get_current_user(
         )
 
     try:
-        payload = decode_token(token)
+        payload = await decode_token_async(token)
     except jwt.PyJWTError as err:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
