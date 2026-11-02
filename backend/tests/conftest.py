@@ -72,6 +72,7 @@ from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 from app.models.scan_schedule import ScanSchedule  # noqa: F401
 from app.models.siem import SiemCase, SiemCaseEvent, SiemCaseNote  # noqa: F401
+from app.models.sku_tier import SkuTier  # noqa: F401
 from app.models.subscription import SubscriptionRequest  # noqa: F401
 from app.models.uptime import UPTIME_SKU_LIMITS, UptimeEvent, UptimeMonitor, UptimeSample  # noqa: F401
 from app.models.user import User
@@ -203,6 +204,97 @@ async def db_session(engine):
     async_session_local = async_sessionmaker(engine, expire_on_commit=False)
     async with async_session_local() as session:
         now = datetime.now(UTC)
+        # Tiers are the FK parent of sku_catalog and every org/invoice/request SKU
+        # column; seed them before any consumer row. Values mirror the owner-locked
+        # constants (see test_locked_sku_constants.py).
+        for tier in (
+            {
+                "code": "basic",
+                "label": "Basic",
+                "rank": 1,
+                "active": True,
+                "requestable": True,
+                "sales_led": False,
+                "is_default": True,
+                "bundle_idr": 450_000,
+                "limit_scan": 1,
+                "limit_host": 1,
+                "limit_uptime": 10,
+                "limit_guard": 1,
+                "allow_status_page": False,
+                "allow_custom_host": False,
+                "allow_waf_protect": False,
+                "allow_siem": False,
+                "billing_unrestricted": False,
+                "workspace_editor_limit": 1,
+                "workspace_viewer_limit": 1,
+            },
+            {
+                "code": "pro",
+                "label": "Pro",
+                "rank": 2,
+                "active": True,
+                "requestable": True,
+                "sales_led": False,
+                "is_default": False,
+                "bundle_idr": 1_000_000,
+                "limit_scan": 3,
+                "limit_host": 3,
+                "limit_uptime": 50,
+                "limit_guard": 3,
+                "allow_status_page": True,
+                "allow_custom_host": False,
+                "allow_waf_protect": True,
+                "allow_siem": False,
+                "billing_unrestricted": False,
+                "workspace_editor_limit": None,
+                "workspace_viewer_limit": None,
+            },
+            {
+                "code": "multi",
+                "label": "Multi",
+                "rank": 3,
+                "active": True,
+                "requestable": True,
+                "sales_led": False,
+                "is_default": False,
+                "bundle_idr": 2_900_000,
+                "limit_scan": 10,
+                "limit_host": 10,
+                "limit_uptime": 200,
+                "limit_guard": 10,
+                "allow_status_page": True,
+                "allow_custom_host": True,
+                "allow_waf_protect": True,
+                "allow_siem": False,
+                "billing_unrestricted": False,
+                "workspace_editor_limit": None,
+                "workspace_viewer_limit": None,
+            },
+            {
+                "code": "enterprise",
+                "label": "Enterprise",
+                "rank": 4,
+                "active": True,
+                "requestable": False,
+                "sales_led": True,
+                "is_default": False,
+                "bundle_idr": None,
+                "limit_scan": 10,
+                "limit_host": 10,
+                "limit_uptime": 200,
+                "limit_guard": 10,
+                "allow_status_page": True,
+                "allow_custom_host": True,
+                "allow_waf_protect": True,
+                "allow_siem": True,
+                "billing_unrestricted": True,
+                "workspace_editor_limit": None,
+                "workspace_viewer_limit": None,
+            },
+        ):
+            session.add(SkuTier(**tier, created_at=now, updated_at=now))
+        await session.flush()
         for product, prices, seats in (
             ("scan", SCAN_SKU_LIST_IDR, SCAN_SKU_SEATS),
             ("host", HOST_SKU_LIST_IDR, SCAN_SKU_SEATS),

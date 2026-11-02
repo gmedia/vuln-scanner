@@ -42,7 +42,9 @@ class Subscription(Base):
         unique=True,
         index=True,
     )
-    sku: Mapped[str] = mapped_column(String(20), nullable=False, default="basic")
+    sku: Mapped[str] = mapped_column(
+        String(20), ForeignKey("sku_tiers.code", ondelete="RESTRICT"), nullable=False, default="basic", index=True
+    )
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="incomplete")
     cycle: Mapped[str] = mapped_column(String(10), nullable=False, default="monthly")
     current_period_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -63,7 +65,6 @@ class Subscription(Base):
     __table_args__ = (
         CheckConstraint(f"status IN {BILLING_STATUSES}", name="ck_subscriptions_status"),
         CheckConstraint(f"cycle IN {BILLING_CYCLES}", name="ck_subscriptions_cycle"),
-        CheckConstraint("sku IN ('basic', 'pro', 'multi', 'enterprise')", name="ck_subscriptions_sku"),
     )
 
 
