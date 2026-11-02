@@ -5,6 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AdminAi from "@/pages/admin/AdminAi";
 import * as adminApi from "@/api/admin";
+import { routingPositions } from "@/components/admin/aiUpstreamOrder";
 import { toast } from "sonner";
 
 beforeAll(() => {
@@ -769,6 +770,81 @@ describe("AdminAi", () => {
     );
     expect(
       await screen.findByText("No fallback upstreams yet."),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("fallback routing order", () => {
+  const candidate = (
+    key: string,
+    rank: number,
+    overrides: Partial<{
+      enabled: boolean;
+      providerEnabled: boolean;
+      providerStatus: string;
+    }> = {},
+  ) => ({
+    key,
+    rank,
+    enabled: true,
+    providerEnabled: true,
+    providerStatus: "ok",
+    ...overrides,
+  });
+
+  it("tries degraded providers after healthy ones and keeps rank order", () => {
+    const positions = routingPositions([
+      candidate("primary", 0, { providerStatus: "degraded" }),
+      candidate("a", 1),
+      candidate("b", 2),
+    ]);
+    expect(positions.get("a")?.position).toBe(1);
+    expect(positions.get("b")?.position).toBe(2);
+    expect(positions.get("primary")?.position).toBe(3);
+    expect(positions.get("primary")?.degraded).toBe(true);
+  });
+
+  it("skips a disabled row and a disabled provider", () => {
+    const positions = routingPositions([
+      candidate("primary", 0),
+      candidate("off-row", 1, { enabled: false }),
+      candidate("off-provider", 2, { providerEnabled: false }),
+      candidate("disabled-status", 3, { providerStatus: "disabled" }),
+    ]);
+    expect(positions.get("off-row")?.skipped).toBe(true);
+    expect(positions.get("off-provider")?.skipped).toBe(true);
+    expect(positions.get("disabled-status")?.skipped).toBe(true);
+    expect(positions.get("off-row")?.position).toBeNull();
+    expect(positions.get("primary")?.position).toBe(1);
+  });
+
+  it("marks a degraded fallback in the sheet", async () => {
+    const user = userEvent.setup();
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [makeProvider("p1", "OpenRouter"), makeProvider("p2", "Together")],
+      total: 2,
+    });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({
+      items: [
+        makeModel({
+          upstreams: [
+            makeUpstream({
+              id: "u1",
+              provider_id: "p2",
+              provider_name: "Together",
+              provider_status: "degraded",
+              upstream_id: "meta/llama",
+            }),
+          ],
+        }),
+      ],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    renderPage();
+    const sheet = await openUpstreamSheet(user);
+    expect(
+      within(sheet).getByTestId("ai-upstream-degraded-u1"),
     ).toBeInTheDocument();
   });
 });

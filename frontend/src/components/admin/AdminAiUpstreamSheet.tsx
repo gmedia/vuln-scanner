@@ -41,6 +41,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  PRIMARY_KEY,
+  RoutePosition,
+  routingPositions,
+} from "@/components/admin/aiUpstreamOrder";
 
 /** 1 primary + 3 fallbacks = 4 candidates. The API enforces the same ceiling. */
 const MAX_FALLBACKS = 3;
@@ -49,6 +54,8 @@ const NEW_ROW_ID = "__new__";
 interface Draft {
   readonly id: string;
   readonly rank: number | null;
+  readonly provider_status: string;
+  readonly provider_enabled: boolean;
   provider_id: string;
   upstream_id: string;
   max_tokens_cap: string;
@@ -65,6 +72,8 @@ function toDraft(row: AiModelUpstreamAdmin): Draft {
   return {
     id: row.id,
     rank: row.rank,
+    provider_status: row.provider_status,
+    provider_enabled: row.provider_enabled,
     provider_id: row.provider_id,
     upstream_id: row.upstream_id,
     max_tokens_cap: numberDraft(row.max_tokens_cap),
@@ -83,6 +92,8 @@ function emptyDraft(): Draft {
   return {
     id: NEW_ROW_ID,
     rank: null,
+    provider_status: "ok",
+    provider_enabled: true,
     provider_id: "",
     upstream_id: "",
     max_tokens_cap: "",
@@ -150,6 +161,7 @@ function providerChoices(
 function FallbackRow({
   index,
   row,
+  position,
   providers,
   inheritedCap,
   pending,
@@ -159,6 +171,7 @@ function FallbackRow({
 }: {
   readonly index: number;
   readonly row: Draft;
+  readonly position: RoutePosition | undefined;
   readonly providers: readonly AiProviderAdmin[];
   readonly inheritedCap: number | null;
   readonly pending: boolean;
@@ -179,9 +192,34 @@ function FallbackRow({
       data-testid={`ai-upstream-row-${row.id}`}
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="font-mono text-xs font-medium tabular-nums text-muted-foreground">
-          #{index + 2}
-        </p>
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <p className="font-mono text-xs font-medium tabular-nums text-muted-foreground">
+            #{index + 2}
+          </p>
+          {position?.skipped ? (
+            <span
+              className="rounded border border-destructive/40 px-1.5 py-0.5 text-xs text-destructive"
+              data-testid={`ai-upstream-skipped-${row.id}`}
+            >
+              {t("aiFallbackSkipped")}
+            </span>
+          ) : position?.degraded ? (
+            <span
+              className="rounded border border-border px-1.5 py-0.5 text-xs text-muted-foreground"
+              data-testid={`ai-upstream-degraded-${row.id}`}
+            >
+              {t("aiFallbackDegraded")}
+            </span>
+          ) : null}
+          {position && !position.skipped && position.position !== index + 2 ? (
+            <span
+              className="text-xs text-muted-foreground"
+              data-testid={`ai-upstream-effective-${row.id}`}
+            >
+              {t("aiFallbackEffective", { position: position.position })}
+            </span>
+          ) : null}
+        </div>
         <div className="flex items-center gap-2">
           <div className="flex min-h-11 items-center gap-2 md:min-h-10">
             <Checkbox
@@ -316,6 +354,23 @@ function UpstreamSheetBody({
 
   const primaryProvider = providers.find((p) => p.id === model.provider_id);
   const primaryName = primaryProvider?.name ?? model.provider_id;
+  const positions = routingPositions([
+    {
+      key: PRIMARY_KEY,
+      rank: 0,
+      enabled: model.enabled,
+      providerEnabled: primaryProvider?.enabled ?? true,
+      providerStatus: primaryProvider?.status ?? "ok",
+    },
+    ...rows.map((row) => ({
+      key: row.id,
+      rank: row.rank ?? rows.length + 1,
+      enabled: row.enabled,
+      providerEnabled: row.provider_enabled,
+      providerStatus: row.provider_status,
+    })),
+  ]);
+  const primaryPosition = positions.get(PRIMARY_KEY);
   const atCap = rows.length >= MAX_FALLBACKS;
   const nextRank =
     rows.reduce((max, row) => Math.max(max, row.rank ?? 0), 0) + 1;
@@ -399,9 +454,26 @@ function UpstreamSheetBody({
       </SheetHeader>
       <div className="space-y-4 px-4 pb-4">
         <div className="rounded-lg border border-border bg-muted/40 p-3">
-          <p className="text-xs font-medium text-muted-foreground">
-            {t("aiFallbackPrimary")}
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs font-medium text-muted-foreground">
+              {t("aiFallbackPrimary")}
+            </p>
+            {primaryPosition?.skipped ? (
+              <span
+                className="rounded border border-destructive/40 px-1.5 py-0.5 text-xs text-destructive"
+                data-testid="ai-upstream-primary-skipped"
+              >
+                {t("aiFallbackSkipped")}
+              </span>
+            ) : primaryPosition?.degraded ? (
+              <span
+                className="rounded border border-border px-1.5 py-0.5 text-xs text-muted-foreground"
+                data-testid="ai-upstream-primary-degraded"
+              >
+                {t("aiFallbackDegraded")}
+              </span>
+            ) : null}
+          </div>
           <p className="mt-1 break-all text-sm font-medium text-foreground">
             {primaryName}
           </p>
@@ -420,6 +492,7 @@ function UpstreamSheetBody({
               key={row.id}
               index={index}
               row={row}
+              position={positions.get(row.id)}
               providers={providers}
               inheritedCap={model.max_tokens_cap}
               pending={pendingId === row.id}
