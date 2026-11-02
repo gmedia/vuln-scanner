@@ -14,6 +14,15 @@ const mockUpdate = vi.fn();
 const mockFetchColors = vi.fn();
 const mockPatchColors = vi.fn();
 
+vi.mock("@/api/subscription", async () => {
+  const actual =
+    await vi.importActual<typeof import("@/api/subscription")>(
+      "@/api/subscription",
+    );
+  const { tierFixtures } = await import("@/test/fixtures/skuTiers");
+  return { ...actual, getSkuTiers: vi.fn(async () => tierFixtures) };
+});
+
 vi.mock("@/api/assets", async () => {
   const actual =
     await vi.importActual<typeof import("@/api/assets")>("@/api/assets");
@@ -71,7 +80,7 @@ describe("Assets page", () => {
     renderPage();
     await waitFor(() => expect(screen.getByTestId("assets-empty")).toBeInTheDocument());
     const kpi = screen.getByTestId("assets-kpi-strip");
-    expect(kpi).toHaveTextContent(/Plan multi — 0 \/ 10 assets/);
+    expect(kpi).toHaveTextContent(/Plan — — 0 \/ 0 assets/);
     expect(kpi).toHaveClass("grid", "grid-cols-2", "gap-3", "lg:grid-cols-4");
     const emptyCta = screen.getByTestId("assets-empty-cta");
     expect(emptyCta).toBeInTheDocument();
@@ -189,7 +198,9 @@ describe("Assets page", () => {
     expect(card.className).toMatch(/overflow-hidden/);
     expect(card.className).toMatch(/pl-4/);
     const kpi = screen.getByTestId("assets-kpi-strip");
-    expect(kpi).toHaveTextContent(/Plan multi — 1 \/ 10 assets/);
+    await waitFor(() =>
+      expect(kpi).toHaveTextContent(/Plan Multi — 1 \/ 10 assets/),
+    );
     expect(kpi).toHaveTextContent("Domains");
     expect(kpi).toHaveTextContent("IPs");
     const desktop = screen.getByTestId("assets-list-desktop");

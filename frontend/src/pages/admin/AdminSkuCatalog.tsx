@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, Package, Tags } from "lucide-react";
+import { BookOpen, Layers, Package, Tags } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import {
@@ -31,10 +31,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/Tabs";
 import {
   Table,
   TableBody,
@@ -43,6 +50,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
+import AdminSkuTierPanel from "@/pages/admin/AdminSkuTierPanel";
 
 interface SkuDraft {
   listIdr: string;
@@ -57,11 +65,6 @@ interface PendingSave {
 
 function rowKey(product: string, sku: string): string {
   return `${product}:${sku}`;
-}
-
-function skuLabel(sku: string): string {
-  if (!sku) return sku;
-  return sku.charAt(0).toUpperCase() + sku.slice(1);
 }
 
 function parseListIdr(raw: string): number | null {
@@ -83,7 +86,7 @@ function formatIdr(n: number): string {
   return n.toLocaleString("id-ID");
 }
 
-function AdminSkuCatalog() {
+export function AdminSkuPricePanel() {
   const { t } = useTranslation("admin");
   const queryClient = useQueryClient();
   const [drafts, setDrafts] = useState<Record<string, SkuDraft>>({});
@@ -127,14 +130,6 @@ function AdminSkuCatalog() {
     return t("skuProductGuard");
   };
 
-  const tierLabel = (tier: "basic" | "pro" | "multi"): string => {
-    switch (tier) {
-      case "basic": return t("bundleTierBasic");
-      case "pro": return t("bundleTierPro");
-      case "multi": return t("bundleTierMulti");
-    }
-  };
-
   const patchDraft = (row: SkuCatalogItem, patch: Partial<SkuDraft>) => {
     const key = rowKey(row.product, row.sku);
     setDrafts((prev) => {
@@ -148,12 +143,6 @@ function AdminSkuCatalog() {
 
   return (
     <div className="w-full space-y-6">
-      <PageHeader
-        leading={<Tags className="h-6 w-6 shrink-0 text-primary-text" />}
-        title={t("skuTitle")}
-        description={t("skuHint")}
-      />
-
       <AdminShell testid="sku-catalog-guide" tone="info">
         <AdminShellHead icon={BookOpen} title={t("skuGuideTitle")} hint={t("skuGuideHint")} />
         <AdminShellBody>
@@ -256,7 +245,18 @@ function AdminSkuCatalog() {
                         {productLabel(row.product)}
                       </TableCell>
                       <TableCell className="py-1.5 text-sm text-foreground">
-                        {skuLabel(row.sku)}
+                        <span className="flex flex-wrap items-center gap-1.5">
+                          {row.label || row.sku}
+                          {row.active === false ? (
+                            <Badge
+                              variant="default"
+                              className="text-[10px] uppercase"
+                              data-testid={`sku-catalog-retired-${row.product}-${row.sku}`}
+                            >
+                              {t("skuStatusRetired")}
+                            </Badge>
+                          ) : null}
+                        </span>
                       </TableCell>
                       <TableCell className="py-1.5">
                         <Label htmlFor={priceId} className="sr-only">
@@ -356,7 +356,19 @@ function AdminSkuCatalog() {
               <TableBody>
                 {(pricing?.bundles ?? []).map((b) => (
                   <TableRow key={b.tier} data-testid={`sku-bundle-row-${b.tier}`}>
-                    <TableCell className="py-1.5 text-xs">{tierLabel(b.tier)}</TableCell>
+                    <TableCell className="py-1.5 text-xs">
+                      <span className="flex flex-wrap items-center gap-1.5">
+                        {b.label || b.tier}
+                        {b.active === false ? (
+                          <Badge
+                            variant="default"
+                            className="text-[10px] uppercase"
+                          >
+                            {t("skuStatusRetired")}
+                          </Badge>
+                        ) : null}
+                      </span>
+                    </TableCell>
                     <TableCell className="py-1.5 font-mono text-xs tabular-nums">
                       {formatIdr(b.bundle_idr)}
                     </TableCell>
@@ -395,7 +407,7 @@ function AdminSkuCatalog() {
               {pending
                 ? t("skuConfirmBody", {
                     product: productLabel(pending.row.product),
-                    sku: skuLabel(pending.row.sku),
+                    sku: pending.row.label || pending.row.sku,
                     oldPrice: pending.row.list_idr.toLocaleString("id-ID"),
                     newPrice: pending.listIdr.toLocaleString("id-ID"),
                   })
@@ -425,6 +437,50 @@ function AdminSkuCatalog() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+function AdminSkuCatalog() {
+  const { t } = useTranslation("admin");
+  const [tab, setTab] = useState("pricing");
+
+  return (
+    <div className="w-full space-y-6">
+      <PageHeader
+        leading={<Tags className="h-6 w-6 shrink-0 text-primary-text" />}
+        title={t("skuTitle")}
+        description={t("skuHint")}
+      />
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList
+          variant="line"
+          className="w-full flex-wrap justify-start sm:flex-nowrap"
+        >
+          <TabsTrigger
+            value="pricing"
+            className="gap-1.5"
+            data-testid="sku-tab-pricing"
+          >
+            <Tags aria-hidden />
+            {t("skuTabPricing")}
+          </TabsTrigger>
+          <TabsTrigger
+            value="tiers"
+            className="gap-1.5"
+            data-testid="sku-tab-tiers"
+          >
+            <Layers aria-hidden />
+            {t("skuTabTiers")}
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="pricing" className="mt-4">
+          <AdminSkuPricePanel />
+        </TabsContent>
+        <TabsContent value="tiers" className="mt-4">
+          <AdminSkuTierPanel />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

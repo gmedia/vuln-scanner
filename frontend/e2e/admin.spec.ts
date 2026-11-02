@@ -32,6 +32,14 @@ test.describe("Admin — Access @admin", () => {
     });
   });
 
+  test("admin SKU page exposes the tier tab", async ({ page }) => {
+    await page.goto("/admin/skus");
+    await expect(page.getByTestId("sku-tab-pricing")).toBeVisible({
+      timeout: 15_000,
+    });
+    await page.getByTestId("sku-tab-tiers").click();
+    await expect(page.getByTestId("sku-tier-table")).toBeVisible();
+  });
   test("admin links visible in sidebar for admin user", async ({ page }) => {
     await page.goto("/dashboard");
     await expect(page.locator("aside")).toBeVisible();

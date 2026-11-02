@@ -6,6 +6,7 @@ import {
   quotaState,
   type AssetTranslate,
 } from "@/components/assets/assetChrome";
+import { useTierMap } from "@/hooks/useTierMap";
 
 export type AssetKpiStripProps = {
   readonly sku: string;
@@ -26,7 +27,9 @@ export function AssetKpiStrip({
   ips,
   t,
 }: AssetKpiStripProps) {
+  const { label } = useTierMap();
   const { pct: quotaPct, tone } = quotaState(count, limit);
+  const tierName = label(sku);
 
   return (
     <StatGrid testid="assets-kpi-strip" className="gap-3">
@@ -34,7 +37,7 @@ export function AssetKpiStrip({
         label={t("kpiQuota")}
         value={
           <span className="text-sm font-medium text-foreground">
-            {t("skuLabel", { sku, count, limit })}
+            {t("skuLabel", { sku: tierName, count, limit })}
           </span>
         }
         railClass={quotaRailClass(tone)}

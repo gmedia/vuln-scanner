@@ -5,7 +5,7 @@
 // it returns a fresh output and never mutates its arguments.
 
 export type ScenarioService = "scan" | "host" | "uptime" | "guard";
-export type ScenarioSku = "basic" | "pro" | "multi";
+export type ScenarioSku = string;
 export type ScenarioReason =
   | "zero_cost"
   | "no_volume"

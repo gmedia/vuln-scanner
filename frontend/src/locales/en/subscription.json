@@ -25,7 +25,6 @@
   "usageUnlimited": "{{used}} / custom",
   "workspaceSeats": "Workspace seats",
   "workspaceSeatsValue": "{{editors}} editor · {{viewers}} viewer",
-  "workspaceSeatsBasic": "{{editors}} / 1 editor · {{viewers}} / 1 viewer",
   "workspaceSeatsCustom": "Unlimited",
   "product_scan": "Scan assets",
   "product_host": "Host sites",
@@ -50,9 +49,6 @@
   "alacarteTitle": "À la carte list prices",
   "alacarteDescription": "Reference only. Guard is free while Host Protect is active.",
   "colProduct": "Product",
-  "colBasic": "Basic",
-  "colPro": "Pro",
-  "colMulti": "Multi",
   "colSeats": "Seats",
   "priceNote": "List price, excluding tax. Final pricing is confirmed on the invoice.",
   "pendingTitle": "Plan change requested",
@@ -97,7 +93,6 @@
   "usageFull": "Capacity full",
   "usageWarn": "Near capacity",
   "cancel": "Cancel",
-  "workspaceSeatsBasicPlan": "1 editor + 1 viewer",
   "planStatus_grace": "Grace period",
   "graceTitle": "Renewal due",
   "graceBody": "The period ended on {{date}}. Access continues during the grace window while ops issues the renewal invoice.",
@@ -166,5 +161,9 @@
   "cancelSubscriptionFail": "Could not schedule the cancellation",
   "resumeSubscription": "Keep subscription",
   "resumeDone": "Cancellation withdrawn",
-  "resumeFail": "Could not resume the subscription"
+  "resumeFail": "Could not resume the subscription",
+  "workspaceSeatsPlan": "{{editor}} editor · {{viewer}} viewer",
+  "workspaceSeatsUsage": "{{editors}} / {{editorLimit}} editor · {{viewers}} / {{viewerLimit}} viewer",
+  "unlimited": "Unlimited",
+  "perTier": "Per tier"
 }

@@ -10,6 +10,15 @@ import * as hostApi from "@/api/hostProtect";
 import * as hostWafApi from "@/api/hostWaf";
 import * as guardApi from "@/api/guard";
 
+vi.mock("@/api/subscription", async () => {
+  const actual =
+    await vi.importActual<typeof import("@/api/subscription")>(
+      "@/api/subscription",
+    );
+  const { tierFixtures } = await import("@/test/fixtures/skuTiers");
+  return { ...actual, getSkuTiers: vi.fn(async () => tierFixtures) };
+});
+
 vi.mock("@/api/hostProtect", async () => {
   const actual =
     await vi.importActual<typeof import("@/api/hostProtect")>(

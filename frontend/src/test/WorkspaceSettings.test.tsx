@@ -5,6 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/authStore";
 import WorkspaceSettings from "@/pages/WorkspaceSettings";
+import { tierFixtures } from "@/test/fixtures/skuTiers";
 import {
   createInvite,
   downloadOrgInvoicePdf,
@@ -12,6 +13,14 @@ import {
   listMembers,
   listOrgInvoices,
 } from "@/api/orgs";
+
+vi.mock("@/api/subscription", async () => {
+  const actual =
+    await vi.importActual<typeof import("@/api/subscription")>(
+      "@/api/subscription",
+    );
+  return { ...actual, getSkuTiers: vi.fn(async () => tierFixtures) };
+});
 
 vi.mock("@/api/orgs", async () => {
   const actual =
@@ -477,6 +486,7 @@ describe("WorkspaceSettings pilot checklist", () => {
           role: "owner",
           kind: "team",
           sku: "basic",
+          workspace_seats_limits: { editor: 1, viewer: 1 },
         },
       ],
     });
@@ -497,7 +507,7 @@ describe("WorkspaceSettings pilot checklist", () => {
     renderPage();
     const hint = await screen.findByTestId("basic-seat-hint");
     expect(hint).toHaveTextContent(
-      "Basic workspace allows 1 editor and 1 viewer",
+      "This workspace reached its 1-seat cap",
     );
     expect(screen.getByTestId("invite-submit")).toBeDisabled();
   });

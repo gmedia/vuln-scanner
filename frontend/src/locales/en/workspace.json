@@ -49,7 +49,6 @@
   "sendInvite": "Send invite",
   "inviteSent": "Invite emailed to {{email}} — copy the link as backup",
   "inviteFail": "Could not create invite",
-  "basicSeatCapHint": "Basic workspace allows 1 editor and 1 viewer. Upgrade to Pro for more seats.",
   "emailRequired": "Email is required",
   "noActiveWorkspace": "No active workspace",
   "pendingInvites": "Pending invites",
@@ -68,11 +67,11 @@
   "inviteLinkCopied": "Invite link copied",
   "inviteLinkCopyFail": "Could not copy link",
   "pilotTitle": "Pilot checklist",
-  "pilotDescription": "Scan attach for one org. Meter is SKU seats (Basic 1 / Pro 3 / Multi 10), not credits. Guard and SIEM are separate SKUs — do not bundle.",
+  "pilotDescription": "Scan attach for one org. The meter is SKU seats, not credits. Guard and SIEM are separate products — do not bundle.",
   "pilotStepOrg": "Confirm this workspace is the hotel or company (one org, not nested properties).",
   "pilotStepInvite": "Invite IT as owner/admin and GM as viewer if they only need reports.",
-  "pilotStepAssets": "Name 1–3 assets (Basic/Pro). Multi-10 only after renew works.",
-  "pilotStepSchedules": "Enable a schedule (monthly Basic, weekly Pro+). Notify on new critical/high.",
+  "pilotStepAssets": "Name 1–3 assets at first. Raise caps only after renewal works.",
+  "pilotStepSchedules": "Enable a schedule — monthly or weekly depends on the active tier. Notify on new critical/high.",
   "pilotStepReport": "Send the Bahasa executive HTML. Hybrid review is 5 business days, not 24/7 SOC.",
   "pilotLinkAssets": "Open assets",
   "pilotLinkSchedules": "Open schedules",
@@ -123,5 +122,6 @@
   "subscriptionLink": "Subscription",
   "invoicePrintDue": "Due",
   "invoicePrintDpp": "DPP (11/12)",
-  "invoicePrintPpn": "PPN 12%"
+  "invoicePrintPpn": "PPN 12%",
+  "seatCapHint": "This workspace reached its {{limit}}-seat cap. Upgrade to add more."
 }

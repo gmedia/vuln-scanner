@@ -1,4 +1,5 @@
 import api from "./scans";
+import type { SkuTierInfo } from "./subscription";
 
 export interface AdminStats {
   total_users: number;
@@ -581,6 +582,8 @@ export type InvoiceProduct = "scan" | "host" | "uptime" | "guard";
 export interface SkuCatalogItem {
   product: InvoiceProduct;
   sku: string;
+  label: string;
+  active: boolean;
   list_idr: number;
   seats: number;
   invoicable: boolean;
@@ -591,7 +594,9 @@ export interface SkuCatalogItem {
 
 export interface SkuPriceItem {
   service: "scan" | "host" | "uptime" | "guard";
-  sku: "basic" | "pro" | "multi";
+  sku: string;
+  label?: string;
+  active?: boolean;
   list_idr: number;
   invoicable: boolean;
 }
@@ -601,7 +606,9 @@ export interface SkuPriceListResponse {
 }
 
 export interface BundlePriceItem {
-  tier: "basic" | "pro" | "multi";
+  tier: string;
+  label?: string;
+  active?: boolean;
   bundle_idr: number;
   alacarte_idr: number;
   saving_idr: number;
@@ -619,11 +626,81 @@ export interface SkuPricingResponse {
   annual: AnnualPolicy | null;
 }
 
+export type SkuTierPriceBody = {
+  list_idr: number;
+  invoicable: boolean;
+};
+
+export interface SkuTierMutationBody {
+  code?: string;
+  label?: string;
+  rank?: number;
+  active?: boolean;
+  requestable?: boolean;
+  sales_led?: boolean;
+  is_default?: boolean;
+  bundle_idr?: number | null;
+  limit_scan?: number;
+  limit_host?: number;
+  limit_uptime?: number;
+  limit_guard?: number;
+  allow_status_page?: boolean;
+  allow_custom_host?: boolean;
+  allow_waf_protect?: boolean;
+  allow_siem?: boolean;
+  billing_unrestricted?: boolean;
+  workspace_editor_limit?: number | null;
+  workspace_viewer_limit?: number | null;
+  prices?: Partial<Record<InvoiceProduct, SkuTierPriceBody>>;
+}
+
+export async function getAdminSkuTiers(): Promise<SkuTierInfo[]> {
+  const { data } = await api.get<SkuTierInfo[]>("/api/admin/sku-tiers");
+  return data;
+}
+
+export async function createSkuTier(
+  body: SkuTierMutationBody,
+): Promise<SkuTierInfo> {
+  const { data } = await api.post<SkuTierInfo>("/api/admin/sku-tiers", body);
+  return data;
+}
+
+export async function updateSkuTier(
+  code: string,
+  body: SkuTierMutationBody,
+): Promise<SkuTierInfo> {
+  const { data } = await api.patch<SkuTierInfo>(
+    `/api/admin/sku-tiers/${code}`,
+    body,
+  );
+  return data;
+}
+
+export async function deactivateSkuTier(code: string): Promise<SkuTierInfo> {
+  const { data } = await api.post<SkuTierInfo>(
+    `/api/admin/sku-tiers/${code}/deactivate`,
+  );
+  return data;
+}
+
+export async function reactivateSkuTier(code: string): Promise<SkuTierInfo> {
+  const { data } = await api.post<SkuTierInfo>(
+    `/api/admin/sku-tiers/${code}/reactivate`,
+  );
+  return data;
+}
+
+export async function deleteSkuTier(code: string): Promise<void> {
+  await api.delete(`/api/admin/sku-tiers/${code}`);
+}
+
 export interface AdminOrgItem {
   id: string;
   name: string;
   slug: string;
   sku: string;
+  sku_label?: string;
   kind: string;
 }
 
@@ -810,6 +887,12 @@ export const adminApi = {
   getSkuPrices,
   getSkuPricing,
   updateSkuCatalog,
+  getAdminSkuTiers,
+  createSkuTier,
+  updateSkuTier,
+  deactivateSkuTier,
+  reactivateSkuTier,
+  deleteSkuTier,
   listAdminOrgs,
   listAdminInvoices,
   createAdminInvoice,

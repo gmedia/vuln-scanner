@@ -5,6 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import AdminSubscriptionRequests from "@/pages/admin/AdminSubscriptionRequests";
+import { tierFixtures } from "@/test/fixtures/skuTiers";
 import {
   approveAdminSubscriptionRequest,
   listAdminSubscriptionRequests,
@@ -22,6 +23,7 @@ vi.mock("@/api/subscription", async () => {
     listAdminSubscriptionRequests: vi.fn(),
     approveAdminSubscriptionRequest: vi.fn(),
     rejectAdminSubscriptionRequest: vi.fn(),
+    getSkuTiers: vi.fn(async () => tierFixtures),
   };
 });
 

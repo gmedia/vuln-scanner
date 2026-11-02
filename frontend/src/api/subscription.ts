@@ -1,7 +1,13 @@
 import api from "@/api/scans";
 
-export type SubscriptionSku = "basic" | "pro" | "multi" | "enterprise";
-export type SubscriptionTier = "basic" | "pro" | "multi";
+/**
+ * Tier codes are data, not a compile-time union: admins can create a tier at
+ * runtime (`pro_plus`) without shipping a frontend build. Labels and feature
+ * gates come from `GET /api/sku-tiers` via `useTierMap`.
+ */
+export type SkuCode = string;
+export type SubscriptionSku = SkuCode;
+export type SubscriptionTier = SkuCode;
 export type SubscriptionCycle = "monthly" | "annual";
 export type SubscriptionStatus =
   | "active"
@@ -42,9 +48,56 @@ export interface WorkspaceSeats {
   viewer_limit: number | null;
 }
 
+export interface SkuTierLimits {
+  scan: number;
+  host: number;
+  uptime: number;
+  guard: number;
+}
+
+export interface SkuTierFeatures {
+  allow_status_page: boolean;
+  allow_custom_host: boolean;
+  allow_waf_protect: boolean;
+  allow_siem: boolean;
+  billing_unrestricted: boolean;
+  sales_led: boolean;
+  requestable: boolean;
+}
+
+export interface SkuTierWorkspaceLimits {
+  editor: number | null;
+  viewer: number | null;
+}
+
+export interface SkuTierUsage {
+  orgs: number;
+  subscriptions: number;
+  invoices: number;
+  requests: number;
+}
+
+export interface SkuTierInfo {
+  code: SkuCode;
+  label: string;
+  rank: number;
+  active: boolean;
+  requestable: boolean;
+  sales_led: boolean;
+  is_default: boolean;
+  bundle_idr: number | null;
+  limits: SkuTierLimits;
+  features: SkuTierFeatures;
+  workspace_limits: SkuTierWorkspaceLimits;
+  usage?: SkuTierUsage | null;
+  has_catalog?: boolean;
+}
+
 export interface SubscriptionCatalogItem {
   service: "scan" | "host" | "uptime" | "guard";
   sku: SubscriptionTier;
+  label: string;
+  active: boolean;
   list_idr: number;
   seats: number;
   invoicable: boolean;
@@ -52,6 +105,8 @@ export interface SubscriptionCatalogItem {
 
 export interface SubscriptionBundleItem {
   tier: SubscriptionTier;
+  label: string;
+  active: boolean;
   bundle_idr: number;
   alacarte_idr: number;
   saving_idr: number;
@@ -111,6 +166,7 @@ export interface SubscriptionOverview {
   organization_id: string;
   organization_name: string;
   plan: SubscriptionPlan;
+  tiers: SkuTierInfo[];
   usage: SubscriptionUsageItem[];
   workspace_seats: WorkspaceSeats;
   catalog: SubscriptionCatalogItem[];
@@ -131,6 +187,11 @@ export interface SubscriptionRequestCreate {
 export interface SubscriptionRequestListResponse {
   items: SubscriptionRequestItem[];
   total: number;
+}
+
+export async function getSkuTiers(): Promise<SkuTierInfo[]> {
+  const { data } = await api.get<SkuTierInfo[]>("/api/sku-tiers");
+  return data;
 }
 
 export async function getSubscription(

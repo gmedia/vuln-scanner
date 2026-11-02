@@ -12,6 +12,7 @@ import {
   createSubscriptionRequest,
   getSubscription,
   resumeSubscription,
+  type SkuTierInfo,
   type SubscriptionOverview,
 } from "@/api/subscription";
 import { listOrgInvoices } from "@/api/orgs";
@@ -65,6 +66,93 @@ vi.mock("@/api/orgs", async () => {
   };
 });
 
+const TIERS: SkuTierInfo[] = [
+  {
+    code: "basic",
+    label: "Basic",
+    rank: 1,
+    active: true,
+    requestable: true,
+    sales_led: false,
+    is_default: true,
+    bundle_idr: 450_000,
+    limits: { scan: 1, host: 1, uptime: 10, guard: 1 },
+    features: {
+      allow_status_page: false,
+      allow_custom_host: false,
+      allow_waf_protect: false,
+      allow_siem: false,
+      billing_unrestricted: false,
+      sales_led: false,
+      requestable: true,
+    },
+    workspace_limits: { editor: 1, viewer: 1 },
+  },
+  {
+    code: "pro",
+    label: "Pro",
+    rank: 2,
+    active: true,
+    requestable: true,
+    sales_led: false,
+    is_default: false,
+    bundle_idr: 1_000_000,
+    limits: { scan: 3, host: 3, uptime: 50, guard: 3 },
+    features: {
+      allow_status_page: true,
+      allow_custom_host: false,
+      allow_waf_protect: true,
+      allow_siem: false,
+      billing_unrestricted: false,
+      sales_led: false,
+      requestable: true,
+    },
+    workspace_limits: { editor: null, viewer: null },
+  },
+  {
+    code: "multi",
+    label: "Multi",
+    rank: 3,
+    active: true,
+    requestable: true,
+    sales_led: false,
+    is_default: false,
+    bundle_idr: 2_900_000,
+    limits: { scan: 10, host: 10, uptime: 200, guard: 10 },
+    features: {
+      allow_status_page: true,
+      allow_custom_host: true,
+      allow_waf_protect: true,
+      allow_siem: false,
+      billing_unrestricted: false,
+      sales_led: false,
+      requestable: true,
+    },
+    workspace_limits: { editor: null, viewer: null },
+  },
+  {
+    code: "enterprise",
+    label: "Enterprise",
+    rank: 4,
+    active: true,
+    requestable: false,
+    sales_led: true,
+    is_default: false,
+    bundle_idr: null,
+    limits: { scan: 10, host: 10, uptime: 200, guard: 10 },
+    features: {
+      allow_status_page: true,
+      allow_custom_host: true,
+      allow_waf_protect: true,
+      allow_siem: true,
+      billing_unrestricted: true,
+      sales_led: true,
+      requestable: false,
+    },
+    workspace_limits: { editor: null, viewer: null },
+  },
+];
+
 function overview(overrides: Partial<SubscriptionOverview> = {}): SubscriptionOverview {
   return {
     organization_id: "org-a",
@@ -82,6 +170,7 @@ function overview(overrides: Partial<SubscriptionOverview> = {}): SubscriptionOv
       invoice_id: "inv-1",
       invoice_number: "SX-202610-0001",
     },
+    tiers: TIERS,
     usage: [
       { product: "scan", used: 2, limit: 3, unit: "asset" },
       { product: "host", used: 1, limit: 3, unit: "site" },
@@ -98,15 +187,17 @@ function overview(overrides: Partial<SubscriptionOverview> = {}): SubscriptionOv
       (["basic", "pro", "multi"] as const).map((sku) => ({
         service: service as "scan" | "host" | "uptime" | "guard",
         sku,
+        label: sku.charAt(0).toUpperCase() + sku.slice(1),
+        active: true,
         list_idr: 100_000,
         seats: 1,
         invoicable: true,
       })),
     ),
     bundles: [
-      { tier: "basic", bundle_idr: 450_000, alacarte_idr: 625_000, saving_idr: 175_000, saving_pct: 28 },
-      { tier: "pro", bundle_idr: 1_000_000, alacarte_idr: 1_450_000, saving_idr: 450_000, saving_pct: 31 },
-      { tier: "multi", bundle_idr: 2_900_000, alacarte_idr: 4_000_000, saving_idr: 1_100_000, saving_pct: 27.5 },
+      { tier: "basic", label: "Basic", active: true, bundle_idr: 450_000, alacarte_idr: 625_000, saving_idr: 175_000, saving_pct: 28 },
+      { tier: "pro", label: "Pro", active: true, bundle_idr: 1_000_000, alacarte_idr: 1_450_000, saving_idr: 450_000, saving_pct: 31 },
+      { tier: "multi", label: "Multi", active: true, bundle_idr: 2_900_000, alacarte_idr: 4_000_000, saving_idr: 1_100_000, saving_pct: 27.5 },
     ],
     annual: { months_paid: 10, months_served: 12 },
     enterprise: { contact_only: true },
@@ -181,6 +272,82 @@ describe("Subscription page", () => {
     expect(screen.getByTestId("subscription-choose-pro")).toBeDisabled();
     expect(screen.getByTestId("subscription-alacarte-table")).toBeInTheDocument();
     expect(screen.getByTestId("subscription-invoices-empty")).toBeInTheDocument();
+  });
+
+  it("renders a new tier from the API as a plan card", async () => {
+    const proPlus: SkuTierInfo = {
+      ...TIERS[1],
+      code: "pro_plus",
+      label: "Pro+",
+      rank: 3,
+      bundle_idr: 1_800_000,
+    };
+    vi.mocked(getSubscription).mockResolvedValue(
+      overview({
+        tiers: [...TIERS, proPlus],
+        catalog: [
+          ...overview().catalog,
+          {
+            service: "scan",
+            sku: "pro_plus",
+            label: "Pro+",
+            active: true,
+            list_idr: 1_800_000,
+            seats: 5,
+            invoicable: true,
+          },
+        ],
+      }),
+    );
+    renderPage();
+
+    await screen.findByTestId("subscription-summary");
+    expect(screen.getByTestId("subscription-plan-pro_plus")).toHaveTextContent(
+      "Pro+",
+    );
+    expect(screen.getByTestId("subscription-choose-pro_plus")).toBeEnabled();
+    expect(screen.getByTestId("subscription-alacarte-table")).toHaveTextContent(
+      "Pro+",
+    );
+  });
+
+  it("hides a retired tier from new choices while keeping the current tier", async () => {
+    const retiredMulti = { ...TIERS[2], active: false };
+    vi.mocked(getSubscription).mockResolvedValue(
+      overview({
+        tiers: [TIERS[0], TIERS[1], retiredMulti, TIERS[3]],
+        plan: { ...overview().plan, sku: "pro" },
+      }),
+    );
+    renderPage();
+
+    await screen.findByTestId("subscription-summary");
+    expect(screen.queryByTestId("subscription-plan-multi")).toBeNull();
+    expect(screen.getByTestId("subscription-plan-pro")).toBeInTheDocument();
+  });
+
+  it("keeps rendering the current tier after it is retired", async () => {
+    vi.mocked(getSubscription).mockResolvedValue(
+      overview({
+        tiers: [TIERS[0], TIERS[1], { ...TIERS[2], active: false }, TIERS[3]],
+        plan: { ...overview().plan, sku: "multi" },
+      }),
+    );
+    renderPage();
+
+    await screen.findByTestId("subscription-summary");
+    expect(screen.getByTestId("subscription-plan-multi")).toBeInTheDocument();
+    expect(screen.getByTestId("subscription-choose-multi")).toBeDisabled();
+  });
+
+  it("renders a sales-led tier as contact us instead of a price", async () => {
+    vi.mocked(getSubscription).mockResolvedValue(overview());
+    renderPage();
+
+    await screen.findByTestId("subscription-summary");
+    const card = screen.getByTestId("subscription-plan-enterprise");
+    expect(card).toHaveTextContent("Contact us");
+    expect(card).not.toHaveTextContent("/ month");
   });
 
   it("submits a plan change request from the dialog", async () => {

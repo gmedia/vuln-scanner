@@ -53,6 +53,7 @@ import {
   type AdminSubscriptionItem,
 } from "@/api/adminBilling";
 import { TONE_TEXT } from "@/lib/toneColors";
+import { useTierMap } from "@/hooks/useTierMap";
 import { cn, type ApiError } from "@/lib/utils";
 
 const STATUSES: AdminBillingStatus[] = [
@@ -97,6 +98,7 @@ function statusVariant(
 
 function AdminSubscriptions() {
   const { t, i18n } = useTranslation("admin");
+  const { label: tierLabel } = useTierMap();
   const dateLocale = i18n.language === "en" ? "en-US" : "id-ID";
   const qc = useQueryClient();
 
@@ -263,7 +265,7 @@ function AdminSubscriptions() {
                           {item.organization_name ?? "—"}
                         </TableCell>
                         <TableCell className="font-mono text-xs uppercase text-foreground">
-                          {item.sku} · {t(`subscriptionCycle_${item.cycle}`)}
+                          {tierLabel(item.sku)} · {t(`subscriptionCycle_${item.cycle}`)}
                         </TableCell>
                         <TableCell>
                           <Badge
@@ -354,7 +356,7 @@ function AdminSubscriptions() {
                       </Badge>
                     </div>
                     <p className="mt-1 font-mono text-xs uppercase text-foreground">
-                      {item.sku} · {t(`subscriptionCycle_${item.cycle}`)}
+                      {tierLabel(item.sku)} · {t(`subscriptionCycle_${item.cycle}`)}
                     </p>
                     <p className="mt-1 font-mono text-xs tabular-nums text-muted-foreground">
                       {formatDate(item.current_period_start, dateLocale)} –{" "}

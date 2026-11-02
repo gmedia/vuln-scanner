@@ -64,6 +64,7 @@ import {
   InvoicePrintSheet,
   useInvoicePrint,
 } from "@/components/invoice/InvoicePrintSheet";
+import { useTierMap } from "@/hooks/useTierMap";
 
 function formatIdr(n: number): string {
   return `Rp ${n.toLocaleString("id-ID")}`;
@@ -73,18 +74,15 @@ function isInvoiceProduct(value: string): value is InvoiceProduct {
   return value === "scan" || value === "host" || value === "uptime" || value === "guard";
 }
 
-function skuLabel(sku: string): string {
-  return sku.charAt(0).toUpperCase() + sku.slice(1);
-}
-
 function AdminInvoices() {
   const { t } = useTranslation("admin");
+  const { label: tierLabel } = useTierMap();
   const qc = useQueryClient();
   const [status, setStatus] = useState("all");
   const [voidTarget, setVoidTarget] = useState<InvoiceItem | null>(null);
   const [orgId, setOrgId] = useState("");
   const [product, setProduct] = useState<InvoiceProduct>("scan");
-  const [sku, setSku] = useState("basic");
+  const [sku, setSku] = useState("");
   const [cycle, setCycle] = useState<"monthly" | "annual">("monthly");
   const [bankRef, setBankRef] = useState("");
   const { printing, startPrint } = useInvoicePrint();
@@ -109,13 +107,13 @@ function AdminInvoices() {
   const orgs = orgsQ.data?.items ?? [];
   const invoices = invoicesQ.data?.items ?? [];
   const invoicableProducts = catalog
-    .filter((row) => row.invoicable)
+    .filter((row) => row.invoicable && row.active !== false)
     .reduce<InvoiceProduct[]>((acc, row) => {
       if (!acc.includes(row.product)) acc.push(row.product);
       return acc;
     }, []);
   const skuOptions = catalog.filter(
-    (row) => row.product === product && row.invoicable,
+    (row) => row.product === product && row.invoicable && row.active !== false,
   );
   const skuValue = skuOptions.some((row) => row.sku === sku)
     ? sku
@@ -125,10 +123,10 @@ function AdminInvoices() {
     if (!isInvoiceProduct(value)) return;
     setProduct(value);
     const nextSkus = catalog.filter(
-      (row) => row.product === value && row.invoicable,
+      (row) => row.product === value && row.invoicable && row.active !== false,
     );
     if (!nextSkus.some((row) => row.sku === sku)) {
-      setSku(nextSkus[0]?.sku ?? "basic");
+      setSku(nextSkus[0]?.sku ?? "");
     }
   }
 
@@ -214,8 +212,8 @@ function AdminInvoices() {
                   >
                     <SiemRail className={adminRailClass("primary")} />
                     <p className="text-sm text-foreground">{row.product}</p>
-                    <p className="font-mono text-xs uppercase text-foreground">
-                      {row.sku}
+                    <p className="text-xs text-foreground">
+                      {row.label || row.sku}
                     </p>
                     <p className="mt-1 text-[11px] text-muted-foreground">
                       {formatIdr(row.list_idr)} · {row.seats} {t("colSeats")} ·{" "}
@@ -242,7 +240,7 @@ function AdminInvoices() {
                     {catalog.map((row) => (
                       <TableRow key={`${row.product}-${row.sku}`} className="hover:bg-muted/50">
                         <TableCell>{row.product}</TableCell>
-                        <TableCell className="uppercase">{row.sku}</TableCell>
+                        <TableCell>{row.label || row.sku}</TableCell>
                         <TableCell className="font-mono tabular-nums">
                           {formatIdr(row.list_idr)}
                         </TableCell>
@@ -271,7 +269,7 @@ function AdminInvoices() {
                 <SelectContent>
                   {orgs.map((o) => (
                     <SelectItem key={o.id} value={o.id}>
-                      {o.name} ({o.sku})
+                      {o.name} ({o.sku_label ?? tierLabel(o.sku)})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -313,7 +311,7 @@ function AdminInvoices() {
                 <SelectContent>
                   {skuOptions.map((row) => (
                     <SelectItem key={row.sku} value={row.sku}>
-                      {skuLabel(row.sku)}
+                      {row.label || row.sku}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -423,7 +421,8 @@ function AdminInvoices() {
                       {inv.organization_name ?? "—"}
                     </p>
                     <p className="mt-1 text-[11px] text-muted-foreground">
-                      {inv.product} · {inv.sku} · {formatIdr(inv.total_idr ?? inv.amount_idr)}
+                      {inv.product} · {tierLabel(inv.sku)} ·{" "}
+                      {formatIdr(inv.total_idr ?? inv.amount_idr)}
                     </p>
                     <div className="mt-3 flex justify-end">
                       <DropdownMenu>
@@ -522,7 +521,7 @@ function AdminInvoices() {
                       </TableCell>
                       <TableCell>{inv.organization_name ?? "—"}</TableCell>
                       <TableCell>{inv.product}</TableCell>
-                      <TableCell className="uppercase">{inv.sku}</TableCell>
+                      <TableCell>{tierLabel(inv.sku)}</TableCell>
                       <TableCell className="font-mono tabular-nums">
                         {formatIdr(inv.total_idr ?? inv.amount_idr)}
                       </TableCell>
@@ -633,7 +632,10 @@ function AdminInvoices() {
           )}
         </AdminShellBody>
       </AdminShell>
-      <InvoicePrintSheet invoice={printing} />
+      <InvoicePrintSheet
+        invoice={printing}
+        skuLabel={printing ? tierLabel(printing.sku) : undefined}
+      />
     </div>
   );
 }

@@ -80,9 +80,15 @@ describe("InvoicePrintSheet", () => {
       sku: "pro",
       amount_idr: 350000,
     };
-    render(<InvoicePrintSheet invoice={host} billTo="Hotel Example" />);
+    render(
+      <InvoicePrintSheet
+        invoice={host}
+        billTo="Hotel Example"
+        skuLabel="Pro"
+      />,
+    );
 
-    expect(screen.getByText("Sinexis Host Protect — PRO")).toBeInTheDocument();
+    expect(screen.getByText("Sinexis Host Protect — Pro")).toBeInTheDocument();
     expect(screen.getByTestId("invoice-print-footer")).toHaveTextContent(
       "Thank you. Sinexis Host Protect — bank transfer, no self-serve upgrade.",
     );
@@ -98,9 +104,15 @@ describe("InvoicePrintSheet", () => {
       seats: 200,
       amount_idr: 500000,
     };
-    render(<InvoicePrintSheet invoice={uptime} billTo="Hotel Example" />);
+    render(
+      <InvoicePrintSheet
+        invoice={uptime}
+        billTo="Hotel Example"
+        skuLabel="Multi"
+      />,
+    );
 
-    expect(screen.getByText("Sinexis Uptime — MULTI")).toBeInTheDocument();
+    expect(screen.getByText("Sinexis Uptime — Multi")).toBeInTheDocument();
     expect(screen.getByRole("cell", { name: "200" })).toBeInTheDocument();
     expect(screen.getByTestId("invoice-print-footer")).toHaveTextContent(
       "Thank you. Sinexis Uptime — bank transfer, no self-serve upgrade.",
@@ -117,9 +129,15 @@ describe("InvoicePrintSheet", () => {
       seats: 1,
       amount_idr: 100000,
     };
-    render(<InvoicePrintSheet invoice={guard} billTo="Hotel Example" />);
+    render(
+      <InvoicePrintSheet
+        invoice={guard}
+        billTo="Hotel Example"
+        skuLabel="Basic"
+      />,
+    );
 
-    expect(screen.getByText("Sinexis Guard — BASIC")).toBeInTheDocument();
+    expect(screen.getByText("Sinexis Guard — Basic")).toBeInTheDocument();
     expect(screen.getByRole("cell", { name: "1" })).toBeInTheDocument();
     expect(screen.getByTestId("invoice-print-footer")).toHaveTextContent(
       "Thank you. Sinexis Guard — bank transfer, no self-serve upgrade.",

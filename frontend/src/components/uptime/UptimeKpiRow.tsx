@@ -8,6 +8,7 @@ import {
   quotaRailClass as sharedQuotaRailClass,
   quotaState,
 } from "@/lib/quota";
+import { useTierMap } from "@/hooks/useTierMap";
 
 export function UptimeKpiRow({
   upCount,
@@ -23,6 +24,7 @@ export function UptimeKpiRow({
   readonly sku: string;
 }) {
   const { t } = useTranslation("uptime");
+  const { label } = useTierMap();
   const {
     pct: quotaPct,
     tone: quotaToneState,
@@ -36,7 +38,7 @@ export function UptimeKpiRow({
       : "text-sm text-foreground";
   const quotaIndicatorClassName = sharedQuotaIndicatorClass(quotaToneState);
   const skuRailClass = sharedQuotaRailClass(quotaToneState);
-  const quotaLabel = t("skuShort", { count: enabledCount, limit, sku });
+  const quotaLabel = t("skuShort", { count: enabledCount, limit, sku: label(sku) });
   return (
     <StatGrid
       testid="uptime-kpi"
