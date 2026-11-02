@@ -21,6 +21,7 @@ from app.schemas.billing import (
     SubscriptionItem,
 )
 from app.services.invoice import InvoiceService
+from app.services.sku_tier import SkuTierService
 
 
 class BillingTransitionError(ValueError):
@@ -124,6 +125,9 @@ class BillingService:
         if org is None:
             raise HTTPException(status_code=404, detail="Organization not found")
         if inv.product == "scan":
+            tier = await SkuTierService(self.db).get(inv.sku)
+            if not tier.active and org.sku != inv.sku:
+                raise HTTPException(status_code=409, detail="Tier is retired")
             org.sku = inv.sku
             org.updated_at = _now()
 

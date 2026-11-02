@@ -11,15 +11,10 @@ from app.middleware.rate_limit import RateLimiter
 from app.models.invoice import (
     ANNUAL_MONTHS_PAID,
     ANNUAL_MONTHS_SERVED,
-    BUNDLE_LIST_IDR,
-    GUARD_SKU_LIST_IDR,
-    HOST_SKU_LIST_IDR,
     INVOICE_PRODUCTS,
-    INVOICE_SKUS,
-    SCAN_SKU_LIST_IDR,
-    UPTIME_SKU_LIST_IDR,
 )
 from app.models.organization import Organization
+from app.models.sku_tier import SkuTier
 from app.models.user import User
 from app.schemas.invoice import (
     AdminOrgItem,
@@ -39,6 +34,7 @@ from app.schemas.invoice import (
 from app.services.auth import get_current_admin
 from app.services.billing import BillingService
 from app.services.invoice import InvoiceService, invoice_pdf_response, to_item
+from app.services.sku_tier import SkuTierService
 
 router = APIRouter(prefix="/admin", tags=["admin-invoices"])
 admin_limiter = RateLimiter(
@@ -88,11 +84,17 @@ async def get_sku_catalog(
     if limit_response:
         return limit_response
     rows = await InvoiceService(db).list_catalog_with_actors()
-    return SkuCatalogListResponse(
-        items=[
+    tier_rows = await db.execute(select(SkuTier.code, SkuTier.label, SkuTier.active))
+    tiers = {str(code): (str(label), bool(active)) for code, label, active in tier_rows.all()}
+    items = []
+    for row, email in rows:
+        label, active = tiers.get(str(row.sku), (str(row.sku), False))
+        items.append(
             SkuCatalogItem(
                 product=row.product,
                 sku=row.sku,
+                label=label,
+                active=active,
                 list_idr=row.list_idr,
                 seats=row.seats,
                 invoicable=row.invoicable,
@@ -100,9 +102,8 @@ async def get_sku_catalog(
                 updated_by=row.updated_by,
                 updated_by_email=email,
             )
-            for row, email in rows
-        ]
-    )
+        )
+    return SkuCatalogListResponse(items=items)
 
 
 @router.put("/sku-catalog/{product}/{sku}", response_model=SkuCatalogItem)
@@ -118,9 +119,12 @@ async def update_sku_catalog(
     if limit_response:
         return limit_response
     row = await InvoiceService(db).update_catalog(product, sku, body.list_idr, body.invoicable, current_admin.id)
+    tier = await SkuTierService(db).get(row.sku)
     return SkuCatalogItem(
         product=row.product,
         sku=row.sku,
+        label=tier.label,
+        active=tier.active,
         list_idr=row.list_idr,
         seats=row.seats,
         invoicable=row.invoicable,
@@ -141,33 +145,36 @@ async def get_sku_prices(
         return limit_response
     rows = await InvoiceService(db).list_catalog()
     catalog = {(r.product, r.sku): r for r in rows}
-    fallbacks = {
-        "scan": SCAN_SKU_LIST_IDR,
-        "host": HOST_SKU_LIST_IDR,
-        "uptime": UPTIME_SKU_LIST_IDR,
-        "guard": GUARD_SKU_LIST_IDR,
-    }
+    tiers = [
+        tier
+        for tier in await SkuTierService(db).list(include_inactive=True)
+        if not tier.sales_led
+    ]
     items: list[SkuPriceItem] = []
-    for service in INVOICE_PRODUCTS:
-        for sku in INVOICE_SKUS:
-            row = catalog.get((service, sku))
-            if row is not None:
-                items.append(
-                    SkuPriceItem(service=service, sku=sku, list_idr=row.list_idr, invoicable=row.invoicable)
+    for tier in tiers:
+        for service in INVOICE_PRODUCTS:
+            row = catalog.get((service, tier.code))
+            items.append(
+                SkuPriceItem(
+                    service=service,
+                    sku=tier.code,
+                    label=tier.label,
+                    active=tier.active,
+                    list_idr=int(row.list_idr) if row is not None else 0,
+                    invoicable=bool(row.invoicable) if row is not None else False,
                 )
-            else:
-                items.append(
-                    SkuPriceItem(service=service, sku=sku, list_idr=fallbacks[service].get(sku, 0), invoicable=False)
-                )
+            )
     by_service_sku = {(i.service, i.sku): i.list_idr for i in items}
     bundles: list[BundlePriceItem] = []
-    for tier in INVOICE_SKUS:
-        alacarte = sum(by_service_sku.get((service, tier), 0) for service in INVOICE_PRODUCTS)
-        bundle = BUNDLE_LIST_IDR.get(tier, 0)
+    for tier in tiers:
+        alacarte = sum(by_service_sku.get((service, tier.code), 0) for service in INVOICE_PRODUCTS)
+        bundle = int(tier.bundle_idr or 0)
         saving = alacarte - bundle
         bundles.append(
             BundlePriceItem(
-                tier=tier,
+                tier=tier.code,
+                label=tier.label,
+                active=tier.active,
                 bundle_idr=bundle,
                 alacarte_idr=alacarte,
                 saving_idr=saving,

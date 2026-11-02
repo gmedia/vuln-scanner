@@ -1,4 +1,4 @@
-"""Read access to the ``sku_tiers`` table.
+"""Read and write access to the ``sku_tiers`` table.
 
 ``sku_tiers`` is the runtime source of truth for tier labels, ranking, product
 capacity caps, feature gates and workspace seat limits. The legacy constant
@@ -9,17 +9,35 @@ Unknown tiers are never silently mapped to the most generous tier: ``get``
 raises 404 and callers that need an active tier use ``get_active`` (400 when
 the tier exists but is retired). Grandfathered orgs may keep reading an
 inactive tier, which is why the plain ``get`` path does not filter on ``active``.
+
+Mutations are intentionally transactional: a default move, a catalog
+synchronisation and the tier row itself commit exactly once, so an admin never
+observes a half-applied tier.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import UTC, datetime
+from typing import Any
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import delete, func, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.billing import Subscription
+from app.models.invoice import INVOICE_PRODUCTS, OrgInvoice, SkuCatalog
+from app.models.organization import Organization
 from app.models.sku_tier import SkuTier
+from app.models.subscription import SubscriptionRequest
+from app.models.user import User
+from app.schemas.sku_tier import (
+    SkuCatalogPriceBody,
+    SkuTierCreate,
+    SkuTierUpdate,
+    SkuUsage,
+)
 
 _PRODUCT_ATTRIBUTES: dict[str, str] = {
     "scan": "limit_scan",
@@ -27,6 +45,7 @@ _PRODUCT_ATTRIBUTES: dict[str, str] = {
     "uptime": "limit_uptime",
     "guard": "limit_guard",
 }
+
 
 @dataclass(frozen=True)
 class SkuFeatures:
@@ -52,10 +71,12 @@ class SkuFeatures:
             requestable=tier.requestable,
         )
 
+
 def _seat_word(limit: int | None, noun: str) -> str:
     if limit is None:
         return f"unlimited {noun}s"
     return f"{limit} {noun}" if limit == 1 else f"{limit} {noun}s"
+
 
 def workspace_seat_cap_detail(label: str, editor_limit: int | None, viewer_limit: int | None) -> str:
     """User-facing seat-cap message built from the tier's actual limits."""
@@ -63,6 +84,49 @@ def workspace_seat_cap_detail(label: str, editor_limit: int | None, viewer_limit
         f"{label} workspace allows {_seat_word(editor_limit, 'editor')} and "
         f"{_seat_word(viewer_limit, 'viewer')}. Upgrade for more seats."
     )
+
+
+def _bad_request(detail: str) -> HTTPException:
+    return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
+
+
+def _conflict(detail: str) -> HTTPException:
+    return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=detail)
+
+
+def _clean_label(label: str) -> str:
+    cleaned = label.strip()
+    if not 1 <= len(cleaned) <= 60:
+        raise _bad_request("label must be 1..60 characters after trimming")
+    return cleaned
+
+
+def _check_limits(limits: dict[str, int]) -> None:
+    for product, value in limits.items():
+        if value < 1:
+            raise _bad_request(f"limit_{product} must be >= 1")
+
+
+def _check_cross_field(
+    *,
+    sales_led: bool,
+    requestable: bool,
+    allow_status_page: bool,
+    allow_custom_host: bool,
+    allow_siem: bool,
+    billing_unrestricted: bool,
+) -> tuple[bool, bool, bool]:
+    """Return the effective (requestable, allow_siem, billing_unrestricted)."""
+    if sales_led:
+        return False, True, True
+    if allow_siem:
+        raise _bad_request("allow_siem requires sales_led=true")
+    if billing_unrestricted:
+        raise _bad_request("billing_unrestricted requires sales_led=true")
+    if allow_custom_host and not allow_status_page:
+        raise _bad_request("allow_custom_host requires allow_status_page=true")
+    return requestable, allow_siem, billing_unrestricted
+
 
 class SkuTierService:
     def __init__(self, db: AsyncSession) -> None:
@@ -128,5 +192,334 @@ class SkuTierService:
 
     async def label(self, code: str) -> str:
         return (await self.get(code)).label
+
+    async def usage_counts(self, code: str) -> SkuUsage:
+        """Rows that reference this tier and therefore block a hard delete.
+
+        ``sku_catalog`` is deliberately excluded: its FK is ``ON DELETE
+        CASCADE`` because prices belong to the tier, not to customer history.
+        """
+        orgs = await self._count(Organization, Organization.sku == code)
+        subscriptions = await self._count(Subscription, Subscription.sku == code)
+        invoices = await self._count(OrgInvoice, OrgInvoice.sku == code)
+        requests = await self._count(
+            SubscriptionRequest,
+            (SubscriptionRequest.current_sku == code) | (SubscriptionRequest.target_sku == code),
+        )
+        return SkuUsage(orgs=orgs, subscriptions=subscriptions, invoices=invoices, requests=requests)
+
+    async def _count(self, model: Any, clause: Any) -> int:
+        result = await self.db.execute(select(func.count()).select_from(model).where(clause))
+        return int(result.scalar() or 0)
+
+    async def _rank_taken(self, rank: int, *, exclude: str | None = None) -> bool:
+        stmt = select(SkuTier.code).where(SkuTier.rank == rank)
+        if exclude is not None:
+            stmt = stmt.where(SkuTier.code != exclude)
+        return (await self.db.execute(stmt.limit(1))).scalar_one_or_none() is not None
+
+    async def _next_rank(self) -> int:
+        current = await self.db.scalar(select(func.max(SkuTier.rank)))
+        return int(current or 0) + 1
+
+    async def _demote_default(self) -> None:
+        """Unset the current default in the same transaction as the promotion."""
+        await self.db.execute(
+            update(SkuTier).where(SkuTier.is_default.is_(True)).values(is_default=False)
+        )
+
+    def _catalog_prices(self, body: SkuTierCreate | SkuTierUpdate) -> dict[str, SkuCatalogPriceBody] | None:
+        prices = body.prices
+        if prices is None:
+            return None
+        return {str(product): price for product, price in prices.items()}
+
+    async def _catalog_rows(self, code: str) -> dict[str, SkuCatalog]:
+        result = await self.db.execute(select(SkuCatalog).where(SkuCatalog.sku == code))
+        return {str(row.product): row for row in result.scalars().all()}
+
+    async def create(self, body: SkuTierCreate, actor: User) -> SkuTier:
+        code = body.code
+        if await self.db.get(SkuTier, code) is not None:
+            raise _conflict(f"SKU tier '{code}' already exists")
+
+        label = _clean_label(body.label)
+        limits = {
+            "scan": body.limit_scan,
+            "host": body.limit_host,
+            "uptime": body.limit_uptime,
+            "guard": body.limit_guard,
+        }
+        _check_limits(limits)
+
+        rank = body.rank if body.rank is not None else await self._next_rank()
+        if await self._rank_taken(rank):
+            raise _conflict(f"Tier rank {rank} is already in use")
+
+        requestable, allow_siem, billing_unrestricted = _check_cross_field(
+            sales_led=body.sales_led,
+            requestable=body.requestable,
+            allow_status_page=body.allow_status_page,
+            allow_custom_host=body.allow_custom_host,
+            allow_siem=body.allow_siem,
+            billing_unrestricted=body.billing_unrestricted,
+        )
+        if body.is_default and not (body.active and not body.sales_led and requestable):
+            raise _bad_request("The default tier must be active, requestable and not sales-led")
+
+        prices = self._catalog_prices(body)
+        if not body.sales_led and (prices is None or set(prices) != set(INVOICE_PRODUCTS)):
+            raise _bad_request("sales_led=false requires prices for scan, host, uptime and guard")
+
+        now = datetime.now(UTC)
+        if body.is_default:
+            await self._demote_default()
+
+        tier = SkuTier(
+            code=code,
+            label=label,
+            rank=rank,
+            active=body.active,
+            requestable=requestable,
+            sales_led=body.sales_led,
+            is_default=body.is_default,
+            bundle_idr=body.bundle_idr,
+            limit_scan=limits["scan"],
+            limit_host=limits["host"],
+            limit_uptime=limits["uptime"],
+            limit_guard=limits["guard"],
+            allow_status_page=body.allow_status_page,
+            allow_custom_host=body.allow_custom_host,
+            allow_waf_protect=body.allow_waf_protect,
+            allow_siem=allow_siem,
+            billing_unrestricted=billing_unrestricted,
+            workspace_editor_limit=body.workspace_editor_limit,
+            workspace_viewer_limit=body.workspace_viewer_limit,
+            created_at=now,
+            updated_at=now,
+            updated_by=actor.id,
+        )
+        self.db.add(tier)
+        await self.db.flush()
+
+        if not body.sales_led and prices is not None:
+            for product in INVOICE_PRODUCTS:
+                price = prices[product]
+                self.db.add(
+                    SkuCatalog(
+                        product=product,
+                        sku=code,
+                        list_idr=price.list_idr,
+                        seats=limits[product],
+                        invoicable=price.invoicable,
+                        updated_at=now,
+                        updated_by=actor.id,
+                    )
+                )
+
+        try:
+            await self.db.commit()
+        except IntegrityError as exc:
+            await self.db.rollback()
+            raise _conflict(f"SKU tier '{code}' or rank {rank} already exists") from exc
+        await self.db.refresh(tier)
+        return tier
+
+    async def update(self, code: str, body: SkuTierUpdate, actor: User) -> SkuTier:
+        tier = await self.get(code)
+        present = body.model_fields_set
+
+        label = _clean_label(body.label) if "label" in present and body.label is not None else tier.label
+        rank = tier.rank
+        if "rank" in present and body.rank is not None:
+            if body.rank != tier.rank and await self._rank_taken(body.rank, exclude=code):
+                raise _conflict(f"Tier rank {body.rank} is already in use")
+            rank = body.rank
+
+        limits = {
+            "scan": body.limit_scan if "limit_scan" in present and body.limit_scan is not None else tier.limit_scan,
+            "host": body.limit_host if "limit_host" in present and body.limit_host is not None else tier.limit_host,
+            "uptime": (
+                body.limit_uptime
+                if "limit_uptime" in present and body.limit_uptime is not None
+                else tier.limit_uptime
+            ),
+            "guard": (
+                body.limit_guard if "limit_guard" in present and body.limit_guard is not None else tier.limit_guard
+            ),
+        }
+        _check_limits(limits)
+
+        active = body.active if "active" in present and body.active is not None else tier.active
+        sales_led = body.sales_led if "sales_led" in present and body.sales_led is not None else tier.sales_led
+        allow_status_page = (
+            body.allow_status_page
+            if "allow_status_page" in present and body.allow_status_page is not None
+            else tier.allow_status_page
+        )
+        allow_custom_host = (
+            body.allow_custom_host
+            if "allow_custom_host" in present and body.allow_custom_host is not None
+            else tier.allow_custom_host
+        )
+        allow_waf_protect = (
+            body.allow_waf_protect
+            if "allow_waf_protect" in present and body.allow_waf_protect is not None
+            else tier.allow_waf_protect
+        )
+        allow_siem = body.allow_siem if "allow_siem" in present and body.allow_siem is not None else tier.allow_siem
+        billing_unrestricted = (
+            body.billing_unrestricted
+            if "billing_unrestricted" in present and body.billing_unrestricted is not None
+            else tier.billing_unrestricted
+        )
+        if tier.sales_led and not sales_led:
+            # These flags were forced on by the sales-led transition; clear them
+            # unless the caller explicitly overrides them while leaving that mode.
+            if "allow_siem" not in present:
+                allow_siem = False
+            if "billing_unrestricted" not in present:
+                billing_unrestricted = False
+        requestable = (
+            body.requestable
+            if "requestable" in present and body.requestable is not None
+            else tier.requestable
+        )
+        requestable, allow_siem, billing_unrestricted = _check_cross_field(
+            sales_led=sales_led,
+            requestable=requestable,
+            allow_status_page=allow_status_page,
+            allow_custom_host=allow_custom_host,
+            allow_siem=allow_siem,
+            billing_unrestricted=billing_unrestricted,
+        )
+
+        is_default = body.is_default if "is_default" in present and body.is_default is not None else tier.is_default
+        if is_default:
+            if not (active and not sales_led and requestable):
+                raise _bad_request("The default tier must be active, requestable and not sales-led")
+            if not tier.is_default:
+                await self._demote_default()
+        elif tier.is_default:
+            raise _bad_request("Cannot unset the default tier; promote another tier first")
+
+        prices = self._catalog_prices(body)
+        existing_rows: dict[str, SkuCatalog] = {}
+        if not sales_led:
+            existing_rows = await self._catalog_rows(code)
+            if tier.sales_led:
+                if prices is None or set(prices) != set(INVOICE_PRODUCTS):
+                    raise _bad_request(
+                        "Switching away from sales_led requires prices for scan, host, uptime and guard"
+                    )
+            else:
+                for product in INVOICE_PRODUCTS:
+                    if product not in existing_rows and (prices is None or product not in prices):
+                        raise _bad_request(f"Missing price for {product}; a catalog row must be created")
+
+        now = datetime.now(UTC)
+        tier.label = label
+        tier.rank = rank
+        tier.active = active
+        tier.requestable = requestable
+        tier.sales_led = sales_led
+        tier.is_default = is_default
+        tier.bundle_idr = body.bundle_idr if "bundle_idr" in present else tier.bundle_idr
+        tier.limit_scan = limits["scan"]
+        tier.limit_host = limits["host"]
+        tier.limit_uptime = limits["uptime"]
+        tier.limit_guard = limits["guard"]
+        tier.allow_status_page = allow_status_page
+        tier.allow_custom_host = allow_custom_host
+        tier.allow_waf_protect = allow_waf_protect
+        tier.allow_siem = allow_siem
+        tier.billing_unrestricted = billing_unrestricted
+        tier.workspace_editor_limit = (
+            body.workspace_editor_limit
+            if "workspace_editor_limit" in present
+            else tier.workspace_editor_limit
+        )
+        tier.workspace_viewer_limit = (
+            body.workspace_viewer_limit
+            if "workspace_viewer_limit" in present
+            else tier.workspace_viewer_limit
+        )
+        tier.updated_at = now
+        tier.updated_by = actor.id
+
+        if sales_led:
+            await self.db.execute(delete(SkuCatalog).where(SkuCatalog.sku == code))
+        else:
+            for product in INVOICE_PRODUCTS:
+                price = prices.get(product) if prices is not None else None
+                row = existing_rows.get(product)
+                if row is None:
+                    if price is None:  # validated above, kept for mypy
+                        raise _bad_request(f"Missing price for {product}")
+                    row = SkuCatalog(
+                        product=product,
+                        sku=code,
+                        list_idr=price.list_idr,
+                        seats=limits[product],
+                        invoicable=price.invoicable,
+                        updated_at=now,
+                        updated_by=actor.id,
+                    )
+                    self.db.add(row)
+                else:
+                    if price is not None:
+                        row.list_idr = price.list_idr
+                        row.invoicable = price.invoicable
+                    row.seats = limits[product]
+                    row.updated_at = now
+                    row.updated_by = actor.id
+
+        try:
+            await self.db.commit()
+        except IntegrityError as exc:
+            await self.db.rollback()
+            raise _conflict(f"SKU tier '{code}' or rank {rank} already exists") from exc
+        await self.db.refresh(tier)
+        return tier
+
+    async def deactivate(self, code: str, actor: User) -> SkuTier:
+        tier = await self.get(code)
+        if tier.is_default:
+            raise _conflict("The default tier cannot be deactivated")
+        tier.active = False
+        tier.updated_at = datetime.now(UTC)
+        tier.updated_by = actor.id
+        await self.db.commit()
+        await self.db.refresh(tier)
+        return tier
+
+    async def reactivate(self, code: str, actor: User) -> SkuTier:
+        tier = await self.get(code)
+        if await self._rank_taken(tier.rank, exclude=code):
+            raise _conflict(f"Tier rank {tier.rank} is already in use")
+        tier.active = True
+        tier.updated_at = datetime.now(UTC)
+        tier.updated_by = actor.id
+        await self.db.commit()
+        await self.db.refresh(tier)
+        return tier
+
+    async def delete(self, code: str, actor: User) -> None:
+        tier = await self.get(code)
+        if tier.is_default:
+            raise _conflict("The default tier cannot be deleted")
+        usage = await self.usage_counts(code)
+        if usage.orgs or usage.subscriptions or usage.invoices or usage.requests:
+            raise _conflict(
+                f"Tier '{code}' is in use "
+                f"(orgs={usage.orgs}, subscriptions={usage.subscriptions}, "
+                f"invoices={usage.invoices}, requests={usage.requests})"
+            )
+        # sku_catalog is owned by the tier (FK CASCADE); delete it explicitly so
+        # SQLite test harnesses and PostgreSQL behave the same way.
+        await self.db.execute(delete(SkuCatalog).where(SkuCatalog.sku == code))
+        await self.db.delete(tier)
+        await self.db.commit()
+
 
 __all__ = ["SkuFeatures", "SkuTierService", "workspace_seat_cap_detail"]
