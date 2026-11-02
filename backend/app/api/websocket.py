@@ -15,7 +15,7 @@ from app.database import async_session
 from app.models.api_key import ApiKey
 from app.models.scan_job import ScanJob
 from app.models.user import User
-from app.services.auth import decode_token
+from app.services.auth import decode_token_async
 from app.services.organization import get_membership, role_at_least
 from app.utils import hash_key
 
@@ -85,7 +85,7 @@ async def _authorize_ws_connection(
     bearer = _extract_bearer(websocket, token)
     if bearer:
         try:
-            payload = decode_token(bearer)
+            payload = await decode_token_async(bearer)
         except jwt.PyJWTError:
             await websocket.close(code=4001, reason="Unauthorized: invalid or expired token")
             return False, None
