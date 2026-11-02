@@ -47,6 +47,7 @@ celery_app.conf.update(
         "host_protect.run_due": {"queue": "ip_scan"},
         "billing.finalize_periods": {"queue": "ip_scan"},
         "billing.send_reminders": {"queue": "ip_scan"},
+        "billing.draft_annual_renewals": {"queue": "ip_scan"},
         "ai_fx.refresh": {"queue": "ip_scan"},
         "ai_reservations.reap": {"queue": "ip_scan"},
     },
@@ -95,6 +96,10 @@ celery_app.conf.update(
         "billing-send-reminders-hourly": {
             "task": "billing.send_reminders",
             "schedule": 3600.0,
+        },
+        "billing-draft-annual-renewals-daily": {
+            "task": "billing.draft_annual_renewals",
+            "schedule": 86400.0,
         },
         "ai-fx-refresh-daily": {
             "task": "ai_fx.refresh",
