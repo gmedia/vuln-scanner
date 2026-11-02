@@ -48,7 +48,15 @@ def _get_sync_redis() -> sync_redis.Redis[str]:
     """
     global _sync_redis
     if _sync_redis is None:
-        _sync_redis = sync_redis.Redis.from_url(settings.redis_url, decode_responses=True)
+        # Bound connect/read so a slow Redis cannot block the caller longer than
+        # a request budget. This runs inside async request handlers, so a long
+        # block also stalls the whole event loop.
+        _sync_redis = sync_redis.Redis.from_url(
+            settings.redis_url,
+            decode_responses=True,
+            socket_connect_timeout=1.0,
+            socket_timeout=1.0,
+        )
     return _sync_redis
 
 
