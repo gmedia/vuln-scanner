@@ -157,6 +157,10 @@ class Settings(BaseSettings):
     ai_fx_fallback_url: str = "https://open.er-api.com/v6/latest/USD"
     ai_fx_timeout_seconds: float = 8.0
     ai_store_prompts: bool = False
+    ai_upstream_failover_enabled: bool = True
+    ai_upstream_max_candidates: int = 4
+    ai_upstream_timeout_seconds: float = 120.0
+    ai_upstream_failover_deadline_seconds: float = 45.0
     ai_trial_monthly_cap_usd: Decimal = Decimal("30")
     # Deprecated: legacy IDR cap, used only when AI_TRIAL_MONTHLY_CAP_USD is absent.
     ai_trial_monthly_cap_idr: int = 500_000
