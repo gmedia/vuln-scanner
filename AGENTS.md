@@ -23,7 +23,9 @@ Use `--author @me`, not `--assignee @me`: `gh pr create` does **not** assign the
 its author, so `--assignee` returns nothing and the merge step below never runs.
 
 - Your PR, CI green → `gh pr merge --squash` → `git branch -d <branch>`
-- Your PR, CI red → `git checkout <branch>` → fix → push
+- Your PR, CI **still running** → leave it open and continue with other work. **Do not wait.**
+- Your PR, CI red → `git checkout <branch>` → fix → push, then continue with other work.
+  Do not wait for the new run; the next session (or the user) sees the result.
 - **PR you did not author** → report it; do not fix or merge it unless the user names it.
   Another session may still be working on it.
 - Then: `git checkout main && git pull`, confirm tip, open `docs/AGENT_EXECUTION_GUIDE.md`
@@ -51,13 +53,35 @@ When **`main` CI is green including the `deploy` job**, production already ran *
 3. Work with incremental commits
 4. Push branch: `git push -u origin HEAD`
 5. Create PR: `gh pr create --fill`
-6. **Move to next task immediately** — do not poll CI
+6. **Start the next task immediately.** CI runs in the background; it is never a
+   reason to idle.
 
-Polling is still forbidden **unless the user explicitly asks you to watch, wait for, or
-merge in this turn** (e.g. "cek PR, merge jika hijau"). That request is the only
-exception: honour it for the PRs the user named, then return to this rule. CI takes
-~7 minutes on `main` (`deploy` 407s, `e2e-tests` 384s), so a wait loop burns a turn
-for information the next turn already has.
+### CI handling — work in parallel, never wait
+
+**Default: push → open PR → keep working.** CI is asynchronous infrastructure, not a
+blocking step.
+
+- **Never block a turn on CI.** No `gh run watch`, no `sleep`/retry loop, no repeated
+  `gh pr checks` until green, no "wait for green then merge" in the same turn.
+- **One status read is allowed**, at Session Start or when the user explicitly asks.
+  A single `gh pr view --json state,statusCheckRollup` is a status read; running it
+  again every few minutes is polling.
+- **Red CI is fixed later.** Push the fix, then continue with other work. Do not
+  wait for the replacement run; report it and move on.
+- **Stacked work is normal.** If the next task needs an unmerged branch, open the
+  next PR against that base, say so in the body, and keep working. Do not wait for
+  the base to merge; the next session retargets the child to `main`.
+- **Report, don't babysit.** Hand off with "PR #N open, CI running" and stop. The
+  user or the next session has the result.
+
+Polling is forbidden **unless the user explicitly asks you to watch, wait for, or
+merge in this turn** (e.g. "cek PR, merge jika hijau"). Honour that only for the PRs
+they named, then return to this rule. CI takes ~7 minutes on `main` (`deploy` 407s,
+`e2e-tests` 384s); a wait loop burns a turn for information the next turn already has.
+
+**Exception that is not waiting:** if a required *specialist result* (Oracle, a
+subagent) gates the next decision, end the response and wait for its notification.
+That is dependency ordering, not CI polling.
 
 ## PR Handoff Template
 Every PR description must include:
@@ -77,7 +101,8 @@ UI PRs must also fill the design change protocol in [`.github/pull_request_templ
 
 ## Anti-patterns
 - Working on `main` branch
-- Waiting/polling for CI/CD (see the explicit-request exception in **Workflow**)
+- Waiting/polling for CI/CD (`gh run watch`, `sleep` loops, repeated `gh pr checks`);
+  see **Workflow → CI handling**. Only an explicit user request in that turn overrides it.
 - **Merging with red CI** — a `push` to `main` runs `deploy`, so a red merge reaches production
 - Merging or "fixing" a PR you did not author without the user naming it
 - **Weakening a CI gate to get green** (raising a coverage threshold, deleting a check, allowlisting without a reason/expiry) — see **CI gates** above
