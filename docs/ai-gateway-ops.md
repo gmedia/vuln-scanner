@@ -48,22 +48,25 @@ Prepaid **org** IDR. Reserve before upstream; settle/release after. Insufficient
 
 ## Monitoring
 
-Both gauges are on `/metrics` (API-key protected) and ignore scrape failures: if the DB read fails, the sample is **omitted** rather than reported as `0`.
+All three gauges are on `/metrics` (API-key protected) and ignore scrape failures: if the DB read fails, the sample is **omitted** rather than reported as `0`.
 
 | Metric | Type | Meaning |
 |--------|------|---------|
 | `vuln_ai_fx_rate_age_days` | gauge | Age in days of the newest stored `USD -> IDR` rate (`ai_fx_rates.effective_date`). `+Inf` means no matching row exists yet. |
 | `vuln_ai_usage_shortfall_idr_24h` | gauge | Sum of `ai_usage_events.shortfall_idr` for rows created in the last 24h — IDR billed but not collected. |
+| `vuln_ai_wallet_ledger_drift_idr` | gauge | Largest `ABS(ai_wallets.balance_idr - SUM(ai_wallet_ledger.delta_idr))` across wallets; `0` when every balance matches its ledger. |
 
 | Alert | Expression | For | Severity |
 |-------|------------|-----|----------|
 | `VulnScannerAiFxRateStale` | `vuln_ai_fx_rate_age_days > 2` | 1h | warning |
 | `VulnScannerAiBillingShortfall` | `vuln_ai_usage_shortfall_idr_24h > 0` | 15m | warning |
+| `VulnScannerAiWalletLedgerDrift` | `vuln_ai_wallet_ledger_drift_idr > 0` | 30m | warning |
 
 First response:
 
 - **FX stale** — check `ai_fx.refresh` logs (runs daily at 01:10 UTC on the `ip_scan` worker) and the worker env (DB / FX source credentials). Then use the admin FX card **Refresh now**, or enter a manual rate, to unblock billing until the fetch is fixed.
 - **Shortfall** — a settle could not collect the full amount because the org wallet was exhausted. Inspect the wallet balance and the matching `ai_usage_events` row (`shortfall_idr`), then top up the wallet / reconcile with the customer.
+- **Wallet ledger drift** — a wallet balance no longer matches its ledger sum, which means a code path mutated the balance without a ledger row (or a manual DB edit). Inspect `ai_wallets` vs `ai_wallet_ledger` for the offending organization, and never "fix" it by editing only one side.
 
 Rules template: [`monitoring/alerts-vuln-scanner.example.yml`](../monitoring/alerts-vuln-scanner.example.yml).
 

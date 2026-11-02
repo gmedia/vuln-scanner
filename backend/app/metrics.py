@@ -21,6 +21,7 @@ AUTO_FAIL_REDIS_KEYS = {
 
 _FX_RATE_AGE_NAME = "vuln_ai_fx_rate_age_days"
 _SHORTFALL_NAME = "vuln_ai_usage_shortfall_idr_24h"
+_LEDGER_DRIFT_NAME = "vuln_ai_wallet_ledger_drift_idr"
 
 _collector_registered = False
 
@@ -115,6 +116,29 @@ def _read_ai_shortfall_idr_24h() -> float | None:
         return None
 
 
+def _read_ai_wallet_ledger_drift_idr() -> float | None:
+    """Largest gap between a wallet balance and its ledger sum; 0.0 when consistent, None on failure."""
+    try:
+        from sqlalchemy import text
+
+        with _ai_engine().connect() as conn:
+            raw = conn.execute(
+                text(
+                    "SELECT COALESCE(MAX(ABS(w.balance_idr - COALESCE(l.total, 0))), 0) "
+                    "FROM ai_wallets w "
+                    "LEFT JOIN ("
+                    "SELECT organization_id, SUM(delta_idr) AS total "
+                    "FROM ai_wallet_ledger "
+                    "GROUP BY organization_id"
+                    ") l ON l.organization_id = w.organization_id"
+                )
+            ).scalar()
+        return float(raw or 0)
+    except Exception as e:
+        logger.debug("ai wallet ledger drift metric scrape failed: %s", e)
+        return None
+
+
 class AutoFailCollector:
     def collect(self) -> Iterable[Metric]:
         counts = _read_auto_fail_counts()
@@ -162,6 +186,23 @@ class AiShortfallCollector:
         yield gauge
 
 
+class AiWalletLedgerDriftCollector:
+    def collect(self) -> Iterable[Metric]:
+        try:
+            value = _read_ai_wallet_ledger_drift_idr()
+        except Exception as e:
+            logger.debug("ai wallet ledger drift collector failed: %s", e)
+            return
+        if value is None:
+            return
+        gauge = GaugeMetricFamily(
+            _LEDGER_DRIFT_NAME,
+            "Largest gap between ai_wallets.balance_idr and the ledger sum (IDR)",
+        )
+        gauge.add_metric([], value)
+        yield gauge
+
+
 def register_custom_metrics() -> None:
     global _collector_registered
     if _collector_registered:
@@ -169,4 +210,5 @@ def register_custom_metrics() -> None:
     REGISTRY.register(AutoFailCollector())
     REGISTRY.register(AiFxRateCollector())
     REGISTRY.register(AiShortfallCollector())
+    REGISTRY.register(AiWalletLedgerDriftCollector())
     _collector_registered = True

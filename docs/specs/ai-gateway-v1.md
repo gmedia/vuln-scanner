@@ -239,14 +239,14 @@ Unique `(base, quote, effective_date)`; a same-day re-fetch or override updates 
 |--------|-------|
 | `id` | UUID |
 | `organization_id` | FK `ai_wallets.organization_id`, indexed |
-| `kind` | `topup` \| `reserve` \| `settle_adjust` \| `release` \| `manual_adjust` |
+| `kind` | `topup` \| `reserve` \| `settle_adjust` \| `release` \| `manual_adjust` \| `opening` |
 | `delta_idr` | signed IDR change |
 | `balance_after_idr` | post-change balance, `>= 0` |
 | `reservation_id`, `usage_event_id`, `actor_user_id` | nullable links |
 | `note` | optional |
 | `created_at` | |
 
-Partial unique `(kind, reservation_id)`; every balance mutation writes exactly one row in the same transaction as the wallet update, so `sum(delta_idr)` equals `balance_idr`.
+Partial unique `(kind, reservation_id)`; every balance mutation writes exactly one row in the same transaction as the wallet update, so `sum(delta_idr)` equals `balance_idr`. The USD-pricing follow-up seeds one `opening` row per pre-existing wallet as `balance - existing ledger sum`, so `sum(delta_idr) == balance_idr` holds for every wallet after that migration; a drift gauge alerts if it stops holding.
 
 ---
 
