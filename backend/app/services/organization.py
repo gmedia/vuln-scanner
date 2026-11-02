@@ -20,6 +20,8 @@ from app.models.organization import (
     OrganizationMembership,
 )
 from app.models.user import User
+from app.schemas.sku_tier import SkuTierFeatures, SkuTierWorkspaceLimits
+from app.services.sku_tier import SkuTierService, workspace_seat_cap_detail
 
 ROLE_RANK: dict[str, int] = {
     "viewer": 1,
@@ -32,9 +34,9 @@ MAX_NON_PERSONAL_ORGS_CREATED = 5
 INVITE_TTL_DAYS = 14
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
 
-# R5: Basic caps at 1 write-role member ("editor", owner included) + 1 viewer; Pro/Multi unlimited.
+# Workspace seat caps come from the org's tier: ``workspace_editor_limit`` /
+# ``workspace_viewer_limit`` in ``sku_tiers`` (NULL = unlimited).
 WRITE_ROLES: frozenset[str] = frozenset({"owner", "admin", "member"})
-BASIC_SEAT_CAP_DETAIL = "Basic workspace allows 1 editor and 1 viewer. Upgrade to Pro for more seats."
 
 
 def role_rank(role: str | None) -> int:
@@ -82,12 +84,13 @@ async def ensure_personal_org(db: AsyncSession, user: User) -> Organization:
         return org
 
     local = (user.email or "user").split("@", 1)[0]
+    default_tier = await SkuTierService(db).default()
     org = Organization(
         id=uuid.uuid4(),
         name=f"{local}'s workspace"[:255],
         slug=make_unique_slug(local),
         kind="personal",
-        sku="basic",
+        sku=default_tier.code,
         created_by_user_id=user.id,
     )
     db.add(org)
@@ -174,7 +177,7 @@ async def count_owners(db: AsyncSession, organization_id: UUID) -> int:
     return int(result.scalar() or 0)
 
 
-async def _enforce_basic_seat_cap(
+async def _enforce_workspace_seat_cap(
     db: AsyncSession,
     org_id: UUID,
     role: str,
@@ -182,7 +185,14 @@ async def _enforce_basic_seat_cap(
     exclude_user_id: UUID | None = None,
 ) -> None:
     sku_result = await db.execute(select(Organization.sku).where(Organization.id == org_id))
-    if sku_result.scalar_one_or_none() != "basic":
+    sku = sku_result.scalar_one_or_none()
+    if sku is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
+
+    tier = await SkuTierService(db).get(sku)
+    editor_limit = tier.workspace_editor_limit
+    viewer_limit = tier.workspace_viewer_limit
+    if editor_limit is None and viewer_limit is None:
         return
 
     query = select(OrganizationMembership.role).where(OrganizationMembership.organization_id == org_id)
@@ -192,10 +202,11 @@ async def _enforce_basic_seat_cap(
 
     write_count = sum(1 for r in roles if r in WRITE_ROLES)
     viewer_count = sum(1 for r in roles if r == "viewer")
-    if role in WRITE_ROLES and write_count >= 1:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=BASIC_SEAT_CAP_DETAIL)
-    if role == "viewer" and viewer_count >= 1:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=BASIC_SEAT_CAP_DETAIL)
+    detail = workspace_seat_cap_detail(tier.label, editor_limit, viewer_limit)
+    if role in WRITE_ROLES and editor_limit is not None and write_count >= editor_limit:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
+    if role == "viewer" and viewer_limit is not None and viewer_count >= viewer_limit:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
 
 
 class OrganizationService:
@@ -210,9 +221,16 @@ class OrganizationService:
             .order_by(OrganizationMembership.created_at.asc())
         )
         rows = result.scalars().all()
+        tiers = {
+            tier.code: tier for tier in await SkuTierService(self.db).list(include_inactive=True)
+        }
         items: list[dict[str, object]] = []
         for m in rows:
             org = m.organization
+            tier = tiers.get(org.sku)
+            if tier is None:
+                # Unknown SKU: raise (404) rather than silently invent a tier.
+                tier = await SkuTierService(self.db).get(org.sku)
             items.append(
                 {
                     "id": org.id,
@@ -220,6 +238,9 @@ class OrganizationService:
                     "slug": org.slug,
                     "kind": org.kind,
                     "sku": org.sku,
+                    "sku_label": tier.label,
+                    "sku_features": SkuTierFeatures.from_model(tier),
+                    "workspace_seats_limits": SkuTierWorkspaceLimits.from_model(tier),
                     "role": m.role,
                     "created_at": org.created_at,
                 }
@@ -262,12 +283,13 @@ class OrganizationService:
                 break
             candidate = make_unique_slug(desired)
 
+        default_tier = await SkuTierService(self.db).default()
         org = Organization(
             id=uuid.uuid4(),
             name=name.strip()[:255],
             slug=candidate,
             kind=kind,
-            sku="basic",
+            sku=default_tier.code,
             created_by_user_id=user.id,
         )
         self.db.add(org)
@@ -320,8 +342,8 @@ class OrganizationService:
                 raise HTTPException(status_code=409, detail="Slug already taken")
             org.slug = cleaned[:64]
         if sku is not None:
-            if sku not in ("basic", "pro", "multi", "enterprise"):
-                raise HTTPException(status_code=400, detail="sku must be basic, pro, multi, or enterprise")
+            if sku != org.sku:
+                await SkuTierService(self.db).get_active(sku)
             if not user.is_admin:
                 raise HTTPException(
                     status_code=403,
@@ -366,7 +388,7 @@ class OrganizationService:
             if owners <= 1:
                 raise HTTPException(status_code=400, detail="Cannot demote the last owner")
 
-        await _enforce_basic_seat_cap(self.db, org_id, new_role, exclude_user_id=target_user_id)
+        await _enforce_workspace_seat_cap(self.db, org_id, new_role, exclude_user_id=target_user_id)
 
         target.role = new_role
         target.updated_at = datetime.now(UTC)
@@ -431,7 +453,7 @@ class OrganizationService:
             if already is not None:
                 raise HTTPException(status_code=409, detail="User is already a member")
 
-        await _enforce_basic_seat_cap(self.db, org_id, role)
+        await _enforce_workspace_seat_cap(self.db, org_id, role)
 
         raw, token_hash = generate_invite_token()
         invite = OrganizationInvite(
@@ -504,7 +526,7 @@ class OrganizationService:
             await self.db.commit()
             return existing
 
-        await _enforce_basic_seat_cap(self.db, invite.organization_id, invite.role)
+        await _enforce_workspace_seat_cap(self.db, invite.organization_id, invite.role)
 
         membership = OrganizationMembership(
             id=uuid.uuid4(),

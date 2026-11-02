@@ -15,8 +15,6 @@ from app.models.organization import Organization
 from app.models.status_page import (
     PLATFORM_HOSTS,
     RESERVED_HOST_SUFFIXES,
-    STATUS_PAGE_CUSTOM_HOST_SKUS,
-    STATUS_PAGE_PUBLISH_SKUS,
     StatusIncident,
     StatusIncidentUpdate,
     StatusPage,
@@ -45,6 +43,7 @@ from app.services.cloudflare_custom_hostnames import (
     map_hostname_status,
 )
 from app.services.organization import require_membership
+from app.services.sku_tier import SkuTierService
 
 logger = logging.getLogger(__name__)
 
@@ -183,8 +182,12 @@ class StatusPageService:
             raise HTTPException(status_code=400, detail="Active organization required")
         await require_membership(self.db, organization_id, user.id, min_role="member")
         org = await self._org(organization_id)
-        if (org.sku or "basic") not in STATUS_PAGE_PUBLISH_SKUS:
-            raise HTTPException(status_code=403, detail="Status page requires Pro or Multi SKU")
+        tier = await SkuTierService(self.db).get(org.sku)
+        if not tier.allow_status_page:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Status page is not available on the {tier.label} tier",
+            )
         existing = await self._page_for_org(organization_id)
         if existing is not None:
             if body.slug != existing.slug:
@@ -216,6 +219,7 @@ class StatusPageService:
             raise HTTPException(status_code=400, detail="Active organization required")
         await require_membership(self.db, organization_id, user.id, min_role="member")
         org = await self._org(organization_id)
+        tier = await SkuTierService(self.db).get(org.sku)
         page = await self._page_for_org(organization_id)
         if page is None:
             raise HTTPException(status_code=404, detail="Status page not found")
@@ -225,16 +229,22 @@ class StatusPageService:
             await self._assert_slug_free(body.slug, page.id)
             page.slug = body.slug
         if body.published is not None:
-            if body.published and (org.sku or "basic") not in STATUS_PAGE_PUBLISH_SKUS:
-                raise HTTPException(status_code=403, detail="Status page requires Pro or Multi SKU")
+            if body.published and not tier.allow_status_page:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Status page is not available on the {tier.label} tier",
+                )
             page.published = body.published
         if "custom_hostname" in body.model_fields_set:
             if not body.custom_hostname:
                 page.custom_hostname = None
                 page.hostname_status = "none"
             else:
-                if (org.sku or "basic") not in STATUS_PAGE_CUSTOM_HOST_SKUS:
-                    raise HTTPException(status_code=403, detail="Custom domain requires Multi SKU")
+                if not tier.allow_custom_host:
+                    raise HTTPException(
+                        status_code=403,
+                        detail=f"Custom domain is not available on the {tier.label} tier",
+                    )
                 assert_custom_hostname(body.custom_hostname)
                 other = await self.db.execute(
                     select(StatusPage).where(
@@ -251,8 +261,12 @@ class StatusPageService:
         return self._to_response(loaded)
 
     async def _set_hostname(self, org: Organization, page: StatusPage, hostname: str) -> None:
-        if (org.sku or "basic") not in STATUS_PAGE_CUSTOM_HOST_SKUS:
-            raise HTTPException(status_code=403, detail="Custom domain requires Multi SKU")
+        tier = await SkuTierService(self.db).get(org.sku)
+        if not tier.allow_custom_host:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Custom domain is not available on the {tier.label} tier",
+            )
         assert_custom_hostname(hostname)
         other = await self.db.execute(
             select(StatusPage).where(StatusPage.custom_hostname == hostname, StatusPage.id != page.id)

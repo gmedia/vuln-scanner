@@ -18,6 +18,7 @@ from app.database import get_db
 from app.main import app
 from app.models.billing import Subscription
 from app.models.organization import Organization, OrganizationMembership
+from app.models.sku_tier import SkuTier
 from app.models.user import User
 from app.services.auth import create_access_token, hash_password
 from app.services.billing_access import (
@@ -403,3 +404,20 @@ async def test_invite_is_blocked_on_the_path_org(db_session, two_orgs):
             assert response.status_code == 403, response.text
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_billing_unrestricted_reads_tier_flag(db_session, ctx):
+    org: Organization = ctx["org"]
+    await _set_status(db_session, org, "canceled", sku="basic")
+    basic = await db_session.get(SkuTier, "basic")
+    assert basic is not None
+
+    assert await billing_write_block(db_session, org.id) == REASON_CANCELED
+    basic.billing_unrestricted = True
+    await db_session.commit()
+    assert await billing_write_block(db_session, org.id) is None
+
+    basic.billing_unrestricted = False
+    await db_session.commit()
+    assert await billing_write_block(db_session, org.id) == REASON_CANCELED

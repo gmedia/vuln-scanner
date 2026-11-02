@@ -18,6 +18,7 @@ from app.models.host_protect import HostSite
 from app.models.host_waf import HostWafEvent
 from app.models.organization import Organization, OrganizationMembership
 from app.models.siem import SiemCase, SiemCaseNote
+from app.models.sku_tier import SkuTier
 from app.models.user import User
 from app.schemas.host_waf import MAX_AGENT_WAF_EVENTS
 from app.services.auth import create_access_token, hash_password
@@ -1855,5 +1856,36 @@ async def test_list_events_paginated_skips_vendor_rules(db_session: AsyncSession
             assert len(page_two["items"]) == 1
             assert page_two["items"][0]["rule_id"] == "1001"
             assert page_two["items"][0]["path"] not in {item["path"] for item in body["items"]}
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_waf_protect_gate_reads_tier_flag(db_session: AsyncSession, ctx):
+    _bind_db(db_session)
+    org = ctx["org"]
+    owner: User = ctx["owner"]
+    site: HostSite = ctx["site"]
+    multi = await db_session.get(SkuTier, "multi")
+    assert multi is not None
+    multi.allow_waf_protect = False
+    await db_session.commit()
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            denied = await client.put(
+                f"/api/host/waf/sites/{site.id}/policy",
+                headers=_auth(owner, org.id),
+                json={"mode": "protect", "engine": "nginx_modsec", "paranoia": 1},
+            )
+            assert denied.status_code == 403
+
+            multi.allow_waf_protect = True
+            await db_session.commit()
+            allowed = await client.put(
+                f"/api/host/waf/sites/{site.id}/policy",
+                headers=_auth(owner, org.id),
+                json={"mode": "protect", "engine": "nginx_modsec", "paranoia": 1},
+            )
+            assert allowed.status_code == 200, allowed.text
     finally:
         app.dependency_overrides.clear()

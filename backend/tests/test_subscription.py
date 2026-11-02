@@ -14,6 +14,7 @@ from app.main import app
 from app.models.asset import ScanAsset
 from app.models.billing import Subscription
 from app.models.organization import Organization, OrganizationMembership
+from app.models.sku_tier import SkuTier
 from app.models.user import User
 from app.services.auth import create_access_token, hash_password
 from app.services.organization import ensure_personal_org
@@ -108,6 +109,30 @@ async def test_overview_returns_plan_usage_and_catalog(db_session, ctx):
     finally:
         app.dependency_overrides.clear()
 
+
+@pytest.mark.asyncio
+async def test_plan_source_and_label_come_from_tier(db_session, ctx):
+    basic = await db_session.get(SkuTier, "basic")
+    pro = await db_session.get(SkuTier, "pro")
+    assert basic is not None and pro is not None
+    basic.is_default = False
+    pro.is_default = True
+    await db_session.commit()
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get(
+                f"/api/orgs/{ctx['org'].id}/subscription",
+                headers=_auth(ctx["owner"], ctx["org"].id),
+            )
+            assert response.status_code == 200, response.text
+            plan = response.json()["plan"]
+            # Basic is no longer the default tier, so the fallback source is ops.
+            assert plan["source"] == "ops"
+            assert plan["label"] == "Sinexis Secure — Basic"
+    finally:
+        app.dependency_overrides.clear()
 
 @pytest.mark.asyncio
 async def test_viewer_cannot_request_plan_change(db_session, ctx):
@@ -318,7 +343,9 @@ async def test_enterprise_is_quote_only(db_session, ctx):
             )
             assert overview.json()["plan"]["status"] == "enterprise"
             assert overview.json()["plan"]["source"] == "custom"
-            assert overview.json()["usage"][0]["limit"] is None
+            assert overview.json()["plan"]["label"] == "Sinexis Secure — Enterprise"
+            # Enterprise keeps the effective 10/10/200/10 cap from the seed.
+            assert overview.json()["usage"][0]["limit"] == 10
 
             r = await client.post(
                 f"/api/orgs/{ctx['org'].id}/subscription/requests",

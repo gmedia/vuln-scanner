@@ -4,7 +4,7 @@ import html
 from datetime import datetime
 
 from app.i18n import DEFAULT_LOCALE, AppLocale, t
-from app.models.invoice import PRODUCT_SEATS, OrgInvoice
+from app.models.invoice import OrgInvoice
 
 _SELLER = "Sinexis"
 _SELLER_PRODUCT = "Sinexis Scan"
@@ -37,12 +37,16 @@ def render_invoice_html(
     org_name: str | None,
     bank: dict[str, str | None] | None,
     locale: AppLocale = DEFAULT_LOCALE,
+    sku_label: str,
+    seats: int,
 ) -> str:
+    """Render an invoice with label and seats resolved from ``sku_tiers``."""
     def label(key: str) -> str:
         return _esc(t(locale, "invoice", key))
 
     product = _PRODUCT_LABEL.get(inv.product, inv.product)
-    seats = PRODUCT_SEATS.get(inv.product, PRODUCT_SEATS["scan"]).get(inv.sku, 1)
+    resolved_label = sku_label
+    resolved_seats = seats
     number = _esc(inv.number)
     bill_to = _esc(org_name or "—")
     amount = _esc(_idr(inv.amount_idr))
@@ -59,7 +63,7 @@ def render_invoice_html(
     issued = _esc(_day(inv.created_at))
     due = _esc(_day(inv.due_date))
     status = _esc(t(locale, "invoice", f"status_{inv.status}"))
-    item = _esc(f"{product} — {inv.sku.upper()}")
+    item = _esc(f"{product} — {resolved_label}")
     bank_block = ""
     if inv.status == "sent":
         pay_hint = _esc(t(locale, "invoice", "payHint", number=inv.number))
@@ -175,7 +179,7 @@ def render_invoice_html(
       </tr></thead>
       <tbody><tr>
         <td><p class="item-title">{item}</p><p class="item-period">{period}</p></td>
-        <td class="num">{seats}</td><td class="num">{amount}</td>
+        <td class="num">{resolved_seats}</td><td class="num">{amount}</td>
       </tr></tbody>
     </table>
     <section class="inv-totals" aria-label="{label("total")}">

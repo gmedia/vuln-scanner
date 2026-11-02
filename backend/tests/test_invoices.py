@@ -17,6 +17,7 @@ from app.i18n import load_catalog
 from app.main import app
 from app.models.invoice import OrgInvoice, SkuCatalog
 from app.models.organization import Organization, OrganizationMembership
+from app.models.sku_tier import SkuTier
 from app.models.user import User
 from app.services.auth import create_access_token, hash_password
 from app.services.invoice import bank_copy
@@ -157,6 +158,26 @@ async def test_create_invoice_snapshots_list_idr(db_session, ctx):
     finally:
         app.dependency_overrides.clear()
 
+
+@pytest.mark.asyncio
+async def test_invoice_seats_come_from_tier_row(db_session, ctx):
+    tier = await db_session.get(SkuTier, "pro")
+    assert tier is not None
+    tier.limit_scan = 7
+    await db_session.commit()
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            created = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={"organization_id": str(ctx["org"].id), "sku": "pro"},
+            )
+            assert created.status_code == 201, created.text
+            assert created.json()["seats"] == 7
+    finally:
+        app.dependency_overrides.clear()
 
 @pytest.mark.asyncio
 async def test_duplicate_scan_invoice_same_period_409(db_session, ctx):
@@ -585,6 +606,8 @@ def test_render_invoice_html_sent_includes_bank_and_host_seats() -> None:
         _sample_invoice(status="sent"),
         org_name="Acme <x>",
         bank={"bank_name": "Bank Contoh", "bank_account": "999", "bank_holder": "Holder"},
+        sku_label="MULTI",
+        seats=10,
     )
     assert "Sinexis Host Protect" in html
     assert "<td class=\"num\">10</td>" in html
@@ -598,6 +621,8 @@ def test_render_invoice_html_paid_omits_bank_account() -> None:
         _sample_invoice(status="paid", product="scan", sku="basic"),
         org_name="Acme",
         bank={"bank_name": "Bank Contoh", "bank_account": "SHOULD-NOT", "bank_holder": "Holder"},
+        sku_label="BASIC",
+        seats=1,
     )
     assert "SHOULD-NOT" not in html
     assert 'class="inv-pay"' not in html
@@ -610,6 +635,8 @@ def test_render_invoice_html_draft_omits_bank() -> None:
         _sample_invoice(status="draft", product="scan", sku="pro"),
         org_name=None,
         bank={"bank_name": "Bank Contoh", "bank_account": "SHOULD-NOT", "bank_holder": "Holder"},
+        sku_label="PRO",
+        seats=3,
     )
     assert "SHOULD-NOT" not in html
     # Bill-to falls back to an em dash when org_name is None (locale-independent).
@@ -627,11 +654,25 @@ def test_render_invoice_html_localizes_labels(locale: str, pay_label: str, statu
         org_name="Acme",
         bank={"bank_name": "Bank Contoh", "bank_account": "999", "bank_holder": "Holder"},
         locale=locale,
+        sku_label="MULTI",
+        seats=10,
     )
     assert pay_label in html
     assert status_label in html
     assert f'lang="{locale}"' in html
 
+
+def test_render_invoice_html_uses_supplied_tier_label_and_seats() -> None:
+    html = render_invoice_html(
+        _sample_invoice(status="draft", product="scan", sku="basic"),
+        org_name="Acme",
+        bank=None,
+        sku_label="Pro Plus",
+        seats=99,
+    )
+    assert "Sinexis Scan — Pro Plus" in html
+    assert '<td class="num">99</td>' in html
+    assert "Sinexis Scan — BASIC" not in html
 
 def test_invoice_catalog_key_parity() -> None:
     assert set(load_catalog("id", "invoice")) == set(load_catalog("en", "invoice"))
@@ -656,6 +697,8 @@ def test_render_invoice_html_friendly_label_and_seats_per_product(
         _sample_invoice(status="draft", product=product, sku=sku),
         org_name="Acme",
         bank=None,
+        sku_label=sku.upper(),
+        seats=expected_seats,
     )
     assert f"{label} — {sku.upper()}" in html
     assert f">{product} —" not in html

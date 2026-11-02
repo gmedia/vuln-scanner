@@ -6,10 +6,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.models.asset import ASSET_SKU_LIMITS
 from app.schemas.scan import TARGET_PATTERN
 
-MAX_ASSETS_MULTI = ASSET_SKU_LIMITS["multi"]
 MAX_TAGS_PER_ASSET = 8
 MAX_TAG_LEN = 32
 _TAG_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,31}$")

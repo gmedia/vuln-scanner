@@ -13,6 +13,7 @@ from app.database import get_db
 from app.main import app
 from app.models.credit_log import CreditLog
 from app.models.organization import Organization, OrganizationMembership
+from app.models.sku_tier import SkuTier
 from app.models.uptime import UptimeMonitor
 from app.models.user import User
 from app.services.auth import create_access_token, hash_password
@@ -518,3 +519,46 @@ async def test_custom_host_root_and_status_path(ctx, db_session: AsyncSession):
         )
         assert via_forwarded.status_code == 200, via_forwarded.text
         assert "ERP" in via_forwarded.text
+
+
+@pytest.mark.asyncio
+async def test_status_page_gates_read_tier_flags(ctx, db_session: AsyncSession):
+    _bind_db(db_session)
+    org: Organization = ctx["org"]  # seeded as "pro"
+    pro = await db_session.get(SkuTier, "pro")
+    assert pro is not None
+    headers = _auth(ctx["owner"], org.id)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        created = await client.put(
+            "/api/status-page",
+            json={"slug": "tier-flag", "title": "Tier Flag"},
+            headers=headers,
+        )
+        assert created.status_code == 200, created.text
+
+        pro.allow_status_page = False
+        await db_session.commit()
+        denied = await client.patch("/api/status-page", json={"published": True}, headers=headers)
+        assert denied.status_code == 403
+
+        pro.allow_status_page = True
+        pro.allow_custom_host = False
+        await db_session.commit()
+        published = await client.patch("/api/status-page", json={"published": True}, headers=headers)
+        assert published.status_code == 200, published.text
+        host_denied = await client.patch(
+            "/api/status-page",
+            json={"custom_hostname": "status-tier.appmedia.id"},
+            headers=headers,
+        )
+        assert host_denied.status_code == 403
+
+        pro.allow_custom_host = True
+        await db_session.commit()
+        host_ok = await client.patch(
+            "/api/status-page",
+            json={"custom_hostname": "status-tier.appmedia.id"},
+            headers=headers,
+        )
+        assert host_ok.status_code == 200, host_ok.text

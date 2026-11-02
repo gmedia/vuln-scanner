@@ -8,10 +8,10 @@ from fastapi import HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.asset import ASSET_SKU_LIMITS, ScanAsset
+from app.models.asset import ScanAsset
 from app.models.billing import PaymentAttempt, Subscription
-from app.models.guard import GUARD_SKU_LIMITS, GuardAgent
-from app.models.host_protect import HOST_SITE_SKU_LIMITS, HostSite
+from app.models.guard import GuardAgent
+from app.models.host_protect import HostSite
 from app.models.invoice import (
     ANNUAL_MONTHS_PAID,
     ANNUAL_MONTHS_SERVED,
@@ -26,8 +26,9 @@ from app.models.invoice import (
     OrgInvoice,
 )
 from app.models.organization import Organization, OrganizationMembership
+from app.models.sku_tier import SkuTier
 from app.models.subscription import SubscriptionRequest
-from app.models.uptime import UPTIME_SKU_LIMITS, UptimeMonitor
+from app.models.uptime import UptimeMonitor
 from app.models.user import User
 from app.schemas.billing import PaymentAttemptItem
 from app.schemas.subscription import (
@@ -45,20 +46,8 @@ from app.schemas.subscription import (
 from app.services.billing_access import billing_write_block
 from app.services.invoice import InvoiceService
 from app.services.organization import role_at_least
+from app.services.sku_tier import SkuTierService, workspace_seat_cap_detail
 
-SKU_RANK: dict[str, int] = {"basic": 1, "pro": 2, "multi": 3, "enterprise": 4}
-SKU_LABEL: dict[str, str] = {
-    "basic": "Basic",
-    "pro": "Pro",
-    "multi": "Multi",
-    "enterprise": "Enterprise",
-}
-PRODUCT_LIMITS: dict[str, dict[str, int]] = {
-    "scan": ASSET_SKU_LIMITS,
-    "host": HOST_SITE_SKU_LIMITS,
-    "uptime": UPTIME_SKU_LIMITS,
-    "guard": GUARD_SKU_LIMITS,
-}
 PRODUCT_UNITS: dict[str, str] = {
     "scan": "asset",
     "host": "site",
@@ -78,11 +67,6 @@ def _utc(value: datetime | None) -> datetime | None:
         return None
     return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
 
-
-def _limit_for(sku: str, limits: dict[str, int]) -> int | None:
-    if sku == "enterprise":
-        return None
-    return limits.get(sku, limits["multi"])
 
 
 def _request_item(
@@ -118,7 +102,20 @@ class SubscriptionService:
             query = query.where(clause)
         return int((await self.db.execute(query)).scalar() or 0)
 
-    async def _usage(self, organization_id: UUID, sku: str) -> tuple[list[SubscriptionUsageItem], WorkspaceSeats]:
+    async def _resolve_tier(self, code: str | None) -> SkuTier:
+        service = SkuTierService(self.db)
+        return await service.get(code) if code else await service.default()
+
+    async def _usage(
+        self, organization_id: UUID, sku: str | None
+    ) -> tuple[list[SubscriptionUsageItem], WorkspaceSeats]:
+        tier = await self._resolve_tier(sku)
+        limits = {
+            "scan": tier.limit_scan,
+            "host": tier.limit_host,
+            "uptime": tier.limit_uptime,
+            "guard": tier.limit_guard,
+        }
         used = {
             "scan": await self._count(ScanAsset, organization_id),
             "host": await self._count(HostSite, organization_id),
@@ -129,7 +126,7 @@ class SubscriptionService:
             SubscriptionUsageItem(
                 product=product,
                 used=used[product],
-                limit=_limit_for(sku, PRODUCT_LIMITS[product]),
+                limit=limits[product],
                 unit=PRODUCT_UNITS[product],
             )
             for product in ("scan", "host", "uptime", "guard")
@@ -148,8 +145,8 @@ class SubscriptionService:
         seats = WorkspaceSeats(
             editors=editors,
             viewers=viewers,
-            editor_limit=1 if sku == "basic" else None,
-            viewer_limit=1 if sku == "basic" else None,
+            editor_limit=tier.workspace_editor_limit,
+            viewer_limit=tier.workspace_viewer_limit,
         )
         return usage, seats
 
@@ -168,15 +165,16 @@ class SubscriptionService:
 
     def _invoice_plan_status(
         self,
-        sku: str,
+        tier: SkuTier,
         invoice: OrgInvoice | None,
         *,
         now: datetime,
         period_end: datetime | None,
     ) -> tuple[str, str]:
         """Legacy derivation, used only when no subscription row exists yet."""
+        fallback_source = "default" if tier.is_default else "ops"
         if invoice is None:
-            return "unbilled", "default" if sku == "basic" else "ops"
+            return "unbilled", fallback_source
         if invoice.status == "sent":
             return "pending_payment", "invoice"
         if invoice.status == "draft":
@@ -184,7 +182,7 @@ class SubscriptionService:
         if invoice.status == "paid":
             status = "active" if period_end is not None and period_end >= now else "expired"
             return status, "invoice"
-        return "unbilled", "default" if sku == "basic" else "ops"
+        return "unbilled", fallback_source
 
     def _subscription_plan_status(
         self,
@@ -219,20 +217,22 @@ class SubscriptionService:
             return "pending_payment"
         return "unbilled"
 
-    def _plan(
+    async def _plan(
         self,
         org: Organization,
         invoice: OrgInvoice | None,
         subscription: Subscription | None = None,
     ) -> SubscriptionPlan:
-        sku = org.sku or "basic"
+        tier = await self._resolve_tier(org.sku)
+        sku = tier.code
+        label = f"Sinexis Secure — {tier.label}"
         now = datetime.now(UTC)
         invoice_end = _utc(invoice.period_end) if invoice is not None else None
 
-        if sku == "enterprise":
+        if tier.sales_led:
             return SubscriptionPlan(
                 sku=sku,
-                label=f"Sinexis Secure — {SKU_LABEL.get(sku, sku)}",
+                label=label,
                 status="enterprise",
                 source="custom",
             )
@@ -244,7 +244,7 @@ class SubscriptionService:
             period_end = _utc(subscription.current_period_end) or invoice_end
             return SubscriptionPlan(
                 sku=sku,
-                label=f"Sinexis Secure — {SKU_LABEL.get(sku, sku)}",
+                label=label,
                 status=self._subscription_plan_status(
                     subscription,
                     invoice,
@@ -264,7 +264,7 @@ class SubscriptionService:
             )
 
         plan_status, source = self._invoice_plan_status(
-            sku,
+            tier,
             invoice,
             now=now,
             period_end=invoice_end,
@@ -277,7 +277,7 @@ class SubscriptionService:
 
         return SubscriptionPlan(
             sku=sku,
-            label=f"Sinexis Secure — {SKU_LABEL.get(sku, sku)}",
+            label=label,
             status=plan_status,
             source=source,
             cycle=cycle,
@@ -363,14 +363,14 @@ class SubscriptionService:
     async def overview(self, org: Organization, role: str) -> SubscriptionOverviewResponse:
         invoice = await self._latest_scan_invoice(org.id)
         subscription = await self._subscription(org.id)
-        usage, seats = await self._usage(org.id, org.sku or "basic")
+        usage, seats = await self._usage(org.id, org.sku)
         catalog, bundles = await self._catalog()
         can_manage = role_at_least(role, "admin")
         read_only_reason = await billing_write_block(self.db, org.id)
         return SubscriptionOverviewResponse(
             organization_id=org.id,
             organization_name=org.name,
-            plan=self._plan(org, invoice, subscription),
+            plan=await self._plan(org, invoice, subscription),
             usage=usage,
             workspace_seats=seats,
             catalog=catalog,
@@ -403,30 +403,40 @@ class SubscriptionService:
         cycle: str,
         note: str,
     ) -> SubscriptionRequestItem:
-        if target_sku not in ("basic", "pro", "multi"):
-            raise HTTPException(status_code=400, detail="Enterprise plans are quote-only")
-        current_sku = org.sku or "basic"
+        service = SkuTierService(self.db)
+        target = await service.get(target_sku)
+        if not target.active or not target.requestable:
+            raise HTTPException(
+                status_code=400,
+                detail=f"{target.label} is not available for new subscriptions",
+            )
+        current = await self._resolve_tier(org.sku)
+        current_sku = current.code
         if target_sku == current_sku:
             raise HTTPException(status_code=400, detail="Organization is already on this plan")
 
-        direction = "upgrade" if SKU_RANK[target_sku] > SKU_RANK[current_sku] else "downgrade"
+        direction = "upgrade" if target.rank > current.rank else "downgrade"
         usage, seats = await self._usage(org.id, current_sku)
         if direction == "downgrade":
+            target_limits = await service.limits(target_sku)
             for item in usage:
-                limit = _limit_for(target_sku, PRODUCT_LIMITS[item.product])
-                if limit is not None and item.used > limit:
+                limit = target_limits[item.product]
+                if item.used > limit:
                     raise HTTPException(
                         status_code=400,
                         detail=(
                             f"{item.product.capitalize()} usage is {item.used}, "
-                            f"but {SKU_LABEL[target_sku]} allows {limit}. "
+                            f"but {target.label} allows {limit}. "
                             "Remove the extra capacity before downgrading."
                         ),
                     )
-            if target_sku == "basic" and (seats.editors > 1 or seats.viewers > 1):
+            editor_limit, viewer_limit = await service.workspace_limits(target_sku)
+            over_editor = editor_limit is not None and seats.editors > editor_limit
+            over_viewer = viewer_limit is not None and seats.viewers > viewer_limit
+            if over_editor or over_viewer:
                 raise HTTPException(
                     status_code=400,
-                    detail="Basic workspace allows 1 editor and 1 viewer. Reduce members before downgrading.",
+                    detail=workspace_seat_cap_detail(target.label, editor_limit, viewer_limit),
                 )
 
         pending = await self.db.execute(

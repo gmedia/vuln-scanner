@@ -12,6 +12,7 @@ from app.config import settings
 from app.main import app
 from app.models.guard import GuardAgent, GuardOrgBinding, wazuh_group_for_org
 from app.models.organization import Organization, OrganizationMembership
+from app.models.sku_tier import SkuTier
 from app.models.user import User
 from app.services.auth import create_access_token, hash_password
 from app.services.organization import ensure_personal_org
@@ -505,3 +506,22 @@ async def test_siem_disabled_404_for_non_enterprise_org(
         r = await client.get("/api/siem/events", headers=_auth(owner, org.id))
         assert r.status_code == 404
     app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_siem_gate_reads_tier_flag(db_session: AsyncSession, siem_ws):
+    enterprise = await db_session.get(SkuTier, "enterprise")
+    assert enterprise is not None
+    enterprise.allow_siem = False
+    await db_session.commit()
+    owner = siem_ws["owner"]
+    org = siem_ws["org"]
+    transport = await _client(db_session)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        denied = await client.get("/api/siem/status", headers=_auth(owner, org.id))
+        assert denied.status_code == 403
+
+        enterprise.allow_siem = True
+        await db_session.commit()
+        allowed = await client.get("/api/siem/status", headers=_auth(owner, org.id))
+        assert allowed.status_code == 200, allowed.text

@@ -5,6 +5,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
+from app.schemas.sku_tier import SkuTierFeatures, SkuTierWorkspaceLimits
+
 
 class OrgCreateRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
@@ -32,6 +34,9 @@ class OrgMembershipResponse(BaseModel):
     sku: str = "basic"
     role: str
     created_at: datetime
+    sku_label: str | None = None
+    sku_features: SkuTierFeatures | None = None
+    workspace_seats_limits: SkuTierWorkspaceLimits | None = None
 
 
 class OrgDetailResponse(BaseModel):
@@ -45,6 +50,9 @@ class OrgDetailResponse(BaseModel):
     created_by_user_id: uuid.UUID | None
     created_at: datetime
     updated_at: datetime
+    sku_label: str | None = None
+    sku_features: SkuTierFeatures | None = None
+    workspace_seats_limits: SkuTierWorkspaceLimits | None = None
 
 
 class MemberResponse(BaseModel):

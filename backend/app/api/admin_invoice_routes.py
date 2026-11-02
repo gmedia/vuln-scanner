@@ -202,7 +202,7 @@ async def list_invoices(
     )
     return InvoiceListResponse(
         items=[
-            InvoiceItem.model_validate(to_item(inv, org_name=name, include_bank=inv.status == "sent"))
+            InvoiceItem.model_validate(await to_item(inv, org_name=name, include_bank=inv.status == "sent", db=db))
             for inv, name in rows
         ],
         total=total,
@@ -229,7 +229,7 @@ async def create_invoice(
         cycle=body.cycle,
         notes=body.notes,
     )
-    return InvoiceItem.model_validate(to_item(inv, org_name=None, include_bank=False))
+    return InvoiceItem.model_validate(await to_item(inv, org_name=None, include_bank=False, db=db))
 
 
 @router.post("/invoices/{invoice_id}/send", response_model=InvoiceItem)
@@ -243,7 +243,7 @@ async def send_invoice(
     if limit_response:
         return limit_response
     inv = await InvoiceService(db).send(invoice_id)
-    return InvoiceItem.model_validate(to_item(inv, org_name=None, include_bank=True))
+    return InvoiceItem.model_validate(await to_item(inv, org_name=None, include_bank=True, db=db))
 
 
 @router.post("/invoices/{invoice_id}/paid", response_model=InvoiceItem)
@@ -263,7 +263,7 @@ async def pay_invoice(
         method="bank_transfer",
         reference=body.bank_ref,
     )
-    return InvoiceItem.model_validate(to_item(inv, org_name=None, include_bank=False))
+    return InvoiceItem.model_validate(await to_item(inv, org_name=None, include_bank=False, db=db))
 
 
 @router.post("/invoices/{invoice_id}/void", response_model=InvoiceItem)
@@ -277,7 +277,7 @@ async def void_invoice(
     if limit_response:
         return limit_response
     inv = await InvoiceService(db).void(invoice_id)
-    return InvoiceItem.model_validate(to_item(inv, org_name=None, include_bank=False))
+    return InvoiceItem.model_validate(await to_item(inv, org_name=None, include_bank=False, db=db))
 
 
 @router.get("/invoices/{invoice_id}/export")
@@ -295,8 +295,9 @@ async def export_invoice_pdf(
     if format != "pdf":
         raise HTTPException(status_code=400, detail="format must be 'pdf'")
     org = await db.get(Organization, inv.organization_id)
-    return invoice_pdf_response(
+    return await invoice_pdf_response(
         inv,
         org_name=org.name if org is not None else None,
+        db=db,
         locale=normalize_lang(getattr(current_admin, "locale", None)),
     )

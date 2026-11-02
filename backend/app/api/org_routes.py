@@ -26,6 +26,7 @@ from app.schemas.organization import (
     OrgSwitchResponse,
     OrgUpdateRequest,
 )
+from app.schemas.sku_tier import SkuTierFeatures, SkuTierWorkspaceLimits
 from app.services.auth import create_access_token, create_refresh_token, get_current_user
 from app.services.billing_access import (
     BILLING_WRITE_MEMBER,
@@ -34,11 +35,28 @@ from app.services.billing_access import (
 from app.services.email import send_invite_email
 from app.services.invoice import InvoiceService, invoice_pdf_response, to_item
 from app.services.organization import OrganizationService, require_membership
+from app.services.sku_tier import SkuTierService
 
 router = APIRouter(tags=["organizations"])
 logger = logging.getLogger(__name__)
 
 invite_create_limiter = RateLimiter(max_requests=10, window_seconds=60, prefix="ratelimit:org_invite")
+
+async def _org_detail_response(db: AsyncSession, org: Organization) -> OrgDetailResponse:
+    tier = await SkuTierService(db).get(org.sku)
+    return OrgDetailResponse(
+        id=org.id,
+        name=org.name,
+        slug=org.slug,
+        kind=org.kind,
+        sku=org.sku,
+        created_by_user_id=org.created_by_user_id,
+        created_at=org.created_at,
+        updated_at=org.updated_at,
+        sku_label=tier.label,
+        sku_features=SkuTierFeatures.from_model(tier),
+        workspace_seats_limits=SkuTierWorkspaceLimits.from_model(tier),
+    )
 
 
 @router.get("/orgs", response_model=list[OrgMembershipResponse])
@@ -57,7 +75,7 @@ async def create_org(
     db: AsyncSession = Depends(get_db),
 ) -> OrgDetailResponse:
     org = await OrganizationService(db).create_org(current_user, name=body.name, slug=body.slug, kind=body.kind)
-    return OrgDetailResponse.model_validate(org)
+    return await _org_detail_response(db, org)
 
 
 @router.get("/orgs/{org_id}", response_model=OrgDetailResponse)
@@ -67,7 +85,7 @@ async def get_org(
     db: AsyncSession = Depends(get_db),
 ) -> OrgDetailResponse:
     org = await OrganizationService(db).get_org(org_id, current_user)
-    return OrgDetailResponse.model_validate(org)
+    return await _org_detail_response(db, org)
 
 
 @router.patch("/orgs/{org_id}", response_model=OrgDetailResponse, dependencies=BILLING_WRITE_ORG)
@@ -78,7 +96,7 @@ async def update_org(
     db: AsyncSession = Depends(get_db),
 ) -> OrgDetailResponse:
     org = await OrganizationService(db).update_org(org_id, current_user, name=body.name, slug=body.slug, sku=body.sku)
-    return OrgDetailResponse.model_validate(org)
+    return await _org_detail_response(db, org)
 
 
 @router.post("/orgs/switch", response_model=OrgSwitchResponse)
@@ -261,7 +279,10 @@ async def list_org_invoices(
     items = await InvoiceService(db).list_org(org_id)
     return InvoiceListResponse(
         items=[
-            InvoiceItem.model_validate(to_item(inv, org_name=None, include_bank=inv.status == "sent")) for inv in items
+            InvoiceItem.model_validate(
+                await to_item(inv, org_name=None, include_bank=inv.status == "sent", db=db)
+            )
+            for inv in items
         ],
         total=len(items),
     )
@@ -278,7 +299,7 @@ async def get_org_invoice(
     inv = await InvoiceService(db).get(invoice_id)
     if inv.organization_id != org_id:
         raise HTTPException(status_code=404, detail="Invoice not found")
-    return InvoiceItem.model_validate(to_item(inv, org_name=None, include_bank=inv.status == "sent"))
+    return InvoiceItem.model_validate(await to_item(inv, org_name=None, include_bank=inv.status == "sent", db=db))
 
 
 @router.get("/orgs/{org_id}/invoices/{invoice_id}/export")
@@ -296,8 +317,9 @@ async def export_org_invoice_pdf(
     if format != "pdf":
         raise HTTPException(status_code=400, detail="format must be 'pdf'")
     org = await db.get(Organization, org_id)
-    return invoice_pdf_response(
+    return await invoice_pdf_response(
         inv,
         org_name=org.name if org is not None else None,
+        db=db,
         locale=normalize_lang(getattr(current_user, "locale", None)),
     )

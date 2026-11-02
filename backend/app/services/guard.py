@@ -15,7 +15,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.models.asset import ScanAsset
 from app.models.guard import (
-    GUARD_SKU_LIMITS,
     GuardAgent,
     GuardAlert,
     GuardEnrollToken,
@@ -30,6 +29,7 @@ from app.services.guard_apply import sync_all_enabled as apply_sync_all_enabled
 from app.services.guard_apply import sync_org as apply_sync_org
 from app.services.host_agent_ingest import generate_results_token
 from app.services.organization import require_membership
+from app.services.sku_tier import SkuTierService
 from app.services.wazuh_client import WazuhClient, get_wazuh_client
 
 _AGENT_NAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._\-]{0,62}$")
@@ -43,9 +43,6 @@ def generate_enroll_token() -> tuple[str, str]:
     raw = secrets.token_urlsafe(32)
     return raw, hash_enroll_token(raw)
 
-
-def sku_guard_limit(sku: str | None) -> int:
-    return GUARD_SKU_LIMITS.get(sku or "multi", GUARD_SKU_LIMITS["multi"])
 
 
 class GuardService:
@@ -325,8 +322,10 @@ class GuardService:
         org = (
             await self.db.execute(select(Organization).where(Organization.id == row.organization_id))
         ).scalar_one_or_none()
-        org_sku = org.sku if org is not None else None
-        limit = sku_guard_limit(org_sku)
+        if org is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
+        tier = await SkuTierService(self.db).get(org.sku)
+        limit = tier.limit_guard
         active = (
             await self.db.execute(
                 select(func.count())
@@ -337,7 +336,7 @@ class GuardService:
         if int(active) >= limit:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Guard seat limit for {org_sku or 'multi'} tier is {limit}",
+                detail=f"Guard seat limit for {tier.label} tier is {limit}",
             )
 
         try:

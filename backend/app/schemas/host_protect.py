@@ -5,10 +5,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.models.host_protect import HOST_SITE_SKU_LIMITS
 from app.services.host_path import validate_root_path
-
-MAX_SITES_MULTI = HOST_SITE_SKU_LIMITS["multi"]
 
 
 class HostSiteCreate(BaseModel):

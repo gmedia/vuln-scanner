@@ -24,6 +24,7 @@ from app.api.scan_routes import router as scan_router
 from app.api.schedule_routes import router as schedule_router
 from app.api.ses_webhook_routes import router as ses_webhook_router
 from app.api.siem_routes import router as siem_router
+from app.api.sku_tier_routes import router as sku_tier_router
 from app.api.status_page_routes import router as status_page_router
 from app.api.subscription_routes import router as subscription_router
 from app.api.uptime_routes import router as uptime_router
@@ -52,6 +53,7 @@ api_router.include_router(org_router)
 api_router.include_router(subscription_router)
 api_router.include_router(guard_router)
 api_router.include_router(siem_router)
+api_router.include_router(sku_tier_router)
 api_router.include_router(host_router)
 api_router.include_router(host_waf_router)
 api_router.include_router(asset_router)

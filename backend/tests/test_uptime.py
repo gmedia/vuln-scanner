@@ -216,14 +216,28 @@ async def test_sku_seat_cap_locked_to_commercial(
     db_session: AsyncSession, ctx: dict, _stub_enqueue: list[str]
 ) -> None:
     """Seat caps are the owner-locked commercial numbers (2026-10-12), not asset seats."""
-    from app.services.uptime import sku_uptime_limit
+    from fastapi import HTTPException
 
-    assert sku_uptime_limit("basic") == 10
-    assert sku_uptime_limit("pro") == 50
-    assert sku_uptime_limit("multi") == 200
-    # unknown / None falls back to the most generous tier
-    assert sku_uptime_limit(None) == 200
-    assert sku_uptime_limit("enterprise") == 200
+    from app.models.sku_tier import SkuTier
+    from app.services.sku_tier import SkuTierService
+
+    service = SkuTierService(db_session)
+    assert (await service.limits("basic"))["uptime"] == 10
+    assert (await service.limits("pro"))["uptime"] == 50
+    assert (await service.limits("multi"))["uptime"] == 200
+    assert (await service.limits("enterprise"))["uptime"] == 200
+    with pytest.raises(HTTPException) as missing:
+        await service.limits("does_not_exist")
+    assert missing.value.status_code == 404
+
+    # Prove the read path uses the row, not a Python constant.
+    tier = await db_session.get(SkuTier, "basic")
+    assert tier is not None
+    tier.limit_uptime = 11
+    await db_session.commit()
+    assert (await service.limits("basic"))["uptime"] == 11
+    tier.limit_uptime = 10
+    await db_session.commit()
 
     _bind_db(db_session)
     owner, org = ctx["owner"], ctx["org"]

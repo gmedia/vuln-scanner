@@ -20,6 +20,7 @@ from app.services.asset import AssetService
 from app.services.asset_pack_html import render_asset_pack_html
 from app.services.auth import get_active_org_id, get_current_user
 from app.services.billing_access import BILLING_WRITE
+from app.services.sku_tier import SkuTierService
 
 router = APIRouter(prefix="/assets", tags=["assets"])
 
@@ -60,8 +61,9 @@ async def asset_pack(
     if format == "json":
         return pack
     if format == "html":
+        sku_label = await SkuTierService(db).label(pack.sku) if pack.sku else None
         return HTMLResponse(
-            content=render_asset_pack_html(pack, lang=lang),
+            content=render_asset_pack_html(pack, lang=lang, sku_label=sku_label),
             headers={
                 "Content-Disposition": 'attachment; filename="assets-pack.html"',
             },

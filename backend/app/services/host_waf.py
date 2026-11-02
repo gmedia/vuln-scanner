@@ -23,6 +23,7 @@ from app.schemas.host_waf import (
 from app.services.host_handoff import handoff_waf_block
 from app.services.host_waf_render import is_lab_waf_site, render_coraza_include, render_nginx_modsec
 from app.services.organization import require_membership
+from app.services.sku_tier import SkuFeatures, SkuTierService
 
 _WAF_STARTER_IDS = frozenset(
     {
@@ -271,10 +272,11 @@ class HostWafService:
         org_id = await self._require_org(user, organization_id, min_role="admin")
         if body.mode == "protect":
             org = (await self.db.execute(select(Organization).where(Organization.id == org_id))).scalar_one()
-            if org.sku not in ("pro", "multi", "enterprise"):
+            tier = await SkuTierService(self.db).get(org.sku)
+            if not SkuFeatures.from_tier(tier).allow_waf_protect:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="WAF protect requires Host Pro or Multi SKU",
+                    detail=f"WAF protect is not available on the {tier.label} tier",
                 )
         site = await self._site(org_id, site_id)
         existing = (
