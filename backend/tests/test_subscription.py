@@ -352,7 +352,8 @@ async def test_enterprise_is_quote_only(db_session, ctx):
                 headers=_auth(ctx["owner"], ctx["org"].id),
                 json={"target_sku": "enterprise"},
             )
-            assert r.status_code == 422
+            assert r.status_code == 400
+            assert "not available" in r.json()["detail"]
 
             downgrade = await client.post(
                 f"/api/orgs/{ctx['org'].id}/subscription/requests",
