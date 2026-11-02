@@ -326,6 +326,8 @@ Response shape: OpenAI chat completions (including `usage`). Errors: OpenAI-styl
 ## 10. Edge / ops
 
 - Host nginx + compose nginx: `location ^~ /v1/` → backend `:8000`; `proxy_http_version 1.1`; `proxy_buffering off`; `proxy_cache off`; `proxy_read_timeout` ≥ 120s; `X-Accel-Buffering: no`.
+- Time budget: `AI_UPSTREAM_FAILOVER_DEADLINE_SECONDS` (default **100**) is the whole request budget and must stay **below** nginx `proxy_read_timeout` (120s), so the gateway answers before the proxy gives up. Every attempt is clamped to what is left of it, and no new attempt starts unless at least `AI_UPSTREAM_MIN_ATTEMPT_SECONDS` remains. `AI_UPSTREAM_CONNECT_TIMEOUT_SECONDS` (10) fails an unreachable provider fast; `AI_UPSTREAM_STREAM_IDLE_TIMEOUT_SECONDS` (45) is the streaming idle timeout, so a provider that accepts then stalls is detected and failed over **before** the first byte.
+- Known limit: a non-streaming provider that stays silent cannot be failed over, because its read timeout *is* the remaining budget — cutting it earlier would break legitimate slow completions. Closing that gap needs the provider health probe / circuit breaker (S7.3), not a shorter timeout.
 - Cloudflare: test **through** orange-cloud; disable buffering if streams stall.
 - Flag default **false** in git compose (local/CI/prod until ops).
 - Secrets: provider creds in DB envelope or env per provider — **not** in git.
