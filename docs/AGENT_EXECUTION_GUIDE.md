@@ -336,8 +336,11 @@ Aligned to **§1.3**. Phase letters are stable for chat (“kerjakan P1”); do 
 
 - **Never** commit on `main`; branch `feat/*` or `fix/*` or `docs/*` from latest `main`
 - Conventional commits: `feat:`, `fix:`, `docs:`, `chore:`, …
-- Push after commits; open PR; **do not poll CI**
-- Squash-merge when CI green (user or agent per session rules)
+- Push after commits; open PR; **then start the next task — do not poll CI**
+- No `gh run watch`, no `sleep` loops, no repeated `gh pr checks` waiting for green
+- Squash-merge only at **Session Start** or when the user explicitly asks in that turn;
+  a check that is still running is not a reason to wait
+- If CI is red: push the fix, keep working, report it (do not wait for the rerun)
 - Every git command: prefix **`GIT_MASTER=1`** (user/session constraint)
 - Do **not** commit: `workers/coverage-report.json`, `.playwright-mcp/`, temp screenshot dirs, **raw customer/finance CSVs**
 
