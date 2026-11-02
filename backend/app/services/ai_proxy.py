@@ -288,7 +288,19 @@ def _attempt_reason(status: int | None) -> str:
 def _can_retry(idx: int, candidates: Sequence[UpstreamCandidate], started: float) -> bool:
     if idx + 1 >= len(candidates):
         return False
-    return (time.monotonic() - started) < settings.ai_upstream_failover_deadline_seconds
+    return _budget_left(started) >= settings.ai_upstream_min_attempt_seconds
+
+
+def _budget_left(started: float) -> float:
+    return settings.ai_upstream_failover_deadline_seconds - (time.monotonic() - started)
+
+
+def _attempt_timeout(started: float, *, streaming: bool) -> httpx.Timeout:
+    remaining = max(_budget_left(started), 0.001)
+    hard_cap = min(remaining, settings.ai_upstream_timeout_seconds)
+    read = min(hard_cap, settings.ai_upstream_stream_idle_timeout_seconds) if streaming else hard_cap
+    connect = min(settings.ai_upstream_connect_timeout_seconds, remaining)
+    return httpx.Timeout(connect=connect, read=read, write=hard_cap, pool=connect)
 
 
 def _note_attempt_failure(
@@ -333,7 +345,12 @@ async def _post_with_failover(
             url, headers, max_tokens = _candidate_target(candidate, capped)
             attempt_body = {**body, "model": candidate.upstream_id, "max_tokens": max_tokens}
             try:
-                resp = await client.post(url, headers=headers, json=attempt_body)
+                resp = await client.post(
+                    url,
+                    headers=headers,
+                    json=attempt_body,
+                    timeout=_attempt_timeout(started, streaming=False),
+                )
             except httpx.TransportError:
                 retry = _can_retry(idx, candidates, started)
                 _note_attempt_failure(
@@ -682,7 +699,13 @@ async def _stream_and_settle(
             url, headers, max_tokens = _candidate_target(candidate, capped)
             attempt_body = {**body, "model": candidate.upstream_id, "max_tokens": max_tokens}
             try:
-                async with client.stream("POST", url, headers=headers, json=attempt_body) as resp:
+                async with client.stream(
+                    "POST",
+                    url,
+                    headers=headers,
+                    json=attempt_body,
+                    timeout=_attempt_timeout(started, streaming=True),
+                ) as resp:
                     http_status = resp.status_code
                     if resp.status_code >= 400:
                         upstream_fault = _retryable_status(resp.status_code)
