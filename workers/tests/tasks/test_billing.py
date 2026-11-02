@@ -426,3 +426,43 @@ class TestDraftAnnualRenewals:
 
         assert result == {"created_count": 0, "skipped_count": 1}
         session.add.assert_not_called()
+
+    def test_grandfathered_inactive_tier_still_gets_renewal_draft(self):
+        from app.models.invoice import OrgInvoice
+
+        now = datetime.now(UTC)
+        sub = SimpleNamespace(
+            organization_id=uuid.uuid4(),
+            sku="multi",
+            cycle="annual",
+            status="active",
+            cancel_at_period_end=False,
+            current_period_end=now + timedelta(days=30),
+            tier_active=False,
+        )
+        rows_result = MagicMock()
+        rows_result.all.return_value = [(sub, "Acme")]
+        catalog_result = MagicMock()
+        catalog_result.scalar_one_or_none.return_value = SimpleNamespace(list_idr=2_000_000)
+        existing_result = MagicMock()
+        existing_result.scalar_one_or_none.return_value = None
+        number_result = MagicMock()
+        number_result.scalar_one.return_value = 0
+
+        session = MagicMock()
+        session.execute.side_effect = [
+            rows_result,
+            catalog_result,
+            existing_result,
+            number_result,
+        ]
+        session.get.return_value = SimpleNamespace(pkp_status="unknown", payment_terms_days=0)
+
+        with patch("tasks.billing.get_sync_session", return_value=session):
+            result = draft_annual_renewals()
+
+        assert result == {"created_count": 1, "skipped_count": 0}
+        draft = session.add.call_args[0][0]
+        assert isinstance(draft, OrgInvoice)
+        assert draft.sku == "multi"
+        assert draft.amount_idr == 20_000_000

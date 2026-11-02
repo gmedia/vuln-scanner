@@ -716,3 +716,55 @@ async def test_cancel_without_a_period_is_rejected(db_session, ctx):
             assert response.status_code == 409
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_overview_lists_active_tiers_and_the_current_tier(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get(
+                f"/api/orgs/{ctx['org'].id}/subscription",
+                headers=_auth(ctx["owner"], ctx["org"].id),
+            )
+            assert response.status_code == 200
+            tiers = {tier["code"]: tier for tier in response.json()["tiers"]}
+            assert set(tiers) == {"basic", "pro", "multi", "enterprise"}
+            assert tiers["enterprise"]["sales_led"] is True
+            assert tiers["basic"]["label"] == "Basic"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_overview_keeps_inactive_current_tier_in_catalog_and_bundles(db_session, ctx):
+    org = await db_session.get(Organization, ctx["org"].id)
+    multi = await db_session.get(SkuTier, "multi")
+    assert org is not None and multi is not None
+    org.sku = "multi"
+    multi.active = False
+    await db_session.commit()
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get(
+                f"/api/orgs/{ctx['org'].id}/subscription",
+                headers=_auth(ctx["owner"], ctx["org"].id),
+            )
+            assert response.status_code == 200, response.text
+            body = response.json()
+            assert body["plan"]["sku"] == "multi"
+            tiers = {tier["code"]: tier for tier in body["tiers"]}
+            assert tiers["multi"]["active"] is False
+            assert len(body["catalog"]) == 12
+            multi_items = [item for item in body["catalog"] if item["sku"] == "multi"]
+            assert len(multi_items) == 4
+            assert all(item["active"] is False and item["label"] == "Multi" for item in multi_items)
+            multi_bundle = next(bundle for bundle in body["bundles"] if bundle["tier"] == "multi")
+            assert multi_bundle["active"] is False
+            assert multi_bundle["label"] == "Multi"
+            assert multi_bundle["bundle_idr"] == 2_900_000
+    finally:
+        app.dependency_overrides.clear()
