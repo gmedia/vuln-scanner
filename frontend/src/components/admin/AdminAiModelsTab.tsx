@@ -17,6 +17,7 @@ import { Boxes } from "lucide-react";
 import { AdminAiField } from "@/components/admin/AdminAiField";
 import { AdminAiFxCard } from "@/components/admin/AdminAiFxCard";
 import { AdminAiModelList } from "@/components/admin/AdminAiModelList";
+import { AdminAiUpstreamSheet } from "@/components/admin/AdminAiUpstreamSheet";
 import { Button } from "@/components/ui/Button";
 import {
   AdminShell,
@@ -83,6 +84,9 @@ export function AdminAiModelsTab({
   const [hppIn, setHppIn] = useState("0");
   const [hppOut, setHppOut] = useState("0");
   const [editingModel, setEditingModel] = useState<AiModelAdmin | null>(null);
+  const [upstreamTarget, setUpstreamTarget] = useState<AiModelAdmin | null>(
+    null,
+  );
   const [editPublicId, setEditPublicId] = useState("");
   const [editUpstreamId, setEditUpstreamId] = useState("");
   const [editPriceIn, setEditPriceIn] = useState("");
@@ -156,6 +160,19 @@ export function AdminAiModelsTab({
 
   const priceLabelIn = t(unit === "usd_1m" ? "aiPriceInUsd" : "aiPriceIn");
   const priceLabelOut = t(unit === "usd_1m" ? "aiPriceOutUsd" : "aiPriceOut");
+
+  const handleUpstreamChanged = (updated: AiModelAdmin) => {
+    qc.setQueryData<{ items: AiModelAdmin[]; total: number }>(
+      ["admin-ai-models"],
+      (old) =>
+        old
+          ? {
+              ...old,
+              items: old.items.map((m) => (m.id === updated.id ? updated : m)),
+            }
+          : old,
+    );
+  };
 
   return (
     <AdminShell tone="primary">
@@ -264,6 +281,16 @@ export function AdminAiModelsTab({
           onCancelEdit={() => setEditingModel(null)}
           onSave={() => saveModel.mutate()}
           onDelete={(id) => delModel.mutate(id)}
+          onManageUpstreams={setUpstreamTarget}
+        />
+        <AdminAiUpstreamSheet
+          model={upstreamTarget}
+          providers={providers}
+          open={upstreamTarget !== null}
+          onOpenChange={(next) => {
+            if (!next) setUpstreamTarget(null);
+          }}
+          onChanged={handleUpstreamChanged}
         />
       </AdminShellBody>
     </AdminShell>

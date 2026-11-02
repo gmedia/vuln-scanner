@@ -60,6 +60,7 @@ export function AdminAiModelList({
   onCancelEdit,
   onSave,
   onDelete,
+  onManageUpstreams,
 }: {
   readonly models: readonly AiModelAdmin[];
   readonly unit: AiPriceUnit;
@@ -83,11 +84,24 @@ export function AdminAiModelList({
   readonly onCancelEdit: () => void;
   readonly onSave: () => void;
   readonly onDelete: (id: string) => void;
+  readonly onManageUpstreams: (m: AiModelAdmin) => void;
 }) {
   const { t } = useTranslation("admin");
   const [deleteTarget, setDeleteTarget] = useState<AiModelAdmin | null>(null);
   const renderPrice = (usd: number, idr: number): string =>
     unit === "usd_1m" ? formatUsdPer1m(usd) : formatIdr(idr);
+  const fallbackBadge = (m: AiModelAdmin) => {
+    const count = m.upstreams?.length ?? 0;
+    if (count === 0) return null;
+    return (
+      <span
+        className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+        data-testid={`ai-model-fallback-count-${m.id}`}
+      >
+        {t("aiFallbackCount", { count })}
+      </span>
+    );
+  };
   if (models.length === 0) {
     return <p className="text-sm text-muted-foreground">{t("aiModelsEmpty")}</p>;
   }
@@ -152,9 +166,12 @@ export function AdminAiModelList({
                 <p className="min-w-0 break-all font-mono text-sm font-medium text-foreground">
                   {m.public_id}
                 </p>
-                <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
-                  {m.upstream_id}
-                </p>
+                <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
+                  <span className="break-all font-mono text-xs text-muted-foreground">
+                    {m.upstream_id}
+                  </span>
+                  {fallbackBadge(m)}
+                </div>
                 <p className="mt-1 font-mono text-xs tabular-nums text-muted-foreground">
                   {priceLabelIn}:{" "}
                   {renderPrice(m.price_usd_per_1m_in, m.price_idr_per_1k_in)} ·{" "}
@@ -181,6 +198,12 @@ export function AdminAiModelList({
                         onSelect={() => onStartEdit(m)}
                       >
                         {t("aiEdit")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        data-testid={`admin-ai-model-upstreams-${m.id}`}
+                        onSelect={() => onManageUpstreams(m)}
+                      >
+                        {t("aiManageUpstreams")}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
@@ -257,7 +280,10 @@ export function AdminAiModelList({
                       />
                     </div>
                   ) : (
-                    m.upstream_id
+                    <span className="inline-flex flex-wrap items-center gap-2">
+                      <span>{m.upstream_id}</span>
+                      {fallbackBadge(m)}
+                    </span>
                   )}
                 </TableCell>
                 <TableCell className="tabular-nums">
@@ -297,6 +323,12 @@ export function AdminAiModelList({
                             onSelect={() => onStartEdit(m)}
                           >
                             {t("aiEdit")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            data-testid={`admin-ai-model-upstreams-${m.id}`}
+                            onSelect={() => onManageUpstreams(m)}
+                          >
+                            {t("aiManageUpstreams")}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
