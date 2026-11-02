@@ -23,11 +23,12 @@ from app.models.hpp import (
     HppOverhead,
     HppRate,
 )
-from app.models.invoice import GUARD_SKU_LIST_IDR, HOST_SKU_LIST_IDR, SCAN_SKU_LIST_IDR, UPTIME_SKU_LIST_IDR, SkuCatalog
+from app.models.invoice import INVOICE_PRODUCTS, SkuCatalog
 from app.models.organization import Organization
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 from app.models.scan_schedule import ScanSchedule
+from app.models.sku_tier import SkuTier
 from app.models.uptime import UptimeMonitor
 from app.models.user import User
 from app.schemas.admin import (
@@ -334,17 +335,12 @@ async def admin_force_verify_user(
     )
 
 
-async def _list_idr_from_catalog(
-    db: AsyncSession, product: str, fallback: dict[str, int]
-) -> tuple[dict[str, int], list[str]]:
-    prices = dict(fallback)
-    seeded = set(fallback)
+async def _list_idr_from_catalog(db: AsyncSession, product: str) -> dict[str, int]:
+    prices: dict[str, int] = {}
     result = await db.execute(select(SkuCatalog).where(SkuCatalog.product == product))
     for row in result.scalars().all():
-        sku = str(row.sku)
-        prices[sku] = int(row.list_idr)
-        seeded.discard(sku)
-    return prices, sorted(seeded)
+        prices[str(row.sku)] = int(row.list_idr)
+    return prices
 
 
 _SCAN_COGS_KEYS: tuple[str, ...] = ("ip", "domain", "apk", "ipa", "statushost")
@@ -559,13 +555,20 @@ async def get_hpp_report(
             host_scan_cap += sites * range_days
     host_scan_count = counts.get("hostscan", 0)
 
+    tier_rows = (await db.execute(select(SkuTier))).scalars().all()
+    tiers = {str(tier.code): tier for tier in tier_rows}
+
+    def _unpriced(sku: str, price: dict[str, int]) -> bool:
+        tier = tiers.get(sku)
+        return tier is None or bool(tier.sales_led) or sku not in price
+
     def _margin(line: str, sku_rows: list[tuple[str, int]], price: dict[str, int], cogs: int) -> HppLineMargin:
         org_count = 0
         revenue = 0
         unpriced = 0
         for sku, n in sku_rows:
             count = int(n)
-            if sku == "enterprise":
+            if _unpriced(sku, price):
                 unpriced += count
                 continue
             org_count += count
@@ -589,7 +592,7 @@ async def get_hpp_report(
         unpriced = 0
         for sku, n in sku_rows:
             count = int(n)
-            if sku == "enterprise":
+            if _unpriced(sku, price):
                 unpriced += count
                 continue
             org_count += count
@@ -612,22 +615,28 @@ async def get_hpp_report(
             unpriced_org_count=unpriced,
         )
 
-    scan_list, scan_seeded = await _list_idr_from_catalog(db, "scan", SCAN_SKU_LIST_IDR)
-    host_list, host_seeded = await _list_idr_from_catalog(db, "host", HOST_SKU_LIST_IDR)
-    uptime_list, uptime_seeded = await _list_idr_from_catalog(db, "uptime", UPTIME_SKU_LIST_IDR)
-    guard_list, guard_seeded = await _list_idr_from_catalog(db, "guard", GUARD_SKU_LIST_IDR)
+    scan_list = await _list_idr_from_catalog(db, "scan")
+    host_list = await _list_idr_from_catalog(db, "host")
+    uptime_list = await _list_idr_from_catalog(db, "uptime")
+    guard_list = await _list_idr_from_catalog(db, "guard")
     line_margins = [
         _margin("scan", [(str(s), int(n)) for s, n in scan_sku_rows], scan_list, scan_cogs),
         _margin_host([(str(s), int(n)) for s, n in host_sku_rows], host_list),
         _margin("uptime", [(str(s), int(n)) for s, n in uptime_sku_rows], uptime_list, uptime_cogs),
         _margin("guard", [(str(s), int(n)) for s, n in guard_sku_rows], guard_list, guard_cogs),
     ]
-    catalog_seed_skus = (
-        [f"scan:{s}" for s in scan_seeded]
-        + [f"host:{s}" for s in host_seeded]
-        + [f"uptime:{s}" for s in uptime_seeded]
-        + [f"guard:{s}" for s in guard_seeded]
-    )
+    prices_by_product = {
+        "scan": scan_list,
+        "host": host_list,
+        "uptime": uptime_list,
+        "guard": guard_list,
+    }
+    catalog_seed_skus = [
+        f"{product}:{tier.code}"
+        for product in INVOICE_PRODUCTS
+        for tier in sorted(tier_rows, key=lambda row: row.rank)
+        if not tier.sales_led and str(tier.code) not in prices_by_product[product]
+    ]
 
     return HppReportResponse(
         from_date=start,

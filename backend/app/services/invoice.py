@@ -156,6 +156,9 @@ class InvoiceService:
         cat = catalog.scalar_one_or_none()
         if cat is None or not cat.invoicable:
             raise HTTPException(status_code=400, detail="SKU is not invoicable")
+        tier = await SkuTierService(self.db).get(sku)
+        if not tier.active and org.sku != sku:
+            raise HTTPException(status_code=400, detail="Tier is retired")
         start, end = period_bounds_utc(period_start, cycle)
         profile = await self.db.get(OrgBillingProfile, organization_id)
         if due_date is not None:
@@ -238,15 +241,18 @@ class InvoiceService:
         inv = await self.get(invoice_id)
         if inv.status not in ("draft", "sent"):
             raise HTTPException(status_code=409, detail="Invoice cannot be marked paid")
+        org = await self.db.get(Organization, inv.organization_id) if inv.product == "scan" else None
+        if inv.product == "scan":
+            tier = await SkuTierService(self.db).get(inv.sku)
+            if not tier.active and (org is None or org.sku != inv.sku):
+                raise HTTPException(status_code=409, detail="Tier is retired")
         inv.status = "paid"
         inv.paid_at = datetime.now(UTC)
         if bank_ref is not None:
             inv.bank_ref = bank_ref.strip()[:64] or None
-        if inv.product == "scan":
-            org = await self.db.get(Organization, inv.organization_id)
-            if org is not None:
-                org.sku = inv.sku
-                org.updated_at = datetime.now(UTC)
+        if org is not None:
+            org.sku = inv.sku
+            org.updated_at = datetime.now(UTC)
         inv.updated_at = datetime.now(UTC)
         await self.db.commit()
         await self.db.refresh(inv)
