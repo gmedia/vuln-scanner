@@ -15,7 +15,7 @@ REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
 EXAMPLE=".env.example"
-COMPOSE_FILES=(docker-compose.prod.yml docker-compose.prod.remote-data.yml)
+COMPOSE_FILES=(docker-compose.prod.yml docker-compose.prod.remote-data.yml docker-compose.images.yml)
 WORKFLOW=".github/workflows/ci.yml"
 
 # Connection-only keys written by the CI deploy job. They are deploy infra, not

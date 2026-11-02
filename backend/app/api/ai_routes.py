@@ -20,7 +20,13 @@ from app.schemas.ai_gateway import (
     AiUsageOut,
     AiWalletOut,
 )
+from app.services import ai_fx
 from app.services.ai_keys import create_key, list_keys, revoke_key
+from app.services.ai_pricing import (
+    canonical_price_usd,
+    fx_stale,
+    usd_per_1m_to_idr_per_1k,
+)
 from app.services.ai_wallet import get_wallet as get_wallet_row
 from app.services.auth import get_active_org_id, get_current_user
 from app.services.billing_access import BILLING_WRITE
@@ -67,16 +73,28 @@ async def list_public_models(
     rows = list(
         (await db.execute(select(AiModel).where(AiModel.enabled.is_(True)).order_by(AiModel.public_id))).scalars().all()
     )
-    items = [
-        AiPublicModelOut(
-            public_id=r.public_id,
-            price_idr_per_1k_in=r.price_idr_per_1k_in,
-            price_idr_per_1k_out=r.price_idr_per_1k_out,
-            max_ctx=r.max_ctx,
-            max_tokens_cap=r.max_tokens_cap,
+    fx_rate, fx_source, fx_row = await ai_fx.effective_rate(db)
+    fx_effective_date = fx_row.effective_date if fx_row is not None else None
+    stale = fx_stale(fx_effective_date)
+    items = []
+    for r in rows:
+        usd_in = canonical_price_usd(r.price_usd_per_1m_in, r.price_idr_per_1k_in, fx_rate)
+        usd_out = canonical_price_usd(r.price_usd_per_1m_out, r.price_idr_per_1k_out, fx_rate)
+        items.append(
+            AiPublicModelOut(
+                public_id=r.public_id,
+                price_idr_per_1k_in=usd_per_1m_to_idr_per_1k(usd_in, fx_rate),
+                price_idr_per_1k_out=usd_per_1m_to_idr_per_1k(usd_out, fx_rate),
+                price_usd_per_1m_in=float(usd_in),
+                price_usd_per_1m_out=float(usd_out),
+                fx_rate=float(fx_rate),
+                fx_source=fx_source,
+                fx_effective_date=fx_effective_date,
+                fx_stale=stale,
+                max_ctx=r.max_ctx,
+                max_tokens_cap=r.max_tokens_cap,
+            )
         )
-        for r in rows
-    ]
     return AiPublicModelList(items=items, total=len(items))
 
 

@@ -1,5 +1,6 @@
 import logging
 import os
+from decimal import Decimal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -25,7 +26,10 @@ _SENTINEL = "__UNSET__"
 
 
 def _build_redis_url() -> str:
-    """Build a Redis URL, including password if REDIS_PASSWORD is set."""
+    """Build a Redis URL, preferring REDIS_URL and falling back to REDIS_PASSWORD."""
+    explicit = os.environ.get("REDIS_URL", "").strip()
+    if explicit:
+        return explicit
     password = os.environ.get("REDIS_PASSWORD", "")
     if password:
         return f"redis://:{password}@redis:6379/0"
@@ -125,6 +129,7 @@ class Settings(BaseSettings):
     jwt_rate_limit: int = 300  # requests per hour per IP for JWT-authenticated endpoints
     jwt_rate_limit_window: int = 3600  # seconds (1 hour)
     invoice_default_term_days: int = 0  # days after period_start before an invoice is due
+    git_sha: str = ""  # build revision written by deploy; surfaced on /health for drift checks
     admin_rate_limit: int = 60  # requests per minute per IP for admin endpoints
     admin_rate_limit_window: int = 60  # seconds
     scan_submit_limit: int = 30  # scan submissions per hour per IP
@@ -147,7 +152,13 @@ class Settings(BaseSettings):
     siem_enabled: bool = False
     ai_gateway_enabled: bool = False
     ai_usd_idr: int = 16000
+    ai_fx_auto_fetch: bool = True
+    ai_fx_source_url: str = "https://api.frankfurter.app/latest?from=USD&to=IDR"
+    ai_fx_fallback_url: str = "https://open.er-api.com/v6/latest/USD"
+    ai_fx_timeout_seconds: float = 8.0
     ai_store_prompts: bool = False
+    ai_trial_monthly_cap_usd: Decimal = Decimal("30")
+    # Deprecated: legacy IDR cap, used only when AI_TRIAL_MONTHLY_CAP_USD is absent.
     ai_trial_monthly_cap_idr: int = 500_000
     host_protect_enabled: bool = False
     host_protect_allow_mock: bool = False

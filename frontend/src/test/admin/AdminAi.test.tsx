@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
@@ -6,6 +6,18 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AdminAi from "@/pages/admin/AdminAi";
 import * as adminApi from "@/api/admin";
 import { toast } from "sonner";
+
+beforeAll(() => {
+  if (!Element.prototype.hasPointerCapture) {
+    Element.prototype.hasPointerCapture = () => false;
+  }
+  if (!Element.prototype.releasePointerCapture) {
+    Element.prototype.releasePointerCapture = () => {};
+  }
+  if (!Element.prototype.scrollIntoView) {
+    Element.prototype.scrollIntoView = () => {};
+  }
+});
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
@@ -25,6 +37,9 @@ vi.mock("@/api/admin", async () => {
     deleteAiModel: vi.fn(),
     topupAiWallet: vi.fn(),
     adminAiChat: vi.fn(),
+    getAiFx: vi.fn(),
+    refreshAiFx: vi.fn(),
+    setAiFxManual: vi.fn(),
   };
 });
 
@@ -44,6 +59,16 @@ function renderPage() {
 describe("AdminAi", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(adminApi.getAiFx).mockResolvedValue({
+      rate: 16300,
+      source: "api.frankfurter.app",
+      effective_date: "2026-10-30",
+      fetched_at: "2026-10-30T01:10:00Z",
+      using_env_fallback: false,
+      env_rate: 16000,
+      auto_fetch_enabled: true,
+      history: [],
+    });
   });
 
   it("renders heading and empty providers", async () => {
@@ -61,6 +86,8 @@ describe("AdminAi", () => {
     expect(list).toHaveAttribute("data-variant", "line");
     expect(list.className).toMatch(/\bw-full\b/);
     expect(list.className).not.toMatch(/min-w-max/);
+    expect(list.className).toMatch(/\bflex-wrap\b/);
+    expect(list.className).toMatch(/\bsm:flex-nowrap\b/);
   });
 
   it("lists provider and model with edit and delete", async () => {
@@ -91,6 +118,10 @@ describe("AdminAi", () => {
           hpp_usd_per_1k_out: 0,
           price_idr_per_1k_in: 1,
           price_idr_per_1k_out: 2,
+          price_usd_per_1m_in: 0.06135,
+          price_usd_per_1m_out: 0.1227,
+          hpp_usd_per_1m_in: 0,
+          hpp_usd_per_1m_out: 0,
           max_ctx: 1,
           max_tokens_cap: 1,
           enabled: true,
@@ -165,6 +196,54 @@ describe("AdminAi", () => {
     expect(screen.getAllByText("Rp 2").length).toBeGreaterThan(0);
   });
 
+  it("switches the models price unit to USD / 1M tokens", async () => {
+    const user = userEvent.setup();
+    window.localStorage.clear();
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [],
+      total: 0,
+    });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({
+      items: [
+        {
+          id: "m1",
+          provider_id: "p1",
+          public_id: "sinexis/demo",
+          upstream_id: "gpt",
+          hpp_usd_per_1k_in: 0,
+          hpp_usd_per_1k_out: 0,
+          price_idr_per_1k_in: 1000,
+          price_idr_per_1k_out: 2000,
+          price_usd_per_1m_in: 61.35,
+          price_usd_per_1m_out: 122.7,
+          hpp_usd_per_1m_in: 0,
+          hpp_usd_per_1m_out: 0,
+          max_ctx: 1,
+          max_tokens_cap: 1,
+          enabled: true,
+          created_at: "",
+          updated_at: "",
+        },
+      ],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    renderPage();
+    await user.click(await screen.findByRole("tab", { name: "Models" }));
+    await screen.findByTestId("admin-ai-model-card-m1");
+    const unitSelect = await screen.findByRole("combobox", {
+      name: "Price unit",
+    });
+    await waitFor(() => expect(unitSelect).toBeEnabled());
+    await user.click(unitSelect);
+    await user.click(await screen.findByRole("option", { name: "USD / 1M tokens" }));
+    expect(await screen.findAllByText("$61.35")).not.toHaveLength(0);
+    expect(screen.queryByText("Rp 1.000")).not.toBeInTheDocument();
+    expect(window.localStorage.getItem("sinexis.admin.aiPriceUnit")).toBe(
+      "usd_1m",
+    );
+  });
+
   it("asks before deleting an AI model", async () => {
     const user = userEvent.setup();
     vi.mocked(adminApi.listAiProviders).mockResolvedValue({
@@ -182,6 +261,10 @@ describe("AdminAi", () => {
           hpp_usd_per_1k_out: 0,
           price_idr_per_1k_in: 1,
           price_idr_per_1k_out: 2,
+          price_usd_per_1m_in: 0.06135,
+          price_usd_per_1m_out: 0.1227,
+          hpp_usd_per_1m_in: 0,
+          hpp_usd_per_1m_out: 0,
           max_ctx: 1,
           max_tokens_cap: 1,
           enabled: true,
@@ -202,6 +285,97 @@ describe("AdminAi", () => {
     expect(adminApi.deleteAiModel).not.toHaveBeenCalled();
     await user.click(screen.getByTestId("admin-ai-model-delete-confirm"));
     expect(adminApi.deleteAiModel).toHaveBeenCalledWith("m1");
+  });
+
+  it("submits USD prices on create and update without client-side IDR conversion", async () => {
+    const user = userEvent.setup();
+    const provider = {
+      id: "p1",
+      name: "OpenRouter",
+      base_url: "https://openrouter.ai/api/v1",
+      auth_header: "Authorization",
+      credential_set: true,
+      enabled: true,
+      status: "ok",
+      created_at: "",
+      updated_at: "",
+    };
+    const model: adminApi.AiModelAdmin = {
+      id: "m1",
+      provider_id: "p1",
+      public_id: "sinexis/demo",
+      upstream_id: "gpt",
+      hpp_usd_per_1k_in: 0,
+      hpp_usd_per_1k_out: 0,
+      price_idr_per_1k_in: 1000,
+      price_idr_per_1k_out: 2000,
+      price_usd_per_1m_in: 61.35,
+      price_usd_per_1m_out: 122.7,
+      hpp_usd_per_1m_in: 0,
+      hpp_usd_per_1m_out: 0,
+      max_ctx: 1,
+      max_tokens_cap: 1,
+      enabled: true,
+      created_at: "",
+      updated_at: "",
+    };
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [provider],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({
+      items: [model],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.createAiModel).mockResolvedValue(model);
+    vi.mocked(adminApi.updateAiModel).mockResolvedValue(model);
+    renderPage();
+
+    await user.click(await screen.findByRole("tab", { name: "Models" }));
+    const providerSelect = await screen.findByRole("combobox", {
+      name: "Provider id",
+    });
+    await user.click(providerSelect);
+    await user.click(await screen.findByRole("option", { name: "OpenRouter" }));
+    await user.click(screen.getByRole("button", { name: "Add model" }));
+
+    await waitFor(() => expect(adminApi.createAiModel).toHaveBeenCalledTimes(1));
+    const created = vi.mocked(adminApi.createAiModel).mock.calls[0][0];
+    expect(created).toMatchObject({
+      provider_id: "p1",
+      public_id: "sinexis/demo",
+      upstream_id: "openai/gpt-4o-mini",
+      price_usd_per_1m_in: 0.15,
+      price_usd_per_1m_out: 0.6,
+      hpp_usd_per_1m_in: 0,
+      hpp_usd_per_1m_out: 0,
+    });
+    expect(created).not.toHaveProperty("price_idr_per_1k_in");
+    expect(created).not.toHaveProperty("price_idr_per_1k_out");
+
+    await user.click(screen.getAllByTestId("admin-ai-model-actions-m1")[0]);
+    await user.click(await screen.findByTestId("admin-ai-model-edit-m1"));
+    const outInput = screen
+      .getAllByLabelText("Price USD / 1M out")
+      .find((el) => el.id === "ai-m-edit-out-m1");
+    expect(outInput).toBeTruthy();
+    await user.clear(outInput as HTMLElement);
+    await user.type(outInput as HTMLElement, "3.5");
+    await user.click(screen.getAllByRole("button", { name: "Save" })[0]);
+
+    await waitFor(() => expect(adminApi.updateAiModel).toHaveBeenCalledTimes(1));
+    const [updatedId, updatedPayload] = vi.mocked(adminApi.updateAiModel).mock
+      .calls[0];
+    expect(updatedId).toBe("m1");
+    expect(updatedPayload).toMatchObject({
+      price_usd_per_1m_in: 61.35,
+      price_usd_per_1m_out: 3.5,
+      hpp_usd_per_1m_in: 0,
+      hpp_usd_per_1m_out: 0,
+    });
+    expect(updatedPayload).not.toHaveProperty("price_idr_per_1k_in");
+    expect(updatedPayload).not.toHaveProperty("price_idr_per_1k_out");
   });
 
   it("asks before deleting an AI provider", async () => {

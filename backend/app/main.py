@@ -114,7 +114,7 @@ async def health_check() -> JSONResponse:
     """Check database and Redis connectivity. Returns 200 if both are reachable, 503 if degraded."""
     import redis.asyncio as aioredis
 
-    checks: dict[str, str] = {"status": "ok"}
+    checks: dict[str, str] = {"status": "ok", "sha": settings.git_sha or "unknown"}
 
     try:
         from sqlalchemy import text

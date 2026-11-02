@@ -20,6 +20,7 @@ from app.config import (
 
 def test_build_redis_url_no_password(monkeypatch):
     """Returns default URL when REDIS_PASSWORD is not set."""
+    monkeypatch.delenv("REDIS_URL", raising=False)
     monkeypatch.delenv("REDIS_PASSWORD", raising=False)
     url = _build_redis_url()
     assert url == "redis://redis:6379/0"
@@ -27,9 +28,18 @@ def test_build_redis_url_no_password(monkeypatch):
 
 def test_build_redis_url_with_password(monkeypatch):
     """Returns URL with password when REDIS_PASSWORD is set."""
+    monkeypatch.delenv("REDIS_URL", raising=False)
     monkeypatch.setenv("REDIS_PASSWORD", "secret123")
     url = _build_redis_url()
     assert url == "redis://:secret123@redis:6379/0"
+
+
+def test_build_redis_url_prefers_redis_url(monkeypatch):
+    """Returns REDIS_URL verbatim when it is set."""
+    monkeypatch.setenv("REDIS_URL", "redis://:pw@mesh-host:6379/0")
+    monkeypatch.setenv("REDIS_PASSWORD", "ignored")
+    url = _build_redis_url()
+    assert url == "redis://:pw@mesh-host:6379/0"
 
 
 # ── _is_dev_value ─────────────────────────────────────────────────────────

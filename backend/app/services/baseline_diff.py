@@ -19,7 +19,6 @@ from datetime import datetime
 from typing import cast
 from uuid import UUID
 
-from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -171,6 +170,8 @@ async def _can_access_job(db: AsyncSession, job: ScanJob, user_id: UUID) -> bool
 
 
 async def get_scan_diff(db: AsyncSession, job_id: str, user_id: UUID) -> ScanDiffResponse:
+    from fastapi import HTTPException
+
     try:
         job_uuid = uuid.UUID(str(job_id))
     except ValueError:

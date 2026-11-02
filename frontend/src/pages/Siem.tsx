@@ -149,7 +149,7 @@ export default function Siem() {
           ) : null}
 
           <Tabs value={tab} onValueChange={setTab} className="w-full">
-            <TabsList variant="line" className="w-full justify-start">
+            <TabsList variant="line" className="w-full flex-wrap justify-start sm:flex-nowrap">
               <TabsTrigger value="search" className="gap-1.5">
                 <Search aria-hidden />
                 {t("tabSearch")}

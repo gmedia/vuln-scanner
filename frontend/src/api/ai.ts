@@ -16,6 +16,12 @@ export interface AiPublicModel {
   public_id: string;
   price_idr_per_1k_in: number;
   price_idr_per_1k_out: number;
+  price_usd_per_1m_in: number | null;
+  price_usd_per_1m_out: number | null;
+  fx_rate: number;
+  fx_source: string;
+  fx_effective_date: string | null;
+  fx_stale: boolean;
   max_ctx: number;
   max_tokens_cap: number;
 }

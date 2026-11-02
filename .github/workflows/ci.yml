@@ -29,7 +29,11 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Cancel superseded PR runs (developers push often), but never cancel a run on
+  # `main`: it may be mid-deploy, and killing `up -d --force-recreate` can leave
+  # containers half-recreated. A newer main push replaces the *pending* run, so
+  # the running deploy finishes and the latest commit deploys next.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   API_KEY: e2e-test-api-key
@@ -43,6 +47,7 @@ jobs:
       frontend: ${{ steps.flags.outputs.frontend }}
       compose: ${{ steps.flags.outputs.compose }}
       packaging: ${{ steps.flags.outputs.packaging }}
+      observability: ${{ steps.flags.outputs.observability }}
       ci: ${{ steps.flags.outputs.ci }}
       docs_only: ${{ steps.flags.outputs.docs_only }}
       unknown: ${{ steps.flags.outputs.unknown }}
@@ -87,6 +92,9 @@ jobs:
               - 'scripts/smoke-broker.sh'
             packaging:
               - 'packaging/**'
+            observability:
+              - 'backend/app/metrics.py'
+              - 'monitoring/**'
             ci:
               - '.github/workflows/**'
               - 'Makefile'
@@ -178,6 +186,7 @@ jobs:
           FILTER_VITEST_SHARED: ${{ steps.filter.outputs.vitest_shared }}
           FILTER_COMPOSE: ${{ steps.filter.outputs.compose }}
           FILTER_PACKAGING: ${{ steps.filter.outputs.packaging }}
+          FILTER_OBSERVABILITY: ${{ steps.filter.outputs.observability }}
           FILTER_CI: ${{ steps.filter.outputs.ci }}
           FILTER_DOCS: ${{ steps.filter.outputs.docs }}
           MOD_SCAN: ${{ steps.filter.outputs.mod_scan }}
@@ -205,7 +214,7 @@ jobs:
             while IFS= read -r f; do
               [ -z "$f" ] && continue
               case "$f" in
-                backend/*|workers/*|frontend/*|packaging/*|nginx/*|docs/*)
+                backend/*|workers/*|frontend/*|packaging/*|nginx/*|docs/*|monitoring/*)
                   ;;
                 docker-compose.yml|docker-compose*.yml|.env.example|Makefile)
                   ;;
@@ -232,6 +241,7 @@ jobs:
           fi
           COMPOSE=$FILTER_COMPOSE
           PACKAGING=$FILTER_PACKAGING
+          OBSERVABILITY=${FILTER_OBSERVABILITY:-false}
           CI_OUT=$FILTER_CI
           if [ "$ALWAYS" = "true" ]; then
             BACKEND=true
@@ -239,6 +249,7 @@ jobs:
             FRONTEND=true
             COMPOSE=true
             PACKAGING=true
+            OBSERVABILITY=true
             CI_OUT=true
           fi
           DOCS_ONLY=false
@@ -333,6 +344,7 @@ jobs:
             echo "frontend=$FRONTEND"
             echo "compose=$COMPOSE"
             echo "packaging=$PACKAGING"
+            echo "observability=$OBSERVABILITY"
             echo "ci=$CI_OUT"
             echo "docs_only=$DOCS_ONLY"
             echo "unknown=$UNKNOWN"
@@ -369,9 +381,13 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.txt pytest-timeout==2.4.0
       - name: Run tests with coverage
-        run: python -m pytest tests/ -v --tb=short --cov-report=xml
+        # --timeout turns an intermittent hang (observed 36-50 min vs a ~10 min
+        # baseline) into a named failure. The step timeout is a backstop for the
+        # rare case where the plugin cannot interrupt a C-level block.
+        timeout-minutes: 25
+        run: python -m pytest tests/ -v --tb=short --cov-report=xml --timeout=300 --timeout-method=signal
       - name: Upload coverage report
         uses: actions/upload-artifact@v6
         with:
@@ -398,9 +414,13 @@ jobs:
           cache: pip
           cache-dependency-path: workers/requirements.txt
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.txt pytest-timeout==2.4.0
       - name: Run tests with coverage
-        run: python -m pytest tests/ -v --tb=short --cov-report=xml
+        # --timeout turns an intermittent hang (observed 36-50 min vs a ~10 min
+        # baseline) into a named failure. The step timeout is a backstop for the
+        # rare case where the plugin cannot interrupt a C-level block.
+        timeout-minutes: 25
+        run: python -m pytest tests/ -v --tb=short --cov-report=xml --timeout=300 --timeout-method=signal
       - name: Upload coverage report
         uses: actions/upload-artifact@v6
         with:
@@ -494,6 +514,7 @@ jobs:
         run: |
           npx vitest run \
             src/test/designInvariants.test.ts \
+            src/test/pageNavTabs.test.ts \
             src/test/docContract.test.ts \
             src/test/themeTokens.test.ts \
             src/test/toneColors.test.ts \
@@ -982,6 +1003,23 @@ jobs:
       - name: Check .env inventory is complete
         run: bash scripts/check-env-inventory.sh
 
+  alert-metrics:
+    name: alert-metrics
+    needs: [changes]
+    if: ${{ (github.event_name != 'workflow_dispatch' || !inputs.skip_tests)
+            && (needs.changes.outputs.always_full == 'true'
+                || needs.changes.outputs.observability == 'true') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check rules reference metrics that metrics.py exports
+        run: node scripts/check-alert-metrics.mjs
+      - name: Validate PromQL rules
+        run: |
+          docker run --rm -v "$PWD/monitoring:/m:ro" \
+            --entrypoint promtool prom/prometheus:v2.55.1 \
+            check rules /m/alerts-vuln-scanner.example.yml
+
   ci-ok:
     name: ci-ok
     runs-on: ubuntu-latest
@@ -1000,6 +1038,7 @@ jobs:
       - frontend-lint
       - e2e-tests
       - env-inventory
+      - alert-metrics
       - deps-sync
       - deps-audit
       - deps-audit-python
@@ -1022,20 +1061,112 @@ jobs:
               sys.exit(1)
           PY
 
+  publish-images:
+    name: publish-images
+    # Publish immutable images only from main (or a manual dispatch that did not
+    # skip the build). PRs never push.
+    if: ${{ !cancelled()
+            && github.ref_name == 'main'
+            && needs.ci-ok.result == 'success'
+            && (needs.docker-scan-backend.result == 'success' || needs.docker-scan-backend.result == 'skipped')
+            && (needs.docker-scan-workers.result == 'success' || needs.docker-scan-workers.result == 'skipped')
+            && (needs.docker-scan-frontend.result == 'success' || needs.docker-scan-frontend.result == 'skipped')
+            && (github.event_name == 'push'
+                || (github.event_name == 'workflow_dispatch'
+                    && !inputs.skip_build)) }}
+    needs: [ci-ok, docker-scan-backend, docker-scan-workers, docker-scan-frontend]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - name: backend
+            context: backend
+            file: backend/Dockerfile
+            target: runtime
+            build_args: ""
+          - name: workers
+            context: .
+            file: workers/Dockerfile
+            target: runtime
+            build_args: "INSTALL_BUNDLETOOL=0"
+          - name: workers-mobile
+            context: .
+            file: workers/Dockerfile
+            target: runtime
+            build_args: "INSTALL_BUNDLETOOL=1"
+          - name: frontend
+            context: frontend
+            file: frontend/Dockerfile
+            target: production
+            build_args: ""
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push ${{ matrix.name }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          target: ${{ matrix.target }}
+          build-args: ${{ matrix.build_args }}
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/vuln-scanner-${{ matrix.name }}:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=buildkit-${{ matrix.name }}
+          cache-to: type=gha,scope=buildkit-${{ matrix.name }},mode=max
+
   deploy:
-    if: ${{ github.ref_name == 'main'
+    if: ${{ vars.SKIP_DEPLOY != 'true'
+            && github.ref_name == 'main'
             && needs.ci-ok.result == 'success'
             && (github.event_name == 'push'
                 || (github.event_name == 'workflow_dispatch'
                     && !inputs.skip_deploy
                     && !inputs.skip_tests)) }}
-    needs: [ci-ok]
+    needs: [ci-ok, publish-images]
     runs-on: ubuntu-latest
     environment: production
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
 
+      - name: Preflight - deploy jump host reachable
+        timeout-minutes: 5
+        env:
+          JUMP_HOST: ${{ secrets.DEPLOY_JUMP_HOST }}
+          JUMP_PORT: ${{ secrets.DEPLOY_JUMP_PORT || 22 }}
+        run: |
+          set -euo pipefail
+          if ! command -v nc >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq netcat-openbsd
+          fi
+          for attempt in 1 2 3; do
+            if nc -z -w 10 "$JUMP_HOST" "$JUMP_PORT"; then
+              echo "jump host reachable (attempt ${attempt})"
+              exit 0
+            fi
+            echo "attempt ${attempt}/3 failed; retrying in 15s"
+            sleep 15
+          done
+          echo "::error::Cannot reach the deploy jump host after 3 attempts. Check bastion health and the runner IP allowlist."
+          exit 1
+
       - name: Write .env on server
+        if: ${{ vars.WRITE_ENV_ON_DEPLOY == 'true' }}
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -1077,6 +1208,7 @@ jobs:
             POSTGRES_DB=${{ secrets.POSTGRES_DB || 'vuln_scanner' }}
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             REDIS_PASSWORD=${REDIS_PASSWORD}
+            GIT_SHA=${{ github.sha }}
             API_KEY=${{ secrets.API_KEY }}
             SENTRY_DSN=${{ secrets.SENTRY_DSN }}
             SECRET_KEY=${{ secrets.SECRET_KEY }}
@@ -1166,18 +1298,72 @@ jobs:
           DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
           # Tunnel through bastion: runner never needs direct SSH to app host.
           PROXY_CMD="ssh -i $HOME/.ssh/jump_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p ${JUMP_PORT} -W %h:%p ${JUMP_USER}@${JUMP_HOST}"
-          scp -i ~/.ssh/deploy_key \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            -o "ProxyCommand=${PROXY_CMD}" \
-            -P "${DEPLOY_PORT}" \
-            scripts/deploy.sh \
-            "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/deploy-vuln.sh"
           ssh -i ~/.ssh/deploy_key \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
             -o "ProxyCommand=${PROXY_CMD}" \
             -p "${DEPLOY_PORT}" \
             "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "bash /tmp/deploy-vuln.sh ${DEPLOY_PATH} 2>&1 | tee /tmp/deploy-vuln.log; EXIT=\${PIPESTATUS[0]}; if [ \$EXIT -ne 0 ]; then echo '=== Full deploy log ==='; cat /tmp/deploy-vuln.log; fi; exit \$EXIT"
+            "cd '${DEPLOY_PATH}' && git fetch origin ${{ github.sha }} && git reset --hard ${{ github.sha }} && COMPOSE_PROJECT_NAME=vuln-scanner REMOTE_DATA=1 PULL_ONLY=1 REGISTRY=ghcr.io/${{ github.repository_owner }} GIT_SHA=${{ github.sha }} IMAGE_TAG=sha-${{ github.sha }} ./scripts/deploy-services.sh backend frontend celery_beat"
+          rm -f ~/.ssh/deploy_key ~/.ssh/jump_key
+
+  deploy-workers:
+    name: deploy-workers
+    if: ${{ vars.SKIP_DEPLOY != 'true'
+            && github.ref_name == 'main'
+            && needs.ci-ok.result == 'success'
+            && (github.event_name == 'push'
+                || (github.event_name == 'workflow_dispatch'
+                    && !inputs.skip_deploy
+                    && !inputs.skip_tests)) }}
+    needs: [ci-ok, publish-images]
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 20
+    steps:
+      - name: Preflight - deploy jump host reachable
+        timeout-minutes: 5
+        env:
+          JUMP_HOST: ${{ secrets.DEPLOY_JUMP_HOST }}
+          JUMP_PORT: ${{ secrets.DEPLOY_JUMP_PORT || 22 }}
+        run: |
+          set -euo pipefail
+          if ! command -v nc >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq netcat-openbsd
+          fi
+          for attempt in 1 2 3; do
+            if nc -z -w 10 "$JUMP_HOST" "$JUMP_PORT"; then
+              echo "jump host reachable (attempt ${attempt})"
+              exit 0
+            fi
+            echo "attempt ${attempt}/3 failed; retrying in 15s"
+            sleep 15
+          done
+          echo "::error::Cannot reach the deploy jump host after 3 attempts. Check bastion health and the runner IP allowlist."
+          exit 1
+
+      - name: Pull and recreate workers on gm-s1
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          umask 077
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          printf '%s\n' "${{ secrets.DEPLOY_JUMP_SSH_KEY }}" > ~/.ssh/jump_key
+          chmod 600 ~/.ssh/deploy_key ~/.ssh/jump_key
+          JUMP_HOST="${{ secrets.DEPLOY_JUMP_HOST }}"
+          JUMP_USER="${{ secrets.DEPLOY_JUMP_USER }}"
+          JUMP_PORT="${{ secrets.DEPLOY_JUMP_PORT || 22 }}"
+          WORKER_HOST="${{ secrets.DEPLOY_WORKER_HOST }}"
+          WORKER_USER="${{ secrets.DEPLOY_WORKER_USER }}"
+          WORKER_PORT="${{ secrets.DEPLOY_WORKER_PORT || 22 }}"
+          WORKER_PATH="${{ secrets.DEPLOY_WORKER_PATH }}"
+          PROXY_CMD="ssh -i $HOME/.ssh/jump_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p ${JUMP_PORT} -W %h:%p ${JUMP_USER}@${JUMP_HOST}"
+          ssh -i ~/.ssh/deploy_key \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            -o "ProxyCommand=${PROXY_CMD}" \
+            -p "${WORKER_PORT}" \
+            "${WORKER_USER}@${WORKER_HOST}" \
+            "cd '${WORKER_PATH}' && git fetch origin ${{ github.sha }} && git reset --hard ${{ github.sha }} && COMPOSE_PROJECT_NAME=vuln-scanner REMOTE_DATA=1 PULL_ONLY=1 REGISTRY=ghcr.io/${{ github.repository_owner }} IMAGE_TAG=sha-${{ github.sha }} ./scripts/deploy-services.sh worker_ip worker_domain worker_mobile worker_uptime worker_dead_letter"
           rm -f ~/.ssh/deploy_key ~/.ssh/jump_key

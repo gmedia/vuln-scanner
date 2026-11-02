@@ -1,4 +1,13 @@
-from app.models.ai_gateway import AiApiKey, AiModel, AiProvider, AiReservation, AiUsageEvent, AiWallet
+from app.models.ai_gateway import (
+    AiApiKey,
+    AiFxRate,
+    AiModel,
+    AiProvider,
+    AiReservation,
+    AiUsageEvent,
+    AiWallet,
+    AiWalletLedger,
+)
 from app.models.asset import ScanAsset
 from app.models.billing import (
     BillingRecipient,
@@ -34,6 +43,8 @@ __all__ = [
     "AiWallet",
     "AiReservation",
     "AiUsageEvent",
+    "AiFxRate",
+    "AiWalletLedger",
     "User",
     "EmailSendLog",
     "EmailVerificationToken",

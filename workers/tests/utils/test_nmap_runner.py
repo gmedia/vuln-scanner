@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from utils.nmap_runner import HostInfo, NmapResult, findings_from_nmap, parse_nmap_xml, run_nmap
+from utils.nmap_runner import HostInfo, NmapResult, _nmap_cmd, findings_from_nmap, parse_nmap_xml, run_nmap
 
 
 class TestParseNmapXml:
@@ -285,3 +285,8 @@ class TestFindingsFromNmapEdgeCases:
         assert "Ubuntu 22.04" in findings[0]["title"]
         assert findings[1]["category"] == "open_port"
         assert "443" in findings[1]["title"]
+
+
+def test_nmap_cmd_treats_firewalled_hosts_as_up():
+    cmd = _nmap_cmd("example.com", "1-1000", with_os=False)
+    assert "-Pn" in cmd

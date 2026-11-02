@@ -108,6 +108,8 @@ _fake_redis.decr = _decr_side_effect
 _fake_redis.delete = _delete_side_effect
 _fake_redis.expire = _AsyncMock(return_value=True)
 _fake_redis.ttl = _AsyncMock(return_value=-1)
+_fake_redis.get = _AsyncMock(return_value=None)
+_fake_redis.set = _AsyncMock(return_value=True)
 _fake_redis.ping = _AsyncMock(return_value=True)
 _fake_redis.aclose = _AsyncMock(return_value=None)
 _aioredis.Redis.from_url = staticmethod(lambda *a, **kw: _fake_redis)
@@ -170,6 +172,21 @@ from app.services.auth import get_current_admin, get_current_user  # noqa: E402
 @pytest.fixture(autouse=True)
 def _reset_redis_counters():
     _incr_counters.clear()
+
+
+@pytest.fixture(autouse=True)
+def _stub_sync_redis(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep decode_token's sync revocation check off the network.
+
+    decode_token() performs a best-effort *blocking* Redis GET. In a test run
+    with no Redis, a failing DNS lookup can block the event loop for minutes
+    (observed as a 25-minute CI hang), so tests get an in-memory miss instead.
+    """
+    import app.services.auth as auth_mod
+
+    fake = MagicMock()
+    fake.get.return_value = None
+    monkeypatch.setattr(auth_mod, "_sync_redis", fake)
 
 
 @pytest_asyncio.fixture

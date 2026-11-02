@@ -68,10 +68,11 @@ Tabular numerals on every count, time, and IDR. Body copy stays i18n `ai` catalo
 **Primitives** (`layout-skill`):
 
 - **stack** — page sections (`space-y-6`).
-- **scroll-body-shell** — AppShell owns document scroll. Tab list is `w-full justify-start`, **not** `min-w-max` (no overflow strip).
+- **scroll-body-shell** — AppShell owns document scroll. Tab list is `w-full flex-wrap justify-start sm:flex-nowrap`, wrapping to a second row below `sm` (5 icon+label tabs do not fit 360px), and still forbids `min-w-max` / horizontal scroll strips.
+- **Budget:** at most 5 tabs. A 6th tab is an information-architecture change — move it to a section, a header action, or its own route. Adding one to the bar is a review reject. Check the strip at 360px in the longest locale (`id`); wrap (not scroll) is the only allowed overflow behaviour.
 - **list-detail** — **not** used. Each tab is a single panel.
 
-`TabsList variant="line"`: `h-auto justify-start gap-1 rounded-none border-b border-border bg-transparent p-0`. Page passes `className="w-full justify-start"`.
+`TabsList variant="line"`: `h-auto justify-start gap-1 rounded-none border-b border-border bg-transparent p-0`. Page passes `className="w-full flex-wrap justify-start sm:flex-nowrap"`.
 
 URL `?tab=` (`replace: true`). Default tab **deletes** the param. Unknown `?tab` → default. ScanDetail patches `tab` through existing `patchFindingsParams` so `page`/`severity`/`sort`/`dir`/`q` are not clobbered.
 
@@ -89,17 +90,18 @@ URL `?tab=` (`replace: true`). Default tab **deletes** the param. Unknown `?tab`
 
 - **Default** (`variant` omitted): pill list `h-10 rounded-md bg-muted p-1`; active trigger `data-[state=active]:bg-background` + shadow. Uptime range (`uptime-range-tabs`) and in-card pills stay here.
 - **Line** (`variant="line"`): hairline list + `data-variant="line"`. Active trigger underline via `group-data-[variant=line]/tabs-list:data-[state=active]:after:opacity-100` (`after:h-0.5 after:bg-foreground`). Line mode kills pill wash (`bg-transparent`, `shadow-none`).
+- **Both variants:** the ring is keyboard-only — a primary-button press sets `data-pointer-focus` and zeroes it, keyboard focus keeps `ring-2 ring-ring` with a `--color-background` offset (§8).
 - Do **not** restyle kit files to match one screenshot. Frozen default tests: `bg-muted`, `data-variant="default"`. Frozen line tests: `bg-transparent`, `border-b`, `after:bg-foreground`, not `after:bg-primary`.
 
 #### Page-nav callers
 
-Shared chrome: `TabsList variant="line" className="w-full justify-start"`. Icons `aria-hidden`. Counts via kit `TabCount` (null when `value <= 0`). Duplicate in-panel `CardTitle` matching the tab label is dropped.
+Shared chrome: `TabsList variant="line" className="w-full flex-wrap justify-start sm:flex-nowrap"`. Icons `aria-hidden`. Counts via kit `TabCount` (null when `value <= 0`). Duplicate in-panel `CardTitle` matching the tab label is dropped.
 
 - **`/ai`**: Wallet / Keys / Usage / Catalog. Frozen testids `ai-tab-wallet` … `ai-tab-catalog`. EN role names frozen. Counts: Keys = active keys; Usage = `items.length`.
 - **Host Protect**: Malware / WAF. Frozen `host-tab-waf`. Icons `Bug` / `Shield`. Count: `overviewNeedsDecision` on Malware.
 - **SIEM**: Search events / Cases (EN roles frozen). Icons `Search` / `FolderOpen`. Count: open cases on Cases. Search `CardTitle` and cases CardHeader title dropped.
 - **ScanDetail**: Findings / Diff / Export (EN roles frozen). Icons `Crosshair` / `GitCompare` / `Download`. Count: `findingsCount` on Findings.
-- **Admin AI**: Providers / Models / Usage / Top-up / Trial. Icons `Server` / `Boxes` / `ScrollText` / `Wallet` / `MessageSquare`. No `min-w-max` overflow strip. Usage CardTitle dropped.
+- **Admin AI**: Providers / Models / Usage / Top-up / Trial. Icons `Server` / `Boxes` / `ScrollText` / `Wallet` / `MessageSquare`. Below `sm` the 5 tabs wrap to two rows (no `min-w-max` overflow strip). Usage CardTitle dropped.
 
 #### AiWalletPanel
 
@@ -138,6 +140,7 @@ Shared chrome: `TabsList variant="line" className="w-full justify-start"`. Icons
 
 - WCAG 2.2 AA contrast on SPA tokens. Underline is redundant with `data-state="active"` + `text-foreground`.
 - Radix Tabs: keyboard arrows, `role="tablist"` / `tab` / `tabpanel`.
+- Focus ring is keyboard-only. Radix focuses the trigger on mouse-down, and Chrome treats that scripted focus as keyboard-ish until it has seen a pointer gesture, so the ring used to flash on the first click after a reload. `TabsTrigger` sets `data-pointer-focus` on a primary-button `mousedown` and clears it on `keydown`/`blur`; the `data-[pointer-focus=true]` classes zero the ring. The ring offset colour is `--color-background` (`focus-visible:ring-offset-[var(--color-background)]`), so dark mode gets a background gap instead of a white halo.
 - Icons `aria-hidden`. Visible labels from i18n (`tabWallet` …).
 - Heading remains PageHeader `h2` "AI Gateway".
 - `prefers-reduced-motion` kills underline opacity transition.

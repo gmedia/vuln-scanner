@@ -34,7 +34,8 @@ urllib3==2.8.0
 # GHSA-6q48-6c7w-9gw2 (critical): compromised emSign root CAs.
 certifi==2026.10.19
 msgpack==1.2.3
-tornado==6.5.10
+brotli==1.2.1
+tornado==6.6
 bleach==6.4.0
 markdown==3.11.1
 # Print S2: scan export format=pdf (executive HTML). Needs Pango at runtime — see Dockerfile + CI.

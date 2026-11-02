@@ -73,6 +73,7 @@ class InvoiceCreateRequest(BaseModel):
     product: str = Field(default="scan", pattern=r"^(scan|host|uptime|guard)$")
     period_start: datetime | None = None
     due_date: datetime | None = None
+    cycle: str = Field(default="monthly", pattern="^(monthly|annual)$")
     notes: str = Field(default="", max_length=500)
 
 

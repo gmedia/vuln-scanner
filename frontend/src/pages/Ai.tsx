@@ -141,7 +141,7 @@ export default function Ai() {
     <div className="w-full space-y-6">
       <Header />
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList variant="line" className="w-full justify-start">
+        <TabsList variant="line" className="w-full flex-wrap justify-start sm:flex-nowrap">
           <TabsTrigger value="wallet" data-testid="ai-tab-wallet" className="gap-1.5">
             <Wallet aria-hidden />
             {t("tabWallet")}

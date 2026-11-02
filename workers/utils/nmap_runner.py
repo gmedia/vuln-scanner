@@ -126,7 +126,7 @@ def parse_nmap_xml(xml_output: str) -> NmapResult:
 
 def _nmap_cmd(target: str, ports: str, *, with_os: bool) -> list[str]:
     # -oX - MUST precede -- ; otherwise nmap treats -oX/- as hostnames and never emits XML.
-    cmd = ["nmap", "-sV", "-sC"]
+    cmd = ["nmap", "-Pn", "-sV", "-sC"]
     if with_os:
         cmd.extend(["-O", "--osscan-guess"])
     cmd.extend(["-p", ports, "-oX", "-", "--", target])

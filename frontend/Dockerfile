@@ -31,7 +31,7 @@ USER root
 # zlib 1.3.2-r0 in the base image carries CVE-2026-85091 (heap overflow);
 # 1.3.2-r1 fixes it. Alpine pins are not covered by the digest refresh.
 RUN apk add --no-cache su-exec \
-    && apk upgrade --no-cache zlib \
+    && apk upgrade --no-cache zlib brotli-libs \
     && chmod +x /docker-entrypoint.sh
 EXPOSE 8080
 ENTRYPOINT ["/docker-entrypoint.sh"]

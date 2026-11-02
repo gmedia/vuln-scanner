@@ -263,6 +263,36 @@ A future Midtrans/Xendit adapter translates its native event into this payload b
 - Admin list + role gate.
 - Invalid transition raises.
 
+## 8.0 Annual invoices
+
+`POST /api/admin/invoices` accepts `cycle: "monthly" | "annual"` (default `monthly`).
+
+| Cycle | Period | Base amount |
+|---|---|---|
+| `monthly` | calendar month | catalog `list_idr` |
+| `annual` | 12 months from the first of the start month | `list_idr × ANNUAL_MONTHS_PAID` (10) |
+
+That is the "10 months for 12" policy applied at invoice time. Tax (DPP/PPN/PPh 23) is computed on the **annual** base. Paying the invoice sets `subscriptions.cycle = "annual"` because the existing `_cycle_for()` detects a period longer than 40 days.
+
+Overlap is rejected, not just an exact period-start match: an annual invoice covering Sep 2026–Aug 2027 cannot coexist with a monthly invoice for Oct 2026 for the same product. Without that check, annual + monthly would double-bill.
+
+### Annual renewal drafts
+
+`workers/tasks/billing.py::draft_annual_renewals` runs daily on `ip_scan` and creates a
+**draft** invoice for each annual subscription whose `current_period_end` falls inside the
+next `BILLING_RENEWAL_DRAFT_LEAD_DAYS` (default **45**).
+
+| Rule | Why |
+|---|---|
+| Only `cycle='annual'`, `status='active'`, `cancel_at_period_end=false` | monthly and cancelled subscriptions renew by other paths |
+| Skips if a non-void invoice already overlaps the next period | idempotent; safe to re-run |
+| Uses `price_breakdown(..., annual=True, pkp=profile.pkp_status == 'pkp')` | same annual price and tax as the async create path |
+| Creates `status='draft'` | ops still reviews and sends; this only prevents a forgotten renewal |
+| Due date = next period start + `payment_terms_days` | consistent with manual invoices |
+
+Without this task an annual workspace can lapse after 365 days simply because nobody issued
+the next invoice — the failure mode is silent and expensive.
+
 ## 8.1 Billing motion (decision)
 
 Sinexis bills **invoice-per-period**, not auto-charge:

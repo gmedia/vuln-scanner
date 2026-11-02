@@ -17,6 +17,7 @@ from app.services.auth import (
     create_access_token,
     create_refresh_token,
     decode_token,
+    decode_token_async,
     hash_password,
     is_token_revoked,
     logout_all,
@@ -1219,3 +1220,47 @@ class TestGetRedisRaceCondition:
                 assert r1 is mock_redis
         finally:
             loop.close()
+
+
+class TestDecodeTokenAsync:
+    @pytest.mark.asyncio
+    async def test_returns_payload_when_redis_misses(self):
+        token = create_access_token(user_id=str(uuid.uuid4()), email="async@test.com")
+        client = MagicMock()
+        client.get = AsyncMock(return_value=None)
+        with patch("app.services.auth._get_redis", new=AsyncMock(return_value=client)):
+            payload = await decode_token_async(token)
+        assert payload["email"] == "async@test.com"
+
+    @pytest.mark.asyncio
+    async def test_revoked_jti_from_redis_raises(self):
+        token = create_access_token(user_id=str(uuid.uuid4()), email="revoked@test.com")
+        client = MagicMock()
+        client.get = AsyncMock(return_value="user-id")
+        with (
+            patch("app.services.auth._get_redis", new=AsyncMock(return_value=client)),
+            pytest.raises(jwt.PyJWTError),
+        ):
+            await decode_token_async(token)
+
+    @pytest.mark.asyncio
+    async def test_fails_open_on_redis_error(self):
+        token = create_access_token(user_id=str(uuid.uuid4()), email="open@test.com")
+        client = MagicMock()
+        client.get = AsyncMock(side_effect=redis.ConnectionError("redis down"))
+        with patch("app.services.auth._get_redis", new=AsyncMock(return_value=client)):
+            payload = await decode_token_async(token)
+        assert payload["email"] == "open@test.com"
+
+    @pytest.mark.asyncio
+    async def test_fails_open_within_the_timeout(self):
+        token = create_access_token(user_id=str(uuid.uuid4()), email="slow@test.com")
+
+        async def slow_check(jti, sub):
+            await asyncio.sleep(5)
+
+        started = time.monotonic()
+        with patch("app.services.auth._check_redis_revocation_async", new=slow_check):
+            payload = await decode_token_async(token)
+        assert payload["email"] == "slow@test.com"
+        assert time.monotonic() - started < 2.0

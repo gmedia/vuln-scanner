@@ -77,7 +77,11 @@ services:
       HOST_WAF_ENABLED: ${HOST_WAF_ENABLED:-false}
       AI_GATEWAY_ENABLED: ${AI_GATEWAY_ENABLED:-false}
       AI_USD_IDR: ${AI_USD_IDR:-16000}
+      AI_FX_AUTO_FETCH: ${AI_FX_AUTO_FETCH:-true}
+      AI_FX_SOURCE_URL: ${AI_FX_SOURCE_URL:-https://api.frankfurter.app/latest?from=USD&to=IDR}
+      AI_FX_FALLBACK_URL: ${AI_FX_FALLBACK_URL:-https://open.er-api.com/v6/latest/USD}
       AI_STORE_PROMPTS: ${AI_STORE_PROMPTS:-false}
+      AI_TRIAL_MONTHLY_CAP_USD: ${AI_TRIAL_MONTHLY_CAP_USD:-30}
       UPTIME_ENABLED: ${UPTIME_ENABLED:-true}
       UPTIME_ALLOW_PRIVATE: ${UPTIME_ALLOW_PRIVATE:-false}
       STATUS_PAGE_ENABLED: ${STATUS_PAGE_ENABLED:-true}
@@ -124,6 +128,11 @@ services:
       HOST_PROTECT_ENABLED: ${HOST_PROTECT_ENABLED:-false}
       HOST_PROTECT_ALLOW_MOCK: ${HOST_PROTECT_ALLOW_MOCK:-false}
       HOST_PROTECT_ALLOW_LOCAL_WALK: ${HOST_PROTECT_ALLOW_LOCAL_WALK:-false}
+      AI_GATEWAY_ENABLED: ${AI_GATEWAY_ENABLED:-false}
+      AI_USD_IDR: ${AI_USD_IDR:-16000}
+      AI_FX_AUTO_FETCH: ${AI_FX_AUTO_FETCH:-true}
+      AI_FX_SOURCE_URL: ${AI_FX_SOURCE_URL:-https://api.frankfurter.app/latest?from=USD&to=IDR}
+      AI_FX_FALLBACK_URL: ${AI_FX_FALLBACK_URL:-https://open.er-api.com/v6/latest/USD}
     volumes:
       - ./workers:/app
       - ./backend:/backend
@@ -296,6 +305,11 @@ services:
       HOST_PROTECT_ENABLED: ${HOST_PROTECT_ENABLED:-false}
       HOST_PROTECT_ALLOW_MOCK: ${HOST_PROTECT_ALLOW_MOCK:-false}
       HOST_PROTECT_ALLOW_LOCAL_WALK: ${HOST_PROTECT_ALLOW_LOCAL_WALK:-false}
+      AI_GATEWAY_ENABLED: ${AI_GATEWAY_ENABLED:-false}
+      AI_USD_IDR: ${AI_USD_IDR:-16000}
+      AI_FX_AUTO_FETCH: ${AI_FX_AUTO_FETCH:-true}
+      AI_FX_SOURCE_URL: ${AI_FX_SOURCE_URL:-https://api.frankfurter.app/latest?from=USD&to=IDR}
+      AI_FX_FALLBACK_URL: ${AI_FX_FALLBACK_URL:-https://open.er-api.com/v6/latest/USD}
     volumes:
       - ./workers:/app
       - ./backend:/backend

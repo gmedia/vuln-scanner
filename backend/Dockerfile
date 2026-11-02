@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpangoft2-1.0-0 \
     libharfbuzz-subset0 \
     fonts-dejavu-core \
+    libbrotli1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Nothing in the runtime stage installs packages, but the base image ships pip

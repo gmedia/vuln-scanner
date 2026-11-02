@@ -2,7 +2,11 @@ import { useState } from "react";
 import { MoreHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AiModelAdmin } from "@/api/admin";
-import { formatIdr } from "@/components/admin/aiFormat";
+import {
+  formatIdr,
+  formatUsdPer1m,
+  type AiPriceUnit,
+} from "@/components/admin/aiFormat";
 import { AdminAiField } from "@/components/admin/AdminAiField";
 import { Button } from "@/components/ui/Button";
 import { buttonVariants } from "@/components/ui/buttonVariants";
@@ -35,32 +39,46 @@ import {
 
 export function AdminAiModelList({
   models,
+  unit,
+  priceLabelIn,
+  priceLabelOut,
   editingModel,
   editPublicId,
   editUpstreamId,
   editPriceIn,
   editPriceOut,
+  editHppIn,
+  editHppOut,
   savePending,
   onEditPublicId,
   onEditUpstreamId,
   onEditPriceIn,
   onEditPriceOut,
+  onEditHppIn,
+  onEditHppOut,
   onStartEdit,
   onCancelEdit,
   onSave,
   onDelete,
 }: {
   readonly models: readonly AiModelAdmin[];
+  readonly unit: AiPriceUnit;
+  readonly priceLabelIn: string;
+  readonly priceLabelOut: string;
   readonly editingModel: AiModelAdmin | null;
   readonly editPublicId: string;
   readonly editUpstreamId: string;
   readonly editPriceIn: string;
   readonly editPriceOut: string;
+  readonly editHppIn: string;
+  readonly editHppOut: string;
   readonly savePending: boolean;
   readonly onEditPublicId: (v: string) => void;
   readonly onEditUpstreamId: (v: string) => void;
   readonly onEditPriceIn: (v: string) => void;
   readonly onEditPriceOut: (v: string) => void;
+  readonly onEditHppIn: (v: string) => void;
+  readonly onEditHppOut: (v: string) => void;
   readonly onStartEdit: (m: AiModelAdmin) => void;
   readonly onCancelEdit: () => void;
   readonly onSave: () => void;
@@ -68,6 +86,8 @@ export function AdminAiModelList({
 }) {
   const { t } = useTranslation("admin");
   const [deleteTarget, setDeleteTarget] = useState<AiModelAdmin | null>(null);
+  const renderPrice = (usd: number, idr: number): string =>
+    unit === "usd_1m" ? formatUsdPer1m(usd) : formatIdr(idr);
   if (models.length === 0) {
     return <p className="text-sm text-muted-foreground">{t("aiModelsEmpty")}</p>;
   }
@@ -96,15 +116,27 @@ export function AdminAiModelList({
                 />
                 <AdminAiField
                   id={`ai-m-edit-in-${m.id}`}
-                  label={t("aiPriceIn")}
+                  label={priceLabelIn}
                   value={editPriceIn}
                   onChange={onEditPriceIn}
                 />
                 <AdminAiField
                   id={`ai-m-edit-out-${m.id}`}
-                  label={t("aiPriceOut")}
+                  label={priceLabelOut}
                   value={editPriceOut}
                   onChange={onEditPriceOut}
+                />
+                <AdminAiField
+                  id={`ai-m-edit-hpp-in-${m.id}`}
+                  label={t("aiHppInUsd")}
+                  value={editHppIn}
+                  onChange={onEditHppIn}
+                />
+                <AdminAiField
+                  id={`ai-m-edit-hpp-out-${m.id}`}
+                  label={t("aiHppOutUsd")}
+                  value={editHppOut}
+                  onChange={onEditHppOut}
                 />
                 <div className="flex flex-wrap justify-end gap-2">
                   <Button type="button" size="sm" onClick={onSave} disabled={savePending}>
@@ -124,8 +156,10 @@ export function AdminAiModelList({
                   {m.upstream_id}
                 </p>
                 <p className="mt-1 font-mono text-xs tabular-nums text-muted-foreground">
-                  {t("aiPriceIn")}: {formatIdr(m.price_idr_per_1k_in)} · {t("aiPriceOut")}:{" "}
-                  {formatIdr(m.price_idr_per_1k_out)}
+                  {priceLabelIn}:{" "}
+                  {renderPrice(m.price_usd_per_1m_in, m.price_idr_per_1k_in)} ·{" "}
+                  {priceLabelOut}:{" "}
+                  {renderPrice(m.price_usd_per_1m_out, m.price_idr_per_1k_out)}
                 </p>
                 <div className="mt-2 flex flex-wrap justify-end gap-2">
                   <DropdownMenu>
@@ -170,8 +204,8 @@ export function AdminAiModelList({
             <TableRow>
               <TableHead>{t("aiPublicId")}</TableHead>
               <TableHead>{t("aiUpstreamId")}</TableHead>
-              <TableHead>{t("aiPriceIn")}</TableHead>
-              <TableHead>{t("aiPriceOut")}</TableHead>
+              <TableHead>{priceLabelIn}</TableHead>
+              <TableHead>{priceLabelOut}</TableHead>
               <TableHead className="text-right">{t("colActions")}</TableHead>
             </TableRow>
           </TableHeader>
@@ -199,15 +233,27 @@ export function AdminAiModelList({
                       />
                       <AdminAiField
                         id={`ai-m-edit-in-${m.id}`}
-                        label={t("aiPriceIn")}
+                        label={priceLabelIn}
                         value={editPriceIn}
                         onChange={onEditPriceIn}
                       />
                       <AdminAiField
                         id={`ai-m-edit-out-${m.id}`}
-                        label={t("aiPriceOut")}
+                        label={priceLabelOut}
                         value={editPriceOut}
                         onChange={onEditPriceOut}
+                      />
+                      <AdminAiField
+                        id={`ai-m-edit-hpp-in-${m.id}`}
+                        label={t("aiHppInUsd")}
+                        value={editHppIn}
+                        onChange={onEditHppIn}
+                      />
+                      <AdminAiField
+                        id={`ai-m-edit-hpp-out-${m.id}`}
+                        label={t("aiHppOutUsd")}
+                        value={editHppOut}
+                        onChange={onEditHppOut}
                       />
                     </div>
                   ) : (
@@ -215,10 +261,10 @@ export function AdminAiModelList({
                   )}
                 </TableCell>
                 <TableCell className="tabular-nums">
-                  {formatIdr(m.price_idr_per_1k_in)}
+                  {renderPrice(m.price_usd_per_1m_in, m.price_idr_per_1k_in)}
                 </TableCell>
                 <TableCell className="tabular-nums">
-                  {formatIdr(m.price_idr_per_1k_out)}
+                  {renderPrice(m.price_usd_per_1m_out, m.price_idr_per_1k_out)}
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-right">
                   {editingModel?.id === m.id ? (

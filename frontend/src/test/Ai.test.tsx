@@ -113,6 +113,8 @@ describe("AI Gateway page", () => {
     expect(list).toHaveAttribute("data-variant", "line");
     expect(list.className).toMatch(/\bw-full\b/);
     expect(list.className).not.toMatch(/min-w-max/);
+    expect(list.className).toMatch(/\bflex-wrap\b/);
+    expect(list.className).toMatch(/\bsm:flex-nowrap\b/);
     expect(screen.getByTestId("ai-tab-wallet")).toBeInTheDocument();
     expect(screen.getByTestId("ai-tab-keys")).toBeInTheDocument();
     expect(screen.getByTestId("ai-tab-usage")).toBeInTheDocument();
@@ -318,6 +320,12 @@ describe("AI Gateway page", () => {
           public_id: "sx/minimax-m3",
           price_idr_per_1k_in: 1000,
           price_idr_per_1k_out: 3000,
+          price_usd_per_1m_in: 0.15,
+          price_usd_per_1m_out: 0.45,
+          fx_rate: 16000,
+          fx_source: "env",
+          fx_effective_date: null,
+          fx_stale: true,
           max_ctx: 8192,
           max_tokens_cap: 2048,
         },
@@ -344,6 +352,42 @@ describe("AI Gateway page", () => {
     const desktop = screen.getByTestId("ai-catalog-list-desktop");
     expect(desktop).toHaveClass("hidden", "md:block", "overflow-x-auto");
     expect(desktop.querySelector("table")).toBeTruthy();
+  });
+
+  it("renders the catalog USD price as primary with derived IDR and a stale note", async () => {
+    vi.mocked(aiApi.getAiWallet).mockResolvedValue({
+      organization_id: "org1",
+      balance_idr: 0,
+      currency: "IDR",
+    });
+    vi.mocked(aiApi.listAiKeys).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(aiApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(aiApi.listAiModels).mockResolvedValue({
+      items: [
+        {
+          public_id: "sx/minimax-m3",
+          price_idr_per_1k_in: 1000,
+          price_idr_per_1k_out: 3000,
+          price_usd_per_1m_in: 0.15,
+          price_usd_per_1m_out: 0.45,
+          fx_rate: 16000,
+          fx_source: "env",
+          fx_effective_date: null,
+          fx_stale: true,
+          max_ctx: 8192,
+          max_tokens_cap: 2048,
+        },
+      ],
+      total: 1,
+    });
+    const user = userEvent.setup();
+    renderAi();
+    await user.click(await screen.findByTestId("ai-tab-catalog"));
+    const card = await screen.findByTestId("ai-catalog-card-sx/minimax-m3");
+
+    expect(card.textContent).toMatch(/\$0\.15/);
+    expect(card.textContent).toMatch(/Rp 1\.000/);
+    expect(card.textContent).toMatch(/older daily rate/);
   });
 
   it("shows feature-off on 404", async () => {

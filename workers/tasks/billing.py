@@ -12,12 +12,13 @@ product decision, and the invoice remains the collection path.
 import asyncio
 import os
 import sys
-from datetime import UTC, datetime
+import uuid
+from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 
 from celery import shared_task
 from loguru import logger
-from sqlalchemy import CursorResult, select, text
+from sqlalchemy import CursorResult, func, select, text
 
 from utils.database import get_sync_session
 
@@ -355,6 +356,144 @@ def send_due_reminders(self: Any) -> dict[str, int]:
             "failed_count": failed_total,
             "skipped_count": skipped,
         }
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+# Days before an annual period ends at which ops should see a renewal draft.
+RENEWAL_DRAFT_LEAD_DAYS = int(os.getenv("BILLING_RENEWAL_DRAFT_LEAD_DAYS", "45"))
+
+
+def _next_annual_start(current_end: datetime) -> datetime:
+    """First day of the month after the current period ends."""
+    end = current_end if current_end.tzinfo is not None else current_end.replace(tzinfo=UTC)
+    end = end.astimezone(UTC)
+    year = end.year + (1 if end.month == 12 else 0)
+    month = (end.month % 12) + 1
+    return datetime(year, month, 1, tzinfo=UTC)
+
+
+def _next_invoice_number(session: Any, start: datetime) -> str:
+    """Sync twin of ``app.services.invoice.next_invoice_number``."""
+    prefix = f"SX-{start.year:04d}{start.month:02d}-"
+    used = session.execute(
+        select(func.count())
+        .select_from(OrgInvoice)
+        .where(OrgInvoice.number.startswith(prefix))
+    ).scalar_one()
+    return f"{prefix}{int(used) + 1:04d}"
+
+
+@shared_task(bind=True, name="billing.draft_annual_renewals", acks_late=True, max_retries=1)  # type: ignore
+def draft_annual_renewals(self: Any) -> dict[str, int]:
+    """Create a DRAFT invoice for annual subscriptions nearing period end.
+
+    Ops still reviews and sends it: this only prevents the failure mode where
+    nobody issues the next annual invoice and the workspace lapses after 365
+    days. Idempotent through the overlap guard, so a re-run creates nothing.
+    """
+    from app.models.billing import Subscription  # noqa: E402
+    from app.models.invoice import SkuCatalog  # noqa: E402
+    from app.services.invoice_math import period_bounds_utc, price_breakdown  # noqa: E402
+
+    now = datetime.now(UTC)
+    horizon = now + timedelta(days=RENEWAL_DRAFT_LEAD_DAYS)
+    session = get_sync_session()
+    created = 0
+    skipped = 0
+    try:
+        rows = cast(
+            list[tuple[Subscription, str]],
+            session.execute(
+                select(Subscription, Organization.name)
+                .join(Organization, Organization.id == Subscription.organization_id)
+                .where(
+                    Subscription.cycle == "annual",
+                    Subscription.status == "active",
+                    Subscription.cancel_at_period_end.is_(False),
+                    Subscription.current_period_end.is_not(None),
+                    Subscription.current_period_end <= horizon,
+                    Subscription.current_period_end > now,
+                )
+            ).all(),
+        )
+
+        for sub, org_name in rows:
+            if sub.current_period_end is None:  # narrows the type for mypy
+                continue
+            next_start = _next_annual_start(sub.current_period_end)
+            start, end = period_bounds_utc(next_start, "annual")
+
+            catalog = session.execute(
+                select(SkuCatalog).where(
+                    SkuCatalog.product == "scan",
+                    SkuCatalog.sku == sub.sku,
+                    SkuCatalog.invoicable.is_(True),
+                )
+            ).scalar_one_or_none()
+            if catalog is None:
+                logger.warning(
+                    "Annual renewal skipped: no invoicable Scan SKU for {org} sku={sku}",
+                    org=org_name,
+                    sku=sub.sku,
+                )
+                skipped += 1
+                continue
+
+            already = session.execute(
+                select(OrgInvoice.id).where(
+                    OrgInvoice.organization_id == sub.organization_id,
+                    OrgInvoice.product == "scan",
+                    OrgInvoice.status != "void",
+                    OrgInvoice.period_start <= end,
+                    OrgInvoice.period_end >= start,
+                )
+            ).scalar_one_or_none()
+            if already is not None:
+                skipped += 1
+                continue
+
+            profile = session.get(OrgBillingProfile, sub.organization_id)
+            prices = price_breakdown(
+                int(catalog.list_idr),
+                annual=True,
+                pkp=profile is not None and profile.pkp_status == "pkp",
+            )
+            term_days = profile.payment_terms_days if profile is not None else 0
+
+            session.add(
+                OrgInvoice(
+                    id=uuid.uuid4(),
+                    organization_id=sub.organization_id,
+                    number=_next_invoice_number(session, start),
+                    product="scan",
+                    sku=sub.sku,
+                    amount_idr=prices["amount"],
+                    dpp_idr=prices["dpp"],
+                    ppn_idr=prices["ppn"],
+                    pph23_idr=prices["pph23"],
+                    total_idr=prices["total"],
+                    period_start=start,
+                    period_end=end,
+                    due_date=start + timedelta(days=max(0, term_days)),
+                    status="draft",
+                    notes=f"Annual renewal draft for {org_name}",
+                )
+            )
+            created += 1
+
+        session.commit()
+        if created or skipped:
+            logger.info(
+                "Annual renewal drafts: created={created} skipped={skipped} lead_days={lead}",
+                created=created,
+                skipped=skipped,
+                lead=RENEWAL_DRAFT_LEAD_DAYS,
+            )
+        return {"created_count": created, "skipped_count": skipped}
     except Exception:
         session.rollback()
         raise

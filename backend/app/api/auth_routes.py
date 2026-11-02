@@ -42,7 +42,7 @@ from app.schemas.auth import (
 from app.services.auth import (
     create_access_token,
     create_refresh_token,
-    decode_token,
+    decode_token_async,
     get_active_org_id,
     get_current_user,
     hash_password,
@@ -496,7 +496,7 @@ async def refresh(
         )
 
     try:
-        payload = decode_token(refresh_token_str)
+        payload = await decode_token_async(refresh_token_str)
     except jwt.PyJWTError as err:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -693,7 +693,7 @@ async def revoke(
     current_user: User = Depends(get_current_user),
 ) -> MessageResponse:
     try:
-        payload = decode_token(body.token)
+        payload = await decode_token_async(body.token)
     except jwt.PyJWTError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

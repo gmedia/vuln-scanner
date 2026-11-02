@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from calendar import monthrange
 from datetime import UTC, datetime, timedelta
-from decimal import ROUND_HALF_UP, Decimal
 
 from fastapi import HTTPException, Response, status
 from sqlalchemy import func, select
@@ -16,19 +14,14 @@ from app.models.invoice import PRODUCT_SEATS, OrgInvoice, SkuCatalog
 from app.models.organization import Organization
 from app.models.user import User
 from app.services.invoice_html import render_invoice_html
+from app.services.invoice_math import (
+    as_utc as _as_utc,
+)
+from app.services.invoice_math import (
+    period_bounds_utc,
+    price_breakdown,
+)
 from app.services.scan_pdf import ScanPdfUnavailableError, render_scan_pdf
-
-
-def _as_utc(value: datetime) -> datetime:
-    return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
-
-
-def month_bounds_utc(when: datetime | None = None) -> tuple[datetime, datetime]:
-    now = when.astimezone(UTC) if when else datetime.now(UTC)
-    start = datetime(now.year, now.month, 1, tzinfo=UTC)
-    last = monthrange(now.year, now.month)[1]
-    end = datetime(now.year, now.month, last, 23, 59, 59, 999999, tzinfo=UTC)
-    return start, end
 
 
 def bank_copy(*, include: bool) -> dict[str, str | None] | None:
@@ -144,6 +137,7 @@ class InvoiceService:
         product: str = "scan",
         period_start: datetime | None = None,
         due_date: datetime | None = None,
+        cycle: str = "monthly",
         notes: str = "",
     ) -> OrgInvoice:
         org = await self.db.get(Organization, organization_id)
@@ -153,7 +147,7 @@ class InvoiceService:
         cat = catalog.scalar_one_or_none()
         if cat is None or not cat.invoicable:
             raise HTTPException(status_code=400, detail="SKU is not invoicable")
-        start, end = month_bounds_utc(period_start)
+        start, end = period_bounds_utc(period_start, cycle)
         profile = await self.db.get(OrgBillingProfile, organization_id)
         if due_date is not None:
             due = _as_utc(due_date)
@@ -164,12 +158,15 @@ class InvoiceService:
                 else settings.invoice_default_term_days
             )
             due = start + timedelta(days=max(0, term_days))
+        # Overlap, not exact-start: an annual invoice must not coexist with a
+        # monthly invoice covering part of the same period (double billing).
         clash = await self.db.execute(
             select(OrgInvoice.id).where(
                 OrgInvoice.organization_id == organization_id,
                 OrgInvoice.product == product,
-                OrgInvoice.period_start == start,
                 OrgInvoice.status != "void",
+                OrgInvoice.period_start <= end,
+                OrgInvoice.period_end >= start,
             )
         )
         if clash.scalar_one_or_none() is not None:
@@ -177,26 +174,16 @@ class InvoiceService:
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"{product.capitalize()} invoice already exists for this period",
             )
-        base = int(cat.list_idr)
-        if profile is not None and profile.pkp_status == "pkp":
-            dpp = int(
-                (Decimal(base) * Decimal(11) / Decimal(12)).quantize(
-                    Decimal("1"), rounding=ROUND_HALF_UP
-                )
-            )
-            ppn = int(
-                (Decimal(dpp) * Decimal("0.12")).quantize(
-                    Decimal("1"), rounding=ROUND_HALF_UP
-                )
-            )
-            pph23 = int(
-                (Decimal(base) * Decimal("0.02")).quantize(
-                    Decimal("1"), rounding=ROUND_HALF_UP
-                )
-            )
-            total = base + ppn
-        else:
-            dpp, ppn, pph23, total = base, 0, 0, base
+        prices = price_breakdown(
+            int(cat.list_idr),
+            annual=cycle == "annual",
+            pkp=profile is not None and profile.pkp_status == "pkp",
+        )
+        base = prices["amount"]
+        dpp = prices["dpp"]
+        ppn = prices["ppn"]
+        pph23 = prices["pph23"]
+        total = prices["total"]
 
         inv = OrgInvoice(
             id=uuid.uuid4(),

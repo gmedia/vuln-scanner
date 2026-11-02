@@ -37,6 +37,33 @@ Scripts derive the repo root from their own location, so they work from any chec
 
 `workflow_dispatch` with **`skip_deploy`** skips the job. Manual dispatch also **does not** rewrite app-host `.env` (that overwrite is **`push` to `main` only**).
 
+### 2.1) Pull-only images from GHCR (multi-host)
+
+After `ci-ok`, `main` CI publishes four immutable images:
+
+| Image | Built from | Notes |
+|---|---|---|
+| `ghcr.io/<owner>/vuln-scanner-backend:sha-<commit>` | `backend/Dockerfile` (`runtime`) | |
+| `ghcr.io/<owner>/vuln-scanner-workers:sha-<commit>` | `workers/Dockerfile` (`runtime`) | ip/domain/uptime/dead-letter/beat |
+| `ghcr.io/<owner>/vuln-scanner-workers-mobile:sha-<commit>` | `workers/Dockerfile` + `INSTALL_BUNDLETOOL=1` | mobile only |
+| `ghcr.io/<owner>/vuln-scanner-frontend:sha-<commit>` | `frontend/Dockerfile` (`production`) | |
+
+On a host that must not build:
+
+```bash
+export REGISTRY=ghcr.io/<owner>
+export IMAGE_TAG=sha-<commit>
+docker login ghcr.io            # token with read:packages
+docker compose -f docker-compose.prod.yml \
+  -f docker-compose.prod.remote-data.yml \
+  -f docker-compose.images.yml pull
+docker compose -f docker-compose.prod.yml \
+  -f docker-compose.prod.remote-data.yml \
+  -f docker-compose.images.yml up -d --no-build
+```
+
+`docker-compose.images.yml` pins `image:` and `pull_policy: always`; the base file keeps `build:` for local/dev. Always pass `--no-build` so Compose cannot fall back to building. `deploy-services.sh` still builds by design — use the raw compose commands above on pull-only hosts.
+
 ---
 
 ## 3) CI deploy vs Alembic (do not confuse)
@@ -97,6 +124,13 @@ export COMPOSE_PROJECT_NAME=vuln   # or vuln-scanner — match inspect
 
 `deploy-services.sh` **never** rebuilds postgres/redis. Default service list is in the script header (backend, frontend, workers, beat — **not** `worker_ip`/`worker_domain` when those live on **tc4**).
 
+When `backend` is in the service list and `--skip-migrate` is unset, the script now runs
+`alembic upgrade head` **in a one-off container before** `up -d --force-recreate`.
+`backend/prestart.sh` also migrates, but only after the old container has been removed — a
+failing migration there leaves the API crash-looping. Pre-migrating means a failure aborts the
+deploy while the previous backend keeps serving. `--skip-migrate` skips both the pre-run and the
+post-recreate health gate, as before.
+
 ### Verify (public URL — do not hardcode hosts in tickets)
 
 ```bash
@@ -106,6 +140,44 @@ curl -sS "$PUBLIC_BASE_URL/" | grep -oE 'assets/index-[^"]+\.js'
 docker ps --filter name=vuln- --format '{{.Names}} {{.Status}}'
 docker exec vuln-backend alembic current        # only if you need to confirm head; not a second migrate
 ```
+
+`/api/health` also reports `sha` — the commit the backend image was deployed from.
+The CI deploy job passes `GIT_SHA` in the deploy environment, and
+`docker-compose.prod.yml` forwards it to the backend container. Compare it with `main`:
+
+```bash
+curl -sS "$PUBLIC_BASE_URL/api/health" | jq -r .sha
+git ls-remote origin refs/heads/main | cut -c1-40
+```
+
+The scheduled **`Prod drift`** workflow (`.github/workflows/prod-drift.yml`)
+does this every 6 hours and fails when production does not match `main`, or when
+production reports `unknown` (i.e. the `GIT_SHA` deploy has not landed). This is
+the alarm for "CI green but deploy red" — the mode that went unnoticed for ~50
+hours on 2026-10-20/22.
+
+### Billing healthcheck (read-only)
+
+After a deploy that touches billing, or when a customer reports a lockout:
+
+```bash
+./scripts/billing-healthcheck.sh                 # docker exec into vuln-postgres
+PG_MODE=network ./scripts/billing-healthcheck.sh # psql via DATABASE_URL_SYNC
+```
+
+It only runs `SELECT`s. It prints: subscription status counts, `past_due`/`canceled`
+workspaces, overdue invoices still marked `sent` (the read-only risk), recent
+`billing_reminders` with send/failure counts, `billing_reminder` email log,
+whether PKP tax is active, and workspaces missing a billing email or recipients.
+
+The CI deploy job checks out the **exact commit it is deploying**
+(`git fetch origin $GITHUB_SHA && git reset --hard $GITHUB_SHA`), not `origin/main`.
+Compose config and `IMAGE_TAG` therefore always come from the same commit, even if
+another merge lands while the deploy is running.
+
+The `deploy` job also has a **preflight** step that retries TCP reachability to
+the jump host three times before any SSH work, plus a 20-minute job timeout, so
+a dead bastion fails in minutes instead of hanging for hours.
 
 ---
 

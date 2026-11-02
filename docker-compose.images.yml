@@ -1,0 +1,44 @@
+# Pull-only image overlay for multi-host deploys.
+#
+# The base compose file keeps `build:` so local/dev can still build. This
+# overlay pins `image:` and `pull_policy: always`; on a host that must not
+# build, run `docker compose ... pull` then `up -d --no-build`.
+#
+# Required env (no defaults on purpose — a pull-only host must be explicit):
+#   REGISTRY=ghcr.io/<owner>
+#   IMAGE_TAG=sha-<commit>
+#
+# Auth: `docker login ghcr.io` with a token that has `read:packages`.
+
+x-workers-image: &workers-image
+  image: ${REGISTRY:?set REGISTRY}/vuln-scanner-workers:${IMAGE_TAG:?set IMAGE_TAG}
+  pull_policy: always
+
+services:
+  backend:
+    image: ${REGISTRY:?set REGISTRY}/vuln-scanner-backend:${IMAGE_TAG:?set IMAGE_TAG}
+    pull_policy: always
+
+  frontend:
+    image: ${REGISTRY:?set REGISTRY}/vuln-scanner-frontend:${IMAGE_TAG:?set IMAGE_TAG}
+    pull_policy: always
+
+  worker_ip:
+    <<: *workers-image
+
+  worker_domain:
+    <<: *workers-image
+
+  worker_uptime:
+    <<: *workers-image
+
+  worker_dead_letter:
+    <<: *workers-image
+
+  celery_beat:
+    <<: *workers-image
+
+  # Separate image: the mobile worker builds with INSTALL_BUNDLETOOL=1.
+  worker_mobile:
+    image: ${REGISTRY:?set REGISTRY}/vuln-scanner-workers-mobile:${IMAGE_TAG:?set IMAGE_TAG}
+    pull_policy: always

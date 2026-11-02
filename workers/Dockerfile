@@ -24,6 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     sudo \
     openjdk-17-jre-headless \
     ca-certificates \
+    libbrotli1 \
     && mkdir -p /opt/bundletool /tmp/scans /tmp/bundletool-work \
     && chmod 1777 /tmp/scans /tmp/bundletool-work \
     && if [ "$INSTALL_BUNDLETOOL" = "1" ]; then \

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from decimal import Decimal
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
@@ -27,7 +28,16 @@ from app.schemas.ai_gateway import (
     AiWalletOut,
     AiWalletTopup,
 )
+from app.services import ai_fx
 from app.services.ai_crypto import encrypt_credential
+from app.services.ai_pricing import (
+    canonical_hpp_usd,
+    canonical_price_usd,
+    legacy_idr_per_1k_to_usd_per_1m,
+    legacy_usd_per_1k_to_usd_per_1m,
+    usd_per_1m_to_idr_per_1k,
+    usd_per_1m_to_legacy_per_1k,
+)
 from app.services.ai_proxy import admin_trial_chat
 from app.services.ai_wallet import topup as wallet_topup
 from app.services.auth import get_current_admin
@@ -62,6 +72,44 @@ def _provider_out(row: AiProvider) -> AiProviderOut:
         created_at=row.created_at,
         updated_at=row.updated_at,
     )
+
+
+def _model_out(row: AiModel, fx_rate: Decimal) -> AiModelOut:
+    usd_in = canonical_price_usd(row.price_usd_per_1m_in, row.price_idr_per_1k_in, fx_rate)
+    usd_out = canonical_price_usd(row.price_usd_per_1m_out, row.price_idr_per_1k_out, fx_rate)
+    hpp_in = canonical_hpp_usd(row.hpp_usd_per_1m_in, row.hpp_usd_per_1k_in)
+    hpp_out = canonical_hpp_usd(row.hpp_usd_per_1m_out, row.hpp_usd_per_1k_out)
+    return AiModelOut(
+        id=row.id,
+        provider_id=row.provider_id,
+        public_id=row.public_id,
+        upstream_id=row.upstream_id,
+        hpp_usd_per_1k_in=row.hpp_usd_per_1k_in,
+        hpp_usd_per_1k_out=row.hpp_usd_per_1k_out,
+        price_idr_per_1k_in=usd_per_1m_to_idr_per_1k(usd_in, fx_rate),
+        price_idr_per_1k_out=usd_per_1m_to_idr_per_1k(usd_out, fx_rate),
+        price_usd_per_1m_in=float(usd_in),
+        price_usd_per_1m_out=float(usd_out),
+        hpp_usd_per_1m_in=float(hpp_in),
+        hpp_usd_per_1m_out=float(hpp_out),
+        max_ctx=row.max_ctx,
+        max_tokens_cap=row.max_tokens_cap,
+        enabled=row.enabled,
+        created_at=row.created_at,
+        updated_at=row.updated_at,
+    )
+
+
+def _created_price_usd(usd: Decimal | None, legacy_idr: int | None, fx_rate: Decimal) -> Decimal:
+    if usd is not None:
+        return usd
+    return legacy_idr_per_1k_to_usd_per_1m(legacy_idr, fx_rate)
+
+
+def _created_hpp_usd(usd: Decimal | None, legacy_usd: int) -> Decimal:
+    if usd is not None:
+        return usd
+    return legacy_usd_per_1k_to_usd_per_1m(legacy_usd)
 
 
 @router.get("/providers", response_model=AiProviderList)
@@ -177,7 +225,8 @@ async def list_models(
         count_stmt = count_stmt.where(AiModel.provider_id == provider_id)
     total = (await db.execute(count_stmt)).scalar() or 0
     rows = list((await db.execute(stmt.order_by(AiModel.public_id))).scalars().all())
-    return AiModelList(items=[AiModelOut.model_validate(r) for r in rows], total=total)
+    fx_rate, _, _ = await ai_fx.effective_rate(db)
+    return AiModelList(items=[_model_out(r, fx_rate) for r in rows], total=total)
 
 
 @router.post("/models", response_model=AiModelOut, status_code=status.HTTP_201_CREATED)
@@ -197,14 +246,23 @@ async def create_model(
     existing = (await db.execute(select(AiModel).where(AiModel.public_id == body.public_id))).scalar_one_or_none()
     if existing is not None:
         raise HTTPException(status_code=409, detail="public_id already exists")
+    fx_rate, _, _ = await ai_fx.effective_rate(db)
+    usd_in = _created_price_usd(body.price_usd_per_1m_in, body.price_idr_per_1k_in, fx_rate)
+    usd_out = _created_price_usd(body.price_usd_per_1m_out, body.price_idr_per_1k_out, fx_rate)
+    hpp_in = _created_hpp_usd(body.hpp_usd_per_1m_in, body.hpp_usd_per_1k_in)
+    hpp_out = _created_hpp_usd(body.hpp_usd_per_1m_out, body.hpp_usd_per_1k_out)
     row = AiModel(
         provider_id=body.provider_id,
         public_id=body.public_id,
         upstream_id=body.upstream_id,
-        hpp_usd_per_1k_in=body.hpp_usd_per_1k_in,
-        hpp_usd_per_1k_out=body.hpp_usd_per_1k_out,
-        price_idr_per_1k_in=body.price_idr_per_1k_in,
-        price_idr_per_1k_out=body.price_idr_per_1k_out,
+        hpp_usd_per_1k_in=usd_per_1m_to_legacy_per_1k(hpp_in),
+        hpp_usd_per_1k_out=usd_per_1m_to_legacy_per_1k(hpp_out),
+        price_idr_per_1k_in=usd_per_1m_to_idr_per_1k(usd_in, fx_rate),
+        price_idr_per_1k_out=usd_per_1m_to_idr_per_1k(usd_out, fx_rate),
+        price_usd_per_1m_in=usd_in,
+        price_usd_per_1m_out=usd_out,
+        hpp_usd_per_1m_in=hpp_in,
+        hpp_usd_per_1m_out=hpp_out,
         max_ctx=body.max_ctx,
         max_tokens_cap=body.max_tokens_cap,
         enabled=body.enabled,
@@ -212,7 +270,7 @@ async def create_model(
     db.add(row)
     await db.commit()
     await db.refresh(row)
-    return AiModelOut.model_validate(row)
+    return _model_out(row, fx_rate)
 
 
 @router.patch("/models/{model_id}", response_model=AiModelOut)
@@ -237,11 +295,46 @@ async def update_model(
         ).scalar_one_or_none()
         if clash is not None:
             raise HTTPException(status_code=409, detail="public_id already exists")
+    fx_rate, _, _ = await ai_fx.effective_rate(db)
+    usd_in: Decimal | None = data.pop("price_usd_per_1m_in", None)
+    usd_out: Decimal | None = data.pop("price_usd_per_1m_out", None)
+    legacy_in: int | None = data.pop("price_idr_per_1k_in", None)
+    legacy_out: int | None = data.pop("price_idr_per_1k_out", None)
+    hpp_usd_in: Decimal | None = data.pop("hpp_usd_per_1m_in", None)
+    hpp_usd_out: Decimal | None = data.pop("hpp_usd_per_1m_out", None)
+    legacy_hpp_in: int | None = data.pop("hpp_usd_per_1k_in", None)
+    legacy_hpp_out: int | None = data.pop("hpp_usd_per_1k_out", None)
+    if usd_in is not None:
+        row.price_usd_per_1m_in = usd_in
+        row.price_idr_per_1k_in = usd_per_1m_to_idr_per_1k(usd_in, fx_rate)
+    elif legacy_in is not None:
+        converted_in = legacy_idr_per_1k_to_usd_per_1m(legacy_in, fx_rate)
+        row.price_usd_per_1m_in = converted_in
+        row.price_idr_per_1k_in = usd_per_1m_to_idr_per_1k(converted_in, fx_rate)
+    if usd_out is not None:
+        row.price_usd_per_1m_out = usd_out
+        row.price_idr_per_1k_out = usd_per_1m_to_idr_per_1k(usd_out, fx_rate)
+    elif legacy_out is not None:
+        converted_out = legacy_idr_per_1k_to_usd_per_1m(legacy_out, fx_rate)
+        row.price_usd_per_1m_out = converted_out
+        row.price_idr_per_1k_out = usd_per_1m_to_idr_per_1k(converted_out, fx_rate)
+    if hpp_usd_in is not None:
+        row.hpp_usd_per_1m_in = hpp_usd_in
+        row.hpp_usd_per_1k_in = usd_per_1m_to_legacy_per_1k(hpp_usd_in)
+    elif legacy_hpp_in is not None:
+        row.hpp_usd_per_1m_in = legacy_usd_per_1k_to_usd_per_1m(legacy_hpp_in)
+        row.hpp_usd_per_1k_in = legacy_hpp_in
+    if hpp_usd_out is not None:
+        row.hpp_usd_per_1m_out = hpp_usd_out
+        row.hpp_usd_per_1k_out = usd_per_1m_to_legacy_per_1k(hpp_usd_out)
+    elif legacy_hpp_out is not None:
+        row.hpp_usd_per_1m_out = legacy_usd_per_1k_to_usd_per_1m(legacy_hpp_out)
+        row.hpp_usd_per_1k_out = legacy_hpp_out
     for key, value in data.items():
         setattr(row, key, value)
     await db.commit()
     await db.refresh(row)
-    return AiModelOut.model_validate(row)
+    return _model_out(row, fx_rate)
 
 
 @router.delete("/models/{model_id}", status_code=status.HTTP_204_NO_CONTENT, response_class=Response)

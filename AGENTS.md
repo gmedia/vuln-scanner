@@ -23,7 +23,9 @@ Use `--author @me`, not `--assignee @me`: `gh pr create` does **not** assign the
 its author, so `--assignee` returns nothing and the merge step below never runs.
 
 - Your PR, CI green → `gh pr merge --squash` → `git branch -d <branch>`
-- Your PR, CI red → `git checkout <branch>` → fix → push
+- Your PR, CI **still running** → leave it open and continue with other work. **Do not wait.**
+- Your PR, CI red → `git checkout <branch>` → fix → push, then continue with other work.
+  Do not wait for the new run; the next session (or the user) sees the result.
 - **PR you did not author** → report it; do not fix or merge it unless the user names it.
   Another session may still be working on it.
 - Then: `git checkout main && git pull`, confirm tip, open `docs/AGENT_EXECUTION_GUIDE.md`
@@ -51,13 +53,35 @@ When **`main` CI is green including the `deploy` job**, production already ran *
 3. Work with incremental commits
 4. Push branch: `git push -u origin HEAD`
 5. Create PR: `gh pr create --fill`
-6. **Move to next task immediately** — do not poll CI
+6. **Start the next task immediately.** CI runs in the background; it is never a
+   reason to idle.
 
-Polling is still forbidden **unless the user explicitly asks you to watch, wait for, or
-merge in this turn** (e.g. "cek PR, merge jika hijau"). That request is the only
-exception: honour it for the PRs the user named, then return to this rule. CI takes
-~7 minutes on `main` (`deploy` 407s, `e2e-tests` 384s), so a wait loop burns a turn
-for information the next turn already has.
+### CI handling — work in parallel, never wait
+
+**Default: push → open PR → keep working.** CI is asynchronous infrastructure, not a
+blocking step.
+
+- **Never block a turn on CI.** No `gh run watch`, no `sleep`/retry loop, no repeated
+  `gh pr checks` until green, no "wait for green then merge" in the same turn.
+- **One status read is allowed**, at Session Start or when the user explicitly asks.
+  A single `gh pr view --json state,statusCheckRollup` is a status read; running it
+  again every few minutes is polling.
+- **Red CI is fixed later.** Push the fix, then continue with other work. Do not
+  wait for the replacement run; report it and move on.
+- **Stacked work is normal.** If the next task needs an unmerged branch, open the
+  next PR against that base, say so in the body, and keep working. Do not wait for
+  the base to merge; the next session retargets the child to `main`.
+- **Report, don't babysit.** Hand off with "PR #N open, CI running" and stop. The
+  user or the next session has the result.
+
+Polling is forbidden **unless the user explicitly asks you to watch, wait for, or
+merge in this turn** (e.g. "cek PR, merge jika hijau"). Honour that only for the PRs
+they named, then return to this rule. CI takes ~7 minutes on `main` (`deploy` 407s,
+`e2e-tests` 384s); a wait loop burns a turn for information the next turn already has.
+
+**Exception that is not waiting:** if a required *specialist result* (Oracle, a
+subagent) gates the next decision, end the response and wait for its notification.
+That is dependency ordering, not CI polling.
 
 ## PR Handoff Template
 Every PR description must include:
@@ -77,7 +101,8 @@ UI PRs must also fill the design change protocol in [`.github/pull_request_templ
 
 ## Anti-patterns
 - Working on `main` branch
-- Waiting/polling for CI/CD (see the explicit-request exception in **Workflow**)
+- Waiting/polling for CI/CD (`gh run watch`, `sleep` loops, repeated `gh pr checks`);
+  see **Workflow → CI handling**. Only an explicit user request in that turn overrides it.
 - **Merging with red CI** — a `push` to `main` runs `deploy`, so a red merge reaches production
 - Merging or "fixing" a PR you did not author without the user naming it
 - **Weakening a CI gate to get green** (raising a coverage threshold, deleting a check, allowlisting without a reason/expiry) — see **CI gates** above
@@ -87,13 +112,14 @@ UI PRs must also fill the design change protocol in [`.github/pull_request_templ
 
 ## CI gates (required checks — all block `ci-ok`)
 
-`ci-ok` is the **only** required check. It aggregates 17 jobs, including four drift/security
+`ci-ok` is the **only** required check. It aggregates 18 jobs, including five drift/security
 gates that are easy to trip without knowing they exist. All of them run in CI; run the script
 locally before pushing.
 
 | Gate (job) | Enforces | If it fails |
 |---|---|---|
 | `env-inventory` | Every env var read by `docker-compose.prod.yml` / `…remote-data.yml`, **and** every var the CI `deploy` job writes, must be documented in `.env.example`. Connection-only `DEPLOY_*` keys are exempted inside the script. | Add the key to `.env.example`. Only if it is genuinely connection-only and must not reach the app `.env`, add it to `DEPLOY_INFRA_KEYS` in the script. |
+| `alert-metrics` | Every `vuln_*` metric referenced by `monitoring/alerts-vuln-scanner.example.yml` must be exported by `backend/app/metrics.py`, and every exported metric must be referenced by a rule; then `promtool check rules` validates the PromQL. A renamed metric otherwise leaves an alert that **never fires and never errors**. | Rename the alert expression with the metric in the same PR, or add the missing rule. Never delete the alert to get green. |
 | `deps-sync` | A package declared in **both** `backend/requirements.txt` and `workers/requirements.txt` must use the **same specifier** (including ranges). Workers import `app.config` / `app.database` / `app.services.*` / `app.models.*`, so a mismatch runs one codebase against two dependency versions. | Align both files in the same PR. Dependabot bumps one file at a time, so this fires after a Dependabot merge — fix it forward, do not revert the bump. |
 | `deps-audit` | `npm audit` must have no **HIGH/CRITICAL** advisory outside `.github/dependency-audit-allowlist.json`. | Bump the package. If no patched release exists, add an allowlist entry with `id`, `package`, `reason`, `expires`. Never leave a security `overrides` floor one patch below the first patched version — that keeps the vulnerability while looking like a fix. |
 | `deps-audit-python` | `pip-audit` over both requirements files must find **no** advisory at all (pip-audit reports no severity, so there is no threshold). | Bump the pin, or allowlist with `ecosystem: "pip"`. |
@@ -105,6 +131,7 @@ Local runs:
 ./scripts/check-requirements-sync.sh
 node scripts/check-dependency-audit.mjs     # needs frontend/node_modules
 python3 scripts/check-pip-audit.py          # needs pip-audit installed
+node scripts/check-alert-metrics.mjs        # alert names must match metrics.py
 ```
 
 The two audit gates share one allowlist file. Expired entries fail; entries that no longer match
@@ -125,6 +152,7 @@ Public marketing and in-app SPA share **one visual family**. Start with [`docs/s
    **Filter bars** (search/date/select rows): copy Credit History — equal `gap-3` grid, each field `flex min-w-0 flex-col gap-1.5`, controls `h-10 min-h-10`. `DatePicker`/`DateTimePicker` trigger chrome = `border-border bg-input` (same as `Input`). Do **not** use uneven `grid-cols-12` spans or a far-right Apply with empty gutter. Reference: `frontend/src/pages/credit/CreditHistory.tsx`.
 4. **Do not** restyle kit files to match one screenshot. Frozen e2e testids stay.
 5. **Row actions** (table last column + mobile card action area) — **right-align**: `text-right` on head **and** cell. The kit's `TableHead` is `text-left` and `TableCell` sets none, so alignment is always an opt-in; and if the cell wraps controls in a **block-level flex**, `text-right` is a **no-op** → use `justify-end` (plus `items-end` when the mobile wrapper is `flex-col`). **Control choice:** 1 action → visible `Button`; 2+ secondary / admin CRUD → `…` `DropdownMenu`; **never** wrap a lone action; `Select`/inputs/disclosure toggles stay **outside** menus. **Menus:** items use `onSelect` (not `onClick`), destructive item last with `variant="destructive"` + separator, and **never** nest `AlertDialogTrigger` inside an item — use a **sibling controlled `AlertDialog`** (`open`/`onOpenChange`, state lifted above the `.map`). **Confirm irreversible actions only** (delete/void/revoke/ignore); reversible ones stay one-click; a toast is not a confirmation. Mobile trigger ≥ 44px; when one component renders both surfaces, branch on a `desktop` prop, **not** `sm:` classes. Detail: `docs/specs/row-actions.md`.
+6. **Page-nav tabs** (`variant="line"`) — shared chrome `w-full flex-wrap justify-start sm:flex-nowrap`, **max 5 tabs** and wrap (never a horizontal scroll strip) below `sm`. A 6th tab is a section/header action/route. Machine: `frontend/src/test/pageNavTabs.test.ts`.
 
 ---
 

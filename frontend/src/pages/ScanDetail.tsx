@@ -444,7 +444,7 @@ function ScanDetail() {
         }}
         className="w-full"
       >
-        <TabsList variant="line" className="w-full justify-start">
+        <TabsList variant="line" className="w-full flex-wrap justify-start sm:flex-nowrap">
           <TabsTrigger value="findings" className="gap-1.5">
             <Crosshair aria-hidden />
             {t("tabFindings")}

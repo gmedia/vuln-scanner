@@ -114,6 +114,10 @@ export interface AiModelAdmin {
   hpp_usd_per_1k_out: number;
   price_idr_per_1k_in: number;
   price_idr_per_1k_out: number;
+  price_usd_per_1m_in: number;
+  price_usd_per_1m_out: number;
+  hpp_usd_per_1m_in: number;
+  hpp_usd_per_1m_out: number;
   max_ctx: number;
   max_tokens_cap: number;
   enabled: boolean;
@@ -177,8 +181,12 @@ export async function createAiModel(body: {
   provider_id: string;
   public_id: string;
   upstream_id: string;
-  price_idr_per_1k_in: number;
-  price_idr_per_1k_out: number;
+  price_usd_per_1m_in?: number;
+  price_usd_per_1m_out?: number;
+  hpp_usd_per_1m_in?: number;
+  hpp_usd_per_1m_out?: number;
+  price_idr_per_1k_in?: number;
+  price_idr_per_1k_out?: number;
   hpp_usd_per_1k_in?: number;
   hpp_usd_per_1k_out?: number;
   max_ctx?: number;
@@ -194,6 +202,10 @@ export async function updateAiModel(
   body: Partial<{
     public_id: string;
     upstream_id: string;
+    price_usd_per_1m_in: number;
+    price_usd_per_1m_out: number;
+    hpp_usd_per_1m_in: number;
+    hpp_usd_per_1m_out: number;
     price_idr_per_1k_in: number;
     price_idr_per_1k_out: number;
     hpp_usd_per_1k_in: number;
@@ -220,6 +232,16 @@ export interface AiUsageAdmin {
   completion_tokens: number;
   billed_idr: number;
   cogs_idr: number;
+  margin_idr?: number;
+  billed_usd?: number | null;
+  cogs_usd?: number | null;
+  fx_rate?: number | null;
+  fx_source?: string | null;
+  fx_effective_date?: string | null;
+  price_usd_per_1m_in?: number | null;
+  price_usd_per_1m_out?: number | null;
+  hpp_usd_per_1m_in?: number | null;
+  hpp_usd_per_1m_out?: number | null;
   http_status: number | null;
   created_at: string;
   request_payload?: Record<string, unknown> | null;
@@ -254,6 +276,43 @@ export async function adminAiChat(body: {
   max_tokens?: number;
 }): Promise<Record<string, unknown>> {
   const { data } = await api.post("/api/admin/ai/chat", body);
+  return data;
+}
+
+export interface AiFxRate {
+  id: string;
+  base: string;
+  quote: string;
+  rate: number;
+  source: string;
+  effective_date: string;
+  fetched_at: string;
+  created_by: string | null;
+}
+
+export interface AiFxStatus {
+  rate: number;
+  source: string;
+  effective_date: string | null;
+  fetched_at: string | null;
+  using_env_fallback: boolean;
+  env_rate: number;
+  auto_fetch_enabled: boolean;
+  history: AiFxRate[];
+}
+
+export async function getAiFx(): Promise<AiFxStatus> {
+  const { data } = await api.get<AiFxStatus>("/api/admin/ai/fx");
+  return data;
+}
+
+export async function refreshAiFx(): Promise<AiFxRate> {
+  const { data } = await api.post<AiFxRate>("/api/admin/ai/fx/refresh");
+  return data;
+}
+
+export async function setAiFxManual(rate: number): Promise<AiFxRate> {
+  const { data } = await api.put<AiFxRate>("/api/admin/ai/fx/manual", { rate });
   return data;
 }
 
@@ -591,6 +650,7 @@ export async function createAdminInvoice(body: {
   organization_id: string;
   sku: string;
   product?: InvoiceProduct;
+  cycle?: "monthly" | "annual";
   notes?: string;
 }): Promise<InvoiceItem> {
   const { data } = await api.post<InvoiceItem>("/api/admin/invoices", body);
@@ -674,6 +734,9 @@ export const adminApi = {
   listAiUsage,
   topupAiWallet,
   adminAiChat,
+  getAiFx,
+  refreshAiFx,
+  setAiFxManual,
   listBlogPosts,
   createBlogPost,
   updateBlogPost,
