@@ -24,6 +24,8 @@ class SkuCatalogItem(BaseModel):
 
     product: str
     sku: str
+    label: str
+    active: bool
     list_idr: int
     seats: int
     invoicable: bool
@@ -38,13 +40,17 @@ class SkuCatalogListResponse(BaseModel):
 
 class SkuPriceItem(BaseModel):
     service: str  # scan | host | uptime | guard
-    sku: str  # basic | pro | multi
+    sku: str  # any sku_tiers.code
+    label: str
+    active: bool
     list_idr: int
     invoicable: bool
 
 
 class BundlePriceItem(BaseModel):
-    tier: str  # basic | pro | multi
+    tier: str  # any non-sales-led sku_tiers.code
+    label: str
+    active: bool
     bundle_idr: int
     alacarte_idr: int
     saving_idr: int
@@ -69,7 +75,10 @@ class SkuCatalogUpdateRequest(BaseModel):
 
 class InvoiceCreateRequest(BaseModel):
     organization_id: uuid.UUID
-    sku: str = Field(..., pattern=r"^(basic|pro|multi)$")
+    # Admin endpoints must accept any tier code that exists in sku_tiers, not
+    # an enumerated seed list; the service resolves the row (404) and applies
+    # the active/grandfathered rule.
+    sku: str = Field(..., pattern=r"^[a-z][a-z0-9_]{1,19}$")
     product: str = Field(default="scan", pattern=r"^(scan|host|uptime|guard)$")
     period_start: datetime | None = None
     due_date: datetime | None = None

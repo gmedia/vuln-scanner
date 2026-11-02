@@ -15,14 +15,7 @@ from app.models.host_protect import HostSite
 from app.models.invoice import (
     ANNUAL_MONTHS_PAID,
     ANNUAL_MONTHS_SERVED,
-    BUNDLE_LIST_IDR,
-    GUARD_SKU_LIST_IDR,
-    HOST_SKU_LIST_IDR,
     INVOICE_PRODUCTS,
-    INVOICE_SKUS,
-    PRODUCT_SEATS,
-    SCAN_SKU_LIST_IDR,
-    UPTIME_SKU_LIST_IDR,
     OrgInvoice,
 )
 from app.models.organization import Organization, OrganizationMembership
@@ -31,6 +24,7 @@ from app.models.subscription import SubscriptionRequest
 from app.models.uptime import UptimeMonitor
 from app.models.user import User
 from app.schemas.billing import PaymentAttemptItem
+from app.schemas.sku_tier import SkuTierItem
 from app.schemas.subscription import (
     SubscriptionAnnualPolicy,
     SubscriptionBundleItem,
@@ -54,12 +48,10 @@ PRODUCT_UNITS: dict[str, str] = {
     "uptime": "monitor",
     "guard": "agent",
 }
-PRODUCT_FALLBACKS: dict[str, dict[str, int]] = {
-    "scan": SCAN_SKU_LIST_IDR,
-    "host": HOST_SKU_LIST_IDR,
-    "uptime": UPTIME_SKU_LIST_IDR,
-    "guard": GUARD_SKU_LIST_IDR,
-}
+
+
+def _limit_for(tier: SkuTier, product: str) -> int:
+    return int(getattr(tier, f"limit_{product}"))
 
 
 def _utc(value: datetime | None) -> datetime | None:
@@ -289,35 +281,47 @@ class SubscriptionService:
             invoice_number=invoice.number if invoice is not None else None,
         )
 
-    async def _catalog(self) -> tuple[list[SubscriptionCatalogItem], list[SubscriptionBundleItem]]:
+    async def _visible_tiers(self, extra_codes: set[str] | None = None) -> list[SkuTier]:
+        """Active tiers plus the caller's current tier, even when retired."""
+        service = SkuTierService(self.db)
+        visible = {tier.code: tier for tier in await service.list()}
+        for code in extra_codes or set():
+            if code not in visible:
+                visible[code] = await service.get(code)
+        return sorted(visible.values(), key=lambda tier: tier.rank)
+
+    async def _catalog(
+        self, extra_codes: set[str] | None = None
+    ) -> tuple[list[SubscriptionCatalogItem], list[SubscriptionBundleItem]]:
+        tiers = [tier for tier in await self._visible_tiers(extra_codes) if not tier.sales_led]
         rows = await InvoiceService(self.db).list_catalog()
         catalog = {(row.product, row.sku): row for row in rows}
         items: list[SubscriptionCatalogItem] = []
-        for service in INVOICE_PRODUCTS:
-            for sku in INVOICE_SKUS:
-                row = catalog.get((service, sku))
+        for tier in tiers:
+            for service in INVOICE_PRODUCTS:
+                row = catalog.get((service, tier.code))
                 items.append(
                     SubscriptionCatalogItem(
                         service=service,
-                        sku=sku,
-                        list_idr=row.list_idr if row is not None else PRODUCT_FALLBACKS[service].get(sku, 0),
-                        seats=(
-                            row.seats
-                            if row is not None
-                            else int(PRODUCT_SEATS.get(service, PRODUCT_SEATS["scan"]).get(sku, 1))
-                        ),
-                        invoicable=row.invoicable if row is not None else False,
+                        sku=tier.code,
+                        label=tier.label,
+                        active=tier.active,
+                        list_idr=int(row.list_idr) if row is not None else 0,
+                        seats=int(row.seats) if row is not None else _limit_for(tier, service),
+                        invoicable=bool(row.invoicable) if row is not None else False,
                     )
                 )
         by_key = {(item.service, item.sku): item.list_idr for item in items}
         bundles: list[SubscriptionBundleItem] = []
-        for tier in INVOICE_SKUS:
-            alacarte = sum(by_key.get((service, tier), 0) for service in INVOICE_PRODUCTS)
-            bundle = BUNDLE_LIST_IDR.get(tier, 0)
+        for tier in tiers:
+            alacarte = sum(by_key.get((service, tier.code), 0) for service in INVOICE_PRODUCTS)
+            bundle = int(tier.bundle_idr or 0)
             saving = alacarte - bundle
             bundles.append(
                 SubscriptionBundleItem(
-                    tier=tier,
+                    tier=tier.code,
+                    label=tier.label,
+                    active=tier.active,
                     bundle_idr=bundle,
                     alacarte_idr=alacarte,
                     saving_idr=saving,
@@ -364,13 +368,15 @@ class SubscriptionService:
         invoice = await self._latest_scan_invoice(org.id)
         subscription = await self._subscription(org.id)
         usage, seats = await self._usage(org.id, org.sku)
-        catalog, bundles = await self._catalog()
+        visible_tiers = await self._visible_tiers({org.sku})
+        catalog, bundles = await self._catalog({org.sku})
         can_manage = role_at_least(role, "admin")
         read_only_reason = await billing_write_block(self.db, org.id)
         return SubscriptionOverviewResponse(
             organization_id=org.id,
             organization_name=org.name,
             plan=await self._plan(org, invoice, subscription),
+            tiers=[SkuTierItem.from_model(tier) for tier in visible_tiers],
             usage=usage,
             workspace_seats=seats,
             catalog=catalog,
