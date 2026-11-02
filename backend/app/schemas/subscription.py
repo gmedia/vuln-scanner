@@ -6,7 +6,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.schemas.billing import PaymentAttemptItem
-from app.schemas.sku_tier import SkuTierItem
+from app.schemas.sku_tier import TIER_CODE_PATTERN, SkuTierItem
 
 
 class SubscriptionPlan(BaseModel):
@@ -112,7 +112,7 @@ class SubscriptionOverviewResponse(BaseModel):
 
 
 class SubscriptionRequestCreate(BaseModel):
-    target_sku: str = Field(..., pattern="^(basic|pro|multi)$")
+    target_sku: str = Field(..., pattern=TIER_CODE_PATTERN)
     cycle: str = Field(default="monthly", pattern="^(monthly|annual)$")
     note: str = Field(default="", max_length=500)
 

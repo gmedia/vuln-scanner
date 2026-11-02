@@ -5,7 +5,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
-from app.schemas.sku_tier import SkuTierFeatures, SkuTierWorkspaceLimits
+from app.schemas.sku_tier import TIER_CODE_PATTERN, SkuTierFeatures, SkuTierWorkspaceLimits
 
 
 class OrgCreateRequest(BaseModel):
@@ -17,7 +17,7 @@ class OrgCreateRequest(BaseModel):
 class OrgUpdateRequest(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=255)
     slug: str | None = Field(default=None, min_length=1, max_length=64)
-    sku: str | None = Field(default=None, pattern=r"^(basic|pro|multi|enterprise)$")
+    sku: str | None = Field(default=None, pattern=TIER_CODE_PATTERN)
 
 
 class OrgSwitchRequest(BaseModel):
