@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 import uuid
 from datetime import UTC, date, datetime
 from decimal import Decimal
@@ -28,6 +29,12 @@ from app.models.ai_gateway import (
 from app.models.organization import Organization, OrganizationMembership
 from app.models.user import User
 from app.services.ai_crypto import encrypt_credential
+from app.services.ai_proxy import (
+    UpstreamCandidate,
+    _attempt_timeout,
+    _can_retry,
+    _post_with_failover,
+)
 from app.services.ai_wallet import hold_idr, resolve_snapshot
 from app.services.auth import create_access_token, hash_password
 from app.services.organization import ensure_personal_org
@@ -630,10 +637,17 @@ class _UpstreamResponse:
 class _FakeStreamResponse:
     """Async context manager standing in for ``httpx.Response`` returned by ``client.stream``."""
 
-    def __init__(self, status_code: int, chunks: list[bytes] | None = None, raise_after: bool = False) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        chunks: list[bytes] | None = None,
+        raise_after: bool = False,
+        raise_before: bool = False,
+    ) -> None:
         self.status_code = status_code
         self._chunks = chunks or []
         self._raise_after = raise_after
+        self._raise_before = raise_before
 
     async def __aenter__(self) -> _FakeStreamResponse:
         return self
@@ -642,6 +656,8 @@ class _FakeStreamResponse:
         return None
 
     async def aiter_bytes(self):
+        if self._raise_before:
+            raise httpx.ReadTimeout("no first byte")
         for chunk in self._chunks:
             yield chunk
         if self._raise_after:
@@ -1269,3 +1285,87 @@ async def test_v1_stream_metric_records_served_after_failover(db_session: AsyncS
     assert "hello" in chat.text
     assert _attempt_total(public_id, "served", "none") - served_before == pytest.approx(1.0)
     assert _attempt_total(public_id, "retried", "server_error") - retried_before == pytest.approx(1.0)
+
+
+def test_attempt_timeout_clamps_to_remaining_budget(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "ai_upstream_failover_deadline_seconds", 100.0)
+    monkeypatch.setattr(settings, "ai_upstream_timeout_seconds", 120.0)
+    monkeypatch.setattr(settings, "ai_upstream_connect_timeout_seconds", 10.0)
+
+    fresh = _attempt_timeout(time.monotonic(), streaming=False)
+    assert fresh.read == pytest.approx(100.0, abs=1.0)
+    assert fresh.connect == pytest.approx(10.0)
+
+    nearly_spent = _attempt_timeout(time.monotonic() - 90.0, streaming=False)
+    assert nearly_spent.read == pytest.approx(10.0, abs=1.0)
+    assert nearly_spent.read < 120.0
+
+
+def test_attempt_timeout_streaming_uses_idle_read(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "ai_upstream_failover_deadline_seconds", 100.0)
+    monkeypatch.setattr(settings, "ai_upstream_stream_idle_timeout_seconds", 45.0)
+
+    timeout = _attempt_timeout(time.monotonic(), streaming=True)
+    assert timeout.read == pytest.approx(45.0)
+    assert timeout.read < settings.ai_upstream_failover_deadline_seconds
+
+
+def test_can_retry_requires_enough_budget_left(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "ai_upstream_failover_deadline_seconds", 100.0)
+    monkeypatch.setattr(settings, "ai_upstream_min_attempt_seconds", 5.0)
+    candidates = [
+        UpstreamCandidate(uuid.uuid4(), "a", "https://a/v1", "Authorization", "c", None, None, None),
+        UpstreamCandidate(uuid.uuid4(), "b", "https://b/v1", "Authorization", "c", None, None, None),
+    ]
+
+    assert _can_retry(0, candidates, time.monotonic()) is True
+    assert _can_retry(0, candidates, time.monotonic() - 97.0) is False
+    assert _can_retry(1, candidates, time.monotonic()) is False
+
+
+@pytest.mark.asyncio
+async def test_post_with_failover_passes_clamped_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "ai_upstream_failover_deadline_seconds", 100.0)
+    mock_client = _post_client(_UpstreamResponse(200, _chat_payload()))
+    candidate = UpstreamCandidate(
+        uuid.uuid4(), "a", "https://a/v1", "Authorization", encrypt_credential("secret"), None, None, None
+    )
+
+    with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+        await _post_with_failover([candidate], {"max_tokens": 8}, time.monotonic(), public_id="sinexis/test")
+
+    passed = mock_client.post.call_args.kwargs["timeout"]
+    assert isinstance(passed, httpx.Timeout)
+    assert passed.read == pytest.approx(100.0, abs=1.0)
+
+
+@pytest.mark.asyncio
+async def test_v1_stream_failover_when_primary_stalls_before_first_byte(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+    fallback = await _add_fallback(db_session, ctx["model"])
+    chunk = b'data: {"id":"s1","choices":[{"delta":{"content":"hello"}}]}\n\n'
+    mock_client = _stream_client(
+        _FakeStreamResponse(200, raise_before=True),
+        _FakeStreamResponse(200, [chunk]),
+    )
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            plain = await _create_key(ac, owner, org.id)
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                chat = await ac.post(CHAT_PATH, headers=_key_headers(plain), json=_chat_body(stream=True))
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert chat.status_code == 200, chat.text
+    assert "hello" in chat.text
+    assert mock_client.stream.call_count == 2
+    events = await _usage_events(db_session, org.id)
+    assert len(events) == 1
+    assert events[0].provider_id == fallback.id
