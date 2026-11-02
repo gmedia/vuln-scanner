@@ -2,12 +2,12 @@
 celery[redis]==5.6.3
 # redis-py max under kombu[redis] (<6.5); server image is redis:8-alpine — see docs/dependency-pins.md
 redis==6.4.0
-sqlalchemy[asyncio]==2.1.4
+sqlalchemy[asyncio]==2.1.6
 asyncpg==0.32.0
 # SQLAlchemy 2.1 defaults `postgresql://` to the psycopg (psycopg3) dialect.
 psycopg[binary]==3.3.6
-pydantic==2.14.1
-pydantic-settings==2.16.0
+pydantic==2.14.2
+pydantic-settings==2.16.2
 httpx==0.28.1
 python-dotenv==1.2.4
 loguru==0.7.3
@@ -20,11 +20,11 @@ email-validator==2.3.0
 # API uses SES. Same floor as backend/requirements.txt.
 boto3>=1.43.114
 pytest==9.1.1
-pytest-asyncio==1.4.0
+pytest-asyncio==1.4.1
 pytest-cov==7.1.0
 
 # Transitive dependency pins for CVE fixes
-langgraph-checkpoint==4.3.0
-langgraph-sdk==0.4.7
+langgraph-checkpoint==4.3.1
+langgraph-sdk==0.4.10
 # GHSA-6q48-6c7w-9gw2 (critical): compromised emSign root CAs.
-certifi==2026.10.19
+certifi==2026.10.23
