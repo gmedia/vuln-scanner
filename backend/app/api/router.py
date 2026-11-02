@@ -6,6 +6,7 @@ from app.api.admin_billing_routes import router as admin_billing_router
 from app.api.admin_blog_routes import router as admin_blog_router
 from app.api.admin_invoice_routes import router as admin_invoice_router
 from app.api.admin_routes import router as admin_router
+from app.api.admin_sku_tier_routes import router as admin_sku_tier_router
 from app.api.admin_subscription_routes import router as admin_subscription_router
 from app.api.ai_routes import router as ai_router
 from app.api.asset_routes import router as asset_router
@@ -40,6 +41,7 @@ api_router.include_router(auth_router)
 api_router.include_router(credit_router)
 api_router.include_router(inbox_router)
 api_router.include_router(admin_router)
+api_router.include_router(admin_sku_tier_router)
 api_router.include_router(admin_invoice_router)
 api_router.include_router(admin_subscription_router)
 api_router.include_router(admin_billing_router)
