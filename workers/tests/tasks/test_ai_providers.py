@@ -48,13 +48,9 @@ def _response(status_code):
 def _run(monkeypatch, providers, client):
     session = MagicMock()
     session.execute.return_value.scalars.return_value.all.return_value = providers
-    success = MagicMock()
-    failure = MagicMock()
     monkeypatch.setattr(ai_providers, "get_sync_session", MagicMock(return_value=session))
     monkeypatch.setattr(ai_providers.httpx, "Client", MagicMock(return_value=client))
-    monkeypatch.setattr(ai_providers, "record_success_sync", success)
-    monkeypatch.setattr(ai_providers, "record_failure_sync", failure)
-    return probe_ai_providers(), session, success, failure
+    return probe_ai_providers(), session
 
 
 def test_skips_without_touching_db_or_http_when_gateway_disabled(monkeypatch):
@@ -81,18 +77,16 @@ def test_skips_without_touching_db_or_http_when_probe_disabled(monkeypatch):
     client_factory.assert_not_called()
 
 
-def test_ok_provider_is_marked_ok_and_records_success(monkeypatch):
+def test_ok_provider_is_marked_ok(monkeypatch):
     _set_settings(monkeypatch)
     provider = _provider()
     client = MagicMock()
     client.get.side_effect = [_response(200)]
 
-    result, session, success, failure = _run(monkeypatch, [provider], client)
+    result, session = _run(monkeypatch, [provider], client)
 
     assert result == {"probed": 1, "ok": 1, "degraded": 0, "unverified": 0, "errors": 0}
     assert provider.status == "ok"
-    success.assert_called_once_with(provider.id)
-    failure.assert_not_called()
     client.get.assert_called_once_with("https://up.example/v1/models", headers={"Authorization": "Bearer "})
     session.commit.assert_called_once()
     session.rollback.assert_not_called()
@@ -105,12 +99,10 @@ def test_auth_failure_marks_provider_degraded(monkeypatch):
     client = MagicMock()
     client.get.side_effect = [_response(401)]
 
-    result, _, success, failure = _run(monkeypatch, [provider], client)
+    result, _ = _run(monkeypatch, [provider], client)
 
     assert result == {"probed": 1, "ok": 0, "degraded": 1, "unverified": 0, "errors": 0}
     assert provider.status == "degraded"
-    failure.assert_called_once_with(provider.id, "auth")
-    success.assert_not_called()
 
 
 def test_server_error_marks_provider_degraded(monkeypatch):
@@ -119,12 +111,10 @@ def test_server_error_marks_provider_degraded(monkeypatch):
     client = MagicMock()
     client.get.side_effect = [_response(503)]
 
-    result, _, success, failure = _run(monkeypatch, [provider], client)
+    result, _ = _run(monkeypatch, [provider], client)
 
     assert result == {"probed": 1, "ok": 0, "degraded": 1, "unverified": 0, "errors": 0}
     assert provider.status == "degraded"
-    failure.assert_called_once_with(provider.id, "server_error")
-    success.assert_not_called()
 
 
 def test_transport_error_degrades_and_the_loop_continues(monkeypatch):
@@ -134,13 +124,11 @@ def test_transport_error_degrades_and_the_loop_continues(monkeypatch):
     client = MagicMock()
     client.get.side_effect = [httpx.ConnectError("down"), _response(200)]
 
-    result, _, success, failure = _run(monkeypatch, [broken, healthy], client)
+    result, _ = _run(monkeypatch, [broken, healthy], client)
 
     assert result == {"probed": 2, "ok": 1, "degraded": 1, "unverified": 0, "errors": 0}
     assert broken.status == "degraded"
     assert healthy.status == "ok"
-    failure.assert_called_once_with(broken.id, "transport")
-    success.assert_called_once_with(healthy.id)
 
 
 def test_selection_excludes_disabled_providers(monkeypatch):
@@ -149,14 +137,13 @@ def test_selection_excludes_disabled_providers(monkeypatch):
     client = MagicMock()
     client.get.side_effect = [_response(200)]
 
-    _, session, success, _ = _run(monkeypatch, [provider], client)
+    _, session = _run(monkeypatch, [provider], client)
 
     statement = session.execute.call_args.args[0]
     sql = str(statement.compile(compile_kwargs={"literal_binds": True}))
     assert "ai_providers.enabled IS true" in sql
     assert "ai_providers.status != 'disabled'" in sql
     assert provider.status == "ok"
-    success.assert_called_once_with(provider.id)
 
 
 def test_missing_models_endpoint_leaves_status_unverified(monkeypatch):
@@ -165,13 +152,16 @@ def test_missing_models_endpoint_leaves_status_unverified(monkeypatch):
     client = MagicMock()
     client.get.side_effect = [_response(404)]
 
-    result, session, success, failure = _run(monkeypatch, [provider], client)
+    result, session = _run(monkeypatch, [provider], client)
 
     assert result == {"probed": 1, "ok": 0, "degraded": 0, "unverified": 1, "errors": 0}
     assert provider.status == "ok"
-    success.assert_not_called()
-    failure.assert_not_called()
     session.commit.assert_called_once()
+
+
+def test_probe_has_no_handle_to_the_breaker():
+    assert not hasattr(ai_providers, "record_success_sync")
+    assert not hasattr(ai_providers, "record_failure_sync")
 
 
 def test_beat_schedule_registers_provider_probe():

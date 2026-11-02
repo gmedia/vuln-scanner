@@ -1,10 +1,14 @@
 """Probe enabled AI upstream providers on a beat schedule.
 
-A 2xx marks the provider ``ok`` and records breaker success. Auth failures,
-5xx and transport errors mark it ``degraded`` and record breaker failure. Any
-other 4xx (a vendor without ``/models``) stays unverified so a missing optional
-endpoint never degrades a healthy provider. ``disabled`` is a human decision and
-is never written here.
+Writes ``ai_providers.status`` only: 2xx is ``ok``, auth failures / 5xx /
+transport errors are ``degraded``, and any other 4xx stays unverified so a vendor
+without ``/models`` is never punished. ``disabled`` is a human decision that this
+task never writes.
+
+The circuit breaker belongs to traffic alone. This task used to record a breaker
+success on every 2xx, which deleted the open key every five minutes and left the
+breaker unable to contain a provider whose ``/models`` answers while
+``/chat/completions`` fails.
 """
 
 import os
@@ -24,10 +28,6 @@ if _BACKEND not in sys.path:
 
 from app.config import settings  # noqa: E402
 from app.models.ai_gateway import AiProvider  # noqa: E402
-from app.services.ai_breaker import (  # noqa: E402
-    record_failure_sync,
-    record_success_sync,
-)
 from app.services.ai_crypto import decrypt_credential  # noqa: E402
 
 
@@ -71,18 +71,14 @@ def probe_ai_providers() -> dict[str, Any]:
                 code = response.status_code
                 if 200 <= code < 300:
                     provider.status = "ok"
-                    record_success_sync(provider.id)
                     counts["ok"] += 1
                 elif code in (401, 403) or code >= 500:
-                    reason = "auth" if code in (401, 403) else "server_error"
                     provider.status = "degraded"
-                    record_failure_sync(provider.id, reason)
                     counts["degraded"] += 1
                 else:
                     counts["unverified"] += 1
             except httpx.HTTPError:
                 provider.status = "degraded"
-                record_failure_sync(provider.id, "transport")
                 counts["degraded"] += 1
             except Exception as exc:
                 logger.warning("ai provider probe failed for {}: {}", provider.name, exc)
