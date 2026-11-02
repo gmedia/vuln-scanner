@@ -22,6 +22,9 @@ AUTO_FAIL_REDIS_KEYS = {
 _FX_RATE_AGE_NAME = "vuln_ai_fx_rate_age_days"
 _SHORTFALL_NAME = "vuln_ai_usage_shortfall_idr_24h"
 _LEDGER_DRIFT_NAME = "vuln_ai_wallet_ledger_drift_idr"
+STALE_OPEN_RESERVATIONS_NAME = "vuln_ai_stale_open_reservations"
+# Mirrors workers/tasks/ai_reservations.STALE_RESERVATION_MINUTES; kept local so metrics never imports the worker.
+STALE_RESERVATION_MINUTES = 20
 
 _collector_registered = False
 
@@ -139,6 +142,23 @@ def _read_ai_wallet_ledger_drift_idr() -> float | None:
         return None
 
 
+def _read_ai_stale_open_reservations() -> float | None:
+    """Open AI reservations older than the reaper threshold; None on failure."""
+    try:
+        from sqlalchemy import text
+
+        cutoff = datetime.now(UTC) - timedelta(minutes=STALE_RESERVATION_MINUTES)
+        with _ai_engine().connect() as conn:
+            raw = conn.execute(
+                text("SELECT COUNT(*) FROM ai_reservations WHERE status = 'open' AND created_at < :cutoff"),
+                {"cutoff": cutoff},
+            ).scalar()
+        return float(raw or 0)
+    except Exception as e:
+        logger.debug("ai stale reservations metric scrape failed: %s", e)
+        return None
+
+
 class AutoFailCollector:
     def collect(self) -> Iterable[Metric]:
         counts = _read_auto_fail_counts()
@@ -203,6 +223,23 @@ class AiWalletLedgerDriftCollector:
         yield gauge
 
 
+class AiStaleReservationsCollector:
+    def collect(self) -> Iterable[Metric]:
+        try:
+            value = _read_ai_stale_open_reservations()
+        except Exception as e:
+            logger.debug("ai stale reservations collector failed: %s", e)
+            return
+        if value is None:
+            return
+        gauge = GaugeMetricFamily(
+            STALE_OPEN_RESERVATIONS_NAME,
+            "Open AI reservations older than the reaper threshold",
+        )
+        gauge.add_metric([], value)
+        yield gauge
+
+
 def register_custom_metrics() -> None:
     global _collector_registered
     if _collector_registered:
@@ -211,4 +248,5 @@ def register_custom_metrics() -> None:
     REGISTRY.register(AiFxRateCollector())
     REGISTRY.register(AiShortfallCollector())
     REGISTRY.register(AiWalletLedgerDriftCollector())
+    REGISTRY.register(AiStaleReservationsCollector())
     _collector_registered = True

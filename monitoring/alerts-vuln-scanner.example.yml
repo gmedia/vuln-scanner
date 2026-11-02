@@ -54,3 +54,17 @@ groups:
             without a ledger row (or a manual DB edit). Inspect ai_wallets vs
             ai_wallet_ledger for the offending organization, and never "fix" it by
             editing only one side.
+      - alert: VulnScannerAiStaleReservations
+        expr: vuln_ai_stale_open_reservations > 0
+        for: 15m
+        labels:
+          severity: warning
+          service: vuln-scanner
+        annotations:
+          summary: "AI reservations are not being reaped"
+          description: >-
+            vuln_ai_stale_open_reservations is {{ $value }}. ai_reservations.reap
+            runs every 5 minutes on the ip_scan queue and releases holds older than
+            20 minutes. A sustained count means beat or its worker is not consuming,
+            so customer funds stay locked. Check the beat schedule and worker logs,
+            then run the task manually if needed.
