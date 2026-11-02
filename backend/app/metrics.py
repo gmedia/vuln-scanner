@@ -23,6 +23,8 @@ _FX_RATE_AGE_NAME = "vuln_ai_fx_rate_age_days"
 _SHORTFALL_NAME = "vuln_ai_usage_shortfall_idr_24h"
 _LEDGER_DRIFT_NAME = "vuln_ai_wallet_ledger_drift_idr"
 STALE_OPEN_RESERVATIONS_NAME = "vuln_ai_stale_open_reservations"
+_UPSTREAM_BREAKERS_OPEN_NAME = "vuln_ai_upstream_breakers_open"
+_PROVIDERS_DEGRADED_NAME = "vuln_ai_providers_degraded"
 # Mirrors workers/tasks/ai_reservations.STALE_RESERVATION_MINUTES; kept local so metrics never imports the worker.
 STALE_RESERVATION_MINUTES = 20
 
@@ -173,6 +175,45 @@ def _read_ai_stale_open_reservations() -> float | None:
         return None
 
 
+def _read_ai_upstream_breakers_open() -> float | None:
+    """Open AI breaker keys in Redis; None on failure."""
+    try:
+        import redis
+
+        from app.config import settings
+
+        r = redis.Redis.from_url(settings.redis_url, socket_connect_timeout=2, decode_responses=True)
+        try:
+            count = 0
+            cursor = 0
+            for _ in range(1000):
+                cursor, keys = r.scan(cursor=cursor, match="ai:cb:*:open", count=500)
+                count += len(keys)
+                if cursor == 0:
+                    break
+            return float(count)
+        finally:
+            r.close()
+    except Exception as e:
+        logger.debug("ai upstream breaker metric scrape failed: %s", e)
+        return None
+
+
+def _read_ai_providers_degraded() -> float | None:
+    """Providers enabled but marked degraded; None on failure."""
+    try:
+        from sqlalchemy import text
+
+        with _ai_engine().connect() as conn:
+            raw = conn.execute(
+                text("SELECT COUNT(*) FROM ai_providers WHERE enabled IS TRUE AND status = 'degraded'")
+            ).scalar()
+        return float(raw or 0)
+    except Exception as e:
+        logger.debug("ai providers degraded metric scrape failed: %s", e)
+        return None
+
+
 class AutoFailCollector:
     def collect(self) -> Iterable[Metric]:
         counts = _read_auto_fail_counts()
@@ -254,6 +295,40 @@ class AiStaleReservationsCollector:
         yield gauge
 
 
+class AiUpstreamBreakersOpenCollector:
+    def collect(self) -> Iterable[Metric]:
+        try:
+            value = _read_ai_upstream_breakers_open()
+        except Exception as e:
+            logger.debug("ai upstream breaker collector failed: %s", e)
+            return
+        if value is None:
+            return
+        gauge = GaugeMetricFamily(
+            _UPSTREAM_BREAKERS_OPEN_NAME,
+            "Open AI upstream circuit-breaker keys in Redis",
+        )
+        gauge.add_metric([], value)
+        yield gauge
+
+
+class AiProvidersDegradedCollector:
+    def collect(self) -> Iterable[Metric]:
+        try:
+            value = _read_ai_providers_degraded()
+        except Exception as e:
+            logger.debug("ai providers degraded collector failed: %s", e)
+            return
+        if value is None:
+            return
+        gauge = GaugeMetricFamily(
+            _PROVIDERS_DEGRADED_NAME,
+            "Enabled AI providers marked degraded",
+        )
+        gauge.add_metric([], value)
+        yield gauge
+
+
 def register_custom_metrics() -> None:
     global _collector_registered
     if _collector_registered:
@@ -263,4 +338,6 @@ def register_custom_metrics() -> None:
     REGISTRY.register(AiShortfallCollector())
     REGISTRY.register(AiWalletLedgerDriftCollector())
     REGISTRY.register(AiStaleReservationsCollector())
+    REGISTRY.register(AiUpstreamBreakersOpenCollector())
+    REGISTRY.register(AiProvidersDegradedCollector())
     _collector_registered = True
