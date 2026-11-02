@@ -45,7 +45,9 @@ class SkuCatalog(Base):
     __tablename__ = "sku_catalog"
 
     product: Mapped[str] = mapped_column(String(20), primary_key=True)
-    sku: Mapped[str] = mapped_column(String(20), primary_key=True)
+    sku: Mapped[str] = mapped_column(
+        String(20), ForeignKey("sku_tiers.code", ondelete="CASCADE"), primary_key=True, index=True
+    )
     list_idr: Mapped[int] = mapped_column(Integer, nullable=False)
     seats: Mapped[int] = mapped_column(Integer, nullable=False)
     invoicable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -56,7 +58,6 @@ class SkuCatalog(Base):
 
     __table_args__ = (
         CheckConstraint("product IN ('scan', 'host', 'uptime', 'guard')", name="ck_sku_catalog_product"),
-        CheckConstraint("sku IN ('basic', 'pro', 'multi')", name="ck_sku_catalog_sku"),
         CheckConstraint("list_idr >= 0", name="ck_sku_catalog_list_idr"),
         CheckConstraint("seats >= 1", name="ck_sku_catalog_seats"),
     )
@@ -71,7 +72,9 @@ class OrgInvoice(Base):
     )
     number: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
     product: Mapped[str] = mapped_column(String(20), nullable=False, default="scan")
-    sku: Mapped[str] = mapped_column(String(20), nullable=False)
+    sku: Mapped[str] = mapped_column(
+        String(20), ForeignKey("sku_tiers.code", ondelete="RESTRICT"), nullable=False, index=True
+    )
     amount_idr: Mapped[int] = mapped_column(Integer, nullable=False)
     dpp_idr: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     ppn_idr: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -95,7 +98,6 @@ class OrgInvoice(Base):
 
     __table_args__ = (
         CheckConstraint("product IN ('scan', 'host', 'uptime', 'guard')", name="ck_org_invoices_product"),
-        CheckConstraint("sku IN ('basic', 'pro', 'multi')", name="ck_org_invoices_sku"),
         CheckConstraint("status IN ('draft', 'sent', 'paid', 'void')", name="ck_org_invoices_status"),
         CheckConstraint("amount_idr >= 0", name="ck_org_invoices_amount"),
         UniqueConstraint("number", name="uq_org_invoices_number"),

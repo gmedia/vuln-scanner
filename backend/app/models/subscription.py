@@ -36,8 +36,12 @@ class SubscriptionRequest(Base):
         nullable=True,
     )
     direction: Mapped[str] = mapped_column(String(20), nullable=False)
-    current_sku: Mapped[str] = mapped_column(String(20), nullable=False)
-    target_sku: Mapped[str] = mapped_column(String(20), nullable=False)
+    current_sku: Mapped[str] = mapped_column(
+        String(20), ForeignKey("sku_tiers.code", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    target_sku: Mapped[str] = mapped_column(
+        String(20), ForeignKey("sku_tiers.code", ondelete="RESTRICT"), nullable=False, index=True
+    )
     cycle: Mapped[str] = mapped_column(String(10), nullable=False, default="monthly")
     note: Mapped[str] = mapped_column(String(500), nullable=False, default="")
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
@@ -57,12 +61,4 @@ class SubscriptionRequest(Base):
         CheckConstraint(f"direction IN {SUBSCRIPTION_REQUEST_DIRECTIONS}", name="ck_subscription_request_direction"),
         CheckConstraint(f"cycle IN {SUBSCRIPTION_REQUEST_CYCLES}", name="ck_subscription_request_cycle"),
         CheckConstraint(f"status IN {SUBSCRIPTION_REQUEST_STATUSES}", name="ck_subscription_request_status"),
-        CheckConstraint(
-            f"current_sku IN {SUBSCRIPTION_REQUEST_CURRENT_SKUS}",
-            name="ck_subscription_request_current_sku",
-        ),
-        CheckConstraint(
-            f"target_sku IN {SUBSCRIPTION_REQUEST_TARGET_SKUS}",
-            name="ck_subscription_request_target_sku",
-        ),
     )

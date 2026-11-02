@@ -25,7 +25,9 @@ class Organization(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     slug: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
     kind: Mapped[str] = mapped_column(String(20), nullable=False, default="personal")
-    sku: Mapped[str] = mapped_column(String(20), nullable=False, default="basic")
+    sku: Mapped[str] = mapped_column(
+        String(20), ForeignKey("sku_tiers.code", ondelete="RESTRICT"), nullable=False, default="basic", index=True
+    )
     tag_colors: Mapped[dict[str, str]] = mapped_column(JSONB, nullable=False, default=dict, server_default="{}")
     created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
@@ -43,10 +45,7 @@ class Organization(Base):
     )
     created_by: Mapped["User | None"] = relationship(foreign_keys=[created_by_user_id])
 
-    __table_args__ = (
-        CheckConstraint(f"kind IN {ORG_KINDS}", name="ck_organization_kind"),
-        CheckConstraint(f"sku IN {ORG_SKUS}", name="ck_organization_sku"),
-    )
+    __table_args__ = (CheckConstraint(f"kind IN {ORG_KINDS}", name="ck_organization_kind"),)
 
 
 class OrganizationMembership(Base):
