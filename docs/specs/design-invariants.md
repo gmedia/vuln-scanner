@@ -52,6 +52,7 @@ If a lower layer contradicts a higher layer, the higher layer wins and the lower
 | 26 | `docs/**/*.md` and `frontend/AGENTS.md` may only reference `components/` `pages/` `lib/` `hooks/` `theme/` source paths that exist, and must not name a retired primitive. | Machine: `scripts/check-design-docs.mjs` |
 | 27 | The invariant registry stays consistent: ids are unique and run 1..N, every `Machine:` claim cites a test or delegates to another invariant, and every cited test/script exists and is wired into CI. | Machine: `scripts/check-invariant-registry.mjs` |
 | 28 | Page-nav tab strips stay on the shared chrome and inside the budget: every `<TabsList variant="line">` under `src/pages/**` carries `w-full flex-wrap justify-start sm:flex-nowrap`, never a `min-w-max`/`w-max`/`overflow-x-auto`/`snap-x` strip, and has at most 5 triggers — a 6th tab moves to a section, a header action, or its own route. | Machine: `pageNavTabs.test.ts` |
+| 29 | A non-zero ring offset width (`ring-offset-1`…N) in `components/ui/**` carries an offset colour on the same line (`ring-offset-background` or `ring-offset-[var(…)]`). Without one, Tailwind falls back to white and the focus ring paints a halo on the dark theme. `ring-offset-0` needs no colour. | Machine: `designInvariants.test.ts` |
 
 ### Adding to the allowlist
 

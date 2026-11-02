@@ -24,6 +24,11 @@ const LOCAL_EMPTY =
 const ACCESSIBLE_NAME = /\s(?:id|aria-label|aria-labelledby)=/;
 const RAILED_SHELL_LITERAL = /relative overflow-hidden[^"'`]*pl-4/;
 
+// A ring offset width without an offset colour falls back to Tailwind's white
+// default, which paints a halo in the default dark theme.
+const RING_OFFSET_WIDTH = /\bring-offset-[1-9]\d*\b/;
+const RING_OFFSET_COLOR = /\bring-offset-(?:background|\[var\()/;
+
 const TILE_ALLOWLIST: ReadonlySet<string> = new Set([
   "components/patterns/StatTile.tsx",
 ]);
@@ -53,7 +58,8 @@ const SOURCES = import.meta.glob("../**/*.{ts,tsx}", {
 }) as Record<string, string>;
 
 const FILES = Object.entries(SOURCES).filter(
-  ([path]) => !path.includes("/test/") && !/\.(test|spec)\.(ts|tsx)$/.test(path),
+  ([path]) =>
+    !path.includes("/test/") && !/\.(test|spec)\.(ts|tsx)$/.test(path),
 );
 
 type Violation = {
@@ -194,6 +200,23 @@ function rowActionViolations(): { total: number; bad: Violation[] } {
   return { total, bad };
 }
 
+function ringOffsetViolations(): { total: number; bad: Violation[] } {
+  const bad: Violation[] = [];
+  let total = 0;
+  for (const [path, source] of FILES) {
+    const file = rel(path);
+    if (!file.startsWith("components/ui/")) continue;
+    for (const [index, text] of source.split("\n").entries()) {
+      if (!RING_OFFSET_WIDTH.test(text)) continue;
+      total += 1;
+      if (!RING_OFFSET_COLOR.test(text)) {
+        bad.push({ file, line: index + 1, text: text.trim() });
+      }
+    }
+  }
+  return { total, bad };
+}
+
 function scanControls(): { total: number; unlabeled: Violation[] } {
   const unlabeled: Violation[] = [];
   let total = 0;
@@ -236,8 +259,7 @@ function emptyPanelSites(): Map<string, number[]> {
         EMPTY_PANEL_ISLAND.test(text) &&
         text.includes("rounded-xl") &&
         text.includes("border-border");
-      const dashed =
-        EMPTY_PANEL_DASHED.test(text) && text.includes("bg-muted");
+      const dashed = EMPTY_PANEL_DASHED.test(text) && text.includes("bg-muted");
       if (EMPTY_PANEL_MIN_H.test(text) || dashed || island) {
         lines.push(lineNumber);
       }
@@ -315,6 +337,15 @@ describe("design invariants", () => {
     expect(
       bad,
       `One action = visible Button; 2+ = menu; confirm with a sibling AlertDialog:\n${report(bad)}`,
+    ).toEqual([]);
+  });
+
+  it("pairs every kit ring offset width with a token colour", () => {
+    const { total, bad } = ringOffsetViolations();
+    expect(total).toBeGreaterThan(5);
+    expect(
+      bad,
+      `Ring offsets default to a white halo in dark mode; add ring-offset-[var(--color-background)] on the same line:\n${report(bad)}`,
     ).toEqual([]);
   });
 
