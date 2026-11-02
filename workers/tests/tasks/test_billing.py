@@ -13,6 +13,9 @@ from tasks.billing import (
     MAX_REMINDER_ATTEMPTS,
     PAST_DUE_CANCEL_DAYS,
     PAST_DUE_GRACE_DAYS,
+    RENEWAL_DRAFT_LEAD_DAYS,
+    _next_annual_start,
+    draft_annual_renewals,
     finalize_periods,
     send_due_reminders,
 )
@@ -312,3 +315,114 @@ class TestSendDueRemindersRun:
         session.rollback.assert_called_once()
         session.commit.assert_not_called()
         session.close.assert_called_once()
+
+
+class TestNextAnnualStart:
+    def test_mid_year_rolls_to_next_month(self):
+        assert _next_annual_start(datetime(2027, 8, 31, 23, 59, 59, tzinfo=UTC)) == datetime(
+            2027, 9, 1, tzinfo=UTC
+        )
+
+    def test_december_rolls_to_january_next_year(self):
+        assert _next_annual_start(datetime(2027, 12, 31, 23, 59, 59, tzinfo=UTC)) == datetime(
+            2028, 1, 1, tzinfo=UTC
+        )
+
+
+class TestDraftAnnualRenewals:
+    def test_lead_defaults_to_forty_five_days(self):
+        assert RENEWAL_DRAFT_LEAD_DAYS == 45
+
+    def test_task_is_registered(self):
+        assert draft_annual_renewals.name == "billing.draft_annual_renewals"
+
+    def test_returns_zero_when_nothing_is_due(self):
+        session = MagicMock()
+        empty = MagicMock()
+        empty.all.return_value = []
+        session.execute.return_value = empty
+        with patch("tasks.billing.get_sync_session", return_value=session):
+            result = draft_annual_renewals()
+        assert result == {"created_count": 0, "skipped_count": 0}
+        session.commit.assert_called_once()
+        session.close.assert_called_once()
+
+    def test_rolls_back_on_error(self):
+        session = MagicMock()
+        session.execute.side_effect = RuntimeError("db down")
+        with patch("tasks.billing.get_sync_session", return_value=session), pytest.raises(RuntimeError):
+            draft_annual_renewals()
+        session.rollback.assert_called_once()
+        session.commit.assert_not_called()
+        session.close.assert_called_once()
+
+    def test_creates_one_annual_draft_at_ten_months_price(self):
+        from app.models.invoice import OrgInvoice
+
+        now = datetime.now(UTC)
+        sub = SimpleNamespace(
+            organization_id=uuid.uuid4(),
+            sku="pro",
+            cycle="annual",
+            status="active",
+            cancel_at_period_end=False,
+            current_period_end=now + timedelta(days=30),
+        )
+        rows_result = MagicMock()
+        rows_result.all.return_value = [(sub, "Acme")]
+        catalog_result = MagicMock()
+        catalog_result.scalar_one_or_none.return_value = SimpleNamespace(list_idr=650_000)
+        existing_result = MagicMock()
+        existing_result.scalar_one_or_none.return_value = None
+        number_result = MagicMock()
+        number_result.scalar_one.return_value = 0
+
+        session = MagicMock()
+        session.execute.side_effect = [
+            rows_result,
+            catalog_result,
+            existing_result,
+            number_result,
+        ]
+        session.get.return_value = SimpleNamespace(
+            pkp_status="unknown", payment_terms_days=0
+        )
+
+        with patch("tasks.billing.get_sync_session", return_value=session):
+            result = draft_annual_renewals()
+
+        assert result == {"created_count": 1, "skipped_count": 0}
+        session.add.assert_called_once()
+        draft = session.add.call_args[0][0]
+        assert isinstance(draft, OrgInvoice)
+        assert draft.status == "draft"
+        assert draft.amount_idr == 6_500_000  # 10 x 650_000
+        assert draft.total_idr == 6_500_000
+        assert (draft.period_end - draft.period_start).days >= 364
+        session.commit.assert_called_once()
+
+    def test_skips_when_the_next_period_already_has_an_invoice(self):
+        now = datetime.now(UTC)
+        sub = SimpleNamespace(
+            organization_id=uuid.uuid4(),
+            sku="pro",
+            cycle="annual",
+            status="active",
+            cancel_at_period_end=False,
+            current_period_end=now + timedelta(days=30),
+        )
+        rows_result = MagicMock()
+        rows_result.all.return_value = [(sub, "Acme")]
+        catalog_result = MagicMock()
+        catalog_result.scalar_one_or_none.return_value = SimpleNamespace(list_idr=650_000)
+        existing_result = MagicMock()
+        existing_result.scalar_one_or_none.return_value = uuid.uuid4()
+
+        session = MagicMock()
+        session.execute.side_effect = [rows_result, catalog_result, existing_result]
+
+        with patch("tasks.billing.get_sync_session", return_value=session):
+            result = draft_annual_renewals()
+
+        assert result == {"created_count": 0, "skipped_count": 1}
+        session.add.assert_not_called()

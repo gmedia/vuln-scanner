@@ -36,6 +36,33 @@ def month_bounds_utc(when: datetime | None = None) -> tuple[datetime, datetime]:
     return start, end
 
 
+def price_breakdown(base_list_idr: int, *, annual: bool, pkp: bool) -> dict[str, int]:
+    """Invoice amounts for a catalog list price.
+
+    Shared by the async create path and the sync beat task so the two can never
+    disagree about annual pricing or tax.
+    """
+    base = int(base_list_idr) * (ANNUAL_MONTHS_PAID if annual else 1)
+    if not pkp:
+        return {"amount": base, "dpp": base, "ppn": 0, "pph23": 0, "total": base}
+    dpp = int(
+        (Decimal(base) * Decimal(11) / Decimal(12)).quantize(
+            Decimal("1"), rounding=ROUND_HALF_UP
+        )
+    )
+    ppn = int(
+        (Decimal(dpp) * Decimal("0.12")).quantize(
+            Decimal("1"), rounding=ROUND_HALF_UP
+        )
+    )
+    pph23 = int(
+        (Decimal(base) * Decimal("0.02")).quantize(
+            Decimal("1"), rounding=ROUND_HALF_UP
+        )
+    )
+    return {"amount": base, "dpp": dpp, "ppn": ppn, "pph23": pph23, "total": base + ppn}
+
+
 def period_bounds_utc(
     when: datetime | None, cycle: str = "monthly"
 ) -> tuple[datetime, datetime]:
@@ -205,26 +232,16 @@ class InvoiceService:
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"{product.capitalize()} invoice already exists for this period",
             )
-        base = int(cat.list_idr) * (ANNUAL_MONTHS_PAID if cycle == "annual" else 1)
-        if profile is not None and profile.pkp_status == "pkp":
-            dpp = int(
-                (Decimal(base) * Decimal(11) / Decimal(12)).quantize(
-                    Decimal("1"), rounding=ROUND_HALF_UP
-                )
-            )
-            ppn = int(
-                (Decimal(dpp) * Decimal("0.12")).quantize(
-                    Decimal("1"), rounding=ROUND_HALF_UP
-                )
-            )
-            pph23 = int(
-                (Decimal(base) * Decimal("0.02")).quantize(
-                    Decimal("1"), rounding=ROUND_HALF_UP
-                )
-            )
-            total = base + ppn
-        else:
-            dpp, ppn, pph23, total = base, 0, 0, base
+        prices = price_breakdown(
+            int(cat.list_idr),
+            annual=cycle == "annual",
+            pkp=profile is not None and profile.pkp_status == "pkp",
+        )
+        base = prices["amount"]
+        dpp = prices["dpp"]
+        ppn = prices["ppn"]
+        pph23 = prices["pph23"]
+        total = prices["total"]
 
         inv = OrgInvoice(
             id=uuid.uuid4(),
