@@ -3,18 +3,27 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, date, datetime
 from decimal import Decimal
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
 from app.main import app
-from app.models.ai_gateway import AiFxRate, AiModel, AiProvider, AiUsageEvent, AiWallet
+from app.models.ai_gateway import (
+    AiFxRate,
+    AiModel,
+    AiModelUpstream,
+    AiProvider,
+    AiUsageEvent,
+    AiWallet,
+    AiWalletLedger,
+)
 from app.models.organization import Organization, OrganizationMembership
 from app.models.user import User
 from app.services.ai_crypto import encrypt_credential
@@ -599,3 +608,541 @@ async def test_customer_usage_hides_cogs_hpp_and_fx(db_session: AsyncSession, ct
     assert "fx_rate" not in item
     assert "fx_source" not in item
     assert "fx_effective_date" not in item
+
+
+# --- AI gateway upstream failover -------------------------------------------
+
+CHAT_PATH = "/v1/chat/completions"
+
+
+class _UpstreamResponse:
+    """Non-stream upstream response fake: only ``status_code`` and ``json()`` are read."""
+
+    def __init__(self, status_code: int, payload: dict[str, object] | None = None) -> None:
+        self.status_code = status_code
+        self._payload = payload if payload is not None else {}
+
+    def json(self) -> dict[str, object]:
+        return self._payload
+
+
+class _FakeStreamResponse:
+    """Async context manager standing in for ``httpx.Response`` returned by ``client.stream``."""
+
+    def __init__(self, status_code: int, chunks: list[bytes] | None = None, raise_after: bool = False) -> None:
+        self.status_code = status_code
+        self._chunks = chunks or []
+        self._raise_after = raise_after
+
+    async def __aenter__(self) -> _FakeStreamResponse:
+        return self
+
+    async def __aexit__(self, *_exc: object) -> None:
+        return None
+
+    async def aiter_bytes(self):
+        for chunk in self._chunks:
+            yield chunk
+        if self._raise_after:
+            raise httpx.TransportError("boom")
+
+
+def _chat_payload(prompt: int = 10, completion: int = 5) -> dict[str, object]:
+    return {
+        "id": "chatcmpl-failover",
+        "choices": [{"finish_reason": "stop", "message": {"role": "assistant", "content": "hi"}}],
+        "usage": {"prompt_tokens": prompt, "completion_tokens": completion},
+    }
+
+
+def _chat_body(**extra: object) -> dict[str, object]:
+    body: dict[str, object] = {"model": "sinexis/test", "messages": [{"role": "user", "content": "hi"}]}
+    body.update(extra)
+    return body
+
+
+def _key_headers(plain: str) -> dict[str, str]:
+    return {"Authorization": f"Bearer {plain}", "X-E2E-Test": "1"}
+
+
+def _post_client(*responses: object) -> AsyncMock:
+    mock_client = AsyncMock()
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+    mock_client.post = AsyncMock(side_effect=list(responses))
+    return mock_client
+
+
+def _stream_client(*responses: object) -> AsyncMock:
+    mock_client = AsyncMock()
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+    # ``AsyncClient.stream`` is a sync method returning an async context manager, not a coroutine.
+    mock_client.stream = MagicMock(side_effect=list(responses))
+    return mock_client
+
+
+async def _add_fallback(
+    db: AsyncSession,
+    model: AiModel,
+    *,
+    name: str = "FB",
+    base_url: str = "https://fallback.example/v1",
+    upstream_id: str = "fb-upstream",
+    rank: int = 1,
+    enabled: bool = True,
+    status: str = "ok",
+    provider_enabled: bool = True,
+    hpp_in: Decimal | None = None,
+    hpp_out: Decimal | None = None,
+    max_tokens_cap: int | None = None,
+) -> AiProvider:
+    provider = AiProvider(
+        name=name,
+        base_url=base_url,
+        credential_enc=encrypt_credential("fb-secret"),
+        status=status,
+        enabled=provider_enabled,
+    )
+    db.add(provider)
+    await db.flush()
+    db.add(
+        AiModelUpstream(
+            model_id=model.id,
+            provider_id=provider.id,
+            upstream_id=upstream_id,
+            rank=rank,
+            enabled=enabled,
+            hpp_usd_per_1m_in=hpp_in,
+            hpp_usd_per_1m_out=hpp_out,
+            max_tokens_cap=max_tokens_cap,
+        )
+    )
+    await db.commit()
+    return provider
+
+
+async def _create_key(ac: AsyncClient, owner: User, org_id: uuid.UUID) -> str:
+    created = await ac.post("/api/ai/keys", headers=_auth(owner, org_id), json={"name": "failover"})
+    assert created.status_code == 201, created.text
+    return str(created.json()["key"])
+
+
+async def _wallet_balance(db: AsyncSession, org_id: uuid.UUID) -> int:
+    value = (await db.execute(select(AiWallet.balance_idr).where(AiWallet.organization_id == org_id))).scalar_one()
+    return int(value)
+
+
+async def _ledger_rows(db: AsyncSession, org_id: uuid.UUID) -> list[AiWalletLedger]:
+    return list(
+        (await db.execute(select(AiWalletLedger).where(AiWalletLedger.organization_id == org_id))).scalars().all()
+    )
+
+
+async def _usage_events(db: AsyncSession, org_id: uuid.UUID) -> list[AiUsageEvent]:
+    return list((await db.execute(select(AiUsageEvent).where(AiUsageEvent.organization_id == org_id))).scalars().all())
+
+
+@pytest.mark.asyncio
+async def test_v1_failover_on_5xx_serves_secondary(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+    fallback = await _add_fallback(db_session, ctx["model"], hpp_in=Decimal("5"), hpp_out=Decimal("10"))
+    mock_client = _post_client(_UpstreamResponse(503), _UpstreamResponse(200, _chat_payload()))
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            plain = await _create_key(ac, owner, org.id)
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                chat = await ac.post(CHAT_PATH, headers=_key_headers(plain), json=_chat_body())
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert chat.status_code == 200, chat.text
+    assert mock_client.post.call_count == 2
+    second = mock_client.post.call_args_list[1]
+    assert second.args[0] == "https://fallback.example/v1/chat/completions"
+    assert second.kwargs["json"]["model"] == "fb-upstream"
+
+    events = await _usage_events(db_session, org.id)
+    assert len(events) == 1
+    event = events[0]
+    assert event.provider_id == fallback.id
+    assert event.hpp_usd_per_1m_in == Decimal("5.000000")
+    assert event.price_usd_per_1m_in == Decimal("62.500000")
+    assert event.billed_idr > 0
+
+
+@pytest.mark.asyncio
+async def test_v1_failover_on_401(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+    fallback = await _add_fallback(db_session, ctx["model"], hpp_in=Decimal("5"), hpp_out=Decimal("10"))
+    mock_client = _post_client(_UpstreamResponse(401), _UpstreamResponse(200, _chat_payload()))
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            plain = await _create_key(ac, owner, org.id)
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                chat = await ac.post(CHAT_PATH, headers=_key_headers(plain), json=_chat_body())
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert chat.status_code == 200, chat.text
+    assert mock_client.post.call_count == 2
+    events = await _usage_events(db_session, org.id)
+    assert len(events) == 1
+    assert events[0].provider_id == fallback.id
+    assert events[0].billed_idr > 0
+
+
+@pytest.mark.asyncio
+async def test_v1_no_failover_on_400(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+    await _add_fallback(db_session, ctx["model"])
+    mock_client = _post_client(_UpstreamResponse(400), _UpstreamResponse(200, _chat_payload()))
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            plain = await _create_key(ac, owner, org.id)
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                chat = await ac.post(CHAT_PATH, headers=_key_headers(plain), json=_chat_body())
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert chat.status_code == 400, chat.text
+    assert mock_client.post.call_count == 1
+    events = await _usage_events(db_session, org.id)
+    assert len(events) == 1
+    assert events[0].billed_idr == 0
+
+
+@pytest.mark.asyncio
+async def test_v1_failover_all_fail_releases_hold(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+    # Price the model so the reservation hold is the entire 50_000 balance: a full release is 50_000.
+    ctx["model"].price_idr_per_1k_in = 0
+    ctx["model"].price_idr_per_1k_out = 500_000
+    await db_session.commit()
+    await _add_fallback(db_session, ctx["model"])
+    mock_client = _post_client(_UpstreamResponse(503), _UpstreamResponse(503))
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            plain = await _create_key(ac, owner, org.id)
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                chat = await ac.post(CHAT_PATH, headers=_key_headers(plain), json=_chat_body())
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert chat.status_code == 502, chat.text
+    assert await _wallet_balance(db_session, org.id) == 50_000
+    ledger = await _ledger_rows(db_session, org.id)
+    releases = [row for row in ledger if row.kind == "release"]
+    assert len(releases) == 1
+    assert releases[0].delta_idr == 50_000
+    assert len(await _usage_events(db_session, org.id)) == 1
+    for leaked in ("wholesale", "fallback.example", "fb-secret", "fb-upstream"):
+        assert leaked not in chat.text
+
+
+@pytest.mark.asyncio
+async def test_v1_failover_respects_kill_switch(db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "ai_upstream_failover_enabled", False)
+    owner = ctx["owner"]
+    org = ctx["org"]
+    await _add_fallback(db_session, ctx["model"])
+    mock_client = _post_client(_UpstreamResponse(503), _UpstreamResponse(200, _chat_payload()))
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            plain = await _create_key(ac, owner, org.id)
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                chat = await ac.post(CHAT_PATH, headers=_key_headers(plain), json=_chat_body())
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert chat.status_code == 502, chat.text
+    assert mock_client.post.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_v1_failover_skips_disabled_candidate(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+    await _add_fallback(db_session, ctx["model"], status="disabled")
+    mock_client = _post_client(_UpstreamResponse(503), _UpstreamResponse(200, _chat_payload()))
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            plain = await _create_key(ac, owner, org.id)
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                chat = await ac.post(CHAT_PATH, headers=_key_headers(plain), json=_chat_body())
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert chat.status_code == 502, chat.text
+    assert mock_client.post.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_v1_failover_ledger_sum_matches_balance(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+    # The fixture seeds the balance without a ledger row; add the opening entry so the ledger describes it.
+    db_session.add(AiWalletLedger(organization_id=org.id, kind="opening", delta_idr=50_000, balance_after_idr=50_000))
+    await db_session.commit()
+    await _add_fallback(db_session, ctx["model"], hpp_in=Decimal("5"), hpp_out=Decimal("10"))
+    mock_client = _post_client(_UpstreamResponse(503), _UpstreamResponse(200, _chat_payload()))
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            plain = await _create_key(ac, owner, org.id)
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                chat = await ac.post(CHAT_PATH, headers=_key_headers(plain), json=_chat_body())
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert chat.status_code == 200, chat.text
+    total = (
+        await db_session.execute(
+            select(func.coalesce(func.sum(AiWalletLedger.delta_idr), 0)).where(AiWalletLedger.organization_id == org.id)
+        )
+    ).scalar_one()
+    assert int(total) == await _wallet_balance(db_session, org.id)
+
+
+@pytest.mark.asyncio
+async def test_v1_stream_failover_before_first_byte(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+    fallback = await _add_fallback(db_session, ctx["model"])
+    content_chunk = b'data: {"id":"s1","choices":[{"delta":{"content":"hello"}}]}\n\n'
+    mock_client = _stream_client(_FakeStreamResponse(503), _FakeStreamResponse(200, [content_chunk]))
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            plain = await _create_key(ac, owner, org.id)
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                chat = await ac.post(CHAT_PATH, headers=_key_headers(plain), json=_chat_body(stream=True))
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert chat.status_code == 200, chat.text
+    assert mock_client.stream.call_count == 2
+    assert "hello" in chat.text
+    assert "data: [DONE]" in chat.text
+    events = await _usage_events(db_session, org.id)
+    assert len(events) == 1
+    assert events[0].provider_id == fallback.id
+
+
+@pytest.mark.asyncio
+async def test_v1_stream_no_failover_after_first_byte(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+    await _add_fallback(db_session, ctx["model"])
+    content_chunk = b'data: {"id":"s1","choices":[{"delta":{"content":"hello"}}]}\n\n'
+    mock_client = _stream_client(_FakeStreamResponse(200, [content_chunk], raise_after=True))
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            plain = await _create_key(ac, owner, org.id)
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                chat = await ac.post(CHAT_PATH, headers=_key_headers(plain), json=_chat_body(stream=True))
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert chat.status_code == 200, chat.text
+    assert mock_client.stream.call_count == 1
+    assert "Upstream provider error" in chat.text
+    assert "data: [DONE]" in chat.text
+    assert await _wallet_balance(db_session, org.id) == 50_000
+    events = await _usage_events(db_session, org.id)
+    assert len(events) == 1
+    assert events[0].billed_idr == 0
+
+
+@pytest.mark.asyncio
+async def test_v1_single_reserve_ledger_row(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+    await _add_fallback(db_session, ctx["model"], hpp_in=Decimal("5"), hpp_out=Decimal("10"))
+    mock_client = _post_client(_UpstreamResponse(503), _UpstreamResponse(200, _chat_payload()))
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            plain = await _create_key(ac, owner, org.id)
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                chat = await ac.post(CHAT_PATH, headers=_key_headers(plain), json=_chat_body())
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert chat.status_code == 200, chat.text
+    ledger = await _ledger_rows(db_session, org.id)
+    assert len([row for row in ledger if row.kind == "reserve"]) == 1
+
+
+@pytest.mark.asyncio
+async def test_v1_primary_disabled_falls_back(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+    primary = await db_session.get(AiProvider, ctx["model"].provider_id)
+    assert primary is not None
+    primary.status = "disabled"
+    await db_session.commit()
+    fallback = await _add_fallback(db_session, ctx["model"])
+    mock_client = _post_client(_UpstreamResponse(200, _chat_payload()))
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            plain = await _create_key(ac, owner, org.id)
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                chat = await ac.post(CHAT_PATH, headers=_key_headers(plain), json=_chat_body())
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert chat.status_code == 200, chat.text
+    assert mock_client.post.call_count == 1
+    assert mock_client.post.call_args.args[0] == "https://fallback.example/v1/chat/completions"
+    events = await _usage_events(db_session, org.id)
+    assert len(events) == 1
+    assert events[0].provider_id == fallback.id
+
+
+@pytest.mark.asyncio
+async def test_v1_no_usable_candidate_404(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+    primary = await db_session.get(AiProvider, ctx["model"].provider_id)
+    assert primary is not None
+    primary.status = "disabled"
+    await db_session.commit()
+    mock_client = _post_client()
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            plain = await _create_key(ac, owner, org.id)
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                chat = await ac.post(CHAT_PATH, headers=_key_headers(plain), json=_chat_body())
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert chat.status_code == 404, chat.text
+    # The route rewrites HTTPException(detail=...) into a machine-readable error code.
+    assert chat.json()["error"]["code"] == "model_not_found"
+    assert mock_client.post.call_count == 0
+
+
+@pytest.mark.asyncio
+async def test_v1_failover_deadline_exhausted(db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "ai_upstream_failover_deadline_seconds", -1.0)
+    owner = ctx["owner"]
+    org = ctx["org"]
+    await _add_fallback(db_session, ctx["model"])
+    mock_client = _post_client(_UpstreamResponse(503), _UpstreamResponse(200, _chat_payload()))
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            plain = await _create_key(ac, owner, org.id)
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                chat = await ac.post(CHAT_PATH, headers=_key_headers(plain), json=_chat_body())
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert chat.status_code == 502, chat.text
+    assert mock_client.post.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_v1_insufficient_balance_402_no_ledger(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+    wallet = (await db_session.execute(select(AiWallet).where(AiWallet.organization_id == org.id))).scalar_one()
+    wallet.balance_idr = 0
+    await db_session.commit()
+    mock_client = _post_client()
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            plain = await _create_key(ac, owner, org.id)
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                chat = await ac.post(CHAT_PATH, headers=_key_headers(plain), json=_chat_body())
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert chat.status_code == 402, chat.text
+    assert await _ledger_rows(db_session, org.id) == []
+    assert await _usage_events(db_session, org.id) == []

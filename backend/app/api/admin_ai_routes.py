@@ -6,13 +6,14 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import JSONResponse
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.config import settings
 from app.database import get_db
 from app.middleware.rate_limit import RateLimiter
-from app.models.ai_gateway import PROVIDER_STATUSES, AiModel, AiProvider, AiUsageEvent
+from app.models.ai_gateway import PROVIDER_STATUSES, AiModel, AiModelUpstream, AiProvider, AiUsageEvent
 from app.models.user import User
 from app.schemas.ai_gateway import (
     AiAdminUsageList,
@@ -25,6 +26,9 @@ from app.schemas.ai_gateway import (
     AiProviderList,
     AiProviderOut,
     AiProviderUpdate,
+    AiUpstreamCreate,
+    AiUpstreamOut,
+    AiUpstreamUpdate,
     AiWalletOut,
     AiWalletTopup,
 )
@@ -74,6 +78,22 @@ def _provider_out(row: AiProvider) -> AiProviderOut:
     )
 
 
+def _upstream_out(row: AiModelUpstream) -> AiUpstreamOut:
+    return AiUpstreamOut(
+        id=row.id,
+        provider_id=row.provider_id,
+        provider_name=row.provider.name,
+        provider_status=row.provider.status,
+        provider_enabled=row.provider.enabled,
+        upstream_id=row.upstream_id,
+        hpp_usd_per_1m_in=float(row.hpp_usd_per_1m_in) if row.hpp_usd_per_1m_in is not None else None,
+        hpp_usd_per_1m_out=float(row.hpp_usd_per_1m_out) if row.hpp_usd_per_1m_out is not None else None,
+        max_tokens_cap=row.max_tokens_cap,
+        rank=row.rank,
+        enabled=row.enabled,
+    )
+
+
 def _model_out(row: AiModel, fx_rate: Decimal) -> AiModelOut:
     usd_in = canonical_price_usd(row.price_usd_per_1m_in, row.price_idr_per_1k_in, fx_rate)
     usd_out = canonical_price_usd(row.price_usd_per_1m_out, row.price_idr_per_1k_out, fx_rate)
@@ -97,7 +117,82 @@ def _model_out(row: AiModel, fx_rate: Decimal) -> AiModelOut:
         enabled=row.enabled,
         created_at=row.created_at,
         updated_at=row.updated_at,
+        upstreams=[_upstream_out(u) for u in row.upstreams],
     )
+
+
+_RANK_OFFSET = 1000
+
+
+async def _load_model_for_admin(db: AsyncSession, model_id: uuid.UUID) -> AiModel:
+    stmt = (
+        select(AiModel)
+        .options(selectinload(AiModel.upstreams).selectinload(AiModelUpstream.provider))
+        .where(AiModel.id == model_id)
+        .execution_options(populate_existing=True)
+    )
+    row = (await db.execute(stmt)).scalar_one_or_none()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Not found")
+    return row
+
+
+async def _offset_ranks(db: AsyncSession, model_id: uuid.UUID) -> None:
+    await db.execute(
+        update(AiModelUpstream)
+        .where(AiModelUpstream.model_id == model_id)
+        .values(rank=AiModelUpstream.rank + _RANK_OFFSET)
+        .execution_options(synchronize_session=False)
+    )
+
+
+async def _ordered_upstreams(db: AsyncSession, model_id: uuid.UUID) -> list[AiModelUpstream]:
+    return list(
+        (
+            await db.execute(
+                select(AiModelUpstream)
+                .where(AiModelUpstream.model_id == model_id)
+                .order_by(AiModelUpstream.rank)
+                .execution_options(populate_existing=True)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def _resequence(db: AsyncSession, model_id: uuid.UUID) -> None:
+    """Compact a model's fallback ranks to 1..n without writing a rank below 1."""
+    await _offset_ranks(db, model_id)
+    for position, upstream in enumerate(await _ordered_upstreams(db, model_id), start=1):
+        upstream.rank = position
+    await db.flush()
+
+
+async def _move_upstream(
+    db: AsyncSession,
+    model_id: uuid.UUID,
+    moved_id: uuid.UUID,
+    target_rank: int,
+) -> None:
+    """Move one fallback to a 1-based position, shifting the others instead of rejecting."""
+    await _offset_ranks(db, model_id)
+    rows = await _ordered_upstreams(db, model_id)
+    moved = next((row for row in rows if row.id == moved_id), None)
+    if moved is None:
+        return
+    ordered = [row for row in rows if row.id != moved_id]
+    ordered.insert(max(0, min(target_rank - 1, len(ordered))), moved)
+    for position, upstream in enumerate(ordered, start=1):
+        upstream.rank = position
+    await db.flush()
+
+
+async def _require_usable_provider(db: AsyncSession, provider_id: uuid.UUID) -> AiProvider:
+    provider = await db.get(AiProvider, provider_id)
+    if provider is None or not provider.enabled or provider.status == "disabled":
+        raise HTTPException(status_code=422, detail="Unknown or disabled provider")
+    return provider
 
 
 def _created_price_usd(usd: Decimal | None, legacy_idr: int | None, fx_rate: Decimal) -> Decimal:
@@ -218,7 +313,11 @@ async def list_models(
     limited = await _limit(request)
     if limited:
         return limited
-    stmt = select(AiModel)
+    stmt = (
+        select(AiModel)
+        .options(selectinload(AiModel.upstreams).selectinload(AiModelUpstream.provider))
+        .execution_options(populate_existing=True)
+    )
     count_stmt = select(func.count(AiModel.id))
     if provider_id is not None:
         stmt = stmt.where(AiModel.provider_id == provider_id)
@@ -268,9 +367,11 @@ async def create_model(
         enabled=body.enabled,
     )
     db.add(row)
+    await db.flush()
+    new_model_id = row.id
     await db.commit()
-    await db.refresh(row)
-    return _model_out(row, fx_rate)
+    fresh = await _load_model_for_admin(db, new_model_id)
+    return _model_out(fresh, fx_rate)
 
 
 @router.patch("/models/{model_id}", response_model=AiModelOut)
@@ -285,9 +386,7 @@ async def update_model(
     limited = await _limit(request)
     if limited:
         return limited
-    row = await db.get(AiModel, model_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="Not found")
+    row = await _load_model_for_admin(db, model_id)
     data = body.model_dump(exclude_unset=True)
     if "public_id" in data:
         clash = (
@@ -295,6 +394,19 @@ async def update_model(
         ).scalar_one_or_none()
         if clash is not None:
             raise HTTPException(status_code=409, detail="public_id already exists")
+    new_provider_id: uuid.UUID | None = data.pop("provider_id", None)
+    new_upstream_id: str | None = data.get("upstream_id")
+    if new_provider_id is not None or new_upstream_id is not None:
+        target_provider_id: uuid.UUID = new_provider_id if new_provider_id is not None else row.provider_id
+        target_upstream_id: str = new_upstream_id if new_upstream_id is not None else row.upstream_id
+        if new_provider_id is not None and new_provider_id != row.provider_id:
+            await _require_usable_provider(db, new_provider_id)
+        if (target_provider_id, target_upstream_id) != (row.provider_id, row.upstream_id) and any(
+            u.provider_id == target_provider_id and u.upstream_id == target_upstream_id for u in row.upstreams
+        ):
+            raise HTTPException(status_code=409, detail="target already exists as a fallback upstream")
+    if new_provider_id is not None:
+        row.provider_id = new_provider_id
     fx_rate, _, _ = await ai_fx.effective_rate(db)
     usd_in: Decimal | None = data.pop("price_usd_per_1m_in", None)
     usd_out: Decimal | None = data.pop("price_usd_per_1m_out", None)
@@ -333,8 +445,8 @@ async def update_model(
     for key, value in data.items():
         setattr(row, key, value)
     await db.commit()
-    await db.refresh(row)
-    return _model_out(row, fx_rate)
+    fresh = await _load_model_for_admin(db, model_id)
+    return _model_out(fresh, fx_rate)
 
 
 @router.delete("/models/{model_id}", status_code=status.HTTP_204_NO_CONTENT, response_class=Response)
@@ -354,6 +466,128 @@ async def delete_model(
     await db.delete(row)
     await db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/models/{model_id}/upstreams", response_model=AiModelOut, status_code=status.HTTP_201_CREATED)
+async def create_model_upstream(
+    model_id: uuid.UUID,
+    request: Request,
+    body: AiUpstreamCreate,
+    _admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> AiModelOut | Response:
+    _disabled()
+    limited = await _limit(request)
+    if limited:
+        return limited
+    model = await _load_model_for_admin(db, model_id)
+    await _require_usable_provider(db, body.provider_id)
+    if body.provider_id == model.provider_id and body.upstream_id == model.upstream_id:
+        raise HTTPException(status_code=409, detail="target is the primary upstream")
+    if any(u.provider_id == body.provider_id and u.upstream_id == body.upstream_id for u in model.upstreams):
+        raise HTTPException(status_code=409, detail="upstream target already exists")
+    if body.rank is not None and any(u.rank == body.rank for u in model.upstreams):
+        raise HTTPException(status_code=409, detail="rank already in use")
+    if len(model.upstreams) + 1 >= settings.ai_upstream_max_candidates:
+        raise HTTPException(status_code=422, detail="candidate limit reached")
+    rank = body.rank if body.rank is not None else max((u.rank for u in model.upstreams), default=0) + 1
+    db.add(
+        AiModelUpstream(
+            model_id=model.id,
+            provider_id=body.provider_id,
+            upstream_id=body.upstream_id,
+            hpp_usd_per_1m_in=body.hpp_usd_per_1m_in,
+            hpp_usd_per_1m_out=body.hpp_usd_per_1m_out,
+            max_tokens_cap=body.max_tokens_cap,
+            rank=rank,
+            enabled=True,
+        )
+    )
+    await db.commit()
+    fx_rate, _, _ = await ai_fx.effective_rate(db)
+    fresh = await _load_model_for_admin(db, model_id)
+    return _model_out(fresh, fx_rate)
+
+
+@router.patch("/models/{model_id}/upstreams/{upstream_id}", response_model=AiModelOut)
+async def update_model_upstream(
+    model_id: uuid.UUID,
+    upstream_id: uuid.UUID,
+    request: Request,
+    body: AiUpstreamUpdate,
+    _admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> AiModelOut | Response:
+    _disabled()
+    limited = await _limit(request)
+    if limited:
+        return limited
+    model = await _load_model_for_admin(db, model_id)
+    row = next((u for u in model.upstreams if u.id == upstream_id), None)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Not found")
+    data = body.model_dump(exclude_unset=True)
+    new_provider_id: uuid.UUID | None = data.get("provider_id")
+    new_upstream_id: str | None = data.get("upstream_id")
+    target_provider_id: uuid.UUID = new_provider_id if new_provider_id is not None else row.provider_id
+    target_upstream_id: str = new_upstream_id if new_upstream_id is not None else row.upstream_id
+    if new_provider_id is not None and new_provider_id != row.provider_id:
+        await _require_usable_provider(db, new_provider_id)
+    if (target_provider_id, target_upstream_id) != (row.provider_id, row.upstream_id):
+        if (target_provider_id, target_upstream_id) == (model.provider_id, model.upstream_id):
+            raise HTTPException(status_code=409, detail="target is the primary upstream")
+        if any(
+            u.id != row.id and u.provider_id == target_provider_id and u.upstream_id == target_upstream_id
+            for u in model.upstreams
+        ):
+            raise HTTPException(status_code=409, detail="upstream target already exists")
+    target_rank: int | None = None
+    if "rank" in data and data["rank"] is not None and data["rank"] != row.rank:
+        target_rank = data["rank"]
+    if new_provider_id is not None:
+        row.provider_id = new_provider_id
+    if new_upstream_id is not None:
+        row.upstream_id = new_upstream_id
+    if "hpp_usd_per_1m_in" in data:
+        row.hpp_usd_per_1m_in = data["hpp_usd_per_1m_in"]
+    if "hpp_usd_per_1m_out" in data:
+        row.hpp_usd_per_1m_out = data["hpp_usd_per_1m_out"]
+    if "max_tokens_cap" in data:
+        row.max_tokens_cap = data["max_tokens_cap"]
+    if data.get("enabled") is not None:
+        row.enabled = data["enabled"]
+    await db.flush()
+    if target_rank is not None:
+        await _move_upstream(db, model_id, row.id, target_rank)
+    await db.commit()
+    fx_rate, _, _ = await ai_fx.effective_rate(db)
+    fresh = await _load_model_for_admin(db, model_id)
+    return _model_out(fresh, fx_rate)
+
+
+@router.delete("/models/{model_id}/upstreams/{upstream_id}", response_model=AiModelOut)
+async def delete_model_upstream(
+    model_id: uuid.UUID,
+    upstream_id: uuid.UUID,
+    request: Request,
+    _admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> AiModelOut | Response:
+    _disabled()
+    limited = await _limit(request)
+    if limited:
+        return limited
+    model = await _load_model_for_admin(db, model_id)
+    row = next((u for u in model.upstreams if u.id == upstream_id), None)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Not found")
+    await db.delete(row)
+    await db.flush()
+    await _resequence(db, model_id)
+    await db.commit()
+    fx_rate, _, _ = await ai_fx.effective_rate(db)
+    fresh = await _load_model_for_admin(db, model_id)
+    return _model_out(fresh, fx_rate)
 
 
 @router.post("/wallets/{org_id}/topup", response_model=AiWalletOut)

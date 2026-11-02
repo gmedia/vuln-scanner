@@ -1,6 +1,6 @@
 # Spec: AI Gateway v1 (OpenAI-compatible resale)
 
-**Status:** **S1–S5 shipped** (catalog, wallet, `/v1`, SPA, Redis limits, ops notes). Git flag default **off**.
+**Status:** **S1–S7 shipped** (catalog, wallet, `/v1`, SPA, Redis limits, ops notes, USD pricing, upstream failover). Git flag default **off**.
 **Goal:** resell **contracted OpenAI-compatible** wholesale APIs to Sinexis orgs: customer keys, usage ledger, admin catalog + trial chat.
 **Epic:** **new business line** (not P14, not Guard, not Workspace). Does **not** jump attach / Host Protect / GTM.
 **Depends:** P2 Workspace (JWT `org_id`, membership) · existing admin SPA kit · host nginx + Cloudflare for a new `/v1` location.
@@ -48,7 +48,7 @@ Prod nginx (`nginx/sinexis.app.conf`) proxies `/api/` and `/ws/` to FastAPI; **`
 |-----|-----|
 | Fork/embed 9router or CLIProxyAPI | Wrong product; ToS; ops |
 | Native `/v1/messages` (Anthropic) / Gemini | Translation epic |
-| Combo / 3-tier fallback | Surface typed **503**; customer retries |
+| Combo / weighted routing across *aliases* | One alias still maps to one model; only its ordered upstreams fail over |
     | Embeddings, TTS, STT | Unpriced |
     | Native tool *execution* in the gateway | Pass `tools` / `tool_choice` / `functions` through to wholesale; no Sinexis-side tool runner |
     | Images / multimodal content (`messages[].content` parts) | Pass-through; tokens priced by wholesale usage. No Sinexis-side image storage / preview. |
@@ -251,6 +251,24 @@ Partial unique `(kind, reservation_id)`; every balance mutation writes exactly o
 
 ---
 
+### 7.9 `ai_model_upstreams` (S7)
+
+Ordered fallback targets per `ai_models` row. `ai_models.provider_id` + `upstream_id` stay the
+primary, so a model with zero rows here behaves exactly as before.
+
+| Column | Notes |
+|--------|-------|
+| `model_id` | FK `ai_models.id`, `ON DELETE CASCADE` |
+| `provider_id` | FK `ai_providers.id`, `ON DELETE CASCADE` |
+| `upstream_id` | string sent upstream |
+| `max_tokens_cap` | nullable override; `NULL` inherits `ai_models.max_tokens_cap` |
+| `hpp_usd_per_1m_in/out` | nullable COGS override; `NULL` inherits the model HPP |
+| `rank` | 1-based, contiguous per model, `CHECK (rank >= 1)`; 1 = first fallback |
+| `enabled` | |
+
+Unique: `(model_id, rank)` and `(model_id, provider_id, upstream_id)`. Sell price is **alias-level** —
+a fallback never changes what the customer pays, only `cogs_idr`.
+
 ## 8. HTTP surface
 
 ### 8.1 Public OpenAI-compat
@@ -292,7 +310,13 @@ Response shape: OpenAI chat completions (including `usage`). Errors: OpenAI-styl
 1. Authenticate `sx-`; load org + wallet; enforce RPM/TPM/concurrent.
 2. Resolve `model` → enabled `ai_models`; reject tools/images/`n!=1`.
 3. Resolve the FX snapshot once (newest stored rate at or before today, else `AI_USD_IDR`) and compute **hold_idr** from `prompt_est` + `max_tokens` at that snapshot — one combined total, rounded up once. `max_tokens` = min(request `max_tokens`/`max_completion_tokens`, model cap, affordable_max_tokens(balance, prompt_est)). If wallet cannot cover 1 in + 1 out token → 402. Coding agents omit `max_tokens` or send 8k–128k. The snapshot (price, HPP, FX) is stored on the reservation and is authoritative at settle.
-4. Strip customer auth; set wholesale header; POST upstream (timeout).
+4. Strip customer auth; set the wholesale header; walk the candidate list in order — primary first,
+   then `ai_model_upstreams` by `rank` — and POST each with its own `model`/`max_tokens`. Retry the
+   next candidate on `TransportError` before the first streamed byte, and on `401/403/429/5xx`; never
+   on `400/404/409/413/422` or on a non-JSON `200`. Stop at
+   `AI_UPSTREAM_FAILOVER_DEADLINE_SECONDS`, at `AI_UPSTREAM_MAX_CANDIDATES`, or (streaming) once a
+   byte has been sent. A disabled provider (`enabled=false` or `status='disabled'`) is skipped,
+   including when it is the primary.
 5. Stream or JSON to client; parse usage from final chunk / body.
 6. `billed_idr`/`cogs_idr` from actual tokens at the **reservation snapshot** (a price or FX edit mid-request cannot change them); settle refunds `hold - billed`, or debits the shortfall up to the available balance and records `shortfall_idr`; write the usage event and one ledger row.
 7. Upstream 401/403: generic 502; **never** echo wholesale host or key. Sentry via `log_sanitizer`.
@@ -331,6 +355,7 @@ Register both in `App.tsx` + [`AGENT_PAGE_REGISTRY.md`](../AGENT_PAGE_REGISTRY.m
 | **S4** | SPA `/ai` + `/admin/ai` trial chat + i18n | **done** |
 | **S5** | Limits, sanitizer tests, ops notes, Playwright smoke flag-off | **done** |
 | **S6** | USD-per-1M canonical prices, reservation-locked daily FX for charge + COGS, `ai_wallet_ledger`, admin USD inputs, catalog USD + derived IDR | **done** |
+| **S7** | Ordered fallback upstreams per model: `ai_model_upstreams`, pre-first-byte failover, served-provider attribution, per-candidate HPP, admin upstream CRUD + Models-tab sheet | S6 |
 
 Default order **S1 → S5**. Do not combine with Host Protect / Guard PRs.
 
@@ -349,6 +374,13 @@ Default order **S1 → S5**. Do not combine with Host Protect / Guard PRs.
 - Admin trial counts against platform cap, not customer org.
 - Upstream error body does not contain `base_url` or secret fragments.
 - Stream: client receives SSE; reservation settled after complete.
+- Failover: one reservation, one usage event and one `reserve` ledger row per request even when the
+  primary attempt fails and a fallback serves; a total failure restores the full hold.
+- Failover: `billed_idr` comes from the reservation snapshot, `cogs_idr` from the served candidate's
+  HPP; a fallback `400` is terminal, not retried.
+- Failover: no candidate, host, or credential appears in the customer body; a model whose every
+  candidate is unusable returns 404 `model_not_found`.
+- Streaming: no failover after the first byte; the client gets one error event and one `[DONE]`.
 
 ---
 

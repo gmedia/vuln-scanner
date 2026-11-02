@@ -444,6 +444,7 @@ async def record_usage(
     provider_request_id: str | None = None,
     request_payload: dict[str, Any] | None = None,
     response_payload: dict[str, Any] | None = None,
+    provider_id: UUID | None = None,
 ) -> AiUsageEvent:
     event = AiUsageEvent(
         organization_id=organization_id,
@@ -451,7 +452,7 @@ async def record_usage(
         key_id=key_id,
         source=source,
         model_public_id=model.public_id,
-        provider_id=model.provider_id,
+        provider_id=provider_id if provider_id is not None else model.provider_id,
         prompt_tokens=prompt_tokens,
         completion_tokens=completion_tokens,
         billed_idr=billed,

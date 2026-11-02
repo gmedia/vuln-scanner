@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+import logging
 import time
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Sequence
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
@@ -16,7 +18,7 @@ from sqlalchemy.orm import selectinload
 from starlette.responses import JSONResponse, StreamingResponse
 
 from app.config import settings
-from app.models.ai_gateway import AiApiKey, AiModel, AiUsageEvent
+from app.models.ai_gateway import AiApiKey, AiModel, AiModelUpstream, AiProvider, AiUsageEvent
 from app.services.ai_crypto import decrypt_credential
 from app.services.ai_limits import acquire as acquire_limits
 from app.services.ai_limits import release_concurrent
@@ -38,7 +40,30 @@ from app.services.ai_wallet import (
     snapshot_from_reservation,
 )
 
-UPSTREAM_TIMEOUT = 120.0
+logger = logging.getLogger(__name__)
+
+RETRYABLE_STATUS = frozenset({401, 403, 429, 500, 502, 503, 504})
+
+STREAM_ERROR_EVENT = b'data: {"error":{"message":"Upstream provider error","type":"api_error"}}\n\n'
+
+
+@dataclass(frozen=True, slots=True)
+class UpstreamCandidate:
+    provider_id: UUID
+    upstream_id: str
+    base_url: str
+    auth_header: str
+    credential_enc: str
+    max_tokens_cap: int | None
+    hpp_in: Decimal | None
+    hpp_out: Decimal | None
+
+
+@dataclass(frozen=True, slots=True)
+class UpstreamResult:
+    response: httpx.Response | None
+    candidate: UpstreamCandidate | None
+    error_kind: str | None
 
 
 def openai_error(status_code: int, message: str, *, err_type: str, code: str | None = None) -> JSONResponse:
@@ -149,17 +174,162 @@ async def _admin_trial_spent_usd(db: AsyncSession) -> Decimal:
     return Decimal(str(total or 0))
 
 
-async def _load_model(db: AsyncSession, public_id: str) -> AiModel:
-    row = (
+def _provider_usable(provider: AiProvider) -> bool:
+    return provider.enabled and provider.status != "disabled"
+
+
+def _primary_candidate(model: AiModel) -> UpstreamCandidate:
+    provider = model.provider
+    return UpstreamCandidate(
+        provider_id=provider.id,
+        upstream_id=model.upstream_id,
+        base_url=provider.base_url,
+        auth_header=provider.auth_header or "Authorization",
+        credential_enc=provider.credential_enc,
+        max_tokens_cap=model.max_tokens_cap,
+        hpp_in=model.hpp_usd_per_1m_in,
+        hpp_out=model.hpp_usd_per_1m_out,
+    )
+
+
+def _fallback_candidate(row: AiModelUpstream) -> UpstreamCandidate:
+    provider = row.provider
+    return UpstreamCandidate(
+        provider_id=provider.id,
+        upstream_id=row.upstream_id,
+        base_url=provider.base_url,
+        auth_header=provider.auth_header or "Authorization",
+        credential_enc=provider.credential_enc,
+        max_tokens_cap=row.max_tokens_cap,
+        hpp_in=row.hpp_usd_per_1m_in,
+        hpp_out=row.hpp_usd_per_1m_out,
+    )
+
+
+async def _load_candidates(db: AsyncSession, public_id: str) -> tuple[AiModel, list[UpstreamCandidate]]:
+    model = (
         await db.execute(
             select(AiModel)
-            .options(selectinload(AiModel.provider))
+            .options(
+                selectinload(AiModel.provider),
+                selectinload(AiModel.upstreams).selectinload(AiModelUpstream.provider),
+            )
             .where(AiModel.public_id == public_id, AiModel.enabled.is_(True))
         )
     ).scalar_one_or_none()
-    if row is None or not row.provider.enabled:
+    if model is None:
         raise HTTPException(status_code=404, detail="model_not_found")
-    return row
+
+    candidates: list[UpstreamCandidate] = []
+    if _provider_usable(model.provider):
+        candidates.append(_primary_candidate(model))
+    else:
+        logger.warning(
+            "ai_upstream_candidate_skipped",
+            extra={
+                "model": public_id,
+                "provider_id": str(model.provider.id),
+                "reason": "provider_unusable",
+            },
+        )
+
+    if settings.ai_upstream_failover_enabled:
+        for row in model.upstreams:
+            if not row.enabled:
+                continue
+            if not _provider_usable(row.provider):
+                logger.warning(
+                    "ai_upstream_candidate_skipped",
+                    extra={
+                        "model": public_id,
+                        "provider_id": str(row.provider.id),
+                        "reason": "provider_unusable",
+                    },
+                )
+                continue
+            candidates.append(_fallback_candidate(row))
+
+    candidates = candidates[: settings.ai_upstream_max_candidates]
+    if not candidates:
+        raise HTTPException(status_code=404, detail="model_not_found")
+    return model, candidates
+
+
+def _candidate_target(candidate: UpstreamCandidate, capped: int) -> tuple[str, dict[str, str], int]:
+    cred = decrypt_credential(candidate.credential_enc)
+    header_name = candidate.auth_header or "Authorization"
+    headers = {"Content-Type": "application/json"}
+    if header_name.lower() == "authorization" and not cred.lower().startswith("bearer "):
+        headers[header_name] = f"Bearer {cred}"
+    else:
+        headers[header_name] = cred
+    url = candidate.base_url.rstrip("/") + "/chat/completions"
+    max_tokens = min(capped, candidate.max_tokens_cap) if candidate.max_tokens_cap else capped
+    return url, headers, max_tokens
+
+
+def _retryable_status(code: int) -> bool:
+    return code in RETRYABLE_STATUS
+
+
+def _can_retry(idx: int, candidates: Sequence[UpstreamCandidate], started: float) -> bool:
+    if idx + 1 >= len(candidates):
+        return False
+    return (time.monotonic() - started) < settings.ai_upstream_failover_deadline_seconds
+
+
+def _cogs_snapshot(candidate: UpstreamCandidate, locked: PriceSnapshot) -> PriceSnapshot:
+    return replace(
+        locked,
+        hpp_usd_per_1m_in=candidate.hpp_in if candidate.hpp_in is not None else locked.hpp_usd_per_1m_in,
+        hpp_usd_per_1m_out=candidate.hpp_out if candidate.hpp_out is not None else locked.hpp_usd_per_1m_out,
+    )
+
+
+async def _post_with_failover(
+    candidates: Sequence[UpstreamCandidate],
+    body: dict[str, Any],
+    started: float,
+    *,
+    public_id: str,
+) -> UpstreamResult:
+    capped = int(body.get("max_tokens") or 0)
+    async with httpx.AsyncClient(timeout=settings.ai_upstream_timeout_seconds) as client:
+        for idx, candidate in enumerate(candidates):
+            url, headers, max_tokens = _candidate_target(candidate, capped)
+            attempt_body = {**body, "model": candidate.upstream_id, "max_tokens": max_tokens}
+            try:
+                resp = await client.post(url, headers=headers, json=attempt_body)
+            except httpx.TransportError:
+                latency_ms = int((time.monotonic() - started) * 1000)
+                logger.warning(
+                    "ai_upstream_attempt_failed",
+                    extra={
+                        "model": public_id,
+                        "candidate_index": idx,
+                        "error_kind": "transport",
+                        "status": None,
+                        "latency_ms": latency_ms,
+                    },
+                )
+                if _can_retry(idx, candidates, started):
+                    continue
+                return UpstreamResult(None, candidate, "transport")
+            if _retryable_status(resp.status_code) and _can_retry(idx, candidates, started):
+                latency_ms = int((time.monotonic() - started) * 1000)
+                logger.warning(
+                    "ai_upstream_attempt_failed",
+                    extra={
+                        "model": public_id,
+                        "candidate_index": idx,
+                        "error_kind": "status",
+                        "status": resp.status_code,
+                        "latency_ms": latency_ms,
+                    },
+                )
+                continue
+            return UpstreamResult(resp, candidate, None)
+    return UpstreamResult(None, candidates[-1] if candidates else None, "transport")
 
 
 def _usage_from_payload(payload: dict[str, Any]) -> tuple[int, int, str | None]:
@@ -196,7 +366,7 @@ async def chat_completions(
     public_id = str(body.get("model") or "")
     if key.allowed_model_ids and public_id not in key.allowed_model_ids:
         raise HTTPException(status_code=404, detail="model_not_found")
-    model = await _load_model(db, public_id)
+    model, candidates = await _load_candidates(db, public_id)
     snapshot = await resolve_snapshot(db, model)
     stream = bool(body.get("stream"))
     requested = _requested_max_tokens(body, model)
@@ -234,58 +404,70 @@ async def chat_completions(
         raise
 
     upstream_body = dict(body)
-    upstream_body["model"] = model.upstream_id
     upstream_body["max_tokens"] = capped
     if stream:
         upstream_body["stream_options"] = {"include_usage": True}
 
-    cred = decrypt_credential(model.provider.credential_enc)
-    header_name = model.provider.auth_header or "Authorization"
-    headers = {"Content-Type": "application/json"}
-    if header_name.lower() == "authorization" and not cred.lower().startswith("bearer "):
-        headers[header_name] = f"Bearer {cred}"
-    else:
-        headers[header_name] = cred
-
-    url = model.provider.base_url.rstrip("/") + "/chat/completions"
-    started = time.perf_counter()
+    started = time.monotonic()
 
     if stream:
         return StreamingResponse(
             _stream_and_settle(
                 db,
-                url=url,
-                headers=headers,
-                upstream_body=upstream_body,
+                candidates=candidates,
+                body=upstream_body,
+                capped=capped,
                 model=model,
                 key=key,
                 reservation_id=reservation.id,
-                snapshot=snapshot,
+                locked=snapshot,
                 started=started,
             ),
             media_type="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
 
-    try:
-        async with httpx.AsyncClient(timeout=UPSTREAM_TIMEOUT) as client:
-            resp = await client.post(url, headers=headers, json=upstream_body)
-    except httpx.HTTPError:
+    result = await _post_with_failover(candidates, upstream_body, started, public_id=model.public_id)
+    served = result.candidate
+    resp = result.response
+    if resp is None or served is None:
         await release_concurrent(key.id)
-        await _fail_release(db, reservation.id, model, key, snapshot, request_payload=body)
+        await _fail_release(
+            db,
+            reservation.id,
+            model,
+            key,
+            snapshot,
+            request_payload=body,
+            provider_id=served.provider_id if served is not None else None,
+        )
         return _generic_upstream_fail()
 
-    latency_ms = int((time.perf_counter() - started) * 1000)
+    latency_ms = int((time.monotonic() - started) * 1000)
     if resp.status_code in (401, 403) or resp.status_code >= 500:
         await release_concurrent(key.id)
         await _fail_release(
-            db, reservation.id, model, key, snapshot, http_status=resp.status_code, request_payload=body
+            db,
+            reservation.id,
+            model,
+            key,
+            snapshot,
+            http_status=resp.status_code,
+            request_payload=body,
+            provider_id=served.provider_id,
         )
         return _generic_upstream_fail()
     if resp.status_code >= 400:
         await release_concurrent(key.id)
         await _fail_release(
-            db, reservation.id, model, key, snapshot, http_status=resp.status_code, request_payload=body
+            db,
+            reservation.id,
+            model,
+            key,
+            snapshot,
+            http_status=resp.status_code,
+            request_payload=body,
+            provider_id=served.provider_id,
         )
         return openai_error(resp.status_code, "Request rejected", err_type="invalid_request_error")
 
@@ -294,7 +476,14 @@ async def chat_completions(
     except json.JSONDecodeError:
         await release_concurrent(key.id)
         await _fail_release(
-            db, reservation.id, model, key, snapshot, http_status=resp.status_code, request_payload=body
+            db,
+            reservation.id,
+            model,
+            key,
+            snapshot,
+            http_status=resp.status_code,
+            request_payload=body,
+            provider_id=served.provider_id,
         )
         return _generic_upstream_fail()
 
@@ -321,6 +510,8 @@ async def chat_completions(
         provider_request_id=payload_dict.get("id"),
         request_payload=body,
         response_payload=payload_dict if isinstance(payload, dict) else None,
+        provider_id=served.provider_id,
+        cogs_snapshot=_cogs_snapshot(served, snapshot),
     )
     await release_concurrent(key.id)
     return JSONResponse(content=payload, status_code=200)
@@ -335,6 +526,8 @@ async def _fail_release(
     http_status: int | None = None,
     request_payload: dict[str, Any] | None = None,
     response_payload: dict[str, Any] | None = None,
+    *,
+    provider_id: UUID | None = None,
 ) -> None:
     from app.models.ai_gateway import AiReservation
 
@@ -360,6 +553,7 @@ async def _fail_release(
         http_status=http_status,
         request_payload=request_payload,
         response_payload=response_payload,
+        provider_id=provider_id,
     )
     await db.commit()
 
@@ -380,6 +574,8 @@ async def _settle_usage(
     provider_request_id: str | None,
     request_payload: dict[str, Any] | None = None,
     response_payload: dict[str, Any] | None = None,
+    provider_id: UUID | None = None,
+    cogs_snapshot: PriceSnapshot | None = None,
 ) -> None:
     from app.models.ai_gateway import AiReservation
 
@@ -389,8 +585,9 @@ async def _settle_usage(
     locked = snapshot_from_reservation(reservation)
     if locked is None:
         locked = await resolve_snapshot(db, model)
+    effective = cogs_snapshot or locked
     billed = billed_idr(prompt_tokens=prompt_tokens, completion_tokens=completion_tokens, snapshot=locked)
-    cogs = cogs_idr(prompt_tokens=prompt_tokens, completion_tokens=completion_tokens, snapshot=locked)
+    cogs = cogs_idr(prompt_tokens=prompt_tokens, completion_tokens=completion_tokens, snapshot=effective)
     event = await record_usage(
         db,
         organization_id=key.organization_id,
@@ -403,8 +600,8 @@ async def _settle_usage(
         billed=billed,
         cogs=cogs,
         billed_usd=billed_usd(prompt_tokens=prompt_tokens, completion_tokens=completion_tokens, snapshot=locked),
-        cogs_usd=cogs_usd(prompt_tokens=prompt_tokens, completion_tokens=completion_tokens, snapshot=locked),
-        snapshot=locked,
+        cogs_usd=cogs_usd(prompt_tokens=prompt_tokens, completion_tokens=completion_tokens, snapshot=effective),
+        snapshot=effective,
         usage_missing=usage_missing,
         billed_estimated=billed_estimated,
         reservation_id=reservation.id,
@@ -414,6 +611,7 @@ async def _settle_usage(
         provider_request_id=provider_request_id,
         request_payload=request_payload,
         response_payload=response_payload,
+        provider_id=provider_id,
     )
     await settle(db, reservation=reservation, billed=billed, usage_event=event)
     await db.commit()
@@ -422,13 +620,13 @@ async def _settle_usage(
 async def _stream_and_settle(
     db: AsyncSession,
     *,
-    url: str,
-    headers: dict[str, str],
-    upstream_body: dict[str, Any],
+    candidates: Sequence[UpstreamCandidate],
+    body: dict[str, Any],
+    capped: int,
     model: AiModel,
     key: AiApiKey,
     reservation_id: UUID,
-    snapshot: PriceSnapshot,
+    locked: PriceSnapshot,
     started: float,
 ) -> AsyncIterator[bytes]:
     prompt_t = 0
@@ -437,59 +635,100 @@ async def _stream_and_settle(
     req_id: str | None = None
     http_status = 200
     failed = False
+    first_byte_sent = False
     streamed_parts: list[str] = []
+    served: UpstreamCandidate | None = None
+    client = httpx.AsyncClient(timeout=settings.ai_upstream_timeout_seconds)
     try:
-        async with (
-            httpx.AsyncClient(timeout=UPSTREAM_TIMEOUT) as client,
-            client.stream("POST", url, headers=headers, json=upstream_body) as resp,
-        ):
-            http_status = resp.status_code
-            if resp.status_code in (401, 403) or resp.status_code >= 400:
-                failed = True
-                yield b'data: {"error":{"message":"Upstream provider error","type":"api_error"}}\n\n'
-                return
-            async for chunk in resp.aiter_bytes():
-                text = chunk.decode("utf-8", errors="replace")
-                for line in text.splitlines():
-                    if not line.startswith("data:"):
-                        continue
-                    data = line[5:].strip()
-                    if data == "[DONE]":
-                        continue
-                    try:
-                        payload = json.loads(data)
-                    except json.JSONDecodeError:
-                        continue
-                    if isinstance(payload, dict):
-                        if payload.get("id"):
-                            req_id = str(payload["id"])
-                        p, c, f = _usage_from_payload(payload)
-                        if p or c:
-                            prompt_t, completion_t = p, c
+        for idx, candidate in enumerate(candidates):
+            retry = False
+            served = candidate
+            url, headers, max_tokens = _candidate_target(candidate, capped)
+            attempt_body = {**body, "model": candidate.upstream_id, "max_tokens": max_tokens}
+            try:
+                async with client.stream("POST", url, headers=headers, json=attempt_body) as resp:
+                    http_status = resp.status_code
+                    if resp.status_code >= 400:
+                        retry = _retryable_status(resp.status_code) and _can_retry(idx, candidates, started)
+                        if retry:
+                            latency_ms = int((time.monotonic() - started) * 1000)
+                            logger.warning(
+                                "ai_upstream_attempt_failed",
+                                extra={
+                                    "model": model.public_id,
+                                    "candidate_index": idx,
+                                    "error_kind": "status",
+                                    "status": resp.status_code,
+                                    "latency_ms": latency_ms,
+                                },
+                            )
                         else:
-                            piece = _delta_content(payload)
-                            if piece:
-                                streamed_parts.append(piece)
-                        if f:
-                            finish = f
-                yield chunk
-    except httpx.HTTPError:
-        failed = True
-        yield b'data: {"error":{"message":"Upstream provider error","type":"api_error"}}\n\n'
+                            failed = True
+                            yield STREAM_ERROR_EVENT
+                            return
+                    else:
+                        async for chunk in resp.aiter_bytes():
+                            first_byte_sent = True
+                            text = chunk.decode("utf-8", errors="replace")
+                            for line in text.splitlines():
+                                if not line.startswith("data:"):
+                                    continue
+                                data = line[5:].strip()
+                                if data == "[DONE]":
+                                    continue
+                                try:
+                                    payload = json.loads(data)
+                                except json.JSONDecodeError:
+                                    continue
+                                if isinstance(payload, dict):
+                                    if payload.get("id"):
+                                        req_id = str(payload["id"])
+                                    p, c, f = _usage_from_payload(payload)
+                                    if p or c:
+                                        prompt_t, completion_t = p, c
+                                    else:
+                                        piece = _delta_content(payload)
+                                        if piece:
+                                            streamed_parts.append(piece)
+                                    if f:
+                                        finish = f
+                            yield chunk
+            except httpx.TransportError:
+                latency_ms = int((time.monotonic() - started) * 1000)
+                logger.warning(
+                    "ai_upstream_attempt_failed",
+                    extra={
+                        "model": model.public_id,
+                        "candidate_index": idx,
+                        "error_kind": "transport",
+                        "status": None,
+                        "latency_ms": latency_ms,
+                    },
+                )
+                if first_byte_sent or not _can_retry(idx, candidates, started):
+                    failed = True
+                    yield STREAM_ERROR_EVENT
+                    return
+                retry = True
+            if retry:
+                continue
+            break
     finally:
-        latency_ms = int((time.perf_counter() - started) * 1000)
+        await client.aclose()
+        latency_ms = int((time.monotonic() - started) * 1000)
         await release_concurrent(key.id)
-        stored_req = dict(upstream_body)
+        stored_req = dict(body)
         stored_req["model"] = model.public_id
-        if failed:
+        if failed or served is None:
             await _fail_release(
                 db,
                 reservation_id,
                 model,
                 key,
-                snapshot,
+                locked,
                 http_status=http_status,
                 request_payload=stored_req,
+                provider_id=served.provider_id if served is not None else None,
             )
         else:
             prompt_t, completion_t, usage_missing, billed_estimated = _billable_tokens(
@@ -512,20 +751,10 @@ async def _stream_and_settle(
                 finish_reason=finish,
                 provider_request_id=req_id,
                 request_payload=stored_req,
+                provider_id=served.provider_id,
+                cogs_snapshot=_cogs_snapshot(served, locked),
             )
         yield b"data: [DONE]\n\n"
-
-
-def _upstream_headers(model: AiModel) -> tuple[str, dict[str, str]]:
-    cred = decrypt_credential(model.provider.credential_enc)
-    header_name = model.provider.auth_header or "Authorization"
-    headers = {"Content-Type": "application/json"}
-    if header_name.lower() == "authorization" and not cred.lower().startswith("bearer "):
-        headers[header_name] = f"Bearer {cred}"
-    else:
-        headers[header_name] = cred
-    url = model.provider.base_url.rstrip("/") + "/chat/completions"
-    return url, headers
 
 
 async def _admin_trial_usage(
@@ -546,6 +775,7 @@ async def _admin_trial_usage(
     provider_request_id: str | None = None,
     request_payload: dict[str, Any] | None = None,
     response_payload: dict[str, Any] | None = None,
+    provider_id: UUID | None = None,
 ) -> AiUsageEvent:
     return await record_usage(
         db,
@@ -570,6 +800,7 @@ async def _admin_trial_usage(
         provider_request_id=provider_request_id,
         request_payload=request_payload,
         response_payload=response_payload,
+        provider_id=provider_id,
     )
 
 
@@ -583,7 +814,7 @@ async def admin_trial_chat(
         raise HTTPException(status_code=400, detail="stream is not supported for admin trial")
     _validate_body(body)
     public_id = str(body.get("model") or "")
-    model = await _load_model(db, public_id)
+    model, candidates = await _load_candidates(db, public_id)
     snapshot = await resolve_snapshot(db, model)
 
     cap_usd = trial_cap_usd()
@@ -592,20 +823,22 @@ async def admin_trial_chat(
         raise HTTPException(status_code=402, detail="Admin trial monthly cap reached")
 
     requested = int(body.get("max_tokens") or model.max_tokens_cap)
+    capped = min(requested, model.max_tokens_cap)
     upstream_body = dict(body)
-    upstream_body["model"] = model.upstream_id
-    upstream_body["max_tokens"] = min(requested, model.max_tokens_cap)
-    url, headers = _upstream_headers(model)
-    started = time.perf_counter()
-    try:
-        async with httpx.AsyncClient(timeout=UPSTREAM_TIMEOUT) as client:
-            resp = await client.post(url, headers=headers, json=upstream_body)
-    except httpx.HTTPError:
+    upstream_body["max_tokens"] = capped
+    started = time.monotonic()
+    result = await _post_with_failover(candidates, upstream_body, started, public_id=model.public_id)
+    served = result.candidate
+    resp = result.response
+    effective = _cogs_snapshot(served, snapshot) if served is not None else snapshot
+    served_provider_id = served.provider_id if served is not None else None
+
+    if resp is None or served is None:
         await _admin_trial_usage(
             db,
             admin_id=admin_id,
             model=model,
-            snapshot=snapshot,
+            snapshot=effective,
             prompt_tokens=0,
             completion_tokens=0,
             billed=0,
@@ -614,17 +847,18 @@ async def admin_trial_chat(
             billed_estimated=False,
             http_status=502,
             request_payload=body,
+            provider_id=served_provider_id,
         )
         await db.commit()
         return _generic_upstream_fail()
 
-    latency_ms = int((time.perf_counter() - started) * 1000)
+    latency_ms = int((time.monotonic() - started) * 1000)
     if resp.status_code in (401, 403) or resp.status_code >= 500:
         await _admin_trial_usage(
             db,
             admin_id=admin_id,
             model=model,
-            snapshot=snapshot,
+            snapshot=effective,
             prompt_tokens=0,
             completion_tokens=0,
             billed=0,
@@ -633,6 +867,7 @@ async def admin_trial_chat(
             billed_estimated=False,
             http_status=resp.status_code,
             request_payload=body,
+            provider_id=served_provider_id,
         )
         await db.commit()
         return _generic_upstream_fail()
@@ -641,7 +876,7 @@ async def admin_trial_chat(
             db,
             admin_id=admin_id,
             model=model,
-            snapshot=snapshot,
+            snapshot=effective,
             prompt_tokens=0,
             completion_tokens=0,
             billed=0,
@@ -650,6 +885,7 @@ async def admin_trial_chat(
             billed_estimated=False,
             http_status=resp.status_code,
             request_payload=body,
+            provider_id=served_provider_id,
         )
         await db.commit()
         return openai_error(resp.status_code, "Request rejected", err_type="invalid_request_error")
@@ -661,7 +897,7 @@ async def admin_trial_chat(
             db,
             admin_id=admin_id,
             model=model,
-            snapshot=snapshot,
+            snapshot=effective,
             prompt_tokens=0,
             completion_tokens=0,
             billed=0,
@@ -670,6 +906,7 @@ async def admin_trial_chat(
             billed_estimated=False,
             http_status=resp.status_code,
             request_payload=body,
+            provider_id=served_provider_id,
         )
         await db.commit()
         return _generic_upstream_fail()
@@ -683,15 +920,15 @@ async def admin_trial_chat(
         content=_response_content(payload_dict),
     )
     billed = billed_idr(prompt_tokens=prompt_t, completion_tokens=completion_t, snapshot=snapshot)
-    cogs = cogs_idr(prompt_tokens=prompt_t, completion_tokens=completion_t, snapshot=snapshot)
-    cogs_usd_value = cogs_usd(prompt_tokens=prompt_t, completion_tokens=completion_t, snapshot=snapshot)
+    cogs = cogs_idr(prompt_tokens=prompt_t, completion_tokens=completion_t, snapshot=effective)
+    cogs_usd_value = cogs_usd(prompt_tokens=prompt_t, completion_tokens=completion_t, snapshot=effective)
     if spent_usd + cogs_usd_value > cap_usd:
         billed = 0
     await _admin_trial_usage(
         db,
         admin_id=admin_id,
         model=model,
-        snapshot=snapshot,
+        snapshot=effective,
         prompt_tokens=prompt_t,
         completion_tokens=completion_t,
         billed=billed,
@@ -704,6 +941,7 @@ async def admin_trial_chat(
         provider_request_id=payload_dict.get("id"),
         request_payload=body,
         response_payload=payload_dict if isinstance(payload, dict) else None,
+        provider_id=served_provider_id,
     )
     await db.commit()
     return JSONResponse(content=payload, status_code=200)

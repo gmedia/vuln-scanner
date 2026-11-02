@@ -85,6 +85,12 @@ class AiModel(Base):
     )
 
     provider: Mapped[AiProvider] = relationship(back_populates="models")
+    upstreams: Mapped[list["AiModelUpstream"]] = relationship(
+        back_populates="model",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="AiModelUpstream.rank",
+    )
 
     __table_args__ = (
         CheckConstraint(
@@ -102,6 +108,62 @@ class AiModel(Base):
         CheckConstraint(
             "hpp_usd_per_1m_out IS NULL OR hpp_usd_per_1m_out >= 0",
             name="ck_ai_models_hpp_usd_out_nonnegative",
+        ),
+    )
+
+
+class AiModelUpstream(Base):
+    __tablename__ = "ai_model_upstreams"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    model_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("ai_models.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    provider_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("ai_providers.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    upstream_id: Mapped[str] = mapped_column(String(256), nullable=False)
+    max_tokens_cap: Mapped[int | None] = mapped_column(Integer)
+    hpp_usd_per_1m_in: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    hpp_usd_per_1m_out: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    rank: Mapped[int] = mapped_column(Integer, nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=sa.true())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+
+    model: Mapped[AiModel] = relationship(back_populates="upstreams")
+    provider: Mapped[AiProvider] = relationship()  # no backref: keep ON DELETE CASCADE the only delete path
+
+    __table_args__ = (
+        UniqueConstraint("model_id", "rank", name="uq_ai_model_upstreams_model_rank"),
+        UniqueConstraint(
+            "model_id",
+            "provider_id",
+            "upstream_id",
+            name="uq_ai_model_upstreams_target",
+        ),
+        CheckConstraint("rank >= 1", name="ck_ai_model_upstreams_rank_positive"),
+        CheckConstraint(
+            "max_tokens_cap IS NULL OR max_tokens_cap >= 1",
+            name="ck_ai_model_upstreams_max_tokens_cap_positive",
+        ),
+        CheckConstraint(
+            "hpp_usd_per_1m_in IS NULL OR hpp_usd_per_1m_in >= 0",
+            name="ck_ai_model_upstreams_hpp_usd_in_nonnegative",
+        ),
+        CheckConstraint(
+            "hpp_usd_per_1m_out IS NULL OR hpp_usd_per_1m_out >= 0",
+            name="ck_ai_model_upstreams_hpp_usd_out_nonnegative",
         ),
     )
 
