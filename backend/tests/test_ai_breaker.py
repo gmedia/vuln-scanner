@@ -53,30 +53,6 @@ class FakePipeline:
         return [1 if key in self._client.store else 0 for key in self._keys]
 
 
-class FakeSyncRedis:
-    def __init__(self, store: dict[str, str]) -> None:
-        self._store = store
-        self.closed = False
-
-    def incr(self, key: str) -> int:
-        value = int(self._store.get(key, 0)) + 1
-        self._store[key] = str(value)
-        return value
-
-    def expire(self, key: str, seconds: int) -> bool:
-        return True
-
-    def set(self, key: str, value: str, ex: int | None = None) -> bool:
-        self._store[key] = value
-        return True
-
-    def delete(self, *keys: str) -> int:
-        return sum(1 for key in keys if self._store.pop(key, None) is not None)
-
-    def close(self) -> None:
-        self.closed = True
-
-
 class BoomAsyncRedis:
     async def incr(self, *_args: object, **_kwargs: object) -> int:
         raise RedisError("down")
@@ -95,23 +71,6 @@ class BoomAsyncRedis:
 
     def pipeline(self) -> FakePipeline:
         raise RedisError("down")
-
-
-class BoomSyncRedis:
-    def incr(self, *_args: object, **_kwargs: object) -> int:
-        raise RedisError("down")
-
-    def expire(self, *_args: object, **_kwargs: object) -> bool:
-        raise RedisError("down")
-
-    def set(self, *_args: object, **_kwargs: object) -> bool:
-        raise RedisError("down")
-
-    def delete(self, *_args: object, **_kwargs: object) -> int:
-        raise RedisError("down")
-
-    def close(self) -> None:
-        return None
 
 
 def _candidate(provider_id: uuid.UUID, status: str = "ok") -> UpstreamCandidate:
@@ -210,27 +169,8 @@ async def test_redis_errors_degrade_safely(monkeypatch: pytest.MonkeyPatch) -> N
     provider_id = uuid.uuid4()
     candidates = [_candidate(provider_id)]
     monkeypatch.setattr(ai_breaker, "_redis", BoomAsyncRedis())
-    monkeypatch.setattr(ai_breaker, "_sync_client", lambda: BoomSyncRedis())
 
     await ai_breaker.record_success(provider_id)
     await ai_breaker.record_failure(provider_id, "server_error")
     assert await ai_breaker.is_open(provider_id) is False
     assert await ai_breaker.filter_available(candidates) == candidates
-    ai_breaker.record_success_sync(provider_id)
-    ai_breaker.record_failure_sync(provider_id, "server_error")
-
-
-@pytest.mark.asyncio
-async def test_sync_and_async_share_key_names(monkeypatch: pytest.MonkeyPatch, _fake_client: FakeAsyncRedis) -> None:
-    provider_id = uuid.uuid4()
-    monkeypatch.setattr(ai_breaker, "_sync_client", lambda: FakeSyncRedis(_fake_client.store))
-
-    ai_breaker.record_failure_sync(provider_id, "server_error")
-    await ai_breaker.record_failure(provider_id, "server_error")
-
-    assert _fake_client.store[_fails_key(provider_id)] == "2"
-
-    await ai_breaker.record_success(provider_id)
-
-    assert _fails_key(provider_id) not in _fake_client.store
-    assert _open_key(provider_id) not in _fake_client.store
