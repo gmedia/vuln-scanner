@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi import HTTPException
@@ -11,12 +12,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.main import app
-from app.models.organization import Organization, OrganizationMembership
+from app.models.organization import Organization, OrganizationInvite, OrganizationMembership
 from app.models.sku_tier import SkuTier
 from app.models.user import User
 from app.schemas.sku_tier import SkuTierFeatures, SkuTierWorkspaceLimits
 from app.services.auth import create_access_token, hash_password
-from app.services.organization import OrganizationService, ensure_personal_org
+from app.services.organization import OrganizationService, ensure_personal_org, hash_invite_token
 from app.services.sku_tier import SkuTierService
 from app.services.subscription import SubscriptionService
 
@@ -368,3 +369,40 @@ async def test_downgrade_checks_target_workspace_limits(db_session: AsyncSession
         )
     assert blocked.value.status_code == 400
     assert "Basic workspace allows 1 editor and 1 viewer" in blocked.value.detail
+
+
+@pytest.mark.asyncio
+async def test_workspace_seat_cap_accept_invite_reads_custom_tier(db_session: AsyncSession) -> None:
+    db_session.add(_tier("tight_accept", 11, workspace_editor_limit=1, workspace_viewer_limit=1))
+    await db_session.flush()
+    owner = await _make_user(db_session, "tight-accept-owner@example.com")
+    org = await _make_org(db_session, owner, sku="tight_accept")
+    invitee = await _make_user(db_session, "tight-accept-invitee@example.com")
+    other = await _make_user(db_session, "tight-accept-other@example.com")
+    db_session.add(
+        OrganizationMembership(
+            id=uuid.uuid4(),
+            organization_id=org.id,
+            user_id=other.id,
+            role="viewer",
+        )
+    )
+    raw = "tight-accept-raw-token"
+    db_session.add(
+        OrganizationInvite(
+            id=uuid.uuid4(),
+            organization_id=org.id,
+            email=invitee.email,
+            role="viewer",
+            token_hash=hash_invite_token(raw),
+            invited_by_user_id=owner.id,
+            status="pending",
+            expires_at=datetime.now(UTC) + timedelta(days=1),
+        )
+    )
+    await db_session.commit()
+
+    with pytest.raises(HTTPException) as blocked:
+        await OrganizationService(db_session).accept_invite(invitee, raw)
+    assert blocked.value.status_code == 403
+    assert "Tight Accept workspace allows 1 editor and 1 viewer" in blocked.value.detail
