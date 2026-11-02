@@ -341,6 +341,11 @@ Response shape: OpenAI chat completions (including `usage`). Errors: OpenAI-styl
 - `ai_providers.probe` runs every 5 minutes on the worker queue and GETs `{base_url}/models` per
   enabled provider: 2xx → `ok`, 401/403/5xx/transport → `degraded`, any other `4xx` → untouched
   (some vendors have no `/models`).
+- **Single writer per state.** The probe writes `ai_providers.status` and never touches the breaker;
+  only the request path writes `ai:cb:*`. Letting a probe 2xx clear the breaker erased it every five
+  minutes, which made it useless against a provider whose `/models` answers while `/chat/completions`
+  fails. Conversely a `2xx` from `/models` is not evidence that chat works, so it must not be read as
+  a breaker success.
 - `/metrics` exposes `vuln_ai_upstream_attempts_total{model,outcome,reason}` where `outcome` is
   `served` / `retried` / `failed` / `rejected` and `reason` is `none` / `transport` / `auth` /
   `rate_limit` / `server_error` / `client_error`. Failover is silent by design, so this counter plus
@@ -376,6 +381,8 @@ Register both in `App.tsx` + [`AGENT_PAGE_REGISTRY.md`](../AGENT_PAGE_REGISTRY.m
 | **S7.1** | Upstream attempt counter + four failover alert rules | **done** |
 | **S7.2** | Attempt timeout clamped to the request budget; connect + stream idle timeouts | **done** |
 | **S7.3** | Provider health probe (`ai_providers.probe`) + Redis circuit breaker; `degraded` ordered last | S7.2 |
+| **S7.3.1** | Models-tab sheet shows the routing order the gateway really uses | **done** |
+| **S7.3.2** | Probe writes `status` only; the breaker is traffic's alone | S7.3 |
 
 Default order **S1 → S5**. Do not combine with Host Protect / Guard PRs.
 
