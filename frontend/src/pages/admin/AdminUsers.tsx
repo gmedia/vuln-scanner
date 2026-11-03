@@ -153,6 +153,9 @@ function AdminUsers() {
                       >
                         {user.is_verified ? t("verified") : t("unverified")}
                       </Badge>
+                      <Badge variant="default" className="text-[11px]">
+                        {user.sku_label ?? t("tierNone")}
+                      </Badge>
                     </div>
                     <p className="mt-1 text-[11px] text-muted-foreground">
                       {user.credits} · {user.scan_count} ·{" "}
@@ -169,28 +172,31 @@ function AdminUsers() {
                   <Table className="table-fixed">
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[22%] text-[10px] uppercase tracking-wider">
+                        <TableHead className="w-[20%] text-[10px] uppercase tracking-wider">
                           {t("colEmail")}
                         </TableHead>
                         <TableHead className="w-[10%] text-[10px] uppercase tracking-wider">
+                          {t("colTier")}
+                        </TableHead>
+                        <TableHead className="w-[9%] text-[10px] uppercase tracking-wider">
                           {t("colRole")}
                         </TableHead>
-                        <TableHead className="w-[10%] text-[10px] uppercase tracking-wider">
+                        <TableHead className="w-[9%] text-[10px] uppercase tracking-wider">
                           {t("colVerified")}
                         </TableHead>
-                        <TableHead className="w-[10%] text-right text-[10px] uppercase tracking-wider">
+                        <TableHead className="w-[9%] text-right text-[10px] uppercase tracking-wider">
                           {t("colCredits")}
                         </TableHead>
-                        <TableHead className="w-[8%] text-right text-[10px] uppercase tracking-wider">
+                        <TableHead className="w-[7%] text-right text-[10px] uppercase tracking-wider">
                           {t("colScans")}
                         </TableHead>
                         <TableHead className="w-[12%] text-[10px] uppercase tracking-wider">
                           {t("colCreated")}
                         </TableHead>
-                        <TableHead className="w-[16%] text-[10px] uppercase tracking-wider">
+                        <TableHead className="w-[14%] text-[10px] uppercase tracking-wider">
                           {t("colLastLogin")}
                         </TableHead>
-                        <TableHead className="w-[12%] whitespace-nowrap text-right text-[10px] uppercase tracking-wider">
+                        <TableHead className="w-[10%] whitespace-nowrap text-right text-[10px] uppercase tracking-wider">
                           {t("colActions")}
                         </TableHead>
                       </TableRow>
@@ -250,6 +256,15 @@ function UserRow({ user, onView }: { user: AdminUserItem; onView: () => void }) 
           title={user.email}
         >
           {user.email}
+        </span>
+      </TableCell>
+      <TableCell>
+        <span
+          className="block truncate text-xs text-foreground"
+          data-testid={`admin-user-tier-${user.id}`}
+          title={user.sku ?? undefined}
+        >
+          {user.sku_label ?? t("tierNone")}
         </span>
       </TableCell>
       <TableCell>

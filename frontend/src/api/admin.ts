@@ -18,6 +18,9 @@ export interface AdminUserItem {
   scan_count: number;
   created_at: string;
   last_login_at: string | null;
+  /** Tier of the user's personal workspace; null when they own none. */
+  sku: string | null;
+  sku_label: string | null;
 }
 
 export interface AdminUserList {

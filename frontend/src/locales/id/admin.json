@@ -30,6 +30,8 @@
   "usersEmptySearch": "Coba kata kunci lain.",
   "usersEmptyNone": "Belum ada pengguna terdaftar.",
   "colEmail": "Email",
+  "colTier": "Tier",
+  "tierNone": "—",
   "colRole": "Peran",
   "colVerified": "Verifikasi",
   "colCredits": "Kredit",

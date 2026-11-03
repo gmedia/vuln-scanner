@@ -25,7 +25,7 @@ from app.models.hpp import (
 )
 from app.models.hpp_history import HppSettingHistory
 from app.models.invoice import INVOICE_PRODUCTS, SkuCatalog
-from app.models.organization import Organization
+from app.models.organization import Organization, OrganizationMembership
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 from app.models.scan_schedule import ScanSchedule
@@ -106,6 +106,63 @@ async def get_stats(
     )
 
 
+async def _scan_counts(db: AsyncSession, user_ids: list[uuid.UUID]) -> dict[uuid.UUID, int]:
+    """Scan counts for many users in one query.
+
+    The per-user loop this replaces issued one COUNT per row, so a 100-row page
+    cost 100 extra round trips.
+    """
+    if not user_ids:
+        return {}
+    rows = await db.execute(
+        select(ScanJob.user_id, func.count(ScanJob.id))
+        .where(ScanJob.user_id.in_(user_ids))
+        .group_by(ScanJob.user_id)
+    )
+    return {user_id: int(count) for user_id, count in rows.all()}
+
+
+async def _personal_tiers(
+    db: AsyncSession, user_ids: list[uuid.UUID]
+) -> dict[uuid.UUID, tuple[str, str]]:
+    """``user_id -> (sku, label)`` for each user's personal workspace.
+
+    A user can belong to several organizations, so the admin list shows the tier
+    of the workspace they own by default rather than an arbitrary membership.
+    """
+    if not user_ids:
+        return {}
+    rows = await db.execute(
+        select(OrganizationMembership.user_id, Organization.sku, SkuTier.label)
+        .join(Organization, Organization.id == OrganizationMembership.organization_id)
+        .join(SkuTier, SkuTier.code == Organization.sku)
+        .where(
+            OrganizationMembership.user_id.in_(user_ids),
+            Organization.kind == "personal",
+            OrganizationMembership.role == "owner",
+        )
+    )
+    return {user_id: (str(sku), str(label)) for user_id, sku, label in rows.all()}
+
+
+def _user_item(
+    user: User, *, scan_count: int, tier: tuple[str, str] | None
+) -> AdminUserItem:
+    sku, sku_label = tier if tier is not None else (None, None)
+    return AdminUserItem(
+        id=user.id,
+        email=user.email,
+        is_admin=user.is_admin,
+        is_verified=user.is_verified,
+        credits=user.credits,
+        scan_count=scan_count,
+        created_at=user.created_at,
+        last_login_at=user.last_login_at,
+        sku=sku,
+        sku_label=sku_label,
+    )
+
+
 @router.get("/users", response_model=AdminUserList)
 async def get_users(
     request: Request,
@@ -133,22 +190,18 @@ async def get_users(
     result = await db.execute(query)
     users = result.scalars().all()
 
-    user_items = []
-    for user in users:
-        scan_count_result = await db.execute(select(func.count(ScanJob.id)).where(ScanJob.user_id == user.id))
-        scan_count = scan_count_result.scalar() or 0
-        user_items.append(
-            AdminUserItem(
-                id=user.id,
-                email=user.email,
-                is_admin=user.is_admin,
-                is_verified=user.is_verified,
-                credits=user.credits,
-                scan_count=scan_count,
-                created_at=user.created_at,
-                last_login_at=user.last_login_at,
-            )
+    user_ids = [user.id for user in users]
+    scan_counts = await _scan_counts(db, user_ids)
+    tiers = await _personal_tiers(db, user_ids)
+
+    user_items = [
+        _user_item(
+            user,
+            scan_count=scan_counts.get(user.id, 0),
+            tier=tiers.get(user.id),
         )
+        for user in users
+    ]
 
     return AdminUserList(users=user_items, total=total)
 
@@ -168,18 +221,13 @@ async def get_user_detail(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-    scan_count_result = await db.execute(select(func.count(ScanJob.id)).where(ScanJob.user_id == user.id))
-    scan_count = scan_count_result.scalar() or 0
+    scan_counts = await _scan_counts(db, [user.id])
+    tiers = await _personal_tiers(db, [user.id])
 
-    return AdminUserItem(
-        id=user.id,
-        email=user.email,
-        is_admin=user.is_admin,
-        is_verified=user.is_verified,
-        credits=user.credits,
-        scan_count=scan_count,
-        created_at=user.created_at,
-        last_login_at=user.last_login_at,
+    return _user_item(
+        user,
+        scan_count=scan_counts.get(user.id, 0),
+        tier=tiers.get(user.id),
     )
 
 
@@ -220,18 +268,13 @@ async def adjust_user_credits(
 
     await db.refresh(user)
 
-    scan_count_result = await db.execute(select(func.count(ScanJob.id)).where(ScanJob.user_id == user.id))
-    scan_count = scan_count_result.scalar() or 0
+    scan_counts = await _scan_counts(db, [user.id])
+    tiers = await _personal_tiers(db, [user.id])
 
-    return AdminUserItem(
-        id=user.id,
-        email=user.email,
-        is_admin=user.is_admin,
-        is_verified=user.is_verified,
-        credits=user.credits,
-        scan_count=scan_count,
-        created_at=user.created_at,
-        last_login_at=user.last_login_at,
+    return _user_item(
+        user,
+        scan_count=scan_counts.get(user.id, 0),
+        tier=tiers.get(user.id),
     )
 
 
@@ -325,17 +368,13 @@ async def admin_force_verify_user(
     else:
         await db.refresh(user)
 
-    scan_count_result = await db.execute(select(func.count(ScanJob.id)).where(ScanJob.user_id == user.id))
-    scan_count = scan_count_result.scalar() or 0
+    scan_counts = await _scan_counts(db, [user.id])
+    tiers = await _personal_tiers(db, [user.id])
 
-    return AdminUserItem(
-        id=user.id,
-        email=user.email,
-        is_admin=user.is_admin,
-        is_verified=user.is_verified,
-        credits=user.credits,
-        scan_count=scan_count,
-        created_at=user.created_at,
+    return _user_item(
+        user,
+        scan_count=scan_counts.get(user.id, 0),
+        tier=tiers.get(user.id),
     )
 
 

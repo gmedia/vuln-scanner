@@ -23,6 +23,10 @@ class AdminUserItem(BaseModel):
     scan_count: int
     created_at: datetime
     last_login_at: datetime | None = None
+    # Tier of the user's personal workspace (kind='personal', role='owner');
+    # null when the user owns no personal org.
+    sku: str | None = None
+    sku_label: str | None = None
 
 
 class AdminUserList(BaseModel):
