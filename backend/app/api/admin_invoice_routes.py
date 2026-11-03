@@ -50,6 +50,7 @@ async def list_admin_orgs(
     current_admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
     q: str | None = Query(default=None),
+    sku: str | None = Query(default=None),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=50, ge=1, le=100),
 ) -> AdminOrgListResponse | Response:
@@ -60,6 +61,8 @@ async def list_admin_orgs(
     if q:
         like = f"%{q.strip()}%"
         filters.append(or_(Organization.name.ilike(like), Organization.slug.ilike(like)))
+    if sku:
+        filters.append(Organization.sku == sku)
     count_q = select(func.count()).select_from(Organization)
     list_q = select(Organization).order_by(Organization.name.asc())
     if filters:

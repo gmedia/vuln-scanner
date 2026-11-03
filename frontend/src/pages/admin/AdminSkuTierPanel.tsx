@@ -11,6 +11,7 @@ import {
   deleteSkuTier,
   getAdminSkuTiers,
   getSkuTierHistory,
+  listAdminOrgs,
   reactivateSkuTier,
   updateSkuTier,
   type InvoiceProduct,
@@ -70,6 +71,7 @@ import { cn } from "@/lib/utils";
 
 const PRODUCTS: readonly InvoiceProduct[] = ["scan", "host", "uptime", "guard"];
 const HISTORY_PAGE_SIZE = 20;
+const ORGS_PAGE_SIZE = 20;
 const CODE_PATTERN = /^[a-z][a-z0-9_]{1,19}$/;
 
 interface TierFormState {
@@ -446,6 +448,7 @@ function TierCells({
   onReactivate,
   onDelete,
   onHistory,
+  onOrgs,
 }: {
   readonly tier: SkuTierInfo;
   readonly desktop: boolean;
@@ -455,6 +458,7 @@ function TierCells({
   readonly onReactivate: (tier: SkuTierInfo) => void;
   readonly onDelete: (tier: SkuTierInfo) => void;
   readonly onHistory: (tier: SkuTierInfo) => void;
+  readonly onOrgs: (tier: SkuTierInfo) => void;
 }) {
   const { t } = useTranslation("admin");
   const action = (
@@ -471,6 +475,10 @@ function TierCells({
       />
     </div>
   );
+
+  const counts = tier.usage
+    ? `${tier.usage.orgs}/${tier.usage.subscriptions}/${tier.usage.invoices}/${tier.usage.requests}`
+    : "—";
 
   if (!desktop) {
     return (
@@ -508,16 +516,27 @@ function TierCells({
           <p className="text-[11px] text-muted-foreground">
             {featureSummary(tier, t)}
           </p>
-          <p className="font-mono text-[11px] text-muted-foreground">
-            {tier.usage
-              ? t("tierUsageCell", {
-                  orgs: tier.usage.orgs,
-                  subscriptions: tier.usage.subscriptions,
-                  invoices: tier.usage.invoices,
-                  requests: tier.usage.requests,
-                })
-              : "—"}
-          </p>
+          {tier.usage && tier.usage.orgs > 0 ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 px-1 font-mono text-[11px] tabular-nums"
+              data-testid={`sku-tier-orgs-mobile-${tier.code}`}
+              onClick={() => onOrgs(tier)}
+            >
+              {t("tierUsageCell", {
+                orgs: tier.usage.orgs,
+                subscriptions: tier.usage.subscriptions,
+                invoices: tier.usage.invoices,
+                requests: tier.usage.requests,
+              })}
+            </Button>
+          ) : (
+            <p className="font-mono text-[11px] text-muted-foreground">
+              {counts}
+            </p>
+          )}
           <div className="flex justify-end pt-1">{action}</div>
         </div>
       </div>
@@ -554,9 +573,20 @@ function TierCells({
         {featureSummary(tier, t)}
       </TableCell>
       <TableCell className="py-2 font-mono text-xs tabular-nums text-muted-foreground">
-        {tier.usage
-          ? `${tier.usage.orgs}/${tier.usage.subscriptions}/${tier.usage.invoices}/${tier.usage.requests}`
-          : "—"}
+        {tier.usage && tier.usage.orgs > 0 ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 px-1 font-mono text-xs tabular-nums"
+            data-testid={`sku-tier-orgs-${tier.code}`}
+            onClick={() => onOrgs(tier)}
+          >
+            {counts}
+          </Button>
+        ) : (
+          counts
+        )}
       </TableCell>
       <TableCell className="py-2 text-right">{action}</TableCell>
     </TableRow>
@@ -571,6 +601,8 @@ export default function AdminSkuTierPanel() {
   const [deleteTarget, setDeleteTarget] = useState<SkuTierInfo | null>(null);
   const [historyTarget, setHistoryTarget] = useState<SkuTierInfo | null>(null);
   const [historyPage, setHistoryPage] = useState(1);
+  const [orgsTarget, setOrgsTarget] = useState<SkuTierInfo | null>(null);
+  const [orgsPage, setOrgsPage] = useState(1);
   const dateLocale = i18n.language === "en" ? "en-US" : "id-ID";
 
   const tiersQ = useQuery({
@@ -592,16 +624,32 @@ export default function AdminSkuTierPanel() {
     enabled: historyTarget != null,
   });
 
+  const orgsCode = orgsTarget?.code ?? "";
+  const orgsQ = useQuery({
+    queryKey: ["admin-orgs", orgsCode, orgsPage],
+    queryFn: () =>
+      listAdminOrgs({ sku: orgsCode, page: orgsPage, page_size: ORGS_PAGE_SIZE }),
+    enabled: orgsTarget != null,
+  });
+
   useEffect(() => {
     if (historyQ.isError) {
       toast.error(apiDetail(historyQ.error, t("tierHistoryError")));
     }
   }, [historyQ.isError, historyQ.error, t]);
 
+  useEffect(() => {
+    if (orgsQ.isError) {
+      toast.error(apiDetail(orgsQ.error, t("tierOrgsError")));
+    }
+  }, [orgsQ.isError, orgsQ.error, t]);
+
   const tiers = tiersQ.data ?? [];
   const catalog = catalogQ.data ?? [];
   const historyItems = historyQ.data?.items ?? [];
   const historyTotal = historyQ.data?.total ?? 0;
+  const orgsItems = orgsQ.data?.items ?? [];
+  const orgsTotal = orgsQ.data?.total ?? 0;
 
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ["admin-sku-tiers"] });
@@ -670,6 +718,11 @@ export default function AdminSkuTierPanel() {
   function openHistory(tier: SkuTierInfo) {
     setHistoryTarget(tier);
     setHistoryPage(1);
+  }
+
+  function openOrgs(tier: SkuTierInfo) {
+    setOrgsTarget(tier);
+    setOrgsPage(1);
   }
 
   function patch(patchValue: Partial<TierFormState>) {
@@ -830,6 +883,7 @@ export default function AdminSkuTierPanel() {
                     onReactivate={(row) => reactivateMut.mutate(row.code)}
                     onDelete={setDeleteTarget}
                     onHistory={openHistory}
+                    onOrgs={openOrgs}
                   />
                 ))}
               </div>
@@ -875,6 +929,7 @@ export default function AdminSkuTierPanel() {
                         onReactivate={(row) => reactivateMut.mutate(row.code)}
                         onDelete={setDeleteTarget}
                         onHistory={openHistory}
+                        onOrgs={openOrgs}
                       />
                     ))}
                   </TableBody>
@@ -1299,6 +1354,97 @@ export default function AdminSkuTierPanel() {
                 data-testid="sku-tier-history-empty"
               >
                 {t("tierHistoryEmpty")}
+              </p>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <Sheet
+        open={orgsTarget != null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setOrgsTarget(null);
+            setOrgsPage(1);
+          }
+        }}
+      >
+        <SheetContent
+          side="right"
+          className="w-full overflow-y-auto sm:max-w-lg"
+          data-testid="sku-tier-orgs-dialog"
+        >
+          <SheetHeader>
+            <SheetTitle>
+              {t("tierOrgsTitle", { label: orgsTarget?.label ?? "" })}
+            </SheetTitle>
+            <SheetDescription>{t("tierOrgsDescription")}</SheetDescription>
+          </SheetHeader>
+          <div className="space-y-3 px-4 pb-4">
+            {orgsQ.isLoading ? (
+              <p className="text-xs text-muted-foreground">
+                {t("tierOrgsLoading")}
+              </p>
+            ) : orgsItems.length > 0 ? (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  {t("tierOrgsTotal", { total: orgsTotal })}
+                </p>
+                <ul className="space-y-2">
+                  {orgsItems.map((org) => (
+                    <li
+                      key={org.id}
+                      className="rounded-md border border-border px-3 py-2"
+                      data-testid="sku-tier-org-entry"
+                    >
+                      <p className="text-sm text-foreground">{org.name}</p>
+                      <p className="font-mono text-[11px] text-muted-foreground">
+                        {org.slug}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex items-center justify-between gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    data-testid="sku-tier-orgs-prev"
+                    disabled={orgsPage <= 1}
+                    onClick={() => setOrgsPage((page) => Math.max(1, page - 1))}
+                  >
+                    {t("tierHistoryPrev")}
+                  </Button>
+                  <span className="text-[11px] text-muted-foreground">
+                    {t("tierHistoryPage", {
+                      page: orgsPage,
+                      pages: Math.max(
+                        1,
+                        Math.ceil(orgsTotal / ORGS_PAGE_SIZE),
+                      ),
+                    })}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    data-testid="sku-tier-orgs-next"
+                    disabled={
+                      orgsPage >=
+                      Math.max(1, Math.ceil(orgsTotal / ORGS_PAGE_SIZE))
+                    }
+                    onClick={() => setOrgsPage((page) => page + 1)}
+                  >
+                    {t("tierHistoryNext")}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <p
+                className="text-xs text-muted-foreground"
+                data-testid="sku-tier-orgs-empty"
+              >
+                {t("tierOrgsEmpty")}
               </p>
             )}
           </div>
