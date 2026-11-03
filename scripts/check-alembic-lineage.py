@@ -1,16 +1,22 @@
 #!/usr/bin/env python3
-"""Fail when an Alembic revision does not descend from the base branch's head.
+"""Fail when merging this branch would leave more than one Alembic head.
 
 ``backend/tests/test_alembic_heads.py`` already guarantees a single head inside one
 tree. That is not enough: two pull requests can each add a revision from the same
 parent, each stay green against its own base, and only break ``main`` once both
-merge. That happened twice — #1177 vs the SKU audit trail, then this scripted guard.
+merge. That happened twice, and a second head blocks ``alembic upgrade head``,
+which every deploy runs before recreating containers.
+
+The check therefore evaluates the graph **after** the merge: the union of this
+tree and the base ref. A branch that merely predates a base revision adds nothing
+to that union, so it passes — being behind is not the problem. A branch that adds
+a sibling of a base revision produces a second head in the union, and fails.
 
 Run before opening a PR that touches ``backend/alembic/versions/``:
 
     python3 scripts/check-alembic-lineage.py
 
-Exit codes: 0 ok, 1 lineage problem, 2 usage/environment problem.
+Exit codes: 0 ok, 1 the merge would leave multiple heads, 2 usage/environment.
 """
 
 from __future__ import annotations
@@ -110,15 +116,6 @@ def main() -> int:
         )
         return 1
 
-    current_heads = heads(current)
-    if len(current_heads) != 1:
-        print(f"FAIL: multiple heads in this tree: {current_heads}", file=sys.stderr)
-        print(
-            "      add an empty merge revision, or fix unrelated branches.",
-            file=sys.stderr,
-        )
-        return 1
-
     try:
         base = load_git(args.base)
     except (RuntimeError, FileNotFoundError) as exc:
@@ -126,39 +123,40 @@ def main() -> int:
         print("      fetch the base ref first: git fetch origin main", file=sys.stderr)
         return 0
 
-    base_heads = heads(base)
-    reached = ancestry(current, current_heads[0])
-    missing = [head for head in base_heads if head not in reached]
-    if missing:
-        print(
-            f"FAIL: {args.base} has head(s) this branch does not descend from:",
-            file=sys.stderr,
-        )
-        for head in missing:
-            print(f"        {head}", file=sys.stderr)
-        print(file=sys.stderr)
-        print(
-            "      Merging this as-is leaves two heads on the target branch and",
-            file=sys.stderr,
-        )
-        print(
-            "      blocks `alembic upgrade head`, which every deploy runs.",
-            file=sys.stderr,
-        )
-        print(
-            "      Fix: rebase onto the base, then add an empty merge revision that",
-            file=sys.stderr,
-        )
-        print(
-            "      lists both heads in down_revision (ids must be <= 32 chars).",
-            file=sys.stderr,
-        )
-        return 1
+    # Merge semantics: a pull request adds its revisions on top of the base graph.
+    merged = {**base, **current}
+    merged_heads = heads(merged)
+
+    if len(merged_heads) == 1:
+        added = sorted(set(current) - set(base))
+        detail = f", added {len(added)} revision(s)" if added else ""
+        print(f"OK: merging leaves one head {merged_heads[0]}{detail}")
+        return 0
 
     print(
-        f"OK: single head {current_heads[0]}, descends from {len(base_heads)} {args.base} head(s)"
+        f"FAIL: merging this into {args.base} would leave {len(merged_heads)} heads:"
+        f" {merged_heads}",
+        file=sys.stderr,
     )
-    return 0
+    added = sorted(set(current) - set(base))
+    if added:
+        print(f"      this branch adds: {added}", file=sys.stderr)
+    else:
+        print(
+            f"      this branch adds no revision, so {args.base} itself is already split.",
+            file=sys.stderr,
+        )
+    print(file=sys.stderr)
+    print(
+        "      Two heads make `alembic upgrade head` fail, and every deploy runs it.",
+        file=sys.stderr,
+    )
+    print(
+        "      Fix: add an empty merge revision whose down_revision lists both heads",
+        file=sys.stderr,
+    )
+    print("      (revision ids must be <= 32 characters).", file=sys.stderr)
+    return 1
 
 
 if __name__ == "__main__":
