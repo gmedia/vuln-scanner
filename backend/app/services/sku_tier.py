@@ -30,6 +30,7 @@ from app.models.billing import Subscription
 from app.models.invoice import INVOICE_PRODUCTS, OrgInvoice, SkuCatalog
 from app.models.organization import Organization
 from app.models.sku_tier import SkuTier
+from app.models.sku_tier_history import SkuTierHistory
 from app.models.subscription import SubscriptionRequest
 from app.models.user import User
 from app.schemas.sku_tier import (
@@ -46,6 +47,81 @@ _PRODUCT_ATTRIBUTES: dict[str, str] = {
     "guard": "limit_guard",
 }
 
+# Fixed audit surface; adding a column here is the only way it reaches history.
+_TIER_HISTORY_FIELDS: tuple[str, ...] = (
+    "label",
+    "rank",
+    "active",
+    "requestable",
+    "sales_led",
+    "is_default",
+    "bundle_idr",
+    "limit_scan",
+    "limit_host",
+    "limit_uptime",
+    "limit_guard",
+    "allow_status_page",
+    "allow_custom_host",
+    "allow_waf_protect",
+    "allow_siem",
+    "billing_unrestricted",
+    "workspace_editor_limit",
+    "workspace_viewer_limit",
+)
+
+# On create, fields still sitting at their model default carry no signal.
+_CREATE_DEFAULTS: dict[str, Any] = {
+    "active": True,
+    "requestable": True,
+    "sales_led": False,
+    "is_default": False,
+    "bundle_idr": None,
+    "allow_status_page": False,
+    "allow_custom_host": False,
+    "allow_waf_protect": False,
+    "allow_siem": False,
+    "billing_unrestricted": False,
+    "workspace_editor_limit": None,
+    "workspace_viewer_limit": None,
+}
+
+def _tier_values(tier: SkuTier) -> dict[str, Any]:
+    return {field: getattr(tier, field) for field in _TIER_HISTORY_FIELDS}
+
+def _price_values(rows: dict[str, SkuCatalog]) -> dict[str, Any]:
+    values: dict[str, Any] = {}
+    for product in INVOICE_PRODUCTS:
+        row = rows.get(product)
+        values[f"price.{product}.list_idr"] = int(row.list_idr) if row is not None else None
+        values[f"price.{product}.invoicable"] = bool(row.invoicable) if row is not None else None
+    return values
+
+def _diff_changes(before: dict[str, Any], after: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {
+        field: {"from": before.get(field), "to": value}
+        for field, value in after.items()
+        if before.get(field) != value
+    }
+
+def _created_changes(tier: SkuTier, prices: dict[str, SkuCatalogPriceBody] | None) -> dict[str, dict[str, Any]]:
+    changes = {
+        field: {"from": None, "to": value}
+        for field, value in _tier_values(tier).items()
+        if field not in _CREATE_DEFAULTS or value != _CREATE_DEFAULTS[field]
+    }
+    if prices is not None:
+        for product in INVOICE_PRODUCTS:
+            price = prices.get(product)
+            if price is None:
+                continue
+            changes[f"price.{product}.list_idr"] = {"from": None, "to": price.list_idr}
+            changes[f"price.{product}.invoicable"] = {"from": None, "to": price.invoicable}
+    return changes
+
+def _deleted_changes(tier: SkuTier, rows: dict[str, SkuCatalog]) -> dict[str, dict[str, Any]]:
+    changes = {field: {"from": None, "to": value} for field, value in _tier_values(tier).items()}
+    changes.update({field: {"from": None, "to": value} for field, value in _price_values(rows).items()})
+    return changes
 
 @dataclass(frozen=True)
 class SkuFeatures:
@@ -131,6 +207,42 @@ def _check_cross_field(
 class SkuTierService:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
+
+    def _record_history(
+        self,
+        code: str,
+        action: str,
+        actor: User | None,
+        changes: dict[str, dict[str, Any]],
+    ) -> None:
+        self.db.add(
+            SkuTierHistory(
+                sku_code=code,
+                action=action,
+                actor_user_id=actor.id if actor is not None else None,
+                changes=changes,
+            )
+        )
+
+    async def history(
+        self, code: str, *, page: int = 1, page_size: int = 20
+    ) -> tuple[list[tuple[SkuTierHistory, str | None]], int]:
+        total = int(
+            await self.db.scalar(
+                select(func.count()).select_from(SkuTierHistory).where(SkuTierHistory.sku_code == code)
+            )
+            or 0
+        )
+        stmt = (
+            select(SkuTierHistory, User.email)
+            .outerjoin(User, SkuTierHistory.actor_user_id == User.id)
+            .where(SkuTierHistory.sku_code == code)
+            .order_by(SkuTierHistory.created_at.desc(), SkuTierHistory.id.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+        rows = (await self.db.execute(stmt)).all()
+        return [(row[0], row[1]) for row in rows], total
 
     async def list(self, *, include_inactive: bool = False) -> list[SkuTier]:
         stmt = select(SkuTier).order_by(SkuTier.rank.asc())
@@ -336,6 +448,8 @@ class SkuTierService:
                     )
                 )
 
+        self._record_history(code, "created", actor, _created_changes(tier, prices))
+
         try:
             await self.db.commit()
         except IntegrityError as exc:
@@ -346,6 +460,8 @@ class SkuTierService:
 
     async def update(self, code: str, body: SkuTierUpdate, actor: User) -> SkuTier:
         tier = await self.get(code)
+        before_rows = await self._catalog_rows(code)
+        before = {**_tier_values(tier), **_price_values(before_rows)}
         present = body.model_fields_set
 
         label = _clean_label(body.label) if "label" in present and body.label is not None else tier.label
@@ -428,7 +544,7 @@ class SkuTierService:
         prices = self._catalog_prices(body)
         existing_rows: dict[str, SkuCatalog] = {}
         if not sales_led:
-            existing_rows = await self._catalog_rows(code)
+            existing_rows = before_rows
             if tier.sales_led:
                 if prices is None or set(prices) != set(INVOICE_PRODUCTS):
                     raise _bad_request(
@@ -496,6 +612,27 @@ class SkuTierService:
                     row.updated_at = now
                     row.updated_by = actor.id
 
+        after_prices: dict[str, Any] = {}
+        if not sales_led:
+            for product in INVOICE_PRODUCTS:
+                price = prices.get(product) if prices is not None else None
+                row = existing_rows.get(product)
+                if price is not None:
+                    after_prices[f"price.{product}.list_idr"] = price.list_idr
+                    after_prices[f"price.{product}.invoicable"] = price.invoicable
+                elif row is not None:
+                    after_prices[f"price.{product}.list_idr"] = int(row.list_idr)
+                    after_prices[f"price.{product}.invoicable"] = bool(row.invoicable)
+                else:
+                    after_prices[f"price.{product}.list_idr"] = None
+                    after_prices[f"price.{product}.invoicable"] = None
+        else:
+            after_prices = _price_values({})
+
+        changes = _diff_changes(before, {**_tier_values(tier), **after_prices})
+        if changes:
+            self._record_history(code, "updated", actor, changes)
+
         try:
             await self.db.commit()
         except IntegrityError as exc:
@@ -510,9 +647,11 @@ class SkuTierService:
             raise _conflict("The default tier cannot be deactivated")
         if tier.active and tier.requestable:
             await self._ensure_not_last_requestable(code, tier.label)
+        previous = tier.active
         tier.active = False
         tier.updated_at = datetime.now(UTC)
         tier.updated_by = actor.id
+        self._record_history(code, "deactivated", actor, {"active": {"from": previous, "to": False}})
         await self.db.commit()
         await self.db.refresh(tier)
         return tier
@@ -521,9 +660,11 @@ class SkuTierService:
         tier = await self.get(code)
         if await self._rank_taken(tier.rank, exclude=code):
             raise _conflict(f"Tier rank {tier.rank} is already in use")
+        previous = tier.active
         tier.active = True
         tier.updated_at = datetime.now(UTC)
         tier.updated_by = actor.id
+        self._record_history(code, "reactivated", actor, {"active": {"from": previous, "to": True}})
         await self.db.commit()
         await self.db.refresh(tier)
         return tier
@@ -539,6 +680,8 @@ class SkuTierService:
                 f"(orgs={usage.orgs}, subscriptions={usage.subscriptions}, "
                 f"invoices={usage.invoices}, requests={usage.requests})"
             )
+        changes = _deleted_changes(tier, await self._catalog_rows(code))
+        self._record_history(code, "deleted", actor, changes)
         # sku_catalog is owned by the tier (FK CASCADE); delete it explicitly so
         # SQLite test harnesses and PostgreSQL behave the same way.
         await self.db.execute(delete(SkuCatalog).where(SkuCatalog.sku == code))
