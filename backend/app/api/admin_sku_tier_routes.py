@@ -9,6 +9,8 @@ organizations working.
 
 from __future__ import annotations
 
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,6 +20,7 @@ from app.database import get_db
 from app.middleware.rate_limit import RateLimiter
 from app.models.invoice import SkuCatalog
 from app.models.sku_tier import SkuTier
+from app.models.sku_tier_history import SkuTierHistory
 from app.models.user import User
 from app.schemas.sku_tier import (
     SkuTierCreate,
@@ -30,11 +33,39 @@ from app.services.auth import get_current_admin
 from app.services.sku_tier import SkuTierService
 
 router = APIRouter(prefix="/admin/sku-tiers", tags=["admin-sku-tiers"])
+org_router = APIRouter(prefix="/admin/orgs", tags=["admin-sku-tiers"])
 admin_limiter = RateLimiter(
     max_requests=settings.admin_rate_limit,
     window_seconds=settings.admin_rate_limit_window,
     prefix="ratelimit:admin_sku_tiers",
 )
+
+
+def _history_list(
+    rows: list[tuple[SkuTierHistory, str | None, str | None]],
+    *,
+    total: int,
+    page: int,
+    page_size: int,
+) -> SkuTierHistoryList:
+    return SkuTierHistoryList(
+        items=[
+            SkuTierHistoryItem(
+                id=row.id,
+                sku_code=row.sku_code,
+                action=row.action,
+                actor_email=email,
+                organization_id=row.organization_id,
+                organization_name=organization_name,
+                changes=row.changes,
+                created_at=row.created_at,
+            )
+            for row, email, organization_name in rows
+        ],
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
 
 
 async def _serialize(db: AsyncSession, tier: SkuTier) -> SkuTierItem:
@@ -91,24 +122,26 @@ async def get_sku_tier_history(
     if limit_response:
         return limit_response
     rows, total = await SkuTierService(db).history(code, page=page, page_size=page_size)
-    return SkuTierHistoryList(
-        items=[
-            SkuTierHistoryItem(
-                id=row.id,
-                sku_code=row.sku_code,
-                action=row.action,
-                actor_email=email,
-                organization_id=row.organization_id,
-                organization_name=organization_name,
-                changes=row.changes,
-                created_at=row.created_at,
-            )
-            for row, email, organization_name in rows
-        ],
-        total=total,
-        page=page,
-        page_size=page_size,
+    return _history_list(rows, total=total, page=page, page_size=page_size)
+
+
+@org_router.get("/{org_id}/tier-history", response_model=SkuTierHistoryList)
+async def get_org_tier_history(
+    org_id: uuid.UUID,
+    request: Request,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    current_admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> SkuTierHistoryList | Response:
+    limit_response = await admin_limiter(request)
+    if limit_response:
+        return limit_response
+    rows, total = await SkuTierService(db).history_for_org(
+        org_id, page=page, page_size=page_size
     )
+    return _history_list(rows, total=total, page=page, page_size=page_size)
+
 
 @router.post("", response_model=SkuTierItem, status_code=status.HTTP_201_CREATED)
 async def create_sku_tier(

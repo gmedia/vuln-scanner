@@ -30,6 +30,12 @@ vi.mock("@/api/admin", () => ({
     page: 1,
     page_size: 20,
   })),
+  getOrgTierHistory: vi.fn(async () => ({
+    items: [],
+    total: 0,
+    page: 1,
+    page_size: 20,
+  })),
   createSkuTier: vi.fn(),
   updateSkuTier: vi.fn(),
   deactivateSkuTier: vi.fn(),

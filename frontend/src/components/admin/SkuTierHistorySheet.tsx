@@ -3,7 +3,11 @@ import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
-import { getSkuTierHistory, type SkuTierHistoryItem } from "@/api/admin";
+import {
+  getOrgTierHistory,
+  getSkuTierHistory,
+  type SkuTierHistoryItem,
+} from "@/api/admin";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import {
@@ -121,35 +125,47 @@ function HistoryEntry({
   );
 }
 
+export type SkuTierHistoryScope =
+  | { kind: "tier"; code: string; label: string }
+  | { kind: "org"; orgId: string; label: string };
+
 /**
- * Read-only append-only change log for one SKU tier.
+ * Read-only append-only change log for one SKU tier or one organization.
  *
- * Shared by the "Tier & Fitur" table and the "Harga" catalog rows so a price
- * edit can be traced from the screen it was made on. Pagination mirrors
- * `GET /api/admin/email-logs` (`page` + `page_size`, `items` + `total`).
+ * Shared by the "Tier & Fitur" table, the "Harga" catalog rows and the orgs
+ * drill-down so a tier move can be traced from the screen it was made on.
+ * Pagination mirrors `GET /api/admin/email-logs` (`page` + `page_size`,
+ * `items` + `total`).
  */
 export default function SkuTierHistorySheet({
   open,
   onOpenChange,
-  code,
-  label,
+  scope,
   page,
   onPageChange,
 }: {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
-  readonly code: string;
-  readonly label: string;
+  readonly scope: SkuTierHistoryScope;
   readonly page: number;
   readonly onPageChange: (page: number) => void;
 }) {
   const { t, i18n } = useTranslation("admin");
   const dateLocale = i18n.language === "en" ? "en-US" : "id-ID";
+  const scopeId = scope.kind === "tier" ? scope.code : scope.orgId;
   const historyQ = useQuery({
-    queryKey: ["sku-tier-history", code, page],
+    queryKey: ["sku-tier-history", scope.kind, scopeId, page],
     queryFn: () =>
-      getSkuTierHistory(code, { page, page_size: HISTORY_PAGE_SIZE }),
-    enabled: open && code !== "",
+      scope.kind === "tier"
+        ? getSkuTierHistory(scope.code, {
+            page,
+            page_size: HISTORY_PAGE_SIZE,
+          })
+        : getOrgTierHistory(scope.orgId, {
+            page,
+            page_size: HISTORY_PAGE_SIZE,
+          }),
+    enabled: open && scopeId !== "",
   });
 
   useEffect(() => {
@@ -170,8 +186,16 @@ export default function SkuTierHistorySheet({
         data-testid="sku-tier-history-dialog"
       >
         <SheetHeader>
-          <SheetTitle>{t("tierHistoryTitle", { label })}</SheetTitle>
-          <SheetDescription>{t("tierHistoryDescription")}</SheetDescription>
+          <SheetTitle>
+            {scope.kind === "tier"
+              ? t("tierHistoryTitle", { label: scope.label })
+              : t("tierHistoryOrgTitle", { name: scope.label })}
+          </SheetTitle>
+          <SheetDescription>
+            {scope.kind === "tier"
+              ? t("tierHistoryDescription")
+              : t("tierHistoryOrgDescription")}
+          </SheetDescription>
         </SheetHeader>
         <div className="space-y-3 px-4 pb-4">
           {historyQ.isLoading ? (

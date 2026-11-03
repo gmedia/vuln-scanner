@@ -13,6 +13,7 @@ import {
   listAdminOrgs,
   reactivateSkuTier,
   updateSkuTier,
+  type AdminOrgItem,
   type InvoiceProduct,
   type SkuTierMutationBody,
 } from "@/api/admin";
@@ -24,7 +25,9 @@ import {
   AdminShellHead,
 } from "@/components/admin/AdminShell";
 import { adminRailClass } from "@/components/admin/adminChrome";
-import SkuTierHistorySheet from "@/components/admin/SkuTierHistorySheet";
+import SkuTierHistorySheet, {
+  type SkuTierHistoryScope,
+} from "@/components/admin/SkuTierHistorySheet";
 import { RAILED_CARD_CLASS } from "@/components/patterns/RailedShell";
 import { SiemRail } from "@/components/siem/siemChrome";
 import {
@@ -71,6 +74,11 @@ import { cn } from "@/lib/utils";
 const PRODUCTS: readonly InvoiceProduct[] = ["scan", "host", "uptime", "guard"];
 const ORGS_PAGE_SIZE = 20;
 const CODE_PATTERN = /^[a-z][a-z0-9_]{1,19}$/;
+const EMPTY_TIER_SCOPE: SkuTierHistoryScope = {
+  kind: "tier",
+  code: "",
+  label: "",
+};
 
 interface TierFormState {
   code: string;
@@ -502,7 +510,9 @@ export default function AdminSkuTierPanel() {
   const [editing, setEditing] = useState<SkuTierInfo | null>(null);
   const [form, setForm] = useState<TierFormState | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SkuTierInfo | null>(null);
-  const [historyTarget, setHistoryTarget] = useState<SkuTierInfo | null>(null);
+  const [historyScope, setHistoryScope] = useState<SkuTierHistoryScope | null>(
+    null,
+  );
   const [historyPage, setHistoryPage] = useState(1);
   const [orgsTarget, setOrgsTarget] = useState<SkuTierInfo | null>(null);
   const [orgsPage, setOrgsPage] = useState(1);
@@ -599,7 +609,12 @@ export default function AdminSkuTierPanel() {
   }
 
   function openHistory(tier: SkuTierInfo) {
-    setHistoryTarget(tier);
+    setHistoryScope({ kind: "tier", code: tier.code, label: tier.label });
+    setHistoryPage(1);
+  }
+
+  function openOrgHistory(org: AdminOrgItem) {
+    setHistoryScope({ kind: "org", orgId: org.id, label: org.name });
     setHistoryPage(1);
   }
 
@@ -1148,15 +1163,14 @@ export default function AdminSkuTierPanel() {
       </AlertDialog>
 
       <SkuTierHistorySheet
-        open={historyTarget != null}
+        open={historyScope != null}
         onOpenChange={(open) => {
           if (!open) {
-            setHistoryTarget(null);
+            setHistoryScope(null);
             setHistoryPage(1);
           }
         }}
-        code={historyTarget?.code ?? ""}
-        label={historyTarget?.label ?? ""}
+        scope={historyScope ?? EMPTY_TIER_SCOPE}
         page={historyPage}
         onPageChange={setHistoryPage}
       />
@@ -1195,13 +1209,27 @@ export default function AdminSkuTierPanel() {
                   {orgsItems.map((org) => (
                     <li
                       key={org.id}
-                      className="rounded-md border border-border px-3 py-2"
+                      className="flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2"
                       data-testid="sku-tier-org-entry"
                     >
-                      <p className="text-sm text-foreground">{org.name}</p>
-                      <p className="font-mono text-[11px] text-muted-foreground">
-                        {org.slug}
-                      </p>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm text-foreground">
+                          {org.name}
+                        </p>
+                        <p className="font-mono text-[11px] text-muted-foreground">
+                          {org.slug}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="shrink-0"
+                        data-testid={`sku-org-history-${org.id}`}
+                        onClick={() => openOrgHistory(org)}
+                      >
+                        {t("tierHistoryAction")}
+                      </Button>
                     </li>
                   ))}
                 </ul>
