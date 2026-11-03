@@ -30,6 +30,8 @@
   "usersEmptySearch": "Try a different search term.",
   "usersEmptyNone": "No users registered yet.",
   "colEmail": "Email",
+  "colTier": "Tier",
+  "tierNone": "—",
   "colRole": "Role",
   "colVerified": "Verified",
   "colCredits": "Credits",

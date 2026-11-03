@@ -13,6 +13,7 @@ from app.models.api_key import ApiKey
 from app.models.credit_log import CreditLog
 from app.models.email_send_log import EmailSendLog
 from app.models.hpp import HppRate
+from app.models.organization import Organization, OrganizationMembership
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 from app.models.user import User
@@ -236,6 +237,60 @@ class TestAdminUsers:
         assert "scan_count" in user
         assert "created_at" in user
         assert "last_login_at" in user
+
+    @pytest.mark.asyncio
+    async def test_reports_the_personal_workspace_tier(self, client, db_session):
+        owner = User(
+            id=uuid.uuid4(),
+            email="tier-owner@example.com",
+            password_hash="fake-hash",
+            is_verified=True,
+            credits=10,
+        )
+        db_session.add(owner)
+        await db_session.flush()
+        org = Organization(
+            id=uuid.uuid4(),
+            name="Tier Owner Workspace",
+            slug=f"tier-owner-{uuid.uuid4().hex[:6]}",
+            kind="personal",
+            sku="pro",
+            created_by_user_id=owner.id,
+        )
+        db_session.add(org)
+        db_session.add(
+            OrganizationMembership(
+                id=uuid.uuid4(),
+                organization_id=org.id,
+                user_id=owner.id,
+                role="owner",
+            )
+        )
+        await db_session.commit()
+
+        resp = client.get("/api/admin/users?search=tier-owner", headers=API_HEADERS)
+        assert resp.status_code == 200
+        user = next(u for u in resp.json()["users"] if u["email"] == "tier-owner@example.com")
+        assert user["sku"] == "pro"
+        assert user["sku_label"] == "Pro"
+
+    @pytest.mark.asyncio
+    async def test_user_without_a_personal_workspace_has_no_tier(self, client, db_session):
+        lone = User(
+            id=uuid.uuid4(),
+            email="no-personal-org@example.com",
+            password_hash="fake-hash",
+            is_verified=True,
+            credits=0,
+        )
+        db_session.add(lone)
+        await db_session.commit()
+
+        resp = client.get("/api/admin/users?search=no-personal-org", headers=API_HEADERS)
+        assert resp.status_code == 200
+        user = next(u for u in resp.json()["users"] if u["email"] == "no-personal-org@example.com")
+        assert user["sku"] is None
+        assert user["sku_label"] is None
 
     def test_pagination_defaults(self, client):
         resp = client.get("/api/admin/users", headers=API_HEADERS)

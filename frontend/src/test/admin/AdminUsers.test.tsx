@@ -222,6 +222,8 @@ describe("AdminUsers", () => {
         scan_count: 42,
         created_at: "2025-01-15T00:00:00Z",
         last_login_at: "2025-08-01T14:30:00Z",
+        sku: "pro",
+        sku_label: "Pro",
       },
       {
         id: "2",
@@ -232,8 +234,17 @@ describe("AdminUsers", () => {
         scan_count: 3,
         created_at: "2025-06-01T00:00:00Z",
         last_login_at: null,
+        sku: null,
+        sku_label: null,
       },
     ];
+
+    it("shows each user's personal workspace tier", () => {
+      mockUseQueryReturn({ data: { users: mockUsers, total: 2 } });
+      renderPage();
+      expect(screen.getByTestId("admin-user-tier-1")).toHaveTextContent("Pro");
+      expect(screen.getByTestId("admin-user-tier-2")).toHaveTextContent("—");
+    });
 
     it("renders user rows in table", () => {
       mockUseQueryReturn({ data: { users: mockUsers, total: 2 } });
@@ -340,6 +351,8 @@ describe("AdminUsers", () => {
         scan_count: 1,
         created_at: "2025-01-01T00:00:00Z",
         last_login_at: null,
+        sku: null,
+        sku_label: null,
       }));
       mockUseQueryReturn({ data: { users: manyUsers, total: 25 } });
       renderPage();
