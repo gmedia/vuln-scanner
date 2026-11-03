@@ -1,4 +1,4 @@
-.PHONY: help install lint lint-fix typecheck test clean dev
+.PHONY: help install lint lint-fix typecheck test clean dev check-alembic
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-16s\033[0m %s\n", $$1, $$2}'
@@ -37,6 +37,10 @@ test: ## Run all tests
 	cd backend && python -m pytest tests/ -v --tb=short
 	cd workers && python -m pytest tests/ -v --tb=short
 	cd frontend && npm test
+
+check-alembic: ## Verify the Alembic revision graph descends from origin/main
+	git fetch --no-tags origin main
+	python3 scripts/check-alembic-lineage.py --base origin/main
 
 test-backend: ## Run backend tests only
 	cd backend && python -m pytest tests/ -v --tb=short
