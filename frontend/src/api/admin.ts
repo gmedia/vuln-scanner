@@ -102,6 +102,7 @@ export interface AiProviderAdmin {
   credential_set: boolean;
   enabled: boolean;
   status: string;
+  last_probed_at: string | null;
   created_at: string;
   updated_at: string;
 }
