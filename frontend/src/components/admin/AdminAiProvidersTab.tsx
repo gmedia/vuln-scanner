@@ -61,6 +61,12 @@ export function AdminAiProvidersTab({
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["admin-ai-providers"] }),
     onError: () => toast.error(t("aiProviderDeleteFail")),
   });
+  const toggleProv = useMutation({
+    mutationFn: ({ id, body }: { id: string; body: { enabled: boolean; status?: string } }) =>
+      updateAiProvider(id, body),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["admin-ai-providers"] }),
+    onError: () => toast.error(t("aiProviderUpdateFail")),
+  });
 
   return (
     <AdminShell tone="primary">
@@ -92,6 +98,7 @@ export function AdminAiProvidersTab({
           editProvUrl={editProvUrl}
           editProvCred={editProvCred}
           savePending={saveProv.isPending}
+          togglePending={toggleProv.isPending}
           onEditName={setEditProvName}
           onEditUrl={setEditProvUrl}
           onEditCred={setEditProvCred}
@@ -103,6 +110,14 @@ export function AdminAiProvidersTab({
           }}
           onCancelEdit={() => setEditingProv(null)}
           onSave={() => saveProv.mutate()}
+          onToggleEnabled={(p, enabled) =>
+            toggleProv.mutate({
+              id: p.id,
+              body: enabled
+                ? { enabled: true, ...(p.status === "disabled" ? { status: "ok" } : {}) }
+                : { enabled: false },
+            })
+          }
           onDelete={(id) => delProv.mutate(id)}
         />
       </AdminShellBody>
