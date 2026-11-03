@@ -15,7 +15,7 @@ In:
 - Bundle + à-la-carte list prices (read-only), annual 10/12 display.
 - Plan-change request (upgrade/downgrade), pending state, cancel request.
 - Invoice list for owner/admin, reusing `WorkspaceInvoiceCard` / `InvoicePrintSheet`.
-- Admin queue: list, approve, reject with note.
+- Admin queue: list, approve, reject with note. **Approving applies the tier** — it moves `organizations.sku` and the matching `subscriptions.sku` to the requested tier in the same transaction and appends an `assigned` row to `sku_tier_history` (source `subscription_request`). It refuses with `400` if the target tier was retired while the request waited, leaving the request `pending` so ops can reject or pick another tier. Invoicing stays manual: approval does not create an invoice.
 
 Out:
 
@@ -87,10 +87,10 @@ Admin (`get_current_admin`):
 | Method | Path |
 |---|---|
 | GET | `/api/admin/subscription-requests?status=&page=` |
-| POST | `/api/admin/subscription-requests/{id}/approve` |
+| POST | `/api/admin/subscription-requests/{id}/approve` — applies the tier; `400` if the target was retired, `409` if already resolved |
 | POST | `/api/admin/subscription-requests/{id}/reject` |
 
-`POST` body: `{ target_sku: basic|pro|multi, cycle: monthly|annual, note?: string }`.
+`POST` body: `{ target_sku: <tier code>, cycle: monthly|annual, note?: string }` (any `sku_tiers` code that is `active` and `requestable`).
 Approve/reject body: `{ note?: string }`.
 
 ### Cancel and resume (owner/admin)

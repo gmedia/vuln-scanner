@@ -40,7 +40,11 @@ from app.schemas.subscription import (
 from app.services.billing_access import billing_write_block
 from app.services.invoice import InvoiceService
 from app.services.organization import role_at_least
-from app.services.sku_tier import SkuTierService, workspace_seat_cap_detail
+from app.services.sku_tier import (
+    SkuTierService,
+    record_tier_assignment,
+    workspace_seat_cap_detail,
+)
 
 PRODUCT_UNITS: dict[str, str] = {
     "scan": "asset",
@@ -525,6 +529,11 @@ class SubscriptionService:
             raise HTTPException(status_code=404, detail="Subscription request not found")
         if request.status != "pending":
             raise HTTPException(status_code=409, detail="Request is no longer pending")
+        org = await self.db.get(Organization, request.organization_id)
+        if org is None:
+            raise HTTPException(status_code=404, detail="Organization not found")
+        if new_status == "approved":
+            await self._apply_requested_tier(request, org, admin)
         request.status = new_status
         request.resolution_note = (note or "").strip()[:500]
         request.resolved_by_user_id = admin.id
@@ -532,12 +541,44 @@ class SubscriptionService:
         request.updated_at = datetime.now(UTC)
         await self.db.commit()
         await self.db.refresh(request)
-        org = await self.db.get(Organization, request.organization_id)
         return _request_item(
             request,
-            organization_name=org.name if org is not None else None,
+            organization_name=org.name,
             requested_by_email=None,
         )
+
+    async def _apply_requested_tier(
+        self, request: SubscriptionRequest, org: Organization, admin: User
+    ) -> None:
+        """Move the organization onto the requested tier.
+
+        Approval is where the decision takes effect, so the org's effective tier
+        and the subscription that drives renewal billing are updated together.
+        Invoicing stays manual — ops still issues the invoice.
+
+        The target must still be active: a request can sit in the queue while
+        the tier is retired, and silently onboarding to a retired tier would
+        break the grandfathering rule that only existing orgs keep it.
+        """
+        if request.target_sku == org.sku:
+            return
+        await SkuTierService(self.db).get_active(request.target_sku)
+        subscription = await self.db.scalar(
+            select(Subscription).where(Subscription.organization_id == org.id)
+        )
+        if subscription is not None:
+            subscription.sku = request.target_sku
+            subscription.updated_at = datetime.now(UTC)
+        record_tier_assignment(
+            self.db,
+            organization_id=org.id,
+            sku_code=request.target_sku,
+            previous=org.sku,
+            actor_id=admin.id,
+            source="subscription_request",
+        )
+        org.sku = request.target_sku
+        org.updated_at = datetime.now(UTC)
 
 
 __all__ = ["SubscriptionService"]
