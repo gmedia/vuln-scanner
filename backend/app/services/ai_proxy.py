@@ -19,8 +19,9 @@ from starlette.responses import JSONResponse, StreamingResponse
 
 from app.config import settings
 from app.metrics import record_upstream_attempt
-from app.models.ai_gateway import AiApiKey, AiModel, AiModelUpstream, AiProvider, AiUsageEvent
+from app.models.ai_gateway import AiApiKey, AiModel, AiModelUpstream, AiUsageEvent
 from app.services.ai_breaker import filter_available, record_failure, record_success
+from app.services.ai_catalog import has_usable_candidate, provider_usable
 from app.services.ai_crypto import decrypt_credential
 from app.services.ai_limits import acquire as acquire_limits
 from app.services.ai_limits import release_concurrent
@@ -177,19 +178,6 @@ async def _admin_trial_spent_usd(db: AsyncSession) -> Decimal:
     return Decimal(str(total or 0))
 
 
-def _provider_usable(provider: AiProvider) -> bool:
-    return provider.enabled and provider.status != "disabled"
-
-
-def _has_usable_candidate(model: AiModel) -> bool:
-    # With failover off, routing only tries the primary, so a fallback cannot make the model callable.
-    if _provider_usable(model.provider):
-        return True
-    if not settings.ai_upstream_failover_enabled:
-        return False
-    return any(row.enabled and _provider_usable(row.provider) for row in model.upstreams)
-
-
 def _primary_candidate(model: AiModel) -> UpstreamCandidate:
     provider = model.provider
     return UpstreamCandidate(
@@ -235,7 +223,7 @@ async def _load_candidates(db: AsyncSession, public_id: str) -> tuple[AiModel, l
         raise HTTPException(status_code=404, detail="model_not_found")
 
     candidates: list[UpstreamCandidate] = []
-    if _provider_usable(model.provider):
+    if provider_usable(model.provider):
         candidates.append(_primary_candidate(model))
     else:
         logger.warning(
@@ -251,7 +239,7 @@ async def _load_candidates(db: AsyncSession, public_id: str) -> tuple[AiModel, l
         for row in model.upstreams:
             if not row.enabled:
                 continue
-            if not _provider_usable(row.provider):
+            if not provider_usable(row.provider):
                 logger.warning(
                     "ai_upstream_candidate_skipped",
                     extra={
@@ -431,7 +419,7 @@ async def list_openai_models(db: AsyncSession, key: AiApiKey) -> dict[str, Any]:
         .scalars()
         .all()
     )
-    rows = [r for r in rows if _has_usable_candidate(r)]
+    rows = [r for r in rows if has_usable_candidate(r)]
     allow = key.allowed_model_ids or []
     if allow:
         rows = [r for r in rows if r.public_id in allow]
