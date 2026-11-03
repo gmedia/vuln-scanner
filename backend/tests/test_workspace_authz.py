@@ -8,9 +8,11 @@ import pytest
 import pytest_asyncio
 from fastapi import HTTPException
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.main import app
+from app.models.billing import Subscription
 from app.models.organization import Organization, OrganizationInvite, OrganizationMembership
 from app.models.scan_job import ScanJob
 from app.models.scan_schedule import ScanSchedule
@@ -647,6 +649,49 @@ async def test_admin_can_set_enterprise_sku(db_session):
     updated = await svc.update_org(org.id, admin, sku="enterprise")
 
     assert updated.sku == "enterprise"
+
+
+@pytest.mark.asyncio
+async def test_admin_sku_change_keeps_subscription_in_sync(db_session):
+    admin = await _make_user(db_session, "r6-sync-admin@example.com")
+    admin.is_admin = True
+    await db_session.commit()
+    org = await _make_org(db_session, admin, sku="multi")
+    db_session.add(
+        Subscription(
+            id=uuid.uuid4(),
+            organization_id=org.id,
+            sku="multi",
+            status="active",
+            cycle="annual",
+            provider="manual",
+        )
+    )
+    await db_session.commit()
+
+    updated = await OrganizationService(db_session).update_org(org.id, admin, sku="pro")
+
+    assert updated.sku == "pro"
+    sub = await db_session.scalar(
+        select(Subscription).where(Subscription.organization_id == org.id)
+    )
+    assert sub is not None
+    assert sub.sku == "pro"
+
+
+@pytest.mark.asyncio
+async def test_admin_sku_change_without_subscription_does_not_create_one(db_session):
+    admin = await _make_user(db_session, "r6-nosub-admin@example.com")
+    admin.is_admin = True
+    await db_session.commit()
+    org = await _make_org(db_session, admin, sku="basic")
+
+    await OrganizationService(db_session).update_org(org.id, admin, sku="pro")
+
+    sub = await db_session.scalar(
+        select(Subscription).where(Subscription.organization_id == org.id)
+    )
+    assert sub is None
 
 
 @pytest.mark.asyncio
