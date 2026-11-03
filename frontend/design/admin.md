@@ -212,6 +212,8 @@ Unchanged from wave 1. Deltas:
 
 **Line margins 2→4 (2026-10-14):** `hpp-line-uptime` and `hpp-line-guard` were added (Uptime/Guard COGS keys `uptimecheck`/`guardagent` + their own `line_margins` entry). The testid template `hpp-line-${row.line}` was already generic, so only the count assertion (`length === 2` → `4`) and the fixture changed. `hpp-line-scan` / `hpp-line-host` keep their names. Card titles come from `marginLineLabel()` (`hppLineScan` / `hppLineHost` / `hppLineUptime` / `hppLineGuard`).
 
+**HPP history sheet (2026-11-03):** the rates and overhead cards each carry a `Button variant="ghost" size="sm"` **Riwayat** trigger (`hpp-rates-history` / `hpp-overhead-history`) in `AdminShellHead`'s `aside` slot. It opens `components/admin/HppHistorySheet.tsx` — a controlled `Sheet` mirroring `SkuTierHistorySheet` (same right-side `sm:max-w-lg` content, `text-[11px]` timestamps, `font-mono tabular-nums` amounts, `id-ID` separators). Testids: `hpp-history-dialog`, `hpp-history-entry`, `hpp-history-empty`, `hpp-history-prev` / `hpp-history-next`. No new primitives, colors, spacing, or motion tokens.
+
 ### 5. Signature Components & States
 
 No new primitives. Tone sources:
