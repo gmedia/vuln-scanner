@@ -38,6 +38,7 @@ def _provider(
         base_url=base_url,
         auth_header=auth_header,
         credential_enc=credential_enc,
+        last_probed_at=None,
     )
 
 
@@ -157,6 +158,45 @@ def test_missing_models_endpoint_leaves_status_unverified(monkeypatch):
     assert result == {"probed": 1, "ok": 0, "degraded": 0, "unverified": 1, "errors": 0}
     assert provider.status == "ok"
     session.commit.assert_called_once()
+
+
+def test_probe_stamps_last_probed_at_on_every_outcome(monkeypatch):
+    _set_settings(monkeypatch)
+    providers = [
+        _provider("ok"),
+        _provider("auth"),
+        _provider("server"),
+        _provider("transport"),
+        _provider("unverified"),
+    ]
+    client = MagicMock()
+    client.get.side_effect = [
+        _response(200),
+        _response(401),
+        _response(503),
+        httpx.ConnectError("down"),
+        _response(404),
+    ]
+
+    result, _ = _run(monkeypatch, providers, client)
+
+    assert result == {"probed": 5, "ok": 1, "degraded": 3, "unverified": 1, "errors": 0}
+    assert all(provider.last_probed_at is not None for provider in providers)
+
+
+def test_probe_does_not_stamp_when_skipped(monkeypatch):
+    provider = _provider()
+    monkeypatch.setattr(
+        ai_providers, "get_sync_session", MagicMock(side_effect=AssertionError("DB must not be touched"))
+    )
+    monkeypatch.setattr(ai_providers.httpx, "Client", MagicMock(side_effect=AssertionError("HTTP must not be touched")))
+
+    _set_settings(monkeypatch, gateway=False)
+    probe_ai_providers()
+    _set_settings(monkeypatch, gateway=True, probe=False)
+    probe_ai_providers()
+
+    assert provider.last_probed_at is None
 
 
 def test_probe_has_no_handle_to_the_breaker():
