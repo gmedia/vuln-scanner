@@ -15,6 +15,7 @@ from app.models.asset import ScanAsset
 from app.models.billing import Subscription
 from app.models.organization import Organization, OrganizationMembership
 from app.models.sku_tier import SkuTier
+from app.models.sku_tier_history import SkuTierHistory
 from app.models.subscription import SubscriptionRequest
 from app.models.user import User
 from app.services.auth import create_access_token, hash_password
@@ -807,10 +808,22 @@ async def test_admin_can_approve_a_pending_request(db_session, ctx):
     body = response.json()
     assert body["status"] == "approved"
     assert body["resolution_note"] == "approved by ops"
-    # Approval is a decision record only: the tier still changes through an
-    # invoice or an explicit admin org update.
-    org = await db_session.get(Organization, ctx["org"].id)
-    assert org is not None and org.sku == "basic"
+
+    await db_session.refresh(ctx["org"])
+    assert ctx["org"].sku == "pro"
+
+    history = (
+        await db_session.execute(
+            select(SkuTierHistory).where(
+                SkuTierHistory.organization_id == ctx["org"].id,
+                SkuTierHistory.action == "assigned",
+            )
+        )
+    ).scalars().all()
+    assert len(history) == 1
+    assert history[0].sku_code == "pro"
+    assert history[0].changes["tier"] == {"from": "basic", "to": "pro"}
+    assert history[0].changes["source"]["to"] == "subscription_request"
 
 
 @pytest.mark.asyncio
@@ -889,3 +902,118 @@ async def test_resolving_an_unknown_request_returns_404(db_session, ctx):
         app.dependency_overrides.clear()
 
     assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_approval_syncs_an_existing_subscription(db_session, ctx):
+    request = await _pending_request(db_session, ctx["org"].id, ctx["owner"].id)
+    db_session.add(
+        Subscription(
+            id=uuid.uuid4(),
+            organization_id=ctx["org"].id,
+            sku="basic",
+            status="active",
+            cycle="annual",
+            provider="manual",
+        )
+    )
+    await db_session.commit()
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                f"/api/admin/subscription-requests/{request.id}/approve",
+                headers=_auth(ctx["admin"]),
+                json={"note": ""},
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200, response.text
+    subscription = await db_session.scalar(
+        select(Subscription).where(Subscription.organization_id == ctx["org"].id)
+    )
+    assert subscription is not None
+    assert subscription.sku == "pro"
+
+
+@pytest.mark.asyncio
+async def test_approval_is_blocked_when_the_target_tier_was_retired(db_session, ctx):
+    request = await _pending_request(db_session, ctx["org"].id, ctx["owner"].id)
+    pro = await db_session.get(SkuTier, "pro")
+    assert pro is not None
+    pro.active = False
+    await db_session.commit()
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                f"/api/admin/subscription-requests/{request.id}/approve",
+                headers=_auth(ctx["admin"]),
+                json={"note": ""},
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 400
+    assert "inactive" in response.json()["detail"]
+    await db_session.refresh(ctx["org"])
+    assert ctx["org"].sku == "basic"
+    await db_session.refresh(request)
+    assert request.status == "pending"
+
+
+@pytest.mark.asyncio
+async def test_rejection_never_changes_the_tier(db_session, ctx):
+    request = await _pending_request(db_session, ctx["org"].id, ctx["owner"].id)
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                f"/api/admin/subscription-requests/{request.id}/reject",
+                headers=_auth(ctx["admin"]),
+                json={"note": "not now"},
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200, response.text
+    await db_session.refresh(ctx["org"])
+    assert ctx["org"].sku == "basic"
+    rows = (
+        await db_session.execute(
+            select(SkuTierHistory).where(SkuTierHistory.organization_id == ctx["org"].id)
+        )
+    ).scalars().all()
+    assert rows == []
+
+
+@pytest.mark.asyncio
+async def test_approval_of_an_already_matching_tier_records_no_assignment(db_session, ctx):
+    request = await _pending_request(db_session, ctx["org"].id, ctx["owner"].id)
+    org = await db_session.get(Organization, ctx["org"].id)
+    assert org is not None
+    org.sku = "pro"
+    await db_session.commit()
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                f"/api/admin/subscription-requests/{request.id}/approve",
+                headers=_auth(ctx["admin"]),
+                json={"note": ""},
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200, response.text
+    rows = (
+        await db_session.execute(
+            select(SkuTierHistory).where(SkuTierHistory.organization_id == ctx["org"].id)
+        )
+    ).scalars().all()
+    assert rows == []
