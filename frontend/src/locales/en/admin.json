@@ -602,6 +602,7 @@
   "tierHistoryActionReactivated": "Reactivated",
   "tierHistoryActionDeleted": "Deleted",
   "tierHistoryActionPriceUpdated": "Price updated",
+  "tierHistoryActionAssigned": "Tier assigned",
   "tierValidationCode": "Code must match ^[a-z][a-z0-9_]{1,19}$",
   "tierValidationLabel": "Label is required",
   "tierValidationRank": "Rank must be a positive integer",

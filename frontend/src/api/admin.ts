@@ -659,6 +659,8 @@ export interface SkuTierHistoryItem {
   sku_code: string;
   action: string;
   actor_email: string | null;
+  organization_id?: string | null;
+  organization_name?: string | null;
   changes: Record<string, { from: unknown; to: unknown }>;
   created_at: string;
 }
