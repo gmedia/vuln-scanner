@@ -630,6 +630,7 @@ async def test_customer_usage_hides_cogs_hpp_and_fx(db_session: AsyncSession, ct
 # --- AI gateway upstream failover -------------------------------------------
 
 CHAT_PATH = "/v1/chat/completions"
+MODELS_PATH = "/v1/models"
 
 
 class _UpstreamResponse:
@@ -752,6 +753,37 @@ async def _create_key(ac: AsyncClient, owner: User, org_id: uuid.UUID) -> str:
     created = await ac.post("/api/ai/keys", headers=_auth(owner, org_id), json={"name": "failover"})
     assert created.status_code == 201, created.text
     return str(created.json()["key"])
+
+
+async def _get_models(
+    db_session: AsyncSession,
+    ctx,
+    *,
+    allowed_model_ids: list[str] | None = None,
+) -> httpx.Response:
+    from app.models.ai_gateway import AiApiKey
+
+    owner = ctx["owner"]
+    org = ctx["org"]
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            created = await ac.post("/api/ai/keys", headers=_auth(owner, org.id), json={"name": "models"})
+            assert created.status_code == 201, created.text
+            plain = str(created.json()["key"])
+            if allowed_model_ids is not None:
+                key = await db_session.get(AiApiKey, uuid.UUID(created.json()["id"]))
+                assert key is not None
+                key.allowed_model_ids = allowed_model_ids
+                await db_session.commit()
+            return await ac.get(MODELS_PATH, headers=_key_headers(plain))
+    finally:
+        app.dependency_overrides.pop(get_db, None)
 
 
 async def _wallet_balance(db: AsyncSession, org_id: uuid.UUID) -> int:
@@ -1496,3 +1528,90 @@ async def test_v1_degraded_primary_is_ordered_behind_healthy_fallback(
     assert mock_client.post.call_args.args[0] == "https://fallback.example/v1/chat/completions"
     events = await _usage_events(db_session, ctx["org"].id)
     assert events[0].provider_id == fallback.id
+
+
+@pytest.mark.asyncio
+async def test_v1_models_lists_a_healthy_model(db_session: AsyncSession, ctx) -> None:
+    response = await _get_models(db_session, ctx)
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert [m["id"] for m in body["data"]] == ["sinexis/test"]
+    assert all(m["object"] == "model" and m["owned_by"] == "sinexis" for m in body["data"])
+
+
+@pytest.mark.asyncio
+async def test_v1_models_hides_model_whose_only_provider_is_disabled(db_session: AsyncSession, ctx) -> None:
+    primary = await db_session.get(AiProvider, ctx["model"].provider_id)
+    assert primary is not None
+    primary.status = "disabled"
+    await db_session.commit()
+
+    response = await _get_models(db_session, ctx)
+
+    assert response.status_code == 200, response.text
+    assert response.json()["data"] == []
+
+
+@pytest.mark.asyncio
+async def test_v1_models_lists_model_with_a_usable_fallback(db_session: AsyncSession, ctx) -> None:
+    primary = await db_session.get(AiProvider, ctx["model"].provider_id)
+    assert primary is not None
+    primary.status = "disabled"
+    await db_session.commit()
+    await _add_fallback(db_session, ctx["model"])
+
+    response = await _get_models(db_session, ctx)
+
+    assert response.status_code == 200, response.text
+    assert [m["id"] for m in response.json()["data"]] == ["sinexis/test"]
+
+
+@pytest.mark.asyncio
+async def test_v1_models_hides_disabled_fallback_only_model(db_session: AsyncSession, ctx) -> None:
+    primary = await db_session.get(AiProvider, ctx["model"].provider_id)
+    assert primary is not None
+    primary.status = "disabled"
+    await db_session.commit()
+    await _add_fallback(db_session, ctx["model"], status="disabled")
+
+    response = await _get_models(db_session, ctx)
+
+    assert response.status_code == 200, response.text
+    assert response.json()["data"] == []
+
+
+@pytest.mark.asyncio
+async def test_v1_models_ignores_failover_when_disabled(
+    db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(settings, "ai_upstream_failover_enabled", False)
+    primary = await db_session.get(AiProvider, ctx["model"].provider_id)
+    assert primary is not None
+    primary.status = "disabled"
+    await db_session.commit()
+    await _add_fallback(db_session, ctx["model"])
+
+    response = await _get_models(db_session, ctx)
+
+    assert response.status_code == 200, response.text
+    assert response.json()["data"] == []
+
+
+@pytest.mark.asyncio
+async def test_v1_models_respects_allowed_model_ids(db_session: AsyncSession, ctx) -> None:
+    response = await _get_models(db_session, ctx, allowed_model_ids=["other/alias"])
+
+    assert response.status_code == 200, response.text
+    assert response.json()["data"] == []
+
+
+@pytest.mark.asyncio
+async def test_v1_models_skips_a_disabled_model_row(db_session: AsyncSession, ctx) -> None:
+    ctx["model"].enabled = False
+    await db_session.commit()
+
+    response = await _get_models(db_session, ctx)
+
+    assert response.status_code == 200, response.text
+    assert response.json()["data"] == []
