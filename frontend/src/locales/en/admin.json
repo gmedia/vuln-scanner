@@ -595,6 +595,8 @@
   "tierOrgsTotal": "{{total}} organizations",
   "tierHistoryTitle": "{{label}} history",
   "tierHistoryDescription": "Configuration and price changes for this tier.",
+  "tierHistoryOrgTitle": "Tier history for {{name}}",
+  "tierHistoryOrgDescription": "Tier moves for this organization and who made them.",
   "tierHistoryLoading": "Loading history…",
   "tierHistoryError": "Could not load history.",
   "tierHistoryEmpty": "No changes yet",

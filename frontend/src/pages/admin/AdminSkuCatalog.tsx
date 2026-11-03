@@ -474,8 +474,11 @@ export function AdminSkuPricePanel() {
             setHistoryPage(1);
           }
         }}
-        code={historyTarget?.code ?? ""}
-        label={historyTarget?.label ?? ""}
+        scope={{
+          kind: "tier",
+          code: historyTarget?.code ?? "",
+          label: historyTarget?.label ?? "",
+        }}
         page={historyPage}
         onPageChange={setHistoryPage}
       />
