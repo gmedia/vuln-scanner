@@ -58,7 +58,6 @@ async def _make_tier(db: AsyncSession, *, active: bool = True, rank: int = 5) ->
                 product=product,
                 sku=TIER_CODE,
                 list_idr=1_000_000,
-                seats=5,
                 invoicable=True,
             )
         )

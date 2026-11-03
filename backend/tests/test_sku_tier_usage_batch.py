@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import event, select, text
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from app.database import get_db
@@ -16,6 +16,7 @@ from app.models.organization import Organization, OrganizationMembership
 from app.models.sku_tier import SkuTier
 from app.models.subscription import SubscriptionRequest
 from app.models.user import User
+from app.schemas.sku_tier import SkuTierUpdate
 from app.services.auth import create_access_token, hash_password
 from app.services.sku_tier import SkuTierService
 
@@ -226,55 +227,60 @@ async def test_catalog_presence_many_returns_only_codes_with_rows(
     assert present == {"basic", "pro", "multi"}
 
 @pytest.mark.asyncio
-async def test_drifted_catalog_seats_never_reach_the_api(db_session: AsyncSession) -> None:
-    admin = await _make_user(db_session, "drift-admin@example.com", is_admin=True)
-    owner = await _make_user(db_session, "drift-owner@example.com")
-    await _add_tier(db_session, "drift", rank=25, limit_scan=7, limit_host=7, limit_uptime=70, limit_guard=7)
+async def test_seats_come_from_the_tier_limit_only(db_session: AsyncSession) -> None:
+    admin = await _make_user(db_session, "seat-admin@example.com", is_admin=True)
+    owner = await _make_user(db_session, "seat-owner@example.com")
+    await _add_tier(db_session, "seatfollow", rank=25, limit_scan=7, limit_host=7, limit_uptime=70, limit_guard=7)
     for product in ("scan", "host", "uptime", "guard"):
         db_session.add(
             SkuCatalog(
                 product=product,
-                sku="drift",
+                sku="seatfollow",
                 list_idr=100_000,
-                seats=7,
                 invoicable=True,
                 updated_at=NOW,
             )
         )
     await db_session.commit()
-    org = await _add_org(db_session, owner, "drift", name="Drift Org")
-    await db_session.execute(
-        text("UPDATE sku_catalog SET seats = 99 WHERE sku = 'drift' AND product = 'scan'")
-    )
-    await db_session.commit()
-
-    stored = await db_session.scalar(
-        select(SkuCatalog.seats).where(SkuCatalog.sku == "drift", SkuCatalog.product == "scan")
-    )
-    assert stored == 99
+    org = await _add_org(db_session, owner, "seatfollow", name="Seat Org")
 
     _bind(db_session)
     transport = ASGITransport(app=app)
     try:
         async with AsyncClient(transport=transport, base_url="http://test") as client:
-            subscription = await client.get(
+            first = await client.get(
                 f"/api/orgs/{org.id}/subscription", headers=_auth(owner, org.id)
             )
-            assert subscription.status_code == 200, subscription.text
-            catalog_item = next(
+            assert first.status_code == 200, first.text
+            first_item = next(
                 item
-                for item in subscription.json()["catalog"]
-                if item["service"] == "scan" and item["sku"] == "drift"
+                for item in first.json()["catalog"]
+                if item["service"] == "scan" and item["sku"] == "seatfollow"
             )
-            assert catalog_item["seats"] == 7
+            assert first_item["seats"] == 7
+
+            await SkuTierService(db_session).update(
+                "seatfollow", SkuTierUpdate(limit_scan=11), admin
+            )
+
+            second = await client.get(
+                f"/api/orgs/{org.id}/subscription", headers=_auth(owner, org.id)
+            )
+            assert second.status_code == 200, second.text
+            second_item = next(
+                item
+                for item in second.json()["catalog"]
+                if item["service"] == "scan" and item["sku"] == "seatfollow"
+            )
+            assert second_item["seats"] == 11
 
             admin_catalog = await client.get("/api/admin/sku-catalog", headers=_auth(admin))
             assert admin_catalog.status_code == 200, admin_catalog.text
             admin_item = next(
                 item
                 for item in admin_catalog.json()["items"]
-                if item["product"] == "scan" and item["sku"] == "drift"
+                if item["product"] == "scan" and item["sku"] == "seatfollow"
             )
-            assert admin_item["seats"] == 7
+            assert admin_item["seats"] == 11
     finally:
         app.dependency_overrides.clear()

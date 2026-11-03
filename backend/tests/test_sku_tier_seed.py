@@ -96,26 +96,26 @@ EXPECTED_TIERS: dict[str, dict[str, object]] = {
 }
 
 
-EXPECTED_CATALOG: dict[str, dict[str, tuple[int, int, bool]]] = {
+EXPECTED_CATALOG: dict[str, dict[str, tuple[int, bool]]] = {
     "scan": {
-        "basic": (300_000, 1, True),
-        "pro": (650_000, 3, True),
-        "multi": (2_000_000, 10, True),
+        "basic": (300_000, True),
+        "pro": (650_000, True),
+        "multi": (2_000_000, True),
     },
     "host": {
-        "basic": (150_000, 1, True),
-        "pro": (350_000, 3, True),
-        "multi": (900_000, 10, True),
+        "basic": (150_000, True),
+        "pro": (350_000, True),
+        "multi": (900_000, True),
     },
     "uptime": {
-        "basic": (75_000, 10, True),
-        "pro": (200_000, 50, True),
-        "multi": (500_000, 200, True),
+        "basic": (75_000, True),
+        "pro": (200_000, True),
+        "multi": (500_000, True),
     },
     "guard": {
-        "basic": (100_000, 1, True),
-        "pro": (250_000, 3, True),
-        "multi": (600_000, 10, True),
+        "basic": (100_000, True),
+        "pro": (250_000, True),
+        "multi": (600_000, True),
     },
 }
 
@@ -184,7 +184,7 @@ async def test_seed_matches_owner_locked_values(db_session) -> None:
 @pytest.mark.asyncio
 async def test_catalog_matches_owner_locked_values(db_session) -> None:
     rows = (await db_session.execute(select(SkuCatalog))).scalars().all()
-    actual = {(row.product, row.sku): (row.list_idr, row.seats, row.invoicable) for row in rows}
+    actual = {(row.product, row.sku): (row.list_idr, row.invoicable) for row in rows}
     expected = {
         (product, sku): values for product, tiers in EXPECTED_CATALOG.items() for sku, values in tiers.items()
     }

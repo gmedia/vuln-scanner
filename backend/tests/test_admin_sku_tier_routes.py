@@ -101,8 +101,6 @@ async def test_create_tier_writes_four_catalog_rows(db_session, ctx):
             ).scalars().all()
             assert len(rows) == 4
             by_product = {row.product: row for row in rows}
-            assert by_product["scan"].seats == 5
-            assert by_product["uptime"].seats == 60
             assert by_product["host"].list_idr == 600_000
             assert all(row.invoicable for row in rows)
     finally:
@@ -416,8 +414,6 @@ async def test_update_syncs_prices_and_missing_catalog_rows(db_session, ctx):
             scan = await db_session.get(SkuCatalog, ("scan", "sync_me"))
             host = await db_session.get(SkuCatalog, ("host", "sync_me"))
             assert scan is not None and host is not None
-            assert scan.seats == 9
-            assert host.seats == 5
             assert host.list_idr == 123_000
             assert host.invoicable is False
     finally:

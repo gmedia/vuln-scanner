@@ -23,7 +23,6 @@ class SkuCatalog(Base):
         String(20), ForeignKey("sku_tiers.code", ondelete="CASCADE"), primary_key=True, index=True
     )
     list_idr: Mapped[int] = mapped_column(Integer, nullable=False)
-    seats: Mapped[int] = mapped_column(Integer, nullable=False)
     invoicable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_by: Mapped[uuid.UUID | None] = mapped_column(
@@ -33,7 +32,6 @@ class SkuCatalog(Base):
     __table_args__ = (
         CheckConstraint("product IN ('scan', 'host', 'uptime', 'guard')", name="ck_sku_catalog_product"),
         CheckConstraint("list_idr >= 0", name="ck_sku_catalog_list_idr"),
-        CheckConstraint("seats >= 1", name="ck_sku_catalog_seats"),
     )
 
 
