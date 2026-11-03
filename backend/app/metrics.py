@@ -232,10 +232,18 @@ def _read_ai_providers_degraded() -> float | None:
 def _read_ai_providers_probe_age_seconds() -> float | None:
     """Seconds since the oldest enabled non-disabled provider was probed.
 
-    ``+Inf`` when never probed, ``None`` on failure or an empty fleet.
+    ``+Inf`` when the probe is configured to run but has never run. ``None`` on failure, on
+    an empty fleet, or when the probe is switched off — a deliberate ``AI_GATEWAY_ENABLED=false``
+    or ``AI_PROVIDER_PROBE_ENABLED=false`` would otherwise report ``+Inf`` forever and page
+    someone with "check celery beat" during an intentional rollback.
     """
     try:
         from sqlalchemy import text
+
+        from app.config import settings
+
+        if not settings.ai_gateway_enabled or not settings.ai_provider_probe_enabled:
+            return None
 
         with _ai_engine().connect() as conn:
             oldest, count = conn.execute(
