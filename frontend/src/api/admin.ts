@@ -794,6 +794,9 @@ export async function updateSkuCatalog(
 
 export async function listAdminOrgs(params?: {
   q?: string;
+  sku?: string;
+  page?: number;
+  page_size?: number;
 }): Promise<{ items: AdminOrgItem[]; total: number }> {
   const { data } = await api.get<{ items: AdminOrgItem[]; total: number }>(
     "/api/admin/orgs",

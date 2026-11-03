@@ -12,6 +12,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.models.billing import Subscription
 from app.models.organization import (
     INVITE_ROLES,
     ORG_ROLES,
@@ -349,6 +350,13 @@ class OrganizationService:
                     status_code=403,
                     detail="sku is billed; ask ops to issue a Scan invoice",
                 )
+            if sku != org.sku:
+                subscription = await self.db.scalar(
+                    select(Subscription).where(Subscription.organization_id == org_id)
+                )
+                if subscription is not None:
+                    subscription.sku = sku
+                    subscription.updated_at = datetime.now(UTC)
             org.sku = sku
         org.updated_at = datetime.now(UTC)
         await self.db.commit()

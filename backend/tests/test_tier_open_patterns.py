@@ -206,3 +206,59 @@ async def test_malformed_tier_code_is_rejected_by_schema(db_session: AsyncSessio
         app.dependency_overrides.clear()
 
     assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_admin_org_list_filters_by_tier(db_session: AsyncSession, ctx) -> None:
+    other = Organization(
+        id=uuid.uuid4(),
+        name="Other Org",
+        slug=f"other-org-{uuid.uuid4().hex[:6]}",
+        kind="company",
+        sku=TIER_CODE,
+        created_by_user_id=ctx["owner"].id,
+    )
+    db_session.add(other)
+    await db_session.commit()
+    await _make_tier(db_session)
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            filtered = await client.get(
+                "/api/admin/orgs",
+                headers=_auth(ctx["admin"], ctx["org"].id),
+                params={"sku": TIER_CODE},
+            )
+            everything = await client.get(
+                "/api/admin/orgs",
+                headers=_auth(ctx["admin"], ctx["org"].id),
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert filtered.status_code == 200
+    body = filtered.json()
+    assert body["total"] == 1
+    assert [item["slug"] for item in body["items"]] == [other.slug]
+    assert everything.json()["total"] >= 2
+
+
+@pytest.mark.asyncio
+async def test_admin_org_list_unknown_tier_returns_empty(
+    db_session: AsyncSession, ctx
+) -> None:
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get(
+                "/api/admin/orgs",
+                headers=_auth(ctx["admin"], ctx["org"].id),
+                params={"sku": "ghost_tier"},
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json() == {"items": [], "total": 0}

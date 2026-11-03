@@ -11,6 +11,7 @@ import {
   deleteSkuTier,
   getAdminSkuTiers,
   getSkuTierHistory,
+  listAdminOrgs,
   reactivateSkuTier,
   updateSkuTier,
 } from "@/api/admin";
@@ -28,6 +29,7 @@ vi.mock("@/api/admin", () => ({
   reactivateSkuTier: vi.fn(),
   deleteSkuTier: vi.fn(),
   getSkuTierHistory: vi.fn(),
+  listAdminOrgs: vi.fn(),
 }));
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -70,6 +72,7 @@ beforeEach(() => {
     page: 1,
     page_size: 20,
   });
+  vi.mocked(listAdminOrgs).mockResolvedValue({ items: [], total: 0 });
 });
 
 describe("AdminSkuTierPanel", () => {
@@ -249,6 +252,53 @@ describe("AdminSkuTierPanel", () => {
 
     expect(await screen.findByTestId("sku-tier-history-empty")).toHaveTextContent(
       "No changes yet",
+    );
+  });
+
+  it("lists the organizations still on a tier", async () => {
+    vi.mocked(getAdminSkuTiers).mockResolvedValue(
+      withUsage("multi", {
+        orgs: 2,
+        subscriptions: 1,
+        invoices: 3,
+        requests: 0,
+      }),
+    );
+    vi.mocked(listAdminOrgs).mockResolvedValue({
+      items: [
+        { id: "o1", name: "Acme", slug: "acme", sku: "multi", kind: "company" },
+      ],
+      total: 1,
+    });
+    renderPanel();
+    const user = userEvent.setup();
+    await user.click(await screen.findByTestId("sku-tier-orgs-multi"));
+
+    await waitFor(() =>
+      expect(listAdminOrgs).toHaveBeenCalledWith(
+        expect.objectContaining({ sku: "multi", page: 1 }),
+      ),
+    );
+    expect(await screen.findByTestId("sku-tier-orgs-dialog")).toBeInTheDocument();
+    expect(screen.getByTestId("sku-tier-org-entry")).toHaveTextContent("Acme");
+    expect(screen.getByTestId("sku-tier-org-entry")).toHaveTextContent("acme");
+  });
+
+  it("shows the empty organizations state", async () => {
+    vi.mocked(getAdminSkuTiers).mockResolvedValue(
+      withUsage("multi", {
+        orgs: 1,
+        subscriptions: 0,
+        invoices: 0,
+        requests: 0,
+      }),
+    );
+    renderPanel();
+    const user = userEvent.setup();
+    await user.click(await screen.findByTestId("sku-tier-orgs-multi"));
+
+    expect(await screen.findByTestId("sku-tier-orgs-empty")).toHaveTextContent(
+      "No organizations on this tier",
     );
   });
 

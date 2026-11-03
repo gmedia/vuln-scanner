@@ -97,6 +97,18 @@ test.describe.serial("Admin — SKU tiers @admin", () => {
     );
   });
 
+  test("the tier history shows the creation entry", async ({ page }) => {
+    await openTierTab(page);
+    await page.getByTestId(`sku-tier-actions-${tierCode}`).click();
+    await page.getByTestId(`sku-tier-history-${tierCode}`).click();
+
+    await expect(page.getByTestId("sku-tier-history-dialog")).toBeVisible();
+    const entries = page.getByTestId("sku-tier-history-entry");
+    await expect(entries.first()).toBeVisible();
+    await expect(entries.first()).toContainText(/Dibuat|Created/);
+    await expect(entries.first()).toContainText("price.scan.list_idr");
+  });
+
   test("the new tier appears on the subscription page", async ({ page }) => {
     await page.goto("/settings/subscription");
     await expect(page.getByTestId("subscription-page")).toBeVisible();
