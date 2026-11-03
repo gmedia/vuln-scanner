@@ -595,6 +595,8 @@
   "tierOrgsTotal": "{{total}} organisasi",
   "tierHistoryTitle": "Riwayat {{label}}",
   "tierHistoryDescription": "Catatan perubahan konfigurasi dan harga tier ini.",
+  "tierHistoryOrgTitle": "Riwayat tier {{name}}",
+  "tierHistoryOrgDescription": "Catatan perpindahan tier organisasi ini dan siapa yang memindahkannya.",
   "tierHistoryLoading": "Memuat riwayat…",
   "tierHistoryError": "Gagal memuat riwayat.",
   "tierHistoryEmpty": "Belum ada perubahan",

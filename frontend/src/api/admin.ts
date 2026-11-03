@@ -724,6 +724,17 @@ export async function getSkuTierHistory(
   return data;
 }
 
+export async function getOrgTierHistory(
+  orgId: string,
+  params: { page?: number; page_size?: number } = {},
+): Promise<SkuTierHistoryList> {
+  const { data } = await api.get<SkuTierHistoryList>(
+    `/api/admin/orgs/${orgId}/tier-history`,
+    { params },
+  );
+  return data;
+}
+
 export interface AdminOrgItem {
   id: string;
   name: string;
@@ -926,6 +937,7 @@ export const adminApi = {
   reactivateSkuTier,
   deleteSkuTier,
   getSkuTierHistory,
+  getOrgTierHistory,
   listAdminOrgs,
   listAdminInvoices,
   createAdminInvoice,

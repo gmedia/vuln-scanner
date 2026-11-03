@@ -10,6 +10,7 @@ import {
   deactivateSkuTier,
   deleteSkuTier,
   getAdminSkuTiers,
+  getOrgTierHistory,
   getSkuTierHistory,
   listAdminOrgs,
   reactivateSkuTier,
@@ -29,6 +30,7 @@ vi.mock("@/api/admin", () => ({
   reactivateSkuTier: vi.fn(),
   deleteSkuTier: vi.fn(),
   getSkuTierHistory: vi.fn(),
+  getOrgTierHistory: vi.fn(),
   listAdminOrgs: vi.fn(),
 }));
 
@@ -67,6 +69,12 @@ beforeEach(() => {
   vi.mocked(reactivateSkuTier).mockResolvedValue(tierFixtures[0]);
   vi.mocked(deleteSkuTier).mockResolvedValue();
   vi.mocked(getSkuTierHistory).mockResolvedValue({
+    items: [],
+    total: 0,
+    page: 1,
+    page_size: 20,
+  });
+  vi.mocked(getOrgTierHistory).mockResolvedValue({
     items: [],
     total: 0,
     page: 1,
@@ -282,6 +290,60 @@ describe("AdminSkuTierPanel", () => {
     expect(await screen.findByTestId("sku-tier-orgs-dialog")).toBeInTheDocument();
     expect(screen.getByTestId("sku-tier-org-entry")).toHaveTextContent("Acme");
     expect(screen.getByTestId("sku-tier-org-entry")).toHaveTextContent("acme");
+  });
+
+  it("opens the org-scoped history from an organization row", async () => {
+    vi.mocked(getAdminSkuTiers).mockResolvedValue(
+      withUsage("multi", {
+        orgs: 1,
+        subscriptions: 0,
+        invoices: 0,
+        requests: 0,
+      }),
+    );
+    vi.mocked(listAdminOrgs).mockResolvedValue({
+      items: [
+        { id: "o1", name: "Acme", slug: "acme", sku: "multi", kind: "company" },
+      ],
+      total: 1,
+    });
+    vi.mocked(getOrgTierHistory).mockResolvedValue({
+      items: [
+        {
+          id: "org-hist-1",
+          sku_code: "multi",
+          action: "assigned",
+          actor_email: "ops@example.com",
+          organization_id: "o1",
+          organization_name: "Acme",
+          changes: { tier: { from: "pro", to: "multi" } },
+          created_at: "2026-11-02T10:00:00Z",
+        },
+      ],
+      total: 1,
+      page: 1,
+      page_size: 20,
+    });
+    renderPanel();
+    const user = userEvent.setup();
+    await user.click(await screen.findByTestId("sku-tier-orgs-multi"));
+    await user.click(await screen.findByTestId("sku-org-history-o1"));
+
+    await waitFor(() =>
+      expect(getOrgTierHistory).toHaveBeenCalledWith("o1", {
+        page: 1,
+        page_size: 20,
+      }),
+    );
+    expect(
+      await screen.findByTestId("sku-tier-history-dialog"),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("sku-tier-history-entry")).toHaveTextContent(
+      "ops@example.com",
+    );
+    expect(screen.getByTestId("sku-tier-history-entry")).toHaveTextContent(
+      "Tier assigned",
+    );
   });
 
   it("shows the empty organizations state", async () => {
