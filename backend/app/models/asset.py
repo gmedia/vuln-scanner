@@ -13,9 +13,6 @@ if TYPE_CHECKING:
     from app.models.scan_schedule import ScanSchedule
     from app.models.user import User
 
-ASSET_SKU_LIMITS: dict[str, int] = {"basic": 1, "pro": 3, "multi": 10}
-
-
 class ScanAsset(Base):
     __tablename__ = "scan_assets"
 

@@ -50,15 +50,10 @@ from app.models.credit_log import CreditLog  # noqa: F401
 from app.models.cve_cache import CveCache  # noqa: F401
 from app.models.email_send_log import EmailSendLog  # noqa: F401
 from app.models.email_verification import EmailVerificationToken  # noqa: F401
-from app.models.guard import GUARD_SKU_LIMITS, GuardAgent, GuardAlert, GuardEnrollToken, GuardOrgBinding  # noqa: F401
+from app.models.guard import GuardAgent, GuardAlert, GuardEnrollToken, GuardOrgBinding  # noqa: F401
 from app.models.host_protect import HostHit, HostQuarantineEvent, HostScan, HostSite  # noqa: F401
 from app.models.hpp import HppCostLine, HppOverhead, HppRate  # noqa: F401
 from app.models.invoice import (  # noqa: F401
-    GUARD_SKU_LIST_IDR,
-    HOST_SKU_LIST_IDR,
-    SCAN_SKU_LIST_IDR,
-    SCAN_SKU_SEATS,
-    UPTIME_SKU_LIST_IDR,
     OrgInvoice,
     SkuCatalog,
 )
@@ -75,7 +70,7 @@ from app.models.siem import SiemCase, SiemCaseEvent, SiemCaseNote  # noqa: F401
 from app.models.sku_tier import SkuTier  # noqa: F401
 from app.models.sku_tier_history import SkuTierHistory  # noqa: F401
 from app.models.subscription import SubscriptionRequest  # noqa: F401
-from app.models.uptime import UPTIME_SKU_LIMITS, UptimeEvent, UptimeMonitor, UptimeSample  # noqa: F401
+from app.models.uptime import UptimeEvent, UptimeMonitor, UptimeSample  # noqa: F401
 from app.models.user import User
 
 # Counter-based incr so rate limiting tests work correctly
@@ -225,8 +220,8 @@ async def db_session(engine):
     async with async_session_local() as session:
         now = datetime.now(UTC)
         # Tiers are the FK parent of sku_catalog and every org/invoice/request SKU
-        # column; seed them before any consumer row. Values mirror the owner-locked
-        # constants (see test_locked_sku_constants.py).
+        # column; seed them before any consumer row. Values are owner-locked and
+        # asserted in test_sku_tier_seed.py.
         for tier in (
             {
                 "code": "basic",
@@ -315,19 +310,48 @@ async def db_session(engine):
         ):
             session.add(SkuTier(**tier, created_at=now, updated_at=now))
         await session.flush()
-        for product, prices, seats in (
-            ("scan", SCAN_SKU_LIST_IDR, SCAN_SKU_SEATS),
-            ("host", HOST_SKU_LIST_IDR, SCAN_SKU_SEATS),
-            ("uptime", UPTIME_SKU_LIST_IDR, UPTIME_SKU_LIMITS),
-            ("guard", GUARD_SKU_LIST_IDR, GUARD_SKU_LIMITS),
-        ):
-            for sku, list_idr in prices.items():
+        catalog = (
+            (
+                "scan",
+                {
+                    "basic": (300_000, 1),
+                    "pro": (650_000, 3),
+                    "multi": (2_000_000, 10),
+                },
+            ),
+            (
+                "host",
+                {
+                    "basic": (150_000, 1),
+                    "pro": (350_000, 3),
+                    "multi": (900_000, 10),
+                },
+            ),
+            (
+                "uptime",
+                {
+                    "basic": (75_000, 10),
+                    "pro": (200_000, 50),
+                    "multi": (500_000, 200),
+                },
+            ),
+            (
+                "guard",
+                {
+                    "basic": (100_000, 1),
+                    "pro": (250_000, 3),
+                    "multi": (600_000, 10),
+                },
+            ),
+        )
+        for product, tiers in catalog:
+            for sku, (list_idr, seats) in tiers.items():
                 session.add(
                     SkuCatalog(
                         product=product,
                         sku=sku,
                         list_idr=list_idr,
-                        seats=seats[sku],
+                        seats=seats,
                         invoicable=True,
                         updated_at=now,
                     )

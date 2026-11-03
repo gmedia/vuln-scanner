@@ -10,8 +10,6 @@ from app.database import Base
 SUBSCRIPTION_REQUEST_DIRECTIONS = ("upgrade", "downgrade")
 SUBSCRIPTION_REQUEST_CYCLES = ("monthly", "annual")
 SUBSCRIPTION_REQUEST_STATUSES = ("pending", "approved", "rejected", "canceled")
-SUBSCRIPTION_REQUEST_CURRENT_SKUS = ("basic", "pro", "multi", "enterprise")
-SUBSCRIPTION_REQUEST_TARGET_SKUS = ("basic", "pro", "multi")
 
 
 class SubscriptionRequest(Base):

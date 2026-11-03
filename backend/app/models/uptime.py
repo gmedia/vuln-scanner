@@ -22,10 +22,6 @@ if TYPE_CHECKING:
     from app.models.organization import Organization
     from app.models.user import User
 
-# Owner-locked 2026-10-12 (docs/commercial/pricing-architecture-v1.md §2/§7).
-# Uptime is the exception to the 1/3/10 mental model: a monitor is a much
-# cheaper unit, so caps are generous (10/50/200). Do NOT alias ASSET_SKU_LIMITS.
-UPTIME_SKU_LIMITS: dict[str, int] = {"basic": 10, "pro": 50, "multi": 200}
 MIN_INTERVAL_SECONDS = 60
 MAX_INTERVAL_SECONDS = 900
 DEFAULT_INTERVAL_SECONDS = 60

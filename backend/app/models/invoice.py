@@ -6,39 +6,13 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
-from app.models.asset import ASSET_SKU_LIMITS
-from app.models.guard import GUARD_SKU_LIMITS
-from app.models.host_protect import HOST_SITE_SKU_LIMITS
-from app.models.uptime import UPTIME_SKU_LIMITS
 
 INVOICE_PRODUCTS = ("scan", "host", "uptime", "guard")
-INVOICE_SKUS = ("basic", "pro", "multi")
 INVOICE_STATUSES = ("draft", "sent", "paid", "void")
 
-# Included capacity per (product, sku). Mirrors sku_catalog.seats, which is seeded
-# from these same constants and is not editable, so the two cannot drift.
-PRODUCT_SEATS: dict[str, dict[str, int]] = {
-    "scan": ASSET_SKU_LIMITS,
-    "host": HOST_SITE_SKU_LIMITS,
-    "uptime": UPTIME_SKU_LIMITS,
-    "guard": GUARD_SKU_LIMITS,
-}
-
-SCAN_SKU_LIST_IDR: dict[str, int] = {"basic": 300_000, "pro": 650_000, "multi": 2_000_000}
-HOST_SKU_LIST_IDR: dict[str, int] = {"basic": 150_000, "pro": 350_000, "multi": 900_000}
-# Owner-locked 2026-10-12 (docs/commercial/pricing-architecture-v1.md §4).
-# Uptime/Guard are priced à-la-carte lines, seeded into `sku_catalog` (migration
-# add_uptime_guard_catalog) with invoicable=true; these constants remain as code
-# defaults / fallbacks when a catalog row is missing.
-UPTIME_SKU_LIST_IDR: dict[str, int] = {"basic": 75_000, "pro": 200_000, "multi": 500_000}
-GUARD_SKU_LIST_IDR: dict[str, int] = {"basic": 100_000, "pro": 250_000, "multi": 600_000}
-# Owner-locked 2026-10-12 (docs/commercial/pricing-architecture-v1.md §3, §5 P2).
-# "Sinexis Secure" = one line covering all four attach products at the matching tier.
-BUNDLE_LIST_IDR: dict[str, int] = {"basic": 450_000, "pro": 1_000_000, "multi": 2_900_000}
 # Annual policy (P2, LOCKED): prepay 10 months, serve 12.
 ANNUAL_MONTHS_PAID = 10
 ANNUAL_MONTHS_SERVED = 12
-SCAN_SKU_SEATS: dict[str, int] = {"basic": 1, "pro": 3, "multi": 10}
 
 
 class SkuCatalog(Base):
