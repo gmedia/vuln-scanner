@@ -22,7 +22,11 @@ from app.models.organization import (
 )
 from app.models.user import User
 from app.schemas.sku_tier import SkuTierFeatures, SkuTierWorkspaceLimits
-from app.services.sku_tier import SkuTierService, workspace_seat_cap_detail
+from app.services.sku_tier import (
+    SkuTierService,
+    record_tier_assignment,
+    workspace_seat_cap_detail,
+)
 
 ROLE_RANK: dict[str, int] = {
     "viewer": 1,
@@ -357,6 +361,14 @@ class OrganizationService:
                 if subscription is not None:
                     subscription.sku = sku
                     subscription.updated_at = datetime.now(UTC)
+                record_tier_assignment(
+                    self.db,
+                    organization_id=org_id,
+                    sku_code=sku,
+                    previous=org.sku,
+                    actor_id=user.id,
+                    source="admin_update",
+                )
             org.sku = sku
         org.updated_at = datetime.now(UTC)
         await self.db.commit()

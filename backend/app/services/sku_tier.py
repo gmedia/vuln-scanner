@@ -17,6 +17,7 @@ observes a half-applied tier.
 
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
@@ -204,6 +205,37 @@ def _check_cross_field(
     return requestable, allow_siem, billing_unrestricted
 
 
+def record_tier_assignment(
+    db: AsyncSession,
+    *,
+    organization_id: uuid.UUID,
+    sku_code: str,
+    previous: str | None,
+    actor_id: uuid.UUID | None,
+    source: str | None = None,
+) -> None:
+    """Append one ``assigned`` row for an organization's effective tier change.
+
+    Called from ``OrganizationService.update_org`` and
+    ``InvoiceService.mark_paid`` so "who moved this org to which tier" is
+    answerable. The caller owns the transaction; nothing is committed here.
+    """
+    changes: dict[str, dict[str, Any]] = {
+        "tier": {"from": previous, "to": sku_code},
+    }
+    if source:
+        changes["source"] = {"from": None, "to": source}
+    db.add(
+        SkuTierHistory(
+            sku_code=sku_code,
+            action="assigned",
+            organization_id=organization_id,
+            actor_user_id=actor_id,
+            changes=changes,
+        )
+    )
+
+
 class SkuTierService:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
@@ -226,7 +258,7 @@ class SkuTierService:
 
     async def history(
         self, code: str, *, page: int = 1, page_size: int = 20
-    ) -> tuple[list[tuple[SkuTierHistory, str | None]], int]:
+    ) -> tuple[list[tuple[SkuTierHistory, str | None, str | None]], int]:
         total = int(
             await self.db.scalar(
                 select(func.count()).select_from(SkuTierHistory).where(SkuTierHistory.sku_code == code)
@@ -234,15 +266,16 @@ class SkuTierService:
             or 0
         )
         stmt = (
-            select(SkuTierHistory, User.email)
+            select(SkuTierHistory, User.email, Organization.name)
             .outerjoin(User, SkuTierHistory.actor_user_id == User.id)
+            .outerjoin(Organization, SkuTierHistory.organization_id == Organization.id)
             .where(SkuTierHistory.sku_code == code)
             .order_by(SkuTierHistory.created_at.desc(), SkuTierHistory.id.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
         )
         rows = (await self.db.execute(stmt)).all()
-        return [(row[0], row[1]) for row in rows], total
+        return [(row[0], row[1], row[2]) for row in rows], total
 
     async def list(self, *, include_inactive: bool = False) -> list[SkuTier]:
         stmt = select(SkuTier).order_by(SkuTier.rank.asc())

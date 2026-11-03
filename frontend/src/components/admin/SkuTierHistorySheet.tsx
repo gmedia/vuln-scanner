@@ -23,6 +23,7 @@ const HISTORY_ACTION_KEYS: Record<string, string> = {
   reactivated: "tierHistoryActionReactivated",
   deleted: "tierHistoryActionDeleted",
   price_updated: "tierHistoryActionPriceUpdated",
+  assigned: "tierHistoryActionAssigned",
 };
 
 const HISTORY_ACTION_VARIANTS: Record<
@@ -35,6 +36,7 @@ const HISTORY_ACTION_VARIANTS: Record<
   reactivated: "success",
   deleted: "failed",
   price_updated: "info",
+  assigned: "info",
 };
 
 function formatHistoryTime(value: string, locale: string): string {
@@ -92,6 +94,14 @@ function HistoryEntry({
           {entry.actor_email ?? "—"}
         </span>
       </div>
+      {entry.organization_name ? (
+        <p
+          className="text-[11px] text-muted-foreground"
+          data-testid="sku-tier-history-org"
+        >
+          {entry.organization_name}
+        </p>
+      ) : null}
       <dl className="space-y-1">
         {Object.entries(entry.changes).map(([field, change]) => (
           <div
