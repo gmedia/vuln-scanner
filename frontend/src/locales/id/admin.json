@@ -235,6 +235,8 @@
   "aiFallbackSkipped": "dilewati — provider nonaktif",
   "aiFallbackCount": "+{{count}} cadangan",
   "aiFallbackDelete": "Hapus cadangan",
+  "aiFallbackMoveUp": "Naikkan",
+  "aiFallbackMoveDown": "Turunkan",
   "aiFallbackDeleteTitle": "Hapus cadangan?",
   "aiFallbackDeleteBody": "Setelah dihapus, permintaan tidak lagi mencoba upstream ini.",
   "aiFallbackEmpty": "Belum ada upstream cadangan.",

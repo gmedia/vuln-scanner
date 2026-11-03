@@ -847,4 +847,105 @@ describe("fallback routing order", () => {
       within(sheet).getByTestId("ai-upstream-degraded-u1"),
     ).toBeInTheDocument();
   });
+
+  it("moves a fallback down and applies the re-sequenced model", async () => {
+    const user = userEvent.setup();
+    const first = makeUpstream({
+      id: "u1",
+      rank: 1,
+      upstream_id: "fallback-1",
+    });
+    const second = makeUpstream({
+      id: "u2",
+      rank: 2,
+      upstream_id: "fallback-2",
+    });
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [makeProvider("p1", "OpenRouter")],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({
+      items: [makeModel({ upstreams: [first, second] })],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.updateAiModelUpstream).mockResolvedValue(
+      makeModel({
+        upstreams: [
+          { ...second, rank: 1 },
+          { ...first, rank: 2 },
+        ],
+      }),
+    );
+    renderPage();
+    const sheet = await openUpstreamSheet(user);
+    const scope = within(sheet);
+    await user.click(scope.getByTestId("ai-upstream-move-down-u1"));
+    await waitFor(() =>
+      expect(adminApi.updateAiModelUpstream).toHaveBeenCalledWith(
+        "m1",
+        "u1",
+        { rank: 2 },
+      ),
+    );
+    await waitFor(() =>
+      expect(
+        scope
+          .getAllByLabelText("Upstream id")
+          .map((input) => (input as HTMLInputElement).value),
+      ).toEqual(["fallback-2", "fallback-1"]),
+    );
+  });
+
+  it("disables move up on the first row and move down on the last row", async () => {
+    const user = userEvent.setup();
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [makeProvider("p1", "OpenRouter")],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({
+      items: [
+        makeModel({
+          upstreams: [
+            makeUpstream({ id: "u1", rank: 1, upstream_id: "fallback-1" }),
+            makeUpstream({ id: "u2", rank: 2, upstream_id: "fallback-2" }),
+          ],
+        }),
+      ],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    renderPage();
+    const sheet = await openUpstreamSheet(user);
+    const scope = within(sheet);
+    expect(scope.getByTestId("ai-upstream-move-up-u1")).toBeDisabled();
+    expect(scope.getByTestId("ai-upstream-move-down-u1")).toBeEnabled();
+    expect(scope.getByTestId("ai-upstream-move-up-u2")).toBeEnabled();
+    expect(scope.getByTestId("ai-upstream-move-down-u2")).toBeDisabled();
+  });
+
+  it("cannot move the unsaved draft", async () => {
+    const user = userEvent.setup();
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [makeProvider("p1", "OpenRouter")],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({
+      items: [
+        makeModel({
+          upstreams: [
+            makeUpstream({ id: "u1", rank: 1, upstream_id: "fallback-1" }),
+          ],
+        }),
+      ],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    renderPage();
+    const sheet = await openUpstreamSheet(user);
+    const scope = within(sheet);
+    await user.click(scope.getByTestId("ai-upstream-add"));
+    expect(scope.getByTestId("ai-upstream-move-up-__new__")).toBeDisabled();
+    expect(scope.getByTestId("ai-upstream-move-down-__new__")).toBeDisabled();
+  });
 });
