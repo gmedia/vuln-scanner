@@ -50,6 +50,7 @@ Table `hpp_rates`:
 |--------|------|--------|
 | GET | `/api/admin/hpp` | `{ items: [{ key, amount_idr, updated_at, updated_by }] }` |
 | PUT | `/api/admin/hpp/{key}` | Body `{ amount_idr }` |
+| GET | `/api/admin/hpp/history?scope=&key=&page=&page_size=` | Append-only amount changes (`hpp_setting_history`), newest first, with `actor_email`. `scope` = `rate` \| `overhead`; `key` only applies to `rate`. |
 | GET | `/api/admin/hpp/report?from=&to=` | ISO date (inclusive). Default: current UTC month. Pool = singleton overhead + journal. |
 | GET | `/api/admin/hpp/costs?from=&to=` | Journal lines in range |
 | POST | `/api/admin/hpp/costs` | `{ incurred_on, amount_idr, category, note }` |
