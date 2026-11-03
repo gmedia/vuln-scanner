@@ -614,6 +614,7 @@ export default function AdminSkuTierPanel() {
   }
 
   function openOrgHistory(org: AdminOrgItem) {
+    setOrgsTarget(null);
     setHistoryScope({ kind: "org", orgId: org.id, label: org.name });
     setHistoryPage(1);
   }
