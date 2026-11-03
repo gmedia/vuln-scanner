@@ -153,6 +153,7 @@ sample is **omitted** rather than reported as `0`, so a gap is "unknown", never 
 | `vuln_ai_upstream_attempts_total` | counter | One increment per upstream attempt. `outcome` = `served` \| `retried` \| `failed` \| `rejected`; `reason` = `none` \| `transport` \| `auth` \| `rate_limit` \| `server_error` \| `client_error`; `model` = the alias. |
 | `vuln_ai_upstream_breakers_open` | gauge | Open breaker keys in Redis. Above `0` means at least one provider is being skipped. |
 | `vuln_ai_providers_degraded` | gauge | Enabled providers with `status = 'degraded'` — still used, but tried last. |
+| `vuln_ai_providers_probe_age_seconds` | gauge | Seconds since the oldest enabled, non-disabled provider was probed; `+Inf` means the probe has never run; omitted when no provider is enabled. |
 
 Reading the counter:
 
@@ -175,6 +176,7 @@ Reading the counter:
 | `VulnScannerAiUpstreamRejectedRequests` | `sum(rate(vuln_ai_upstream_attempts_total{outcome="rejected"}[30m])) > 0` | 30m | warning |
 | `VulnScannerAiUpstreamBreakerOpen` | `vuln_ai_upstream_breakers_open > 0` | 10m | warning |
 | `VulnScannerAiProvidersDegraded` | `vuln_ai_providers_degraded > 0` | 15m | warning |
+| `VulnScannerAiProviderProbeStale` | `vuln_ai_providers_probe_age_seconds > 900` | 10m | warning |
 
 First response:
 
@@ -197,6 +199,10 @@ First response:
 - **Providers degraded** — the probe (or an admin) marked a provider `degraded`. It is still used, only
   tried last. Verify before touching anything: a provider that answers `/models` but fails
   `/chat/completions` will not show up here.
+- **Provider probe stale** — `ai_providers.probe` runs every 5 minutes, so 15 minutes means at least
+  three cycles were missed and `status` is frozen: the fleet looks healthy while nothing is being
+  checked. First check that celery beat is running and that `ai_providers.probe` is routed to the
+  `ip_scan` queue (compose `task_routes`), then read the worker logs.
 
 Rules template: [`monitoring/alerts-vuln-scanner.example.yml`](../monitoring/alerts-vuln-scanner.example.yml).
 
