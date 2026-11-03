@@ -10,6 +10,7 @@ import {
   deactivateSkuTier,
   deleteSkuTier,
   getAdminSkuTiers,
+  getSkuTierHistory,
   reactivateSkuTier,
   updateSkuTier,
 } from "@/api/admin";
@@ -26,6 +27,7 @@ vi.mock("@/api/admin", () => ({
   deactivateSkuTier: vi.fn(),
   reactivateSkuTier: vi.fn(),
   deleteSkuTier: vi.fn(),
+  getSkuTierHistory: vi.fn(),
 }));
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -62,6 +64,12 @@ beforeEach(() => {
   vi.mocked(deactivateSkuTier).mockResolvedValue(tierFixtures[0]);
   vi.mocked(reactivateSkuTier).mockResolvedValue(tierFixtures[0]);
   vi.mocked(deleteSkuTier).mockResolvedValue();
+  vi.mocked(getSkuTierHistory).mockResolvedValue({
+    items: [],
+    total: 0,
+    page: 1,
+    page_size: 20,
+  });
 });
 
 describe("AdminSkuTierPanel", () => {
@@ -190,6 +198,57 @@ describe("AdminSkuTierPanel", () => {
         billing_unrestricted: true,
         prices: undefined,
       }),
+    );
+  });
+
+  it("opens the history dialog and renders entries", async () => {
+    vi.mocked(getSkuTierHistory).mockResolvedValue({
+      items: [
+        {
+          id: "hist-1",
+          sku_code: "multi",
+          action: "updated",
+          actor_email: "admin@example.com",
+          changes: {
+            label: { from: "Multi", to: "Multi Plus" },
+            "price.scan.list_idr": { from: 1_000_000, to: 2_000_000 },
+          },
+          created_at: "2026-11-02T10:00:00Z",
+        },
+      ],
+      total: 1,
+      page: 1,
+      page_size: 20,
+    });
+    renderPanel();
+    const user = await openMenu("multi");
+    await user.click(await screen.findByTestId("sku-tier-history-multi"));
+
+    await waitFor(() =>
+      expect(getSkuTierHistory).toHaveBeenCalledWith("multi", {
+        page: 1,
+        page_size: 20,
+      }),
+    );
+    expect(await screen.findByTestId("sku-tier-history-dialog")).toBeInTheDocument();
+    expect(screen.getByTestId("sku-tier-history-entry")).toHaveTextContent(
+      "admin@example.com",
+    );
+    expect(screen.getByTestId("sku-tier-history-entry")).toHaveTextContent(
+      "Multi Plus",
+    );
+    expect(screen.getByTestId("sku-tier-history-entry")).toHaveTextContent(
+      "2.000.000",
+    );
+  });
+
+  it("shows the empty history state", async () => {
+    renderPanel();
+    const user = await openMenu("multi");
+    await user.click(await screen.findByTestId("sku-tier-history-multi"));
+
+    expect(await screen.findByTestId("sku-tier-history-empty")).toHaveTextContent(
+      "No changes yet",
     );
   });
 
