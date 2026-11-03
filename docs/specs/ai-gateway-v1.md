@@ -1,6 +1,6 @@
 # Spec: AI Gateway v1 (OpenAI-compatible resale)
 
-**Status:** **S1–S7 shipped** (catalog, wallet, `/v1`, SPA, Redis limits, ops notes, USD pricing, upstream failover). Git flag default **off**.
+**Status:** **S1–S7.3.2 shipped** (catalog, wallet, `/v1`, SPA, Redis limits, ops notes, USD pricing, upstream failover, time budget, breaker + health probe). Git flag default **off**.
 **Goal:** resell **contracted OpenAI-compatible** wholesale APIs to Sinexis orgs: customer keys, usage ledger, admin catalog + trial chat.
 **Epic:** **new business line** (not P14, not Guard, not Workspace). Does **not** jump attach / Host Protect / GTM.
 **Depends:** P2 Workspace (JWT `org_id`, membership) · existing admin SPA kit · host nginx + Cloudflare for a new `/v1` location.
@@ -377,12 +377,12 @@ Register both in `App.tsx` + [`AGENT_PAGE_REGISTRY.md`](../AGENT_PAGE_REGISTRY.m
 | **S4** | SPA `/ai` + `/admin/ai` trial chat + i18n | **done** |
 | **S5** | Limits, sanitizer tests, ops notes, Playwright smoke flag-off | **done** |
 | **S6** | USD-per-1M canonical prices, reservation-locked daily FX for charge + COGS, `ai_wallet_ledger`, admin USD inputs, catalog USD + derived IDR | **done** |
-| **S7** | Ordered fallback upstreams per model: `ai_model_upstreams`, pre-first-byte failover, served-provider attribution, per-candidate HPP, admin upstream CRUD + Models-tab sheet | S6 |
+| **S7** | Ordered fallback upstreams per model: `ai_model_upstreams`, pre-first-byte failover, served-provider attribution, per-candidate HPP, admin upstream CRUD + Models-tab sheet | **done** |
 | **S7.1** | Upstream attempt counter + four failover alert rules | **done** |
 | **S7.2** | Attempt timeout clamped to the request budget; connect + stream idle timeouts | **done** |
-| **S7.3** | Provider health probe (`ai_providers.probe`) + Redis circuit breaker; `degraded` ordered last | S7.2 |
+| **S7.3** | Provider health probe (`ai_providers.probe`) + Redis circuit breaker; `degraded` ordered last | **done** |
 | **S7.3.1** | Models-tab sheet shows the routing order the gateway really uses | **done** |
-| **S7.3.2** | Probe writes `status` only; the breaker is traffic's alone | S7.3 |
+| **S7.3.2** | Probe writes `status` only; the breaker is traffic's alone | **done** |
 
 Default order **S1 → S5**. Do not combine with Host Protect / Guard PRs.
 
