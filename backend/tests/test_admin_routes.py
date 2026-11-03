@@ -1073,7 +1073,7 @@ class TestAdminHpp:
 
         await db_session.execute(delete(SkuCatalog))
         db_session.add(
-            SkuCatalog(product="host", sku="multi", list_idr=900_000, seats=10, invoicable=True)
+            SkuCatalog(product="host", sku="multi", list_idr=900_000, invoicable=True)
         )
         await db_session.commit()
         day = datetime.now(UTC).date().isoformat()
@@ -1142,7 +1142,7 @@ class TestAdminHpp:
         # demonstrates a sku dropping out of the seed-constant fallback list.
         await db_session.execute(delete(SkuCatalog))
         db_session.add(
-            SkuCatalog(product="scan", sku="basic", list_idr=300_000, seats=1, invoicable=True)
+            SkuCatalog(product="scan", sku="basic", list_idr=300_000, invoicable=True)
         )
         await db_session.commit()
         resp = client.get("/api/admin/hpp/report", headers=API_HEADERS)

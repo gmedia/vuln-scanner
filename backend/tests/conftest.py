@@ -311,47 +311,18 @@ async def db_session(engine):
             session.add(SkuTier(**tier, created_at=now, updated_at=now))
         await session.flush()
         catalog = (
-            (
-                "scan",
-                {
-                    "basic": (300_000, 1),
-                    "pro": (650_000, 3),
-                    "multi": (2_000_000, 10),
-                },
-            ),
-            (
-                "host",
-                {
-                    "basic": (150_000, 1),
-                    "pro": (350_000, 3),
-                    "multi": (900_000, 10),
-                },
-            ),
-            (
-                "uptime",
-                {
-                    "basic": (75_000, 10),
-                    "pro": (200_000, 50),
-                    "multi": (500_000, 200),
-                },
-            ),
-            (
-                "guard",
-                {
-                    "basic": (100_000, 1),
-                    "pro": (250_000, 3),
-                    "multi": (600_000, 10),
-                },
-            ),
+            ("scan", {"basic": 300_000, "pro": 650_000, "multi": 2_000_000}),
+            ("host", {"basic": 150_000, "pro": 350_000, "multi": 900_000}),
+            ("uptime", {"basic": 75_000, "pro": 200_000, "multi": 500_000}),
+            ("guard", {"basic": 100_000, "pro": 250_000, "multi": 600_000}),
         )
         for product, tiers in catalog:
-            for sku, (list_idr, seats) in tiers.items():
+            for sku, list_idr in tiers.items():
                 session.add(
                     SkuCatalog(
                         product=product,
                         sku=sku,
                         list_idr=list_idr,
-                        seats=seats,
                         invoicable=True,
                         updated_at=now,
                     )

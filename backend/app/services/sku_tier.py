@@ -546,7 +546,6 @@ class SkuTierService:
                         product=product,
                         sku=code,
                         list_idr=price.list_idr,
-                        seats=limits[product],
                         invoicable=price.invoicable,
                         updated_at=now,
                         updated_by=actor.id,
@@ -693,7 +692,6 @@ class SkuTierService:
                         product=product,
                         sku=code,
                         list_idr=price.list_idr,
-                        seats=limits[product],
                         invoicable=price.invoicable,
                         updated_at=now,
                         updated_by=actor.id,
@@ -703,7 +701,6 @@ class SkuTierService:
                     if price is not None:
                         row.list_idr = price.list_idr
                         row.invoicable = price.invoicable
-                    row.seats = limits[product]
                     row.updated_at = now
                     row.updated_by = actor.id
 
