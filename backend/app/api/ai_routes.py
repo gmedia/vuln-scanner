@@ -5,10 +5,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.config import settings
 from app.database import get_db
-from app.models.ai_gateway import AiApiKey, AiModel, AiUsageEvent
+from app.models.ai_gateway import AiApiKey, AiModel, AiModelUpstream, AiUsageEvent
 from app.models.user import User
 from app.schemas.ai_gateway import (
     AiKeyCreate,
@@ -21,6 +22,7 @@ from app.schemas.ai_gateway import (
     AiWalletOut,
 )
 from app.services import ai_fx
+from app.services.ai_catalog import has_usable_candidate
 from app.services.ai_keys import create_key, list_keys, revoke_key
 from app.services.ai_pricing import (
     canonical_price_usd,
@@ -71,8 +73,21 @@ async def list_public_models(
     _disabled()
     await _org(request, current_user, db)
     rows = list(
-        (await db.execute(select(AiModel).where(AiModel.enabled.is_(True)).order_by(AiModel.public_id))).scalars().all()
+        (
+            await db.execute(
+                select(AiModel)
+                .options(
+                    selectinload(AiModel.provider),
+                    selectinload(AiModel.upstreams).selectinload(AiModelUpstream.provider),
+                )
+                .where(AiModel.enabled.is_(True))
+                .order_by(AiModel.public_id)
+            )
+        )
+        .scalars()
+        .all()
     )
+    rows = [r for r in rows if has_usable_candidate(r)]
     fx_rate, fx_source, fx_row = await ai_fx.effective_rate(db)
     fx_effective_date = fx_row.effective_date if fx_row is not None else None
     stale = fx_stale(fx_effective_date)
