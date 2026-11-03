@@ -39,7 +39,8 @@ def _auth(user: User) -> dict[str, str]:
         is_admin=user.is_admin,
         org_id=None,
     )
-    return {"Authorization": f"Bearer {token}"}
+    # Repo-wide rate-limit bypass; without it the suite's shared budget yields 429.
+    return {"Authorization": f"Bearer {token}", "X-E2E-Test": "true"}
 
 
 def _bind(db_session: AsyncSession) -> None:
