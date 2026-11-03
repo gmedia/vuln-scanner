@@ -155,3 +155,18 @@ groups:
             deprioritised but still used, so live traffic can still route to them.
             Check the provider rows in /admin/ai?tab=providers, and remember that only
             an admin should ever set a provider disabled.
+      - alert: VulnScannerAiProviderProbeStale
+        expr: vuln_ai_providers_probe_age_seconds > 900
+        for: 10m
+        labels:
+          severity: warning
+          service: vuln-scanner
+        annotations:
+          summary: "The AI provider probe is not running"
+          description: >-
+            vuln_ai_providers_probe_age_seconds is {{ $value }}. ai_providers.probe
+            runs every 5 minutes, so 15 minutes means at least three cycles were
+            missed and no provider has been checked since. status is frozen, so the
+            fleet looks healthy while nothing is being checked. First check that
+            celery beat is running and that ai_providers.probe is routed to the
+            ip_scan queue (compose task_routes), then read the worker logs.

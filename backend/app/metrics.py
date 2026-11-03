@@ -25,8 +25,11 @@ _LEDGER_DRIFT_NAME = "vuln_ai_wallet_ledger_drift_idr"
 STALE_OPEN_RESERVATIONS_NAME = "vuln_ai_stale_open_reservations"
 _UPSTREAM_BREAKERS_OPEN_NAME = "vuln_ai_upstream_breakers_open"
 _PROVIDERS_DEGRADED_NAME = "vuln_ai_providers_degraded"
+_PROVIDERS_PROBE_AGE_NAME = "vuln_ai_providers_probe_age_seconds"
 # Mirrors workers/tasks/ai_reservations.STALE_RESERVATION_MINUTES; kept local so metrics never imports the worker.
 STALE_RESERVATION_MINUTES = 20
+# Also local by the same rule; documents the 15-minute VulnScannerAiProviderProbeStale threshold.
+PROBE_STALE_THRESHOLD_SECONDS = 900
 
 _collector_registered = False
 
@@ -90,6 +93,18 @@ def _as_date(value: object) -> date | None:
             return date.fromisoformat(value[:10])
         except ValueError:
             return None
+    return None
+
+
+def _as_datetime(value: object) -> datetime | None:
+    if isinstance(value, datetime):
+        return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
+    if isinstance(value, str):
+        try:
+            parsed = datetime.fromisoformat(value)
+        except ValueError:
+            return None
+        return parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=UTC)
     return None
 
 
@@ -214,6 +229,34 @@ def _read_ai_providers_degraded() -> float | None:
         return None
 
 
+def _read_ai_providers_probe_age_seconds() -> float | None:
+    """Seconds since the oldest enabled non-disabled provider was probed.
+
+    ``+Inf`` when never probed, ``None`` on failure or an empty fleet.
+    """
+    try:
+        from sqlalchemy import text
+
+        with _ai_engine().connect() as conn:
+            oldest, count = conn.execute(
+                text(
+                    "SELECT MIN(last_probed_at), COUNT(*) FROM ai_providers "
+                    "WHERE enabled IS TRUE AND status != 'disabled'"
+                )
+            ).one()
+        if not count:
+            return None
+        if oldest is None:
+            return float("inf")
+        probed_at = _as_datetime(oldest)
+        if probed_at is None:
+            return None
+        return max((datetime.now(UTC) - probed_at).total_seconds(), 0.0)
+    except Exception as e:
+        logger.debug("ai providers probe age metric scrape failed: %s", e)
+        return None
+
+
 class AutoFailCollector:
     def collect(self) -> Iterable[Metric]:
         counts = _read_auto_fail_counts()
@@ -329,6 +372,23 @@ class AiProvidersDegradedCollector:
         yield gauge
 
 
+class AiProvidersProbeAgeCollector:
+    def collect(self) -> Iterable[Metric]:
+        try:
+            value = _read_ai_providers_probe_age_seconds()
+        except Exception as e:
+            logger.debug("ai providers probe age collector failed: %s", e)
+            return
+        if value is None:
+            return
+        gauge = GaugeMetricFamily(
+            _PROVIDERS_PROBE_AGE_NAME,
+            "Seconds since the oldest enabled AI provider was last probed; +Inf when never probed",
+        )
+        gauge.add_metric([], value)
+        yield gauge
+
+
 def register_custom_metrics() -> None:
     global _collector_registered
     if _collector_registered:
@@ -340,4 +400,5 @@ def register_custom_metrics() -> None:
     REGISTRY.register(AiStaleReservationsCollector())
     REGISTRY.register(AiUpstreamBreakersOpenCollector())
     REGISTRY.register(AiProvidersDegradedCollector())
+    REGISTRY.register(AiProvidersProbeAgeCollector())
     _collector_registered = True

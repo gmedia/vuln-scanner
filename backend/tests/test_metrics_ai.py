@@ -1,6 +1,7 @@
 import logging
 import math
 import sys
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -9,12 +10,14 @@ import app.metrics as metrics_mod
 from app.metrics import (
     AiFxRateCollector,
     AiProvidersDegradedCollector,
+    AiProvidersProbeAgeCollector,
     AiShortfallCollector,
     AiStaleReservationsCollector,
     AiUpstreamBreakersOpenCollector,
     AiWalletLedgerDriftCollector,
     _read_ai_fx_rate_age_days,
     _read_ai_providers_degraded,
+    _read_ai_providers_probe_age_seconds,
     _read_ai_shortfall_idr_24h,
     _read_ai_stale_open_reservations,
     _read_ai_upstream_breakers_open,
@@ -201,6 +204,78 @@ class TestAiProvidersDegradedReader:
             assert _read_ai_providers_degraded() is None
 
 
+class TestAiProvidersProbeAgeReader:
+    def _reader_returning(self, row: tuple[object, int]) -> tuple[float | None, MagicMock]:
+        engine = MagicMock()
+        execute = engine.connect.return_value.__enter__.return_value.execute
+        execute.return_value.one.return_value = row
+        with patch("app.metrics._ai_engine", return_value=engine):
+            return _read_ai_providers_probe_age_seconds(), execute
+
+    def test_provider_probe_age_returns_inf_when_never_probed(self):
+        value, _ = self._reader_returning((None, 1))
+        assert value is not None
+        assert math.isinf(value)
+        assert value > 0
+
+    def test_provider_probe_age_reports_oldest_provider(self):
+        oldest = datetime.now(UTC) - timedelta(seconds=600)
+        value, _ = self._reader_returning((oldest, 2))
+        assert value is not None
+        assert 595 <= value <= 605
+
+    def test_provider_probe_age_omitted_without_providers(self):
+        value, _ = self._reader_returning((None, 0))
+        assert value is None
+
+    def test_provider_probe_age_accepts_naive_and_string_timestamps(self):
+        oldest = (datetime.now(UTC) - timedelta(seconds=90)).replace(tzinfo=None)
+
+        for timestamp in (oldest, oldest.isoformat()):
+            value, _ = self._reader_returning((timestamp, 1))
+            assert value is not None
+            assert 85 <= value <= 95
+
+    def test_provider_probe_age_ignores_disabled_providers(self):
+        oldest = datetime.now(UTC) - timedelta(seconds=60)
+        value, execute = self._reader_returning((oldest, 1))
+
+        assert value is not None
+        assert 55 <= value <= 65
+        sql = str(execute.call_args.args[0])
+        assert "enabled IS TRUE" in sql
+        assert "status != 'disabled'" in sql
+
+    def test_reader_returns_none_when_engine_raises(self):
+        with patch("app.metrics._ai_engine", side_effect=RuntimeError("no db")):
+            assert _read_ai_providers_probe_age_seconds() is None
+
+
+class TestAiProvidersProbeAgeCollector:
+    def test_emits_probe_age(self):
+        with patch("app.metrics._read_ai_providers_probe_age_seconds", return_value=120.0):
+            family, sample = _only_sample(AiProvidersProbeAgeCollector())
+
+        assert family.name == "vuln_ai_providers_probe_age_seconds"
+        assert family.type == "gauge"
+        assert sample.value == 120.0
+
+    def test_emits_positive_infinity_when_never_probed(self):
+        with patch("app.metrics._read_ai_providers_probe_age_seconds", return_value=float("inf")):
+            family, sample = _only_sample(AiProvidersProbeAgeCollector())
+
+        assert family.name == "vuln_ai_providers_probe_age_seconds"
+        assert math.isinf(sample.value)
+
+    def test_emits_nothing_when_reader_returns_none(self):
+        with patch("app.metrics._read_ai_providers_probe_age_seconds", return_value=None):
+            assert list(AiProvidersProbeAgeCollector().collect()) == []
+
+    def test_emits_nothing_when_reader_raises(self):
+        with patch("app.metrics._read_ai_providers_probe_age_seconds", side_effect=RuntimeError("db down")):
+            assert list(AiProvidersProbeAgeCollector().collect()) == []
+
+
 class TestAiUpstreamBreakersOpenCollector:
     def test_emits_open_count(self):
         with patch("app.metrics._read_ai_upstream_breakers_open", return_value=2.0):
@@ -233,17 +308,18 @@ class TestRegisterCustomMetrics:
             register_custom_metrics()
             register_custom_metrics()
 
-        assert mock_reg.call_count == 7
+        assert mock_reg.call_count == 8
         classes = [type(call.args[0]).__name__ for call in mock_reg.call_args_list]
         assert sorted(classes) == sorted(
             [
                 "AutoFailCollector",
                 "AiFxRateCollector",
                 "AiProvidersDegradedCollector",
+                "AiProvidersProbeAgeCollector",
                 "AiShortfallCollector",
                 "AiStaleReservationsCollector",
                 "AiUpstreamBreakersOpenCollector",
                 "AiWalletLedgerDriftCollector",
             ]
         )
-        assert len(set(classes)) == 7
+        assert len(set(classes)) == 8

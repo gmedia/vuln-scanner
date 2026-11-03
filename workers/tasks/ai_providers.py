@@ -1,9 +1,9 @@
 """Probe enabled AI upstream providers on a beat schedule.
 
-Writes ``ai_providers.status`` only: 2xx is ``ok``, auth failures / 5xx /
-transport errors are ``degraded``, and any other 4xx stays unverified so a vendor
-without ``/models`` is never punished. ``disabled`` is a human decision that this
-task never writes.
+Writes ``ai_providers.status`` and ``ai_providers.last_probed_at`` for every provider
+it probes: 2xx is ``ok``, auth failures / 5xx / transport errors are ``degraded``, and
+any other 4xx stays unverified so a vendor without ``/models`` is never punished.
+``disabled`` is a human decision that this task never writes.
 
 The circuit breaker belongs to traffic alone. This task used to record a breaker
 success on every 2xx, which deleted the open key every five minutes and left the
@@ -13,6 +13,7 @@ breaker unable to contain a provider whose ``/models`` answers while
 
 import os
 import sys
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -63,6 +64,7 @@ def probe_ai_providers() -> dict[str, Any]:
         )
         for provider in providers:
             counts["probed"] += 1
+            provider.last_probed_at = datetime.now(UTC)
             try:
                 response = client.get(
                     provider.base_url.rstrip("/") + "/models",
