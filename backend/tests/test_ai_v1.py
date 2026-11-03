@@ -1686,3 +1686,37 @@ async def test_public_models_ignores_failover_when_disabled(
 
     assert response.status_code == 200, response.text
     assert response.json()["items"] == []
+
+
+async def _both_catalog_ids(db_session: AsyncSession, ctx) -> tuple[set[str], set[str]]:
+    v1 = await _get_models(db_session, ctx)
+    spa = await _get_public_models(db_session, ctx)
+    assert v1.status_code == 200, v1.text
+    assert spa.status_code == 200, spa.text
+    return {m["id"] for m in v1.json()["data"]}, {m["public_id"] for m in spa.json()["items"]}
+
+
+@pytest.mark.asyncio
+async def test_catalogs_never_disagree(db_session: AsyncSession, ctx, ai_on) -> None:
+    """Both catalogs and routing must share one definition of a servable model.
+
+    They drifted twice: /v1/models kept a model whose provider was disabled (#1170),
+    then /api/ai/models did the same (#1172). Asserting equality here fails whichever
+    of the two re-introduces a private filter.
+    """
+    v1_ids, spa_ids = await _both_catalog_ids(db_session, ctx)
+    assert v1_ids == spa_ids == {"sinexis/test"}
+
+    primary = await db_session.get(AiProvider, ctx["model"].provider_id)
+    assert primary is not None
+    primary.status = "disabled"
+    await db_session.commit()
+
+    v1_ids, spa_ids = await _both_catalog_ids(db_session, ctx)
+    assert v1_ids == spa_ids == set()
+
+    await _add_fallback(db_session, ctx["model"])
+    db_session.expire(ctx["model"], ["upstreams"])
+
+    v1_ids, spa_ids = await _both_catalog_ids(db_session, ctx)
+    assert v1_ids == spa_ids == {"sinexis/test"}
