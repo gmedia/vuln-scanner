@@ -21,7 +21,7 @@ import builtins
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
 
 from fastapi import HTTPException, status
 from sqlalchemy import delete, func, select, update
@@ -87,8 +87,10 @@ _CREATE_DEFAULTS: dict[str, Any] = {
     "workspace_viewer_limit": None,
 }
 
+
 def _tier_values(tier: SkuTier) -> dict[str, Any]:
     return {field: getattr(tier, field) for field in _TIER_HISTORY_FIELDS}
+
 
 def _price_values(rows: dict[str, SkuCatalog]) -> dict[str, Any]:
     values: dict[str, Any] = {}
@@ -98,12 +100,12 @@ def _price_values(rows: dict[str, SkuCatalog]) -> dict[str, Any]:
         values[f"price.{product}.invoicable"] = bool(row.invoicable) if row is not None else None
     return values
 
+
 def _diff_changes(before: dict[str, Any], after: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {
-        field: {"from": before.get(field), "to": value}
-        for field, value in after.items()
-        if before.get(field) != value
+        field: {"from": before.get(field), "to": value} for field, value in after.items() if before.get(field) != value
     }
+
 
 def _created_changes(tier: SkuTier, prices: dict[str, SkuCatalogPriceBody] | None) -> dict[str, dict[str, Any]]:
     changes = {
@@ -120,10 +122,12 @@ def _created_changes(tier: SkuTier, prices: dict[str, SkuCatalogPriceBody] | Non
             changes[f"price.{product}.invoicable"] = {"from": None, "to": price.invoicable}
     return changes
 
+
 def _deleted_changes(tier: SkuTier, rows: dict[str, SkuCatalog]) -> dict[str, dict[str, Any]]:
     changes = {field: {"from": None, "to": value} for field, value in _tier_values(tier).items()}
     changes.update({field: {"from": None, "to": value} for field, value in _price_values(rows).items()})
     return changes
+
 
 @dataclass(frozen=True)
 class SkuFeatures:
@@ -370,10 +374,8 @@ class SkuTierService:
         unique: builtins.list[str] = list(dict.fromkeys(codes))
 
         async def _grouped(column: Any) -> dict[str, int]:
-            rows = await self.db.execute(
-                select(column, func.count()).where(column.in_(unique)).group_by(column)
-            )
-            return {str(code): int(count) for code, count in rows.all()}
+            rows = await self.db.execute(select(column, func.count()).where(column.in_(unique)).group_by(column))
+            return {str(code): int(cast(int, count)) for code, count in rows.all()}
 
         orgs = await _grouped(Organization.sku)
         subscriptions = await _grouped(Subscription.sku)
@@ -396,9 +398,7 @@ class SkuTierService:
         if not codes:
             return set()
         rows = await self.db.execute(
-            select(SkuCatalog.sku)
-            .where(SkuCatalog.sku.in_(list(dict.fromkeys(codes))))
-            .group_by(SkuCatalog.sku)
+            select(SkuCatalog.sku).where(SkuCatalog.sku.in_(list(dict.fromkeys(codes)))).group_by(SkuCatalog.sku)
         )
         return {str(code) for code in rows.scalars().all()}
 
@@ -431,15 +431,12 @@ class SkuTierService:
         remaining = await self._requestable_codes(exclude=code)
         if not remaining:
             raise _conflict(
-                f"{label} is the last tier a customer can request; "
-                "make another tier requestable before retiring it"
+                f"{label} is the last tier a customer can request; make another tier requestable before retiring it"
             )
 
     async def _demote_default(self) -> None:
         """Unset the current default in the same transaction as the promotion."""
-        await self.db.execute(
-            update(SkuTier).where(SkuTier.is_default.is_(True)).values(is_default=False)
-        )
+        await self.db.execute(update(SkuTier).where(SkuTier.is_default.is_(True)).values(is_default=False))
 
     def _catalog_prices(self, body: SkuTierCreate | SkuTierUpdate) -> dict[str, SkuCatalogPriceBody] | None:
         prices = body.prices
@@ -557,9 +554,7 @@ class SkuTierService:
             "scan": body.limit_scan if "limit_scan" in present and body.limit_scan is not None else tier.limit_scan,
             "host": body.limit_host if "limit_host" in present and body.limit_host is not None else tier.limit_host,
             "uptime": (
-                body.limit_uptime
-                if "limit_uptime" in present and body.limit_uptime is not None
-                else tier.limit_uptime
+                body.limit_uptime if "limit_uptime" in present and body.limit_uptime is not None else tier.limit_uptime
             ),
             "guard": (
                 body.limit_guard if "limit_guard" in present and body.limit_guard is not None else tier.limit_guard
@@ -598,9 +593,7 @@ class SkuTierService:
             if "billing_unrestricted" not in present:
                 billing_unrestricted = False
         requestable = (
-            body.requestable
-            if "requestable" in present and body.requestable is not None
-            else tier.requestable
+            body.requestable if "requestable" in present and body.requestable is not None else tier.requestable
         )
         requestable, allow_siem, billing_unrestricted = _check_cross_field(
             sales_led=sales_led,
@@ -629,9 +622,7 @@ class SkuTierService:
             existing_rows = before_rows
             if tier.sales_led:
                 if prices is None or set(prices) != set(INVOICE_PRODUCTS):
-                    raise _bad_request(
-                        "Switching away from sales_led requires prices for scan, host, uptime and guard"
-                    )
+                    raise _bad_request("Switching away from sales_led requires prices for scan, host, uptime and guard")
             else:
                 for product in INVOICE_PRODUCTS:
                     if product not in existing_rows and (prices is None or product not in prices):
@@ -655,14 +646,10 @@ class SkuTierService:
         tier.allow_siem = allow_siem
         tier.billing_unrestricted = billing_unrestricted
         tier.workspace_editor_limit = (
-            body.workspace_editor_limit
-            if "workspace_editor_limit" in present
-            else tier.workspace_editor_limit
+            body.workspace_editor_limit if "workspace_editor_limit" in present else tier.workspace_editor_limit
         )
         tier.workspace_viewer_limit = (
-            body.workspace_viewer_limit
-            if "workspace_viewer_limit" in present
-            else tier.workspace_viewer_limit
+            body.workspace_viewer_limit if "workspace_viewer_limit" in present else tier.workspace_viewer_limit
         )
         tier.updated_at = now
         tier.updated_by = actor.id
