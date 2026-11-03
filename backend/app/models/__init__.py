@@ -25,6 +25,7 @@ from app.models.guard import GuardAgent, GuardAlert, GuardEnrollToken, GuardOrgB
 from app.models.host_protect import HostCommand, HostHit, HostQuarantineEvent, HostScan, HostSite
 from app.models.host_waf import HostWafEvent, HostWafPolicy
 from app.models.hpp import HppCostLine, HppOverhead, HppRate
+from app.models.hpp_history import HppSettingHistory
 from app.models.invoice import OrgInvoice, SkuCatalog
 from app.models.organization import Organization, OrganizationInvite, OrganizationMembership
 from app.models.password_reset import PasswordResetToken
@@ -65,6 +66,7 @@ __all__ = [
     "HppRate",
     "HppOverhead",
     "HppCostLine",
+    "HppSettingHistory",
     "SkuCatalog",
     "SkuTier",
     "SkuTierHistory",

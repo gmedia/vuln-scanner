@@ -23,6 +23,7 @@ from app.models.hpp import (
     HppOverhead,
     HppRate,
 )
+from app.models.hpp_history import HppSettingHistory
 from app.models.invoice import INVOICE_PRODUCTS, SkuCatalog
 from app.models.organization import Organization
 from app.models.scan_finding import ScanFinding
@@ -49,10 +50,13 @@ from app.schemas.admin import (
     HppRateUpdateRequest,
     HppReportLine,
     HppReportResponse,
+    HppSettingHistoryItem,
+    HppSettingHistoryList,
 )
 from app.schemas.auth import MessageResponse
 from app.services.auth import get_current_admin
 from app.services.email import send_verification_email
+from app.services.hpp import record_setting_change
 
 logger = logging.getLogger(__name__)
 
@@ -671,6 +675,62 @@ async def get_hpp_overhead(
     return HppOverheadItem.model_validate(row)
 
 
+@router.get("/hpp/history", response_model=HppSettingHistoryList)
+async def list_hpp_setting_history(
+    request: Request,
+    scope: str | None = Query(default=None),
+    key: str | None = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    current_admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> HppSettingHistoryList | Response:
+    limit_response = await admin_limiter(request)
+    if limit_response:
+        return limit_response
+    filters = []
+    if scope is not None:
+        if scope not in ("rate", "overhead"):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid scope")
+        filters.append(HppSettingHistory.scope == scope)
+    if key is not None:
+        filters.append(HppSettingHistory.key == key)
+    count_q = select(func.count(HppSettingHistory.id))
+    list_q = select(HppSettingHistory, User.email).outerjoin(
+        User, HppSettingHistory.actor_user_id == User.id
+    )
+    if filters:
+        count_q = count_q.where(*filters)
+        list_q = list_q.where(*filters)
+    total = int((await db.execute(count_q)).scalar() or 0)
+    list_q = (
+        list_q.order_by(
+            HppSettingHistory.created_at.desc(),
+            HppSettingHistory.id.desc(),
+        )
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    rows = (await db.execute(list_q)).all()
+    return HppSettingHistoryList(
+        items=[
+            HppSettingHistoryItem(
+                id=row.id,
+                scope=row.scope,
+                key=row.key,
+                amount_from=row.amount_from,
+                amount_to=row.amount_to,
+                actor_email=email,
+                created_at=row.created_at,
+            )
+            for row, email in rows
+        ],
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
 @router.put("/hpp/overhead", response_model=HppOverheadItem)
 async def update_hpp_overhead(
     request: Request,
@@ -685,6 +745,16 @@ async def update_hpp_overhead(
     row = result.scalar_one_or_none()
     now = datetime.now(UTC)
     if row:
+        previous = row.amount_idr
+        if previous != body.amount_idr:
+            await record_setting_change(
+                db,
+                scope="overhead",
+                key=None,
+                amount_from=previous,
+                amount_to=body.amount_idr,
+                actor_id=current_admin.id,
+            )
         row.amount_idr = body.amount_idr
         row.updated_at = now
         row.updated_by = current_admin.id
@@ -696,6 +766,14 @@ async def update_hpp_overhead(
             updated_by=current_admin.id,
         )
         db.add(row)
+        await record_setting_change(
+            db,
+            scope="overhead",
+            key=None,
+            amount_from=None,
+            amount_to=body.amount_idr,
+            actor_id=current_admin.id,
+        )
     await db.commit()
     await db.refresh(row)
     return HppOverheadItem.model_validate(row)
@@ -785,12 +863,30 @@ async def update_hpp_rate(
     row = result.scalar_one_or_none()
     now = datetime.now(UTC)
     if row:
+        previous = row.amount_idr
+        if previous != body.amount_idr:
+            await record_setting_change(
+                db,
+                scope="rate",
+                key=key,
+                amount_from=previous,
+                amount_to=body.amount_idr,
+                actor_id=current_admin.id,
+            )
         row.amount_idr = body.amount_idr
         row.updated_at = now
         row.updated_by = current_admin.id
     else:
         row = HppRate(key=key, amount_idr=body.amount_idr, updated_at=now, updated_by=current_admin.id)
         db.add(row)
+        await record_setting_change(
+            db,
+            scope="rate",
+            key=key,
+            amount_from=None,
+            amount_to=body.amount_idr,
+            actor_id=current_admin.id,
+        )
     await db.commit()
     await db.refresh(row)
     return HppRateItem.model_validate(row)
