@@ -105,7 +105,7 @@ function UsageTile({ item }: { readonly item: SubscriptionUsageItem }) {
   const { t } = useTranslation("subscription");
   const limit = item.limit;
   const state = limit != null ? quotaState(item.used, limit) : null;
-  // Wazuh sync does not enforce GUARD_SKU_LIMITS, so a Guard fleet can sit
+  // Wazuh sync does not enforce sku_tiers.limit_guard, so a Guard fleet can sit
   // above its seat count. Surface that instead of calling it "full".
   const over = limit != null && item.used > limit ? item.used - limit : 0;
   const value =

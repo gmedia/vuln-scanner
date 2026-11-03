@@ -23,8 +23,6 @@ if TYPE_CHECKING:
     from app.models.organization import Organization
     from app.models.user import User
 
-HOST_SITE_SKU_LIMITS: dict[str, int] = {"basic": 1, "pro": 3, "multi": 10}
-
 CMS_HINTS = ("wordpress", "laravel", "unknown")
 SCAN_INTERVALS = ("daily", "hourly")
 SCAN_INTERVAL_SECONDS = {"daily": 86400, "hourly": 3600}

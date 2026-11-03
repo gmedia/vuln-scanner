@@ -8,7 +8,7 @@ from sqlalchemy import event, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from app.models.invoice import SkuCatalog
+from app.models.invoice import ANNUAL_MONTHS_PAID, ANNUAL_MONTHS_SERVED, SkuCatalog
 from app.models.organization import Organization
 from app.models.sku_tier import SkuTier
 
@@ -96,6 +96,30 @@ EXPECTED_TIERS: dict[str, dict[str, object]] = {
 }
 
 
+EXPECTED_CATALOG: dict[str, dict[str, tuple[int, int, bool]]] = {
+    "scan": {
+        "basic": (300_000, 1, True),
+        "pro": (650_000, 3, True),
+        "multi": (2_000_000, 10, True),
+    },
+    "host": {
+        "basic": (150_000, 1, True),
+        "pro": (350_000, 3, True),
+        "multi": (900_000, 10, True),
+    },
+    "uptime": {
+        "basic": (75_000, 10, True),
+        "pro": (200_000, 50, True),
+        "multi": (500_000, 200, True),
+    },
+    "guard": {
+        "basic": (100_000, 1, True),
+        "pro": (250_000, 3, True),
+        "multi": (600_000, 10, True),
+    },
+}
+
+
 @pytest_asyncio.fixture
 async def engine():
     """SQLite enforces no FK unless asked, so turn it on for this module."""
@@ -155,6 +179,57 @@ async def test_seed_matches_owner_locked_values(db_session) -> None:
     for row in rows:
         for field, expected in EXPECTED_TIERS[row.code].items():
             assert getattr(row, field) == expected, f"{row.code}.{field}"
+
+
+@pytest.mark.asyncio
+async def test_catalog_matches_owner_locked_values(db_session) -> None:
+    rows = (await db_session.execute(select(SkuCatalog))).scalars().all()
+    actual = {(row.product, row.sku): (row.list_idr, row.seats, row.invoicable) for row in rows}
+    expected = {
+        (product, sku): values for product, tiers in EXPECTED_CATALOG.items() for sku, values in tiers.items()
+    }
+
+    assert actual == expected
+
+
+@pytest.mark.asyncio
+async def test_enterprise_has_no_catalog_rows(db_session) -> None:
+    count = await db_session.scalar(select(func.count()).select_from(SkuCatalog).where(SkuCatalog.sku == "enterprise"))
+    assert count == 0
+
+
+def test_annual_policy_matches_locked_doc() -> None:
+    assert (ANNUAL_MONTHS_PAID, ANNUAL_MONTHS_SERVED) == (10, 12)
+
+
+@pytest.mark.asyncio
+async def test_bundle_saving_matches_locked_arithmetic(db_session) -> None:
+    rows = (await db_session.execute(select(SkuCatalog))).scalars().all()
+    alacarte: dict[str, int] = {}
+    for row in rows:
+        alacarte[row.sku] = alacarte.get(row.sku, 0) + row.list_idr
+    tiers = (await db_session.execute(select(SkuTier))).scalars().all()
+    bundle = {tier.code: tier.bundle_idr for tier in tiers}
+
+    expected_saving = {"basic": 175_000, "pro": 450_000, "multi": 1_100_000}
+    for sku, saving in expected_saving.items():
+        assert bundle[sku] is not None
+        assert alacarte[sku] - bundle[sku] == saving
+
+
+def test_hpp_keys_cover_all_four_services() -> None:
+    from app.models.hpp import HPP_KEYS
+
+    assert HPP_KEYS == (
+        "ip",
+        "domain",
+        "apk",
+        "ipa",
+        "statushost",
+        "hostscan",
+        "uptimemonitor",
+        "guardagent",
+    )
 
 
 @pytest.mark.asyncio
