@@ -301,6 +301,8 @@
   "aiProviderEnable": "Aktifkan",
   "aiProviderDisable": "Nonaktifkan",
   "aiProviderUpdateFail": "Gagal memperbarui provider.",
+  "aiProviderLastChecked": "Diperiksa {{when}}",
+  "aiProviderNeverChecked": "Belum pernah diperiksa",
   "aiSelectProvider": "Pilih provider",
   "aiSelectModel": "Pilih model",
   "aiRequest": "Request",

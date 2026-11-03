@@ -36,6 +36,7 @@ class AiProviderOut(BaseModel):
     credential_set: bool
     enabled: bool
     status: str
+    last_probed_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 

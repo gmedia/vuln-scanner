@@ -60,6 +60,40 @@ function ProviderStateBadge({
   );
 }
 
+function formatProbeTime(value: string, locale: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString(locale, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function ProbeTime({
+  provider,
+  locale,
+}: {
+  readonly provider: AiProviderAdmin;
+  readonly locale: string;
+}) {
+  const { t } = useTranslation("admin");
+  return (
+    <span
+      className="block text-xs text-muted-foreground"
+      data-testid={`admin-ai-provider-probed-${provider.id}`}
+    >
+      {provider.last_probed_at
+        ? t("aiProviderLastChecked", {
+            when: formatProbeTime(provider.last_probed_at, locale),
+          })
+        : t("aiProviderNeverChecked")}
+    </span>
+  );
+}
+
 function ProviderMenuItems({
   provider,
   togglePending,
@@ -135,7 +169,8 @@ export function AdminAiProviderList({
   readonly onToggleEnabled: (p: AiProviderAdmin, enabled: boolean) => void;
   readonly onDelete: (id: string) => void;
 }) {
-  const { t } = useTranslation("admin");
+  const { t, i18n } = useTranslation("admin");
+  const dateLocale = i18n.language === "en" ? "en-US" : "id-ID";
   const [deleteTarget, setDeleteTarget] = useState<AiProviderAdmin | null>(null);
   if (providers.length === 0) {
     return <p className="text-sm text-muted-foreground">{t("aiProvidersEmpty")}</p>;
@@ -190,6 +225,7 @@ export function AdminAiProviderList({
                 <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
                   {p.base_url}
                 </p>
+                <ProbeTime provider={p} locale={dateLocale} />
                 <div className="mt-2 flex flex-wrap justify-end gap-2">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -259,6 +295,7 @@ export function AdminAiProviderList({
                 </TableCell>
                 <TableCell>
                   <ProviderStateBadge provider={p} />
+                  <ProbeTime provider={p} locale={dateLocale} />
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-right">
                   {editingProv?.id === p.id ? (

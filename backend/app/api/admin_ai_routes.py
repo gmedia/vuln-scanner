@@ -73,6 +73,7 @@ def _provider_out(row: AiProvider) -> AiProviderOut:
         credential_set=bool(row.credential_enc),
         enabled=row.enabled,
         status=row.status,
+        last_probed_at=row.last_probed_at,
         created_at=row.created_at,
         updated_at=row.updated_at,
     )

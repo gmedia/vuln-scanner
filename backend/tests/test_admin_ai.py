@@ -75,6 +75,7 @@ def test_provider_model_crud(client, ai_on) -> None:
     assert body["credential_set"] is True
     assert "credential" not in body
     assert "sk-or" not in created.text
+    assert body["last_probed_at"] is None
     pid = body["id"]
 
     listed = client.get("/api/admin/ai/providers", headers=API_HEADERS)
