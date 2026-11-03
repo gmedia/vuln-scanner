@@ -1246,6 +1246,19 @@ jobs:
             SIEM_MAX_PAGE_SIZE=${{ secrets.SIEM_MAX_PAGE_SIZE || '50' }}
             HOST_PROTECT_ENABLED=${{ secrets.HOST_PROTECT_ENABLED || 'false' }}
             AI_GATEWAY_ENABLED=${{ secrets.AI_GATEWAY_ENABLED || 'false' }}
+            # AI tuning as secrets: the failover deadline must stay below nginx proxy_read_timeout 120s.
+            AI_UPSTREAM_FAILOVER_ENABLED=${{ secrets.AI_UPSTREAM_FAILOVER_ENABLED || 'true' }}
+            AI_UPSTREAM_MAX_CANDIDATES=${{ secrets.AI_UPSTREAM_MAX_CANDIDATES || '4' }}
+            AI_UPSTREAM_TIMEOUT_SECONDS=${{ secrets.AI_UPSTREAM_TIMEOUT_SECONDS || '120' }}
+            AI_UPSTREAM_CONNECT_TIMEOUT_SECONDS=${{ secrets.AI_UPSTREAM_CONNECT_TIMEOUT_SECONDS || '10' }}
+            AI_UPSTREAM_STREAM_IDLE_TIMEOUT_SECONDS=${{ secrets.AI_UPSTREAM_STREAM_IDLE_TIMEOUT_SECONDS || '45' }}
+            AI_UPSTREAM_FAILOVER_DEADLINE_SECONDS=${{ secrets.AI_UPSTREAM_FAILOVER_DEADLINE_SECONDS || '100' }}
+            AI_UPSTREAM_MIN_ATTEMPT_SECONDS=${{ secrets.AI_UPSTREAM_MIN_ATTEMPT_SECONDS || '5' }}
+            AI_BREAKER_FAILURE_THRESHOLD=${{ secrets.AI_BREAKER_FAILURE_THRESHOLD || '5' }}
+            AI_BREAKER_WINDOW_SECONDS=${{ secrets.AI_BREAKER_WINDOW_SECONDS || '120' }}
+            AI_BREAKER_COOLDOWN_SECONDS=${{ secrets.AI_BREAKER_COOLDOWN_SECONDS || '60' }}
+            AI_PROVIDER_PROBE_ENABLED=${{ secrets.AI_PROVIDER_PROBE_ENABLED || 'true' }}
+            AI_PROVIDER_PROBE_TIMEOUT_SECONDS=${{ secrets.AI_PROVIDER_PROBE_TIMEOUT_SECONDS || '10' }}
             OBJECT_STORAGE_BACKEND=${{ secrets.OBJECT_STORAGE_BACKEND || 'local' }}
             COS_SECRET_ID=${{ secrets.COS_SECRET_ID }}
             COS_SECRET_KEY=${{ secrets.COS_SECRET_KEY }}
