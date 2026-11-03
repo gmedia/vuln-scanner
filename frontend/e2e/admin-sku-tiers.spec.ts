@@ -109,6 +109,30 @@ test.describe.serial("Admin — SKU tiers @admin", () => {
     await expect(entries.first()).toContainText("price.scan.list_idr");
   });
 
+  test("opens an organization's tier history from the usage drill-down", async ({
+    page,
+  }) => {
+    await openTierTab(page);
+
+    // Read-only: the admin's personal org already sits on the default tier, so
+    // this exercises the drill-down and the per-org endpoint without moving any
+    // organization between tiers (a crashed run must not leave shared state behind).
+    await page.getByTestId("sku-tier-orgs-basic").click();
+    await expect(page.getByTestId("sku-tier-orgs-dialog")).toBeVisible();
+
+    const orgEntry = page.getByTestId("sku-tier-org-entry").first();
+    await expect(orgEntry).toBeVisible();
+    const orgName = (await orgEntry.locator("p").first().textContent())?.trim();
+    expect(orgName).toBeTruthy();
+
+    await orgEntry.getByRole("button").click();
+
+    await expect(page.getByTestId("sku-tier-orgs-dialog")).toBeHidden();
+    const historyDialog = page.getByTestId("sku-tier-history-dialog");
+    await expect(historyDialog).toBeVisible();
+    await expect(historyDialog).toContainText(orgName as string);
+  });
+
   test("the new tier appears on the subscription page", async ({ page }) => {
     await page.goto("/settings/subscription");
     await expect(page.getByTestId("subscription-page")).toBeVisible();
