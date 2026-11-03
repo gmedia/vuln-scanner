@@ -36,9 +36,29 @@ tests/           # pytest; cov fail-under 75
 - `DATABASE_URL` async; Alembic uses `DATABASE_URL_SYNC`.
 - Do not add Discover/cases on Guard routes. SIEM is separate flag.
 
+### Every new Alembic revision (mandatory)
+
+Run these before pushing, not just the tests for the files you touched:
+
+```bash
+cd backend && alembic heads            # must print exactly one head: <rev> (head)
+cd .. && make check-alembic            # head must descend from origin/main
+```
+
+`tests/test_alembic_heads.py` runs the same checks. Both incidents so far were green
+on the PR branch and only broke `main` at merge, which blocks `alembic upgrade head`
+and therefore **every deploy** (`deploy-services.sh` migrates before recreating).
+
+- Two PRs adding a revision from the same parent each pass alone, then `main` ends up
+  with two heads. Fix with an empty merge revision, never by re-parenting a revision
+  that may already be recorded in an environment's `alembic_version`.
+- `alembic_version.version_num` is **varchar(32)**: a longer `revision` id fails at
+  runtime with `StringDataRightTruncation` *after* earlier migrations have run.
+
 ## ANTI-PATTERNS
 
 - Running Alembic from repo root (ini lives here).
 - Putting scan engine logic in services (belongs in `workers/tasks/`).
 - Mocking Host Protect findings when roots missing (`pending_agent` / `unreachable_root`).
 - Mixing Guard + Workspace in one PR.
+- Merging an Alembic revision without `alembic heads` against the current `origin/main`.

@@ -380,6 +380,20 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core
+      # Runs against the PR head, not the checkout (which is the merge commit and
+      # would pass trivially). Two PRs adding sibling revisions each went green on
+      # their own base and broke `main` only after both merged, which blocks
+      # `alembic upgrade head` and therefore every deploy.
+      - name: Alembic lineage vs main
+        if: github.event_name == 'pull_request'
+        timeout-minutes: 5
+        working-directory: .
+        run: |
+          git fetch --no-tags origin main
+          git fetch --no-tags origin "${{ github.event.pull_request.head.sha }}"
+          git worktree add --detach /tmp/lineage "${{ github.event.pull_request.head.sha }}"
+          cd /tmp/lineage
+          python3 scripts/check-alembic-lineage.py --base origin/main
       - name: Install dependencies
         run: pip install -r requirements.txt pytest-timeout==2.4.0
       - name: Run tests with coverage
