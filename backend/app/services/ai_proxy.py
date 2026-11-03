@@ -181,6 +181,15 @@ def _provider_usable(provider: AiProvider) -> bool:
     return provider.enabled and provider.status != "disabled"
 
 
+def _has_usable_candidate(model: AiModel) -> bool:
+    # With failover off, routing only tries the primary, so a fallback cannot make the model callable.
+    if _provider_usable(model.provider):
+        return True
+    if not settings.ai_upstream_failover_enabled:
+        return False
+    return any(row.enabled and _provider_usable(row.provider) for row in model.upstreams)
+
+
 def _primary_candidate(model: AiModel) -> UpstreamCandidate:
     provider = model.provider
     return UpstreamCandidate(
@@ -408,7 +417,21 @@ def _usage_from_payload(payload: dict[str, Any]) -> tuple[int, int, str | None]:
 
 
 async def list_openai_models(db: AsyncSession, key: AiApiKey) -> dict[str, Any]:
-    rows = list((await db.execute(select(AiModel).where(AiModel.enabled.is_(True)))).scalars().all())
+    rows = list(
+        (
+            await db.execute(
+                select(AiModel)
+                .options(
+                    selectinload(AiModel.provider),
+                    selectinload(AiModel.upstreams).selectinload(AiModelUpstream.provider),
+                )
+                .where(AiModel.enabled.is_(True))
+            )
+        )
+        .scalars()
+        .all()
+    )
+    rows = [r for r in rows if _has_usable_candidate(r)]
     allow = key.allowed_model_ids or []
     if allow:
         rows = [r for r in rows if r.public_id in allow]
