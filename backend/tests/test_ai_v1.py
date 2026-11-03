@@ -1615,3 +1615,74 @@ async def test_v1_models_skips_a_disabled_model_row(db_session: AsyncSession, ct
 
     assert response.status_code == 200, response.text
     assert response.json()["data"] == []
+
+
+async def _get_public_models(db_session: AsyncSession, ctx) -> httpx.Response:
+    owner = ctx["owner"]
+    org = ctx["org"]
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            return await ac.get("/api/ai/models", headers=_auth(owner, org.id))
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+
+@pytest.mark.asyncio
+async def test_public_models_lists_a_healthy_model(db_session: AsyncSession, ctx, ai_on) -> None:
+    response = await _get_public_models(db_session, ctx)
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert [m["public_id"] for m in body["items"]] == ["sinexis/test"]
+    assert body["total"] == 1
+
+
+@pytest.mark.asyncio
+async def test_public_models_hides_model_whose_only_provider_is_disabled(db_session: AsyncSession, ctx, ai_on) -> None:
+    primary = await db_session.get(AiProvider, ctx["model"].provider_id)
+    assert primary is not None
+    primary.status = "disabled"
+    await db_session.commit()
+
+    response = await _get_public_models(db_session, ctx)
+
+    assert response.status_code == 200, response.text
+    assert response.json()["items"] == []
+    assert response.json()["total"] == 0
+
+
+@pytest.mark.asyncio
+async def test_public_models_lists_model_with_a_usable_fallback(db_session: AsyncSession, ctx, ai_on) -> None:
+    primary = await db_session.get(AiProvider, ctx["model"].provider_id)
+    assert primary is not None
+    primary.status = "disabled"
+    await db_session.commit()
+    await _add_fallback(db_session, ctx["model"])
+
+    response = await _get_public_models(db_session, ctx)
+
+    assert response.status_code == 200, response.text
+    assert [m["public_id"] for m in response.json()["items"]] == ["sinexis/test"]
+
+
+@pytest.mark.asyncio
+async def test_public_models_ignores_failover_when_disabled(
+    db_session: AsyncSession, ctx, ai_on, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(settings, "ai_upstream_failover_enabled", False)
+    primary = await db_session.get(AiProvider, ctx["model"].provider_id)
+    assert primary is not None
+    primary.status = "disabled"
+    await db_session.commit()
+    await _add_fallback(db_session, ctx["model"])
+
+    response = await _get_public_models(db_session, ctx)
+
+    assert response.status_code == 200, response.text
+    assert response.json()["items"] == []
