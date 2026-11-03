@@ -235,6 +235,8 @@
   "aiFallbackSkipped": "skipped — provider disabled",
   "aiFallbackCount": "+{{count}} fallback",
   "aiFallbackDelete": "Delete fallback",
+  "aiFallbackMoveUp": "Move up",
+  "aiFallbackMoveDown": "Move down",
   "aiFallbackDeleteTitle": "Delete fallback?",
   "aiFallbackDeleteBody": "After removal, requests will no longer retry to this upstream.",
   "aiFallbackEmpty": "No fallback upstreams yet.",

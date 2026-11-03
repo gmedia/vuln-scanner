@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
 import { isAxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -165,9 +165,12 @@ function FallbackRow({
   providers,
   inheritedCap,
   pending,
+  canMoveUp,
+  canMoveDown,
   onChange,
   onSave,
   onDelete,
+  onMove,
 }: {
   readonly index: number;
   readonly row: Draft;
@@ -175,9 +178,12 @@ function FallbackRow({
   readonly providers: readonly AiProviderAdmin[];
   readonly inheritedCap: number | null;
   readonly pending: boolean;
+  readonly canMoveUp: boolean;
+  readonly canMoveDown: boolean;
   readonly onChange: (patch: Partial<Draft>) => void;
   readonly onSave: () => void;
   readonly onDelete: () => void;
+  readonly onMove: (delta: -1 | 1) => void;
 }) {
   const { t } = useTranslation("admin");
   const fieldId = (name: string) => `ai-upstream-${name}-${row.id}`;
@@ -185,6 +191,7 @@ function FallbackRow({
   const hppEmpty = row.hpp_in.trim() === "" || row.hpp_out.trim() === "";
   const canSave =
     !pending && row.provider_id !== "" && row.upstream_id.trim() !== "";
+  const moveLocked = pending || row.id === NEW_ROW_ID;
 
   return (
     <div
@@ -236,6 +243,30 @@ function FallbackRow({
               {t("aiFallbackEnabled")}
             </Label>
           </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-11 w-11 min-h-11 min-w-11 p-0 md:h-10 md:w-10 md:min-h-10 md:min-w-10"
+            aria-label={t("aiFallbackMoveUp")}
+            data-testid={`ai-upstream-move-up-${row.id}`}
+            onClick={() => onMove(-1)}
+            disabled={!canMoveUp || moveLocked}
+          >
+            <ArrowUp className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-11 w-11 min-h-11 min-w-11 p-0 md:h-10 md:w-10 md:min-h-10 md:min-w-10"
+            aria-label={t("aiFallbackMoveDown")}
+            data-testid={`ai-upstream-move-down-${row.id}`}
+            onClick={() => onMove(1)}
+            disabled={!canMoveDown || moveLocked}
+          >
+            <ArrowDown className="h-4 w-4" />
+          </Button>
           <Button
             type="button"
             variant="ghost"
@@ -429,6 +460,24 @@ function UpstreamSheetBody({
     }
   };
 
+  const moveRow = async (row: Draft, delta: -1 | 1) => {
+    if (row.id === NEW_ROW_ID) return;
+    const index = rows.findIndex((item) => item.id === row.id);
+    const target = index + delta;
+    if (index < 0 || target < 0 || target >= rows.length) return;
+    setPendingId(row.id);
+    try {
+      const updated = await updateAiModelUpstream(model.id, row.id, {
+        rank: rows[target].rank ?? target + 1,
+      });
+      applyUpdated(updated);
+    } catch (error) {
+      toast.error(t(upstreamErrorKey(error)));
+    } finally {
+      setPendingId(null);
+    }
+  };
+
   const requestDelete = (row: Draft) => {
     if (row.id === NEW_ROW_ID) {
       void removeRow(row);
@@ -496,9 +545,12 @@ function UpstreamSheetBody({
               providers={providers}
               inheritedCap={model.max_tokens_cap}
               pending={pendingId === row.id}
+              canMoveUp={index > 0}
+              canMoveDown={index < rows.length - 1}
               onChange={(patch) => updateDraft(row.id, patch)}
               onSave={() => void saveRow(row)}
               onDelete={() => requestDelete(row)}
+              onMove={(delta) => void moveRow(row, delta)}
             />
           ))}
         </div>
