@@ -53,15 +53,6 @@ async def _note_failure(client: redis_async.Redis[str], provider_id: UUID, reaso
         logger.warning("ai_breaker_open", extra={"provider_id": str(provider_id), "reason": reason})
 
 
-def _note_failure_sync(client: redis.Redis[str], provider_id: UUID, reason: str) -> None:
-    fails_key = _fails_key(provider_id)
-    fails = client.incr(fails_key)
-    client.expire(fails_key, _window_seconds())
-    if fails >= settings.ai_breaker_failure_threshold:
-        client.set(_open_key(provider_id), "1", ex=_cooldown_seconds())
-        logger.warning("ai_breaker_open", extra={"provider_id": str(provider_id), "reason": reason})
-
-
 async def record_success(provider_id: UUID) -> None:
     try:
         client = await _client()
@@ -105,35 +96,3 @@ async def filter_available(candidates: Sequence[UpstreamCandidate]) -> list[Upst
     except redis.RedisError:
         logger.warning("ai_breaker_redis_unavailable", extra={"op": "filter_available"})
         return candidates if isinstance(candidates, list) else list(candidates)
-
-
-def _sync_client() -> redis.Redis[str]:
-    return redis.Redis.from_url(settings.redis_url, socket_connect_timeout=2, decode_responses=True)
-
-
-def record_success_sync(provider_id: UUID) -> None:
-    client: redis.Redis[str] | None = None
-    try:
-        client = _sync_client()
-        client.delete(_fails_key(provider_id), _open_key(provider_id))
-    except redis.RedisError:
-        logger.warning(
-            "ai_breaker_redis_unavailable", extra={"op": "record_success_sync", "provider_id": str(provider_id)}
-        )
-    finally:
-        if client is not None:
-            client.close()
-
-
-def record_failure_sync(provider_id: UUID, reason: str) -> None:
-    client: redis.Redis[str] | None = None
-    try:
-        client = _sync_client()
-        _note_failure_sync(client, provider_id, reason)
-    except redis.RedisError:
-        logger.warning(
-            "ai_breaker_redis_unavailable", extra={"op": "record_failure_sync", "provider_id": str(provider_id)}
-        )
-    finally:
-        if client is not None:
-            client.close()
