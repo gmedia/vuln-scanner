@@ -128,8 +128,16 @@ breaker rather than the traffic.
 | timeout / connection error | `degraded` |
 | any other `4xx` | **untouched** — some vendors have no `/models` |
 
-`degraded` providers stay in rotation but are tried last. Only a human sets `disabled`, and a
-`disabled` provider is never probed.
+`degraded` providers stay in rotation but are tried last. A human never sets `degraded`: the probe
+owns it. The two suppression flags are separate but have the same effect on both routing and probing:
+
+| Flag | Set from | Routed? | Probed? |
+|---|---|---|---|
+| `enabled = false` | Providers tab → **Nonaktifkan**, or `PATCH {enabled:false}` | no | **no** (the probe selects `enabled IS TRUE`) |
+| `status = 'disabled'` | API only; the Providers tab shows it as not routed, and **Aktifkan** clears it | no | **no** |
+
+So switching a provider off is not a pause: nothing checks it, and it stays out until someone turns
+it back on. Rotate an expired key instead of disabling the provider you intend to keep using.
 
 Breaker entries are skipped for their TTL only. To force a provider back into rotation before the
 cooldown ends, delete its keys:
