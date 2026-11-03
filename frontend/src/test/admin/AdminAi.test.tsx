@@ -60,7 +60,11 @@ function renderPage() {
   );
 }
 
-function makeProvider(id: string, name: string): adminApi.AiProviderAdmin {
+function makeProvider(
+  id: string,
+  name: string,
+  overrides: Partial<adminApi.AiProviderAdmin> = {},
+): adminApi.AiProviderAdmin {
   return {
     id,
     name,
@@ -71,6 +75,7 @@ function makeProvider(id: string, name: string): adminApi.AiProviderAdmin {
     status: "ok",
     created_at: "",
     updated_at: "",
+    ...overrides,
   };
 }
 
@@ -267,6 +272,108 @@ describe("AdminAi", () => {
     ).toBeInTheDocument();
     expect(screen.getAllByText("Rp 1").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Rp 2").length).toBeGreaterThan(0);
+  });
+
+  it("shows a degraded badge for a degraded provider", async () => {
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [makeProvider("p1", "OpenRouter", { status: "degraded" })],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    renderPage();
+    const desktop = await screen.findByTestId("admin-ai-providers-desktop");
+    expect(
+      within(desktop).getByTestId("admin-ai-provider-state-p1"),
+    ).toHaveTextContent("Degraded");
+  });
+
+  it("shows an off badge and enable action for a disabled provider", async () => {
+    const user = userEvent.setup();
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [makeProvider("p1", "OpenRouter", { enabled: false })],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    renderPage();
+    const desktop = await screen.findByTestId("admin-ai-providers-desktop");
+    expect(
+      within(desktop).getByTestId("admin-ai-provider-state-p1"),
+    ).toHaveTextContent("Not routed");
+    await user.click(screen.getAllByTestId("admin-ai-provider-actions-p1")[0]);
+    expect(await screen.findByTestId("ai-provider-toggle-p1")).toHaveTextContent(
+      "Enable",
+    );
+  });
+
+  it("toggles a provider off through the API", async () => {
+    const user = userEvent.setup();
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [makeProvider("p1", "OpenRouter")],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.updateAiProvider).mockResolvedValue(
+      makeProvider("p1", "OpenRouter", { enabled: false }),
+    );
+    renderPage();
+    await screen.findByTestId("admin-ai-provider-card-p1");
+    await user.click(screen.getAllByTestId("admin-ai-provider-actions-p1")[0]);
+    await user.click(await screen.findByTestId("ai-provider-toggle-p1"));
+    await waitFor(() =>
+      expect(adminApi.updateAiProvider).toHaveBeenCalledWith("p1", {
+        enabled: false,
+      }),
+    );
+  });
+
+  it("clears a disabled status when the provider is turned back on", async () => {
+    const user = userEvent.setup();
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [makeProvider("p1", "OpenRouter", { status: "disabled" })],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.updateAiProvider).mockResolvedValue(
+      makeProvider("p1", "OpenRouter"),
+    );
+    renderPage();
+    await screen.findByTestId("admin-ai-provider-card-p1");
+    await user.click(screen.getAllByTestId("admin-ai-provider-actions-p1")[0]);
+    const toggle = await screen.findByTestId("ai-provider-toggle-p1");
+    expect(toggle).toHaveTextContent("Enable");
+    await user.click(toggle);
+    await waitFor(() =>
+      expect(adminApi.updateAiProvider).toHaveBeenCalledWith("p1", {
+        enabled: true,
+        status: "ok",
+      }),
+    );
+  });
+
+  it("leaves status alone when enabling an already-ok provider", async () => {
+    const user = userEvent.setup();
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [makeProvider("p1", "OpenRouter", { enabled: false })],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.updateAiProvider).mockResolvedValue(
+      makeProvider("p1", "OpenRouter"),
+    );
+    renderPage();
+    await screen.findByTestId("admin-ai-provider-card-p1");
+    await user.click(screen.getAllByTestId("admin-ai-provider-actions-p1")[0]);
+    await user.click(await screen.findByTestId("ai-provider-toggle-p1"));
+    await waitFor(() =>
+      expect(adminApi.updateAiProvider).toHaveBeenCalledWith("p1", {
+        enabled: true,
+      }),
+    );
   });
 
   it("switches the models price unit to USD / 1M tokens", async () => {
