@@ -231,6 +231,14 @@ describe("Profile", () => {
           "currentpass",
         );
       });
+
+      // Both handlers are async: asserting only the call lets the trailing setState land
+      // after teardown, where React touches a dead `window` and vitest fails the run.
+      await waitFor(() => {
+        expect(
+          (screen.getByPlaceholderText("new@example.com") as HTMLInputElement).value,
+        ).toBe("");
+      });
     });
 
     it("shows success message after successful update", async () => {
@@ -330,6 +338,14 @@ describe("Profile", () => {
           "newpass123",
           "newpass123",
         );
+      });
+
+      // The handler is async: asserting only the call lets setPasswordSuccess land after
+      // teardown, where React touches a dead `window` and vitest reports an unhandled error.
+      await waitFor(() => {
+        expect(
+          (document.getElementById("current-password") as HTMLInputElement).value,
+        ).toBe("");
       });
     });
 
