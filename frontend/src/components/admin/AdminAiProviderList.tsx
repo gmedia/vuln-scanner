@@ -32,6 +32,76 @@ import {
 } from "@/components/ui/Table";
 import { AdminAiField } from "@/components/admin/AdminAiField";
 
+function ProviderStateBadge({
+  provider,
+}: {
+  readonly provider: AiProviderAdmin;
+}) {
+  const { t } = useTranslation("admin");
+  const off = !provider.enabled || provider.status === "disabled";
+  const degraded = !off && provider.status === "degraded";
+  return (
+    <span
+      className={`rounded border px-1.5 py-0.5 text-xs ${
+        off
+          ? "border-destructive/40 text-destructive"
+          : "border-border text-muted-foreground"
+      }`}
+      data-testid={`admin-ai-provider-state-${provider.id}`}
+    >
+      {t(
+        off
+          ? "aiProviderStateOff"
+          : degraded
+            ? "aiProviderStateDegraded"
+            : "aiProviderStateOk",
+      )}
+    </span>
+  );
+}
+
+function ProviderMenuItems({
+  provider,
+  togglePending,
+  onStartEdit,
+  onToggleEnabled,
+  onDelete,
+}: {
+  readonly provider: AiProviderAdmin;
+  readonly togglePending: boolean;
+  readonly onStartEdit: (p: AiProviderAdmin) => void;
+  readonly onToggleEnabled: (p: AiProviderAdmin, enabled: boolean) => void;
+  readonly onDelete: (p: AiProviderAdmin) => void;
+}) {
+  const { t } = useTranslation("admin");
+  const off = !provider.enabled || provider.status === "disabled";
+  return (
+    <>
+      <DropdownMenuItem
+        data-testid={`admin-ai-provider-edit-${provider.id}`}
+        onSelect={() => onStartEdit(provider)}
+      >
+        {t("aiEdit")}
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        data-testid={`ai-provider-toggle-${provider.id}`}
+        disabled={togglePending}
+        onSelect={() => onToggleEnabled(provider, off)}
+      >
+        {off ? t("aiProviderEnable") : t("aiProviderDisable")}
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        variant="destructive"
+        data-testid={`admin-ai-provider-delete-${provider.id}`}
+        onSelect={() => onDelete(provider)}
+      >
+        {t("aiDelete")}
+      </DropdownMenuItem>
+    </>
+  );
+}
+
 export function AdminAiProviderList({
   providers,
   editingProv,
@@ -39,12 +109,14 @@ export function AdminAiProviderList({
   editProvUrl,
   editProvCred,
   savePending,
+  togglePending,
   onEditName,
   onEditUrl,
   onEditCred,
   onStartEdit,
   onCancelEdit,
   onSave,
+  onToggleEnabled,
   onDelete,
 }: {
   readonly providers: readonly AiProviderAdmin[];
@@ -53,12 +125,14 @@ export function AdminAiProviderList({
   readonly editProvUrl: string;
   readonly editProvCred: string;
   readonly savePending: boolean;
+  readonly togglePending: boolean;
   readonly onEditName: (v: string) => void;
   readonly onEditUrl: (v: string) => void;
   readonly onEditCred: (v: string) => void;
   readonly onStartEdit: (p: AiProviderAdmin) => void;
   readonly onCancelEdit: () => void;
   readonly onSave: () => void;
+  readonly onToggleEnabled: (p: AiProviderAdmin, enabled: boolean) => void;
   readonly onDelete: (id: string) => void;
 }) {
   const { t } = useTranslation("admin");
@@ -107,9 +181,12 @@ export function AdminAiProviderList({
               </div>
             ) : (
               <>
-                <p className="min-w-0 break-words text-sm font-medium text-foreground">
-                  {p.name}
-                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="min-w-0 break-words text-sm font-medium text-foreground">
+                    {p.name}
+                  </p>
+                  <ProviderStateBadge provider={p} />
+                </div>
                 <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
                   {p.base_url}
                 </p>
@@ -128,20 +205,13 @@ export function AdminAiProviderList({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuItem
-                        data-testid={`admin-ai-provider-edit-${p.id}`}
-                        onSelect={() => onStartEdit(p)}
-                      >
-                        {t("aiEdit")}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        variant="destructive"
-                        data-testid={`admin-ai-provider-delete-${p.id}`}
-                        onSelect={() => setDeleteTarget(p)}
-                      >
-                        {t("aiDelete")}
-                      </DropdownMenuItem>
+                      <ProviderMenuItems
+                        provider={p}
+                        togglePending={togglePending}
+                        onStartEdit={onStartEdit}
+                        onToggleEnabled={onToggleEnabled}
+                        onDelete={setDeleteTarget}
+                      />
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -156,6 +226,7 @@ export function AdminAiProviderList({
             <TableRow>
               <TableHead>{t("aiName")}</TableHead>
               <TableHead>{t("aiBaseUrl")}</TableHead>
+              <TableHead>{t("colStatus")}</TableHead>
               <TableHead className="text-right">{t("colActions")}</TableHead>
             </TableRow>
           </TableHeader>
@@ -185,6 +256,9 @@ export function AdminAiProviderList({
                       {p.base_url}
                     </span>
                   )}
+                </TableCell>
+                <TableCell>
+                  <ProviderStateBadge provider={p} />
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-right">
                   {editingProv?.id === p.id ? (
@@ -219,20 +293,13 @@ export function AdminAiProviderList({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem
-                            data-testid={`admin-ai-provider-edit-${p.id}`}
-                            onSelect={() => onStartEdit(p)}
-                          >
-                            {t("aiEdit")}
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            variant="destructive"
-                            data-testid={`admin-ai-provider-delete-${p.id}`}
-                            onSelect={() => setDeleteTarget(p)}
-                          >
-                            {t("aiDelete")}
-                          </DropdownMenuItem>
+                          <ProviderMenuItems
+                            provider={p}
+                            togglePending={togglePending}
+                            onStartEdit={onStartEdit}
+                            onToggleEnabled={onToggleEnabled}
+                            onDelete={setDeleteTarget}
+                          />
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
