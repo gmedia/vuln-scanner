@@ -9,7 +9,9 @@ new tier (for example ``pro_plus``) without a deploy.
 
 from __future__ import annotations
 
-from typing import Literal
+import uuid
+from datetime import datetime
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -111,6 +113,20 @@ class SkuTierItem(BaseModel):
         )
 
 
+class SkuTierHistoryItem(BaseModel):
+    id: uuid.UUID
+    sku_code: str
+    action: str
+    actor_email: str | None = None
+    changes: dict[str, dict[str, Any]]
+    created_at: datetime
+
+class SkuTierHistoryList(BaseModel):
+    items: list[SkuTierHistoryItem]
+    total: int
+    page: int
+    page_size: int
+
 class SkuCatalogPriceBody(BaseModel):
     list_idr: int = Field(..., ge=0)
     invoicable: bool
@@ -172,6 +188,8 @@ __all__ = [
     "SkuProduct",
     "SkuTierCreate",
     "SkuTierFeatures",
+    "SkuTierHistoryItem",
+    "SkuTierHistoryList",
     "SkuTierItem",
     "SkuTierLimits",
     "SkuTierUpdate",

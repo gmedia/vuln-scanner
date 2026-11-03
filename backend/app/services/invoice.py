@@ -12,6 +12,7 @@ from app.i18n import DEFAULT_LOCALE, AppLocale
 from app.models.billing import OrgBillingProfile
 from app.models.invoice import OrgInvoice, SkuCatalog
 from app.models.organization import Organization
+from app.models.sku_tier_history import SkuTierHistory
 from app.models.user import User
 from app.services.invoice_html import render_invoice_html
 from app.services.invoice_math import (
@@ -122,17 +123,31 @@ class InvoiceService:
         sku: str,
         list_idr: int,
         invoicable: bool | None = None,
-        updated_by: uuid.UUID | None = None,
+        actor_user_id: uuid.UUID | None = None,
     ) -> SkuCatalog:
         result = await self.db.execute(select(SkuCatalog).where(SkuCatalog.product == product, SkuCatalog.sku == sku))
         row = result.scalar_one_or_none()
         if row is None:
             raise HTTPException(status_code=404, detail="Catalog row not found")
+        changes: dict[str, dict[str, object]] = {}
+        if row.list_idr != list_idr:
+            changes[f"price.{product}.list_idr"] = {"from": row.list_idr, "to": list_idr}
+        if invoicable is not None and row.invoicable != invoicable:
+            changes[f"price.{product}.invoicable"] = {"from": row.invoicable, "to": invoicable}
         row.list_idr = list_idr
         if invoicable is not None:
             row.invoicable = invoicable
         row.updated_at = datetime.now(UTC)
-        row.updated_by = updated_by
+        row.updated_by = actor_user_id
+        if changes:
+            self.db.add(
+                SkuTierHistory(
+                    sku_code=sku,
+                    action="price_updated",
+                    actor_user_id=actor_user_id,
+                    changes=changes,
+                )
+            )
         await self.db.commit()
         await self.db.refresh(row)
         return row

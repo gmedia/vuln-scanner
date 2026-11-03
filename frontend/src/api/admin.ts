@@ -654,6 +654,22 @@ export interface SkuTierMutationBody {
   prices?: Partial<Record<InvoiceProduct, SkuTierPriceBody>>;
 }
 
+export interface SkuTierHistoryItem {
+  id: string;
+  sku_code: string;
+  action: string;
+  actor_email: string | null;
+  changes: Record<string, { from: unknown; to: unknown }>;
+  created_at: string;
+}
+
+export interface SkuTierHistoryList {
+  items: SkuTierHistoryItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
 export async function getAdminSkuTiers(): Promise<SkuTierInfo[]> {
   const { data } = await api.get<SkuTierInfo[]>("/api/admin/sku-tiers");
   return data;
@@ -693,6 +709,17 @@ export async function reactivateSkuTier(code: string): Promise<SkuTierInfo> {
 
 export async function deleteSkuTier(code: string): Promise<void> {
   await api.delete(`/api/admin/sku-tiers/${code}`);
+}
+
+export async function getSkuTierHistory(
+  code: string,
+  params: { page?: number; page_size?: number } = {},
+): Promise<SkuTierHistoryList> {
+  const { data } = await api.get<SkuTierHistoryList>(
+    `/api/admin/sku-tiers/${code}/history`,
+    { params },
+  );
+  return data;
 }
 
 export interface AdminOrgItem {
@@ -893,6 +920,7 @@ export const adminApi = {
   deactivateSkuTier,
   reactivateSkuTier,
   deleteSkuTier,
+  getSkuTierHistory,
   listAdminOrgs,
   listAdminInvoices,
   createAdminInvoice,
