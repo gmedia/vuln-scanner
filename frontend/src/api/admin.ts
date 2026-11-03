@@ -427,6 +427,23 @@ export interface HppRateItem {
   updated_by: string | null;
 }
 
+export interface HppSettingHistoryItem {
+  id: string;
+  scope: "rate" | "overhead";
+  key: string | null;
+  amount_from: number | null;
+  amount_to: number;
+  actor_email: string | null;
+  created_at: string;
+}
+
+export interface HppSettingHistoryList {
+  items: HppSettingHistoryItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
 export interface HppOverheadItem {
   amount_idr: number;
   updated_at: string | null;
@@ -510,6 +527,19 @@ export async function getHppReport(params?: {
 
 export async function getHppOverhead(): Promise<HppOverheadItem> {
   const { data } = await api.get<HppOverheadItem>("/api/admin/hpp/overhead");
+  return data;
+}
+
+export async function getHppHistory(params?: {
+  scope?: "rate" | "overhead";
+  key?: string;
+  page?: number;
+  page_size?: number;
+}): Promise<HppSettingHistoryList> {
+  const { data } = await api.get<HppSettingHistoryList>(
+    "/api/admin/hpp/history",
+    { params },
+  );
   return data;
 }
 
@@ -904,6 +934,7 @@ export const adminApi = {
   getHppReport,
   getHppOverhead,
   updateHppOverhead,
+  getHppHistory,
   listHppCosts,
   createHppCost,
   deleteHppCost,

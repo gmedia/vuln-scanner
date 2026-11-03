@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { adminApi } from "@/api/admin";
+import { adminApi, getHppHistory } from "@/api/admin";
 import AdminHpp from "@/pages/admin/AdminHpp";
 
 vi.mock("@tanstack/react-query", () => ({
@@ -21,6 +21,7 @@ vi.mock("@/api/admin", () => ({
     createHppCost: vi.fn(),
     deleteHppCost: vi.fn(),
   },
+  getHppHistory: vi.fn(),
 }));
 
 vi.mock("@/components/ui/Card", () => ({
@@ -705,5 +706,109 @@ describe("AdminHpp", () => {
     expect(
       screen.getByTestId("hpp-report-card").querySelector(".bg-amber-600"),
     ).toBeTruthy();
+  });
+});
+
+describe("AdminHpp HPP history", () => {
+  const historyItem = {
+    id: "hist-1",
+    scope: "rate" as const,
+    key: "ip",
+    amount_from: 1000,
+    amount_to: 1500,
+    actor_email: "admin@example.com",
+    created_at: "2026-08-01T00:00:00Z",
+  };
+
+  let historyQuery: { queryFn?: () => unknown } | undefined;
+
+  function mockQueries(history: { items: unknown[]; total: number }) {
+    historyQuery = undefined;
+    vi.mocked(useQuery).mockImplementation((opts) => {
+      const key = (opts.queryKey as readonly unknown[])[0];
+      if (key === "hpp-history") {
+        historyQuery = opts as { queryFn?: () => unknown };
+        return {
+          data: { ...history, page: 1, page_size: 20 },
+          isLoading: false,
+        } as never;
+      }
+      if (key === "admin-hpp") {
+        return { data: rates, isLoading: false } as never;
+      }
+      if (key === "admin-hpp-overhead") {
+        return {
+          data: {
+            amount_idr: 100,
+            updated_at: "2026-08-01T00:00:00Z",
+            updated_by: null,
+          },
+          isLoading: false,
+        } as never;
+      }
+      if (key === "admin-hpp-costs") {
+        return { data: [], isLoading: false } as never;
+      }
+      return { data: report, isLoading: false } as never;
+    });
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(useMutation).mockReturnValue({ mutate: vi.fn() } as never);
+    vi.mocked(getHppHistory).mockResolvedValue({
+      items: [historyItem],
+      total: 1,
+      page: 1,
+      page_size: 20,
+    } as never);
+  });
+
+  it("opens the rates history with scope=rate and renders an entry", async () => {
+    mockQueries({ items: [historyItem], total: 1 });
+    const user = userEvent.setup();
+    render(<AdminHpp />);
+
+    await user.click(screen.getByTestId("hpp-rates-history"));
+
+    expect(await screen.findByTestId("hpp-history-dialog")).toBeInTheDocument();
+    const entry = screen.getByTestId("hpp-history-entry");
+    expect(entry).toHaveTextContent("1.500");
+    expect(entry).toHaveTextContent("admin@example.com");
+
+    await historyQuery?.queryFn?.();
+    expect(getHppHistory).toHaveBeenCalledWith({
+      scope: "rate",
+      page: 1,
+      page_size: 20,
+    });
+  });
+
+  it("opens the overhead history with scope=overhead", async () => {
+    mockQueries({ items: [], total: 0 });
+    const user = userEvent.setup();
+    render(<AdminHpp />);
+
+    await user.click(screen.getByTestId("hpp-overhead-history"));
+
+    expect(await screen.findByTestId("hpp-history-dialog")).toBeInTheDocument();
+    await historyQuery?.queryFn?.();
+    expect(getHppHistory).toHaveBeenCalledWith({
+      scope: "overhead",
+      page: 1,
+      page_size: 20,
+    });
+  });
+
+  it("renders the empty state when there is no history", async () => {
+    mockQueries({ items: [], total: 0 });
+    const user = userEvent.setup();
+    render(<AdminHpp />);
+
+    await user.click(screen.getByTestId("hpp-rates-history"));
+
+    expect(await screen.findByTestId("hpp-history-empty")).toHaveTextContent(
+      "No changes yet",
+    );
   });
 });
