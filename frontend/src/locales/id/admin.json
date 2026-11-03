@@ -580,6 +580,7 @@
   "tierFieldWorkspaceUnlimited": "Tanpa batas",
   "tierFieldWorkspaceHint": "Kosongkan untuk kursi tanpa batas.",
   "tierActionHistory": "Riwayat",
+  "skuHistoryAction": "Riwayat",
   "tierOrgsTitle": "Organisasi di {{label}}",
   "tierOrgsDescription": "Organisasi yang tier efektifnya masih tier ini, termasuk yang sudah dipensiunkan.",
   "tierOrgsLoading": "Memuat organisasi…",

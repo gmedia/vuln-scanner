@@ -580,6 +580,7 @@
   "tierFieldWorkspaceUnlimited": "Unlimited",
   "tierFieldWorkspaceHint": "Leave empty for unlimited seats.",
   "tierActionHistory": "History",
+  "skuHistoryAction": "History",
   "tierOrgsTitle": "Organizations on {{label}}",
   "tierOrgsDescription": "Organizations whose effective tier is still this one, including retired tiers.",
   "tierOrgsLoading": "Loading organizations…",
