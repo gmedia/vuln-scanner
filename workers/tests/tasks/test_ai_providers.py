@@ -6,6 +6,7 @@ _WORKERS = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_WORKERS))
 sys.path.insert(0, str(_WORKERS.parent / "backend"))
 
+from datetime import UTC, datetime  # noqa: E402
 from unittest.mock import MagicMock  # noqa: E402
 
 import app.services.ai_breaker  # noqa: E402, F401
@@ -182,6 +183,38 @@ def test_probe_stamps_last_probed_at_on_every_outcome(monkeypatch):
 
     assert result == {"probed": 5, "ok": 1, "degraded": 3, "unverified": 1, "errors": 0}
     assert all(provider.last_probed_at is not None for provider in providers)
+
+
+def test_probe_leaves_the_timestamp_alone_when_it_cannot_decide(monkeypatch):
+    """An exception before a verdict must not look like a successful check.
+
+    last_probed_at is the only liveness signal the probe has, so stamping it on a
+    request that never happened would keep vuln_ai_providers_probe_age_seconds small
+    and silence the stale alert while the probe is effectively dead.
+    """
+    _set_settings(monkeypatch)
+    provider = _provider()
+    client = MagicMock()
+    client.get.side_effect = RuntimeError("credential decrypt failed")
+
+    result, _ = _run(monkeypatch, [provider], client)
+
+    assert result == {"probed": 1, "ok": 0, "degraded": 0, "unverified": 0, "errors": 1}
+    assert provider.last_probed_at is None
+    assert provider.status == "ok"
+
+
+def test_probe_keeps_the_old_timestamp_when_it_cannot_decide(monkeypatch):
+    _set_settings(monkeypatch)
+    previous = datetime(2026, 1, 1, tzinfo=UTC)
+    provider = _provider()
+    provider.last_probed_at = previous
+    client = MagicMock()
+    client.get.side_effect = RuntimeError("credential decrypt failed")
+
+    _run(monkeypatch, [provider], client)
+
+    assert provider.last_probed_at == previous
 
 
 def test_probe_does_not_stamp_when_skipped(monkeypatch):

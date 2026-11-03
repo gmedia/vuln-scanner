@@ -128,6 +128,15 @@ breaker rather than the traffic.
 | timeout / connection error | `degraded` |
 | any other `4xx` | **untouched** — some vendors have no `/models` |
 
+`last_probed_at` is written only when the probe reaches one of those verdicts. If the request
+cannot even be built (an unreadable credential, a rotated encryption key, any unexpected
+exception) the timestamp is left as-is, so it never claims a check that did not happen. That is
+what lets `vuln_ai_providers_probe_age_seconds` stay honest.
+
+Limit worth knowing: that gauge reads `MIN(last_probed_at)`, which ignores `NULL`. So it catches
+a probe that is dead for **every** provider, but not a single provider that always errors while
+the rest are fine — check the per-provider `last_probed_at` in the Providers tab for that case.
+
 `degraded` providers stay in rotation but are tried last. A human never sets `degraded`: the probe
 owns it. The two suppression flags are separate but have the same effect on both routing and probing:
 

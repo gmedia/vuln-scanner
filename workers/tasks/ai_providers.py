@@ -1,9 +1,12 @@
 """Probe enabled AI upstream providers on a beat schedule.
 
-Writes ``ai_providers.status`` and ``ai_providers.last_probed_at`` for every provider
-it probes: 2xx is ``ok``, auth failures / 5xx / transport errors are ``degraded``, and
-any other 4xx stays unverified so a vendor without ``/models`` is never punished.
-``disabled`` is a human decision that this task never writes.
+Writes ``ai_providers.status`` and ``ai_providers.last_probed_at`` for every provider it
+reaches a verdict on: 2xx is ``ok``, auth failures / 5xx / transport errors are
+``degraded``, and any other 4xx stays unverified so a vendor without ``/models`` is never
+punished. ``disabled`` is a human decision that this task never writes.
+
+A provider whose probe raises before producing a verdict keeps its previous timestamp, so
+``last_probed_at`` never claims a check that did not happen.
 
 The circuit breaker belongs to traffic alone. This task used to record a breaker
 success on every 2xx, which deleted the open key every five minutes and left the
@@ -64,7 +67,6 @@ def probe_ai_providers() -> dict[str, Any]:
         )
         for provider in providers:
             counts["probed"] += 1
-            provider.last_probed_at = datetime.now(UTC)
             try:
                 response = client.get(
                     provider.base_url.rstrip("/") + "/models",
@@ -79,10 +81,14 @@ def probe_ai_providers() -> dict[str, Any]:
                     counts["degraded"] += 1
                 else:
                     counts["unverified"] += 1
+                provider.last_probed_at = datetime.now(UTC)
             except httpx.HTTPError:
                 provider.status = "degraded"
+                provider.last_probed_at = datetime.now(UTC)
                 counts["degraded"] += 1
             except Exception as exc:
+                # No verdict, so no timestamp: leaving it NULL keeps the probe-age alert honest
+                # about a probe that cannot even build a request (bad credential, rotated key).
                 logger.warning("ai provider probe failed for {}: {}", provider.name, exc)
                 counts["errors"] += 1
         session.commit()
