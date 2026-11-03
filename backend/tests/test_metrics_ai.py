@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 import app.metrics as metrics_mod
+from app.config import settings
 from app.metrics import (
     AiFxRateCollector,
     AiProvidersDegradedCollector,
@@ -205,12 +206,31 @@ class TestAiProvidersDegradedReader:
 
 
 class TestAiProvidersProbeAgeReader:
+    @pytest.fixture(autouse=True)
+    def _probe_on(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(settings, "ai_gateway_enabled", True)
+        monkeypatch.setattr(settings, "ai_provider_probe_enabled", True)
+
     def _reader_returning(self, row: tuple[object, int]) -> tuple[float | None, MagicMock]:
         engine = MagicMock()
         execute = engine.connect.return_value.__enter__.return_value.execute
         execute.return_value.one.return_value = row
         with patch("app.metrics._ai_engine", return_value=engine):
             return _read_ai_providers_probe_age_seconds(), execute
+
+    def test_provider_probe_age_omitted_when_gateway_disabled(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(settings, "ai_gateway_enabled", False)
+        engine = MagicMock()
+        with patch("app.metrics._ai_engine", return_value=engine):
+            assert _read_ai_providers_probe_age_seconds() is None
+        engine.connect.assert_not_called()
+
+    def test_provider_probe_age_omitted_when_probe_disabled(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(settings, "ai_provider_probe_enabled", False)
+        engine = MagicMock()
+        with patch("app.metrics._ai_engine", return_value=engine):
+            assert _read_ai_providers_probe_age_seconds() is None
+        engine.connect.assert_not_called()
 
     def test_provider_probe_age_returns_inf_when_never_probed(self):
         value, _ = self._reader_returning((None, 1))
