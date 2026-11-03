@@ -1,6 +1,6 @@
 """Merge the provider-probe column and the SKU assignment audit trail.
 
-Revision ID: merge_ai_probe_and_sku_assignment
+Revision ID: merge_ai_probe_sku_assignment
 Revises: add_ai_provider_last_probed_at, sku_tier_history_assignment_v1
 Create Date: 2026-11-03
 
@@ -12,7 +12,7 @@ whole fix: no schema change, just a single head again.
 
 from collections.abc import Sequence
 
-revision: str = "merge_ai_probe_and_sku_assignment"
+revision: str = "merge_ai_probe_sku_assignment"
 down_revision: tuple[str, str] | None = ("add_ai_provider_last_probed_at", "sku_tier_history_assignment_v1")
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
