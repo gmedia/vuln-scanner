@@ -64,6 +64,23 @@ class HppOverheadUpdateRequest(BaseModel):
     amount_idr: int = Field(..., ge=0)
 
 
+class HppSettingHistoryItem(BaseModel):
+    id: uuid.UUID
+    scope: str
+    key: str | None = None
+    amount_from: int | None = None
+    amount_to: int
+    actor_email: str | None = None
+    created_at: datetime
+
+
+class HppSettingHistoryList(BaseModel):
+    items: list[HppSettingHistoryItem]
+    total: int
+    page: int
+    page_size: int
+
+
 class HppCostLineItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
