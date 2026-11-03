@@ -261,26 +261,52 @@ class SkuTierService:
             )
         )
 
-    async def history(
-        self, code: str, *, page: int = 1, page_size: int = 20
+    async def _history_page(
+        self, clause: Any, *, page: int, page_size: int
     ) -> tuple[list[tuple[SkuTierHistory, str | None, str | None]], int]:
+        """Shared count + page read for the two history scopes (tier, org).
+
+        Keeping the joins, ordering and offset maths in one place is what stops
+        ``history`` and ``history_for_org`` from drifting apart; only the filter
+        clause differs.
+        """
         total = int(
-            await self.db.scalar(
-                select(func.count()).select_from(SkuTierHistory).where(SkuTierHistory.sku_code == code)
-            )
+            await self.db.scalar(select(func.count()).select_from(SkuTierHistory).where(clause))
             or 0
         )
         stmt = (
             select(SkuTierHistory, User.email, Organization.name)
             .outerjoin(User, SkuTierHistory.actor_user_id == User.id)
             .outerjoin(Organization, SkuTierHistory.organization_id == Organization.id)
-            .where(SkuTierHistory.sku_code == code)
+            .where(clause)
             .order_by(SkuTierHistory.created_at.desc(), SkuTierHistory.id.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
         )
         rows = (await self.db.execute(stmt)).all()
         return [(row[0], row[1], row[2]) for row in rows], total
+
+    async def history(
+        self, code: str, *, page: int = 1, page_size: int = 20
+    ) -> tuple[list[tuple[SkuTierHistory, str | None, str | None]], int]:
+        return await self._history_page(
+            SkuTierHistory.sku_code == code, page=page, page_size=page_size
+        )
+
+    async def history_for_org(
+        self, organization_id: uuid.UUID, *, page: int = 1, page_size: int = 20
+    ) -> tuple[list[tuple[SkuTierHistory, str | None, str | None]], int]:
+        """History rows for one organization, newest first.
+
+        There is no existence check by design: history is append-only, so a
+        deleted organization must still return its rows (``organization_id`` is
+        ``ON DELETE SET NULL``, so an unknown id simply yields an empty page).
+        """
+        return await self._history_page(
+            SkuTierHistory.organization_id == organization_id,
+            page=page,
+            page_size=page_size,
+        )
 
     async def list(self, *, include_inactive: bool = False) -> list[SkuTier]:
         stmt = select(SkuTier).order_by(SkuTier.rank.asc())
