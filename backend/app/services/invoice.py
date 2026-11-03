@@ -23,7 +23,7 @@ from app.services.invoice_math import (
     price_breakdown,
 )
 from app.services.scan_pdf import ScanPdfUnavailableError, render_scan_pdf
-from app.services.sku_tier import SkuTierService
+from app.services.sku_tier import SkuTierService, record_tier_assignment
 
 
 def bank_copy(*, include: bool) -> dict[str, str | None] | None:
@@ -266,6 +266,15 @@ class InvoiceService:
         if bank_ref is not None:
             inv.bank_ref = bank_ref.strip()[:64] or None
         if org is not None:
+            if org.sku != inv.sku:
+                record_tier_assignment(
+                    self.db,
+                    organization_id=org.id,
+                    sku_code=inv.sku,
+                    previous=org.sku,
+                    actor_id=None,
+                    source=f"invoice {inv.number}",
+                )
             org.sku = inv.sku
             org.updated_at = datetime.now(UTC)
         inv.updated_at = datetime.now(UTC)

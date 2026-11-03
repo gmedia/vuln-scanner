@@ -11,10 +11,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.main import app
+from app.models.invoice import OrgInvoice
+from app.models.organization import Organization, OrganizationMembership
 from app.models.sku_tier_history import SkuTierHistory
 from app.models.user import User
 from app.schemas.sku_tier import SkuTierCreate, SkuTierUpdate
 from app.services.auth import create_access_token, hash_password
+from app.services.billing import BillingService
+from app.services.organization import OrganizationService
 from app.services.sku_tier import SkuTierService
 
 
@@ -282,3 +286,119 @@ async def test_history_total_counts_rows_not_page(db_session: AsyncSession, admi
 
     assert total == 3
     assert len(rows) == 2
+
+
+async def _make_org(db: AsyncSession, owner: User, sku: str = "basic") -> Organization:
+    org = Organization(
+        id=uuid.uuid4(),
+        name="Audit Org",
+        slug=f"audit-org-{uuid.uuid4().hex[:6]}",
+        kind="company",
+        sku=sku,
+        created_by_user_id=owner.id,
+    )
+    db.add(org)
+    await db.flush()
+    db.add(
+        OrganizationMembership(
+            id=uuid.uuid4(),
+            organization_id=org.id,
+            user_id=owner.id,
+            role="owner",
+        )
+    )
+    await db.commit()
+    await db.refresh(org)
+    return org
+
+
+@pytest.mark.asyncio
+async def test_admin_tier_change_records_an_assignment_row(
+    db_session: AsyncSession, admin: User
+) -> None:
+    org = await _make_org(db_session, admin, sku="multi")
+
+    await OrganizationService(db_session).update_org(org.id, admin, sku="pro")
+
+    rows = [
+        row
+        for row in await _history_rows(db_session, "pro")
+        if row.action == "assigned"
+    ]
+    assert len(rows) == 1
+    row = rows[0]
+    assert row.organization_id == org.id
+    assert row.actor_user_id == admin.id
+    assert row.changes["tier"] == {"from": "multi", "to": "pro"}
+    assert row.changes["source"]["to"] == "admin_update"
+
+
+@pytest.mark.asyncio
+async def test_unchanged_tier_writes_no_assignment_row(
+    db_session: AsyncSession, admin: User
+) -> None:
+    org = await _make_org(db_session, admin, sku="basic")
+
+    await OrganizationService(db_session).update_org(org.id, admin, sku="basic")
+
+    rows = await _history_rows(db_session, "basic")
+    assert [row for row in rows if row.action == "assigned"] == []
+
+
+@pytest.mark.asyncio
+async def test_paying_a_scan_invoice_records_one_assignment_row(
+    db_session: AsyncSession, admin: User
+) -> None:
+    org = await _make_org(db_session, admin, sku="basic")
+    invoice = OrgInvoice(
+        id=uuid.uuid4(),
+        organization_id=org.id,
+        number="SX-AUDIT-0001",
+        product="scan",
+        sku="pro",
+        amount_idr=650_000,
+        period_start=datetime.now(UTC),
+        period_end=datetime.now(UTC) + timedelta(days=30),
+        due_date=datetime.now(UTC) + timedelta(days=7),
+        status="sent",
+        notes="",
+    )
+    db_session.add(invoice)
+    await db_session.commit()
+
+    await BillingService(db_session).record_invoice_payment(invoice.id, admin)
+
+    rows = [
+        row
+        for row in await _history_rows(db_session, "pro")
+        if row.action == "assigned"
+    ]
+    assert len(rows) == 1
+    assert rows[0].organization_id == org.id
+    assert rows[0].changes["tier"] == {"from": "basic", "to": "pro"}
+    assert rows[0].changes["source"]["to"] == "invoice SX-AUDIT-0001"
+
+
+@pytest.mark.asyncio
+async def test_history_endpoint_returns_the_organization_name(
+    db_session: AsyncSession, admin: User
+) -> None:
+    org = await _make_org(db_session, admin, sku="multi")
+    await OrganizationService(db_session).update_org(org.id, admin, sku="pro")
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get(
+                "/api/admin/sku-tiers/pro/history",
+                headers=_auth(admin),
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200, response.text
+    items = response.json()["items"]
+    assigned = [item for item in items if item["action"] == "assigned"]
+    assert len(assigned) == 1
+    assert assigned[0]["organization_id"] == str(org.id)
+    assert assigned[0]["organization_name"] == "Audit Org"

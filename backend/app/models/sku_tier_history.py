@@ -1,9 +1,13 @@
-"""Append-only audit trail for SKU tier configuration and price changes.
+"""Append-only audit trail for SKU tier configuration, price and assignment changes.
 
 ``sku_code`` is deliberately **not** a foreign key: deleting an unused tier must
 not erase the record of what it once was. Rows are written by
-``SkuTierService`` (tier mutations) and ``InvoiceService.update_catalog``
-(price-only edits), each in the same transaction as the mutation itself.
+``SkuTierService`` (tier mutations), ``InvoiceService.update_catalog``
+(price-only edits) and the two places that change an organization's effective
+tier, each in the same transaction as the mutation itself.
+
+``organization_id`` is only set for ``assigned`` rows; it is nullable and uses
+``ON DELETE SET NULL`` so the record survives an organization deletion.
 """
 
 import uuid
@@ -23,6 +27,7 @@ SKU_TIER_HISTORY_ACTIONS = (
     "reactivated",
     "deleted",
     "price_updated",
+    "assigned",
 )
 
 _ACTION_CHECK = "action IN (" + ", ".join(f"'{action}'" for action in SKU_TIER_HISTORY_ACTIONS) + ")"
@@ -33,6 +38,11 @@ class SkuTierHistory(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     sku_code: Mapped[str] = mapped_column(String(20), nullable=False)
     action: Mapped[str] = mapped_column(String(20), nullable=False)
+    organization_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     actor_user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="SET NULL"),
@@ -46,4 +56,5 @@ class SkuTierHistory(Base):
     __table_args__ = (
         CheckConstraint(_ACTION_CHECK, name="ck_sku_tier_history_action"),
         Index("ix_sku_tier_history_sku_created", "sku_code", "created_at"),
+        Index("ix_sku_tier_history_org_created", "organization_id", "created_at"),
     )

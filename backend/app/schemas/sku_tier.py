@@ -118,6 +118,8 @@ class SkuTierHistoryItem(BaseModel):
     sku_code: str
     action: str
     actor_email: str | None = None
+    organization_id: uuid.UUID | None = None
+    organization_name: str | None = None
     changes: dict[str, dict[str, Any]]
     created_at: datetime
 

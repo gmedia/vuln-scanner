@@ -84,10 +84,12 @@ async def get_sku_tier_history(
                 sku_code=row.sku_code,
                 action=row.action,
                 actor_email=email,
+                organization_id=row.organization_id,
+                organization_name=organization_name,
                 changes=row.changes,
                 created_at=row.created_at,
             )
-            for row, email in rows
+            for row, email, organization_name in rows
         ],
         total=total,
         page=page,
