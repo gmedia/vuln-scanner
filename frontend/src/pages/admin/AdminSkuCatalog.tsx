@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, Layers, Package, Tags } from "lucide-react";
+import { BookOpen, History, Layers, Package, Tags } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import {
@@ -50,6 +50,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
+import SkuTierHistorySheet from "@/components/admin/SkuTierHistorySheet";
 import AdminSkuTierPanel from "@/pages/admin/AdminSkuTierPanel";
 
 interface SkuDraft {
@@ -91,6 +92,11 @@ export function AdminSkuPricePanel() {
   const queryClient = useQueryClient();
   const [drafts, setDrafts] = useState<Record<string, SkuDraft>>({});
   const [pending, setPending] = useState<PendingSave | null>(null);
+  const [historyTarget, setHistoryTarget] = useState<{
+    code: string;
+    label: string;
+  } | null>(null);
+  const [historyPage, setHistoryPage] = useState(1);
 
   const { data: catalog } = useQuery({
     queryKey: ["admin-sku-catalog"],
@@ -287,16 +293,38 @@ export function AdminSkuPricePanel() {
                         />
                       </TableCell>
                       <TableCell className="py-1.5 text-xs text-muted-foreground">
-                        <span className="block font-mono tabular-nums">{formatUpdated(row.updated_at)}</span>
-                        {row.updated_by_email ? (
-                          <span
-                            className="block text-[11px]"
-                            data-testid={`sku-catalog-actor-${row.product}-${row.sku}`}
-                            title={row.updated_by_email}
-                          >
-                            {t("skuUpdatedBy", { email: row.updated_by_email })}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto min-h-0 flex-col items-start gap-0 whitespace-normal p-0 text-left text-xs font-normal"
+                          data-testid={`sku-catalog-history-${row.product}-${row.sku}`}
+                          title={t("skuHistoryAction")}
+                          aria-label={t("skuHistoryAction")}
+                          onClick={() =>
+                            setHistoryTarget({
+                              code: row.sku,
+                              label: row.label || row.sku,
+                            })
+                          }
+                        >
+                          <span className="font-mono tabular-nums">
+                            {formatUpdated(row.updated_at)}
                           </span>
-                        ) : null}
+                          {row.updated_by_email ? (
+                            <span
+                              className="text-[11px]"
+                              data-testid={`sku-catalog-actor-${row.product}-${row.sku}`}
+                              title={row.updated_by_email}
+                            >
+                              {t("skuUpdatedBy", { email: row.updated_by_email })}
+                            </span>
+                          ) : null}
+                          <span className="inline-flex items-center gap-1 text-[11px]">
+                            <History className="h-3 w-3" aria-hidden />
+                            {t("skuHistoryAction")}
+                          </span>
+                        </Button>
                       </TableCell>
                       <TableCell className="py-1.5 text-right">
                         <Button
@@ -437,6 +465,20 @@ export function AdminSkuPricePanel() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <SkuTierHistorySheet
+        open={historyTarget != null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setHistoryTarget(null);
+            setHistoryPage(1);
+          }
+        }}
+        code={historyTarget?.code ?? ""}
+        label={historyTarget?.label ?? ""}
+        page={historyPage}
+        onPageChange={setHistoryPage}
+      />
     </div>
   );
 }

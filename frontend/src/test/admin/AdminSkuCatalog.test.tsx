@@ -24,6 +24,12 @@ vi.mock("@/api/admin", () => ({
     deleteSkuTier: vi.fn(),
   },
   getAdminSkuTiers: vi.fn(async () => tierFixtures),
+  getSkuTierHistory: vi.fn(async () => ({
+    items: [],
+    total: 0,
+    page: 1,
+    page_size: 20,
+  })),
   createSkuTier: vi.fn(),
   updateSkuTier: vi.fn(),
   deactivateSkuTier: vi.fn(),
@@ -182,6 +188,55 @@ describe("AdminSkuCatalog", () => {
     ).toBeInTheDocument();
     expect(screen.getByTestId("sku-catalog-row-scan-pro")).toHaveTextContent(
       "3",
+    );
+  });
+
+  it("opens the tier history from a price row", async () => {
+    vi.mocked(useQuery).mockImplementation(((options: { queryKey: unknown[] }) => {
+      if (options.queryKey[0] === "sku-tier-history") {
+        return {
+          data: {
+            items: [
+              {
+                id: "h1",
+                sku_code: "pro",
+                action: "price_updated",
+                actor_email: "ops@sinexis.app",
+                changes: {
+                  "price.scan.list_idr": { from: 600_000, to: 650_000 },
+                },
+                created_at: "2026-11-03T00:00:00Z",
+              },
+            ],
+            total: 1,
+            page: 1,
+            page_size: 20,
+          },
+        } as never;
+      }
+      if (options.queryKey[0] === "admin-sku-tiers") {
+        return { data: tierFixtures } as never;
+      }
+      return {
+        data:
+          options.queryKey[0] === "admin-sku-pricing" ? pricing : catalog,
+      } as never;
+    }) as typeof useQuery);
+    const user = userEvent.setup();
+    render(<AdminSkuCatalog />);
+
+    await user.click(
+      screen.getByTestId("sku-catalog-history-scan-pro"),
+    );
+
+    expect(
+      await screen.findByTestId("sku-tier-history-dialog"),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("sku-tier-history-entry")).toHaveTextContent(
+      "price.scan.list_idr",
+    );
+    expect(screen.getByTestId("sku-tier-history-entry")).toHaveTextContent(
+      "ops@sinexis.app",
     );
   });
 

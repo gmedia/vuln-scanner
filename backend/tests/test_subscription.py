@@ -15,6 +15,7 @@ from app.models.asset import ScanAsset
 from app.models.billing import Subscription
 from app.models.organization import Organization, OrganizationMembership
 from app.models.sku_tier import SkuTier
+from app.models.subscription import SubscriptionRequest
 from app.models.user import User
 from app.services.auth import create_access_token, hash_password
 from app.services.organization import ensure_personal_org
@@ -769,3 +770,122 @@ async def test_overview_keeps_inactive_current_tier_in_catalog_and_bundles(db_se
             assert multi_bundle["bundle_idr"] == 2_900_000
     finally:
         app.dependency_overrides.clear()
+
+
+async def _pending_request(db: AsyncSession, org_id: uuid.UUID, owner_id: uuid.UUID) -> SubscriptionRequest:
+    request = SubscriptionRequest(
+        id=uuid.uuid4(),
+        organization_id=org_id,
+        direction="upgrade",
+        current_sku="basic",
+        target_sku="pro",
+        status="pending",
+        requested_by_user_id=owner_id,
+    )
+    db.add(request)
+    await db.commit()
+    await db.refresh(request)
+    return request
+
+
+@pytest.mark.asyncio
+async def test_admin_can_approve_a_pending_request(db_session, ctx):
+    request = await _pending_request(db_session, ctx["org"].id, ctx["owner"].id)
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                f"/api/admin/subscription-requests/{request.id}/approve",
+                headers=_auth(ctx["admin"]),
+                json={"note": "approved by ops"},
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["status"] == "approved"
+    assert body["resolution_note"] == "approved by ops"
+    # Approval is a decision record only: the tier still changes through an
+    # invoice or an explicit admin org update.
+    org = await db_session.get(Organization, ctx["org"].id)
+    assert org is not None and org.sku == "basic"
+
+
+@pytest.mark.asyncio
+async def test_admin_can_reject_a_pending_request(db_session, ctx):
+    request = await _pending_request(db_session, ctx["org"].id, ctx["owner"].id)
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                f"/api/admin/subscription-requests/{request.id}/reject",
+                headers=_auth(ctx["admin"]),
+                json={"note": "not now"},
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200, response.text
+    assert response.json()["status"] == "rejected"
+
+
+@pytest.mark.asyncio
+async def test_resolving_an_already_resolved_request_conflicts(db_session, ctx):
+    request = await _pending_request(db_session, ctx["org"].id, ctx["owner"].id)
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            first = await client.post(
+                f"/api/admin/subscription-requests/{request.id}/approve",
+                headers=_auth(ctx["admin"]),
+                json={"note": ""},
+            )
+            second = await client.post(
+                f"/api/admin/subscription-requests/{request.id}/approve",
+                headers=_auth(ctx["admin"]),
+                json={"note": ""},
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert first.status_code == 200
+    assert second.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test_non_admin_cannot_resolve_a_request(db_session, ctx):
+    request = await _pending_request(db_session, ctx["org"].id, ctx["owner"].id)
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                f"/api/admin/subscription-requests/{request.id}/approve",
+                headers=_auth(ctx["owner"], ctx["org"].id),
+                json={"note": ""},
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_resolving_an_unknown_request_returns_404(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                f"/api/admin/subscription-requests/{uuid.uuid4()}/approve",
+                headers=_auth(ctx["admin"]),
+                json={"note": ""},
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 404
