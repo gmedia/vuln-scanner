@@ -307,7 +307,7 @@ class SubscriptionService:
                         label=tier.label,
                         active=tier.active,
                         list_idr=int(row.list_idr) if row is not None else 0,
-                        seats=int(row.seats) if row is not None else _limit_for(tier, service),
+                        seats=_limit_for(tier, service),
                         invoicable=bool(row.invoicable) if row is not None else False,
                     )
                 )

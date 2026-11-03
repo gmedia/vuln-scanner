@@ -87,11 +87,37 @@ async def get_sku_catalog(
     if limit_response:
         return limit_response
     rows = await InvoiceService(db).list_catalog_with_actors()
-    tier_rows = await db.execute(select(SkuTier.code, SkuTier.label, SkuTier.active))
-    tiers = {str(code): (str(label), bool(active)) for code, label, active in tier_rows.all()}
+    tier_rows = await db.execute(
+        select(
+            SkuTier.code,
+            SkuTier.label,
+            SkuTier.active,
+            SkuTier.limit_scan,
+            SkuTier.limit_host,
+            SkuTier.limit_uptime,
+            SkuTier.limit_guard,
+        )
+    )
+    tiers = {
+        str(code): (
+            str(label),
+            bool(active),
+            {
+                "scan": int(limit_scan),
+                "host": int(limit_host),
+                "uptime": int(limit_uptime),
+                "guard": int(limit_guard),
+            },
+        )
+        for code, label, active, limit_scan, limit_host, limit_uptime, limit_guard in tier_rows.all()
+    }
     items = []
     for row, email in rows:
-        label, active = tiers.get(str(row.sku), (str(row.sku), False))
+        entry = tiers.get(str(row.sku))
+        label, active, limits = entry if entry is not None else (str(row.sku), False, {})
+        # seats is derived from sku_tiers.limit_*; the sku_catalog.seats column
+        # is retained for now but is not read on any API path.
+        seats = int(limits.get(row.product, 0))
         items.append(
             SkuCatalogItem(
                 product=row.product,
@@ -99,7 +125,7 @@ async def get_sku_catalog(
                 label=label,
                 active=active,
                 list_idr=row.list_idr,
-                seats=row.seats,
+                seats=seats,
                 invoicable=row.invoicable,
                 updated_at=row.updated_at,
                 updated_by=row.updated_by,
@@ -123,13 +149,16 @@ async def update_sku_catalog(
         return limit_response
     row = await InvoiceService(db).update_catalog(product, sku, body.list_idr, body.invoicable, current_admin.id)
     tier = await SkuTierService(db).get(row.sku)
+    # seats is derived from sku_tiers.limit_*; the sku_catalog.seats column is
+    # retained for now but is not read on any API path.
+    seats = await SkuTierService(db).product_limit(row.sku, row.product)
     return SkuCatalogItem(
         product=row.product,
         sku=row.sku,
         label=tier.label,
         active=tier.active,
         list_idr=row.list_idr,
-        seats=row.seats,
+        seats=seats,
         invoicable=row.invoicable,
         updated_at=row.updated_at,
         updated_by=row.updated_by,

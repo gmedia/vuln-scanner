@@ -60,8 +60,22 @@ async def list_sku_tiers(
     limit_response = await admin_limiter(request)
     if limit_response:
         return limit_response
-    tiers = await SkuTierService(db).list(include_inactive=True)
-    return [await _serialize(db, tier) for tier in tiers]
+    service = SkuTierService(db)
+    tiers = await service.list(include_inactive=True)
+    codes = [tier.code for tier in tiers]
+    # Two batch lookups keep the statement count constant regardless of how
+    # many tiers exist (the per-tier _serialize loop was an N+1).
+    usage = await service.usage_counts_many(codes)
+    with_catalog = await service.catalog_presence_many(codes)
+    return [
+        SkuTierItem.from_model(tier).model_copy(
+            update={
+                "usage": usage[tier.code],
+                "has_catalog": tier.code in with_catalog,
+            }
+        )
+        for tier in tiers
+    ]
 
 
 @router.get("/{code}/history", response_model=SkuTierHistoryList)
