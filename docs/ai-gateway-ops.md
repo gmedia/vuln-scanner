@@ -20,6 +20,10 @@ curl -s -o /dev/null -w '%{http_code}\n' https://<host>/v1/models
 
 `404` = flag off. `401` (invalid API key) = flag on, auth reachable.
 
+The tuning knobs (`AI_UPSTREAM_*`, `AI_BREAKER_*`, `AI_PROVIDER_PROBE_*`) follow the same path: the
+deploy job writes them into the host `.env` from secrets, falling back to the compose defaults listed
+under **Time budget**. Tune them as secrets, not by editing `.env` — the next deploy rewrites that file.
+
 ## What must be running
 
 | Piece | Why |
