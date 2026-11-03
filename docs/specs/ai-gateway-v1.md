@@ -1,6 +1,6 @@
 # Spec: AI Gateway v1 (OpenAI-compatible resale)
 
-**Status:** **S1–S7.3.2 shipped** (catalog, wallet, `/v1`, SPA, Redis limits, ops notes, USD pricing, upstream failover, time budget, breaker + health probe). Git flag default **off**.
+**Status:** **S1–S7.3.6 shipped** (catalog, wallet, `/v1`, SPA, Redis limits, ops notes, USD pricing, upstream failover, time budget, breaker + health probe, servable catalog, probe liveness). Git flag default **off**.
 **Goal:** resell **contracted OpenAI-compatible** wholesale APIs to Sinexis orgs: customer keys, usage ledger, admin catalog + trial chat.
 **Epic:** **new business line** (not P14, not Guard, not Workspace). Does **not** jump attach / Host Protect / GTM.
 **Depends:** P2 Workspace (JWT `org_id`, membership) · existing admin SPA kit · host nginx + Cloudflare for a new `/v1` location.
@@ -132,6 +132,7 @@ SPA /admin/ai                  -- admin --> /api/admin/ai/*
 | `credential_enc` | envelope-encrypted; never log |
 | `enabled` | bool; `false` removes the provider from routing entirely |
 | `status` | `ok` \| `degraded` \| `disabled`. **`disabled`** = admin-only, not routed. **`degraded`** = still routed but ordered **last** behind healthy providers. Unreachable providers are marked `degraded` by `ai_providers.probe`; only a human marks `disabled`. |
+| `last_probed_at` | nullable. When the probe last reached a **verdict** for this provider. `NULL` = never probed, or probed but no request could be built (unreadable credential). Read by `vuln_ai_providers_probe_age_seconds` and shown per provider in the Providers tab. |
 
 ### 7.2 `ai_models`
 
@@ -280,6 +281,14 @@ a fallback never changes what the customer pays, only `cogs_idr`.
 
 Response shape: OpenAI chat completions (including `usage`). Errors: OpenAI-style `{ "error": { "message", "type", "code" } }` plus our types `insufficient_quota`, `model_not_found`, `rate_limit`.
 
+**Servable catalog.** `GET /v1/models` lists an alias only when at least one of its candidates is
+usable — `provider.enabled` and `provider.status != 'disabled'`, checked on the primary and on each
+fallback row. With `AI_UPSTREAM_FAILOVER_ENABLED=false` only the primary counts, because that is the
+only attempt routing would make. A model with no usable candidate answers `404 model_not_found` on
+chat, so listing it would advertise a call that cannot succeed. `GET /api/ai/models` applies the
+**same** rule through the same predicate (`app/services/ai_catalog.py`); the two catalogs must never
+disagree, and a test asserts they return identical id sets.
+
 ### 8.2 Customer SPA API (JWT org)
 
 | Method | Path | Notes |
@@ -288,7 +297,7 @@ Response shape: OpenAI chat completions (including `usage`). Errors: OpenAI-styl
 | DELETE | `/api/ai/keys/{id}` | revoke |
 | GET | `/api/ai/usage` | org-scoped, metadata |
 | GET | `/api/ai/wallet` | balance |
-| GET | `/api/ai/models` | public catalog |
+| GET | `/api/ai/models` | public catalog; same servable filter as `/v1/models` |
 
 ### 8.3 Admin (JWT `is_admin`)
 
@@ -327,6 +336,10 @@ Response shape: OpenAI chat completions (including `usage`). Errors: OpenAI-styl
 
 ## 10. Edge / ops
 
+The authoritative list of `/metrics` series and alert rules is
+[`ai-gateway-ops.md`](ai-gateway-ops.md#monitoring) — one owner per fact, so this section only records
+the rules the design itself depends on and does not restate the tables.
+
 - Host nginx + compose nginx: `location ^~ /v1/` → backend `:8000`; `proxy_http_version 1.1`; `proxy_buffering off`; `proxy_cache off`; `proxy_read_timeout` ≥ 120s; `X-Accel-Buffering: no`.
 - Time budget: `AI_UPSTREAM_FAILOVER_DEADLINE_SECONDS` (default **100**) is the whole request budget and must stay **below** nginx `proxy_read_timeout` (120s), so the gateway answers before the proxy gives up. Every attempt is clamped to what is left of it, and no new attempt starts unless at least `AI_UPSTREAM_MIN_ATTEMPT_SECONDS` remains. `AI_UPSTREAM_CONNECT_TIMEOUT_SECONDS` (10) fails an unreachable provider fast; `AI_UPSTREAM_STREAM_IDLE_TIMEOUT_SECONDS` (45) is the streaming idle timeout, so a provider that accepts then stalls is detected and failed over **before** the first byte.
 - Known limit: a non-streaming provider that stays silent cannot be failed over, because its read timeout *is* the remaining budget — cutting it earlier would break legitimate slow completions. Closing that gap needs the provider health probe / circuit breaker (S7.3), not a shorter timeout.
@@ -341,6 +354,17 @@ Response shape: OpenAI chat completions (including `usage`). Errors: OpenAI-styl
 - `ai_providers.probe` runs every 5 minutes on the worker queue and GETs `{base_url}/models` per
   enabled provider: 2xx → `ok`, 401/403/5xx/transport → `degraded`, any other `4xx` → untouched
   (some vendors have no `/models`).
+- `last_probed_at` is written only when the probe reaches a **verdict** (`2xx`, `401/403`, `5xx`,
+  another `4xx`, or a transport error). An exception before that — unreadable credential, rotated
+  encryption key — leaves it untouched, so the timestamp never claims a check that did not happen.
+- `/metrics` also exposes `vuln_ai_providers_probe_age_seconds`: age of the **oldest** enabled,
+  non-disabled provider's `last_probed_at`. `+Inf` when the probe should run but has never run;
+  sample omitted when the fleet is empty **or when `AI_GATEWAY_ENABLED` / `AI_PROVIDER_PROBE_ENABLED`
+  is off**, so a deliberate rollback does not page anyone. `VulnScannerAiProviderProbeStale` fires
+  above 900s (three missed 5-minute cycles).
+- Known limit: `MIN(last_probed_at)` ignores `NULL`, so that gauge catches a probe that is dead for
+  **every** provider, not one provider that always errors while the rest are fine. The per-provider
+  timestamp in the Providers tab is what covers the single-provider case.
 - **Single writer per state.** The probe writes `ai_providers.status` and never touches the breaker;
   only the request path writes `ai:cb:*`. Letting a probe 2xx clear the breaker erased it every five
   minutes, which made it useless against a provider whose `/models` answers while `/chat/completions`
@@ -383,6 +407,10 @@ Register both in `App.tsx` + [`AGENT_PAGE_REGISTRY.md`](../AGENT_PAGE_REGISTRY.m
 | **S7.3** | Provider health probe (`ai_providers.probe`) + Redis circuit breaker; `degraded` ordered last | **done** |
 | **S7.3.1** | Models-tab sheet shows the routing order the gateway really uses | **done** |
 | **S7.3.2** | Probe writes `status` only; the breaker is traffic's alone | **done** |
+| **S7.3.3** | Servable catalog: `/v1/models` and `/api/ai/models` list only aliases with a usable candidate, via one shared predicate | **done** |
+| **S7.3.4** | Providers tab shows routing state (routed / degraded / not routed) and toggles `enabled`, clearing a stale `disabled` | **done** |
+| **S7.3.5** | Probe liveness: `ai_providers.last_probed_at`, `vuln_ai_providers_probe_age_seconds`, `VulnScannerAiProviderProbeStale` | **done** |
+| **S7.3.6** | Probe stamps `last_probed_at` only on a verdict; per-provider last-check time in the Providers tab | **done** |
 
 Default order **S1 → S5**. Do not combine with Host Protect / Guard PRs.
 
@@ -412,6 +440,13 @@ Default order **S1 → S5**. Do not combine with Host Protect / Guard PRs.
   `4xx` never opens it; one success closes it.
 - Probe: an unreachable provider becomes `degraded` and is ordered last; a probe never writes
   `disabled`, and a `disabled` provider is never probed or re-enabled.
+- Catalog: `/v1/models` and `/api/ai/models` return the same ids for the same fleet, and a model
+  whose every candidate is unusable appears in neither.
+- Probe liveness: a provider that never reaches a verdict keeps `last_probed_at` unchanged, so the
+  age gauge ages out and `VulnScannerAiProviderProbeStale` fires; with the gateway or the probe
+  switched off the sample is omitted instead.
+- Providers tab: a provider is labelled routed / degraded / not routed, and turning it back on
+  clears a `disabled` status so it is actually routed again.
 
 ---
 
