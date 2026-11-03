@@ -28,11 +28,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/Select";
-import {
-  AdminShell,
-  AdminShellBody,
-  AdminShellHead,
-} from "@/components/admin/AdminShell";
+import { AdminShell, AdminShellBody, AdminShellHead } from "@/components/admin/AdminShell";
+import HppHistorySheet, {
+  type HppHistoryScope,
+} from "@/components/admin/HppHistorySheet";
 import { marginTone, reportTone } from "@/components/admin/adminChrome";
 import { SiemRail } from "@/components/siem/siemChrome";
 import { TONE_TEXT } from "@/lib/toneColors";
@@ -80,6 +79,15 @@ function AdminHpp() {
   const [costAmount, setCostAmount] = useState("");
   const [costCategory, setCostCategory] = useState<"opex" | "variable">("opex");
   const [costNote, setCostNote] = useState("");
+  const [historyScope, setHistoryScope] = useState<HppHistoryScope | null>(
+    null,
+  );
+  const [historyPage, setHistoryPage] = useState(1);
+
+  const openHistory = (scope: HppHistoryScope) => {
+    setHistoryPage(1);
+    setHistoryScope(scope);
+  };
 
   const { data: rates, isLoading: ratesLoading } = useQuery({
     queryKey: ["admin-hpp"],
@@ -257,6 +265,16 @@ function AdminHpp() {
           icon={Calculator}
           title={t("hppRatesCard")}
           hint={t("hppRatesHint")}
+          aside={
+            <Button
+              variant="ghost"
+              size="sm"
+              data-testid="hpp-rates-history"
+              onClick={() => openHistory("rate")}
+            >
+              {t("tierActionHistory")}
+            </Button>
+          }
         />
         <AdminShellBody>
           <p className="mb-3 text-[11px] text-muted-foreground">
@@ -390,6 +408,16 @@ function AdminHpp() {
           icon={Receipt}
           title={t("hppOverheadCard")}
           hint={t("hppOverheadHint")}
+          aside={
+            <Button
+              variant="ghost"
+              size="sm"
+              data-testid="hpp-overhead-history"
+              onClick={() => openHistory("overhead")}
+            >
+              {t("tierActionHistory")}
+            </Button>
+          }
         />
         <AdminShellBody className="space-y-3">
           {overheadLoading ? (
@@ -820,6 +848,19 @@ function AdminHpp() {
           )}
         </AdminShellBody>
       </AdminShell>
+
+      <HppHistorySheet
+        open={historyScope !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setHistoryScope(null);
+            setHistoryPage(1);
+          }
+        }}
+        scope={historyScope ?? "rate"}
+        page={historyPage}
+        onPageChange={setHistoryPage}
+      />
     </div>
   );
 }
