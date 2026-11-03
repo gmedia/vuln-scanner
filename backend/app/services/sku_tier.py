@@ -17,6 +17,7 @@ observes a half-applied tier.
 
 from __future__ import annotations
 
+import builtins
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -352,6 +353,54 @@ class SkuTierService:
             (SubscriptionRequest.current_sku == code) | (SubscriptionRequest.target_sku == code),
         )
         return SkuUsage(orgs=orgs, subscriptions=subscriptions, invoices=invoices, requests=requests)
+
+    async def usage_counts_many(self, codes: builtins.list[str]) -> dict[str, SkuUsage]:
+        """Usage counts for many tiers in a constant number of queries.
+
+        Five grouped statements total (orgs, subscriptions, invoices, request
+        ``current_sku`` and request ``target_sku``); the request column is
+        summed in Python rather than expressed as a UNION so SQLite and
+        PostgreSQL run the same shape. A request row is attributed to both
+        columns, so a row moving from one tier to another counts under both
+        codes. Every requested code is present in the result, defaulting to
+        zeros.
+        """
+        if not codes:
+            return {}
+        unique: builtins.list[str] = list(dict.fromkeys(codes))
+
+        async def _grouped(column: Any) -> dict[str, int]:
+            rows = await self.db.execute(
+                select(column, func.count()).where(column.in_(unique)).group_by(column)
+            )
+            return {str(code): int(count) for code, count in rows.all()}
+
+        orgs = await _grouped(Organization.sku)
+        subscriptions = await _grouped(Subscription.sku)
+        invoices = await _grouped(OrgInvoice.sku)
+        requests_current = await _grouped(SubscriptionRequest.current_sku)
+        requests_target = await _grouped(SubscriptionRequest.target_sku)
+
+        return {
+            code: SkuUsage(
+                orgs=orgs.get(code, 0),
+                subscriptions=subscriptions.get(code, 0),
+                invoices=invoices.get(code, 0),
+                requests=requests_current.get(code, 0) + requests_target.get(code, 0),
+            )
+            for code in unique
+        }
+
+    async def catalog_presence_many(self, codes: builtins.list[str]) -> set[str]:
+        """Codes that have at least one ``sku_catalog`` row, in one query."""
+        if not codes:
+            return set()
+        rows = await self.db.execute(
+            select(SkuCatalog.sku)
+            .where(SkuCatalog.sku.in_(list(dict.fromkeys(codes))))
+            .group_by(SkuCatalog.sku)
+        )
+        return {str(code) for code in rows.scalars().all()}
 
     async def _count(self, model: Any, clause: Any) -> int:
         result = await self.db.execute(select(func.count()).select_from(model).where(clause))
