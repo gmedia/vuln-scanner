@@ -202,6 +202,13 @@ class Settings(BaseSettings):
     # Billing core (phase 2). Empty disables the payment webhook endpoint.
     payment_webhook_secret: str = ""
 
+    # Payments v1. Gateway is optional and off by default; manual transfer stays.
+    payment_gateway_enabled: bool = False
+    payment_providers_enabled: str = ""
+    midtrans_server_key: str = ""
+    midtrans_is_production: bool = False
+    midtrans_verify_status: bool = True
+
 
 settings = Settings()
 

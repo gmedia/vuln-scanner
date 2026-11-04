@@ -18,6 +18,7 @@ from app.api.status_html import html_router as status_html_router
 from app.config import check_settings, settings
 from app.middleware.auth import ApiKeyMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
+from app.services.payments.registry import validate_payment_config
 from app.utils.log_sanitizer import sanitize_for_log
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Verify settings on startup and clean up on shutdown."""
     _configure_app_logging()
     check_settings()
+    validate_payment_config()
     yield
 
 
