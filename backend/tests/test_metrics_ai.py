@@ -1,3 +1,4 @@
+import inspect
 import logging
 import math
 import sys
@@ -11,6 +12,7 @@ from app.config import settings
 from app.metrics import (
     AiFxRateCollector,
     AiProvidersDegradedCollector,
+    AiProvidersNeverProbedCollector,
     AiProvidersProbeAgeCollector,
     AiShortfallCollector,
     AiStaleReservationsCollector,
@@ -18,6 +20,7 @@ from app.metrics import (
     AiWalletLedgerDriftCollector,
     _read_ai_fx_rate_age_days,
     _read_ai_providers_degraded,
+    _read_ai_providers_never_probed,
     _read_ai_providers_probe_age_seconds,
     _read_ai_shortfall_idr_24h,
     _read_ai_stale_open_reservations,
@@ -328,13 +331,14 @@ class TestRegisterCustomMetrics:
             register_custom_metrics()
             register_custom_metrics()
 
-        assert mock_reg.call_count == 8
+        assert mock_reg.call_count == 9
         classes = [type(call.args[0]).__name__ for call in mock_reg.call_args_list]
         assert sorted(classes) == sorted(
             [
                 "AutoFailCollector",
                 "AiFxRateCollector",
                 "AiProvidersDegradedCollector",
+                "AiProvidersNeverProbedCollector",
                 "AiProvidersProbeAgeCollector",
                 "AiShortfallCollector",
                 "AiStaleReservationsCollector",
@@ -342,4 +346,70 @@ class TestRegisterCustomMetrics:
                 "AiWalletLedgerDriftCollector",
             ]
         )
-        assert len(set(classes)) == 8
+        assert len(set(classes)) == 9
+
+
+class TestAiProvidersNeverProbedReader:
+    @pytest.fixture(autouse=True)
+    def _probe_on(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(settings, "ai_gateway_enabled", True)
+        monkeypatch.setattr(settings, "ai_provider_probe_enabled", True)
+
+    def _reader_returning(self, count: int) -> float | None:
+        engine = MagicMock()
+        execute = engine.connect.return_value.__enter__.return_value.execute
+        execute.return_value.scalar.return_value = count
+        with patch("app.metrics._ai_engine", return_value=engine):
+            return _read_ai_providers_never_probed()
+
+    def test_reports_the_count(self):
+        assert self._reader_returning(2) == 2.0
+        assert self._reader_returning(0) == 0.0
+
+    def test_null_count_is_zero(self):
+        assert self._reader_returning(None) == 0.0
+
+    def test_omitted_when_the_probe_is_off(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(settings, "ai_provider_probe_enabled", False)
+        engine = MagicMock()
+        with patch("app.metrics._ai_engine", return_value=engine):
+            assert _read_ai_providers_never_probed() is None
+        engine.connect.assert_not_called()
+
+    def test_omitted_when_the_gateway_is_off(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(settings, "ai_gateway_enabled", False)
+        engine = MagicMock()
+        with patch("app.metrics._ai_engine", return_value=engine):
+            assert _read_ai_providers_never_probed() is None
+        engine.connect.assert_not_called()
+
+    def test_never_probed_metric_is_excluded_only_when_voluntarily_off(self):
+        """A disabled provider is the admin's decision, not a probe failure."""
+        source = inspect.getsource(metrics_mod._read_ai_providers_never_probed)
+        assert "status != 'disabled'" in source
+        assert "enabled IS TRUE" in source
+        assert "last_probed_at IS NULL" in source
+
+
+class TestAiProvidersNeverProbedCollector:
+    def test_emits_the_count(self):
+        with patch("app.metrics._read_ai_providers_never_probed", return_value=3.0):
+            family, sample = _only_sample(AiProvidersNeverProbedCollector())
+
+        assert family.name == "vuln_ai_providers_never_probed"
+        assert family.type == "gauge"
+        assert sample.value == 3.0
+
+    def test_emits_zero_rather_than_nothing_when_every_provider_is_fine(self):
+        with patch("app.metrics._read_ai_providers_never_probed", return_value=0.0):
+            family, sample = _only_sample(AiProvidersNeverProbedCollector())
+
+        assert sample.value == 0.0
+
+    def test_emits_nothing_when_reader_returns_none(self):
+        with patch("app.metrics._read_ai_providers_never_probed", return_value=None):
+            assert list(AiProvidersNeverProbedCollector().collect()) == []
+
+    def test_emits_nothing_when_reader_raises(self):
+        with patch("app.metrics._read_ai_providers_never_probed", side_effect=RuntimeError("db down")):
+            assert list(AiProvidersNeverProbedCollector().collect()) == []

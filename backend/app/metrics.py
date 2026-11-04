@@ -26,6 +26,7 @@ STALE_OPEN_RESERVATIONS_NAME = "vuln_ai_stale_open_reservations"
 _UPSTREAM_BREAKERS_OPEN_NAME = "vuln_ai_upstream_breakers_open"
 _PROVIDERS_DEGRADED_NAME = "vuln_ai_providers_degraded"
 _PROVIDERS_PROBE_AGE_NAME = "vuln_ai_providers_probe_age_seconds"
+_PROVIDERS_NEVER_PROBED_NAME = "vuln_ai_providers_never_probed"
 # Mirrors workers/tasks/ai_reservations.STALE_RESERVATION_MINUTES; kept local so metrics never imports the worker.
 STALE_RESERVATION_MINUTES = 20
 # Also local by the same rule; documents the 15-minute VulnScannerAiProviderProbeStale threshold.
@@ -229,6 +230,34 @@ def _read_ai_providers_degraded() -> float | None:
         return None
 
 
+def _read_ai_providers_never_probed() -> float | None:
+    """Enabled providers the probe has never reached a verdict on.
+
+    ``MIN(last_probed_at)`` ignores NULL, so a provider that always fails while the rest
+    are healthy is invisible to the age gauge. This counts exactly those rows. Omitted
+    when the probe is switched off, so a deliberate pause does not page anyone.
+    """
+    try:
+        from sqlalchemy import text
+
+        from app.config import settings
+
+        if not settings.ai_gateway_enabled or not settings.ai_provider_probe_enabled:
+            return None
+
+        with _ai_engine().connect() as conn:
+            raw = conn.execute(
+                text(
+                    "SELECT COUNT(*) FROM ai_providers "
+                    "WHERE enabled IS TRUE AND status != 'disabled' AND last_probed_at IS NULL"
+                )
+            ).scalar()
+        return float(raw or 0)
+    except Exception as e:
+        logger.debug("ai providers never-probed metric scrape failed: %s", e)
+        return None
+
+
 def _read_ai_providers_probe_age_seconds() -> float | None:
     """Seconds since the oldest enabled non-disabled provider was probed.
 
@@ -380,6 +409,23 @@ class AiProvidersDegradedCollector:
         yield gauge
 
 
+class AiProvidersNeverProbedCollector:
+    def collect(self) -> Iterable[Metric]:
+        try:
+            value = _read_ai_providers_never_probed()
+        except Exception as e:
+            logger.debug("ai providers never-probed collector failed: %s", e)
+            return
+        if value is None:
+            return
+        gauge = GaugeMetricFamily(
+            _PROVIDERS_NEVER_PROBED_NAME,
+            "Enabled AI providers with no probe verdict yet",
+        )
+        gauge.add_metric([], value)
+        yield gauge
+
+
 class AiProvidersProbeAgeCollector:
     def collect(self) -> Iterable[Metric]:
         try:
@@ -409,4 +455,5 @@ def register_custom_metrics() -> None:
     REGISTRY.register(AiUpstreamBreakersOpenCollector())
     REGISTRY.register(AiProvidersDegradedCollector())
     REGISTRY.register(AiProvidersProbeAgeCollector())
+    REGISTRY.register(AiProvidersNeverProbedCollector())
     _collector_registered = True
