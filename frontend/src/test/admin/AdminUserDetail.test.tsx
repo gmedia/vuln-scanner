@@ -31,6 +31,8 @@ const mockUser = {
   scan_count: 7,
   created_at: "2024-01-15T12:00:00Z",
   last_login_at: null,
+  sku: "pro",
+  sku_label: "Pro",
 };
 
 function renderPage(userId = "user-1") {
@@ -108,6 +110,26 @@ describe("AdminUserDetail", () => {
     expect(
       screen.getByRole("button", { name: "Adjust credits" }),
     ).toBeInTheDocument();
+  });
+
+  it("shows the personal workspace tier", () => {
+    (useQuery as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: { ...mockUser, sku: "multi", sku_label: "Multi" },
+      isLoading: false,
+    });
+    renderPage();
+    expect(screen.getByTestId("admin-user-detail-tier")).toHaveTextContent(
+      "Multi",
+    );
+  });
+
+  it("falls back to an em dash when the user owns no workspace", () => {
+    (useQuery as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: { ...mockUser, sku: null, sku_label: null },
+      isLoading: false,
+    });
+    renderPage();
+    expect(screen.getByTestId("admin-user-detail-tier")).toHaveTextContent("—");
   });
 
   it("shows Unverified badge with pending variant", () => {
