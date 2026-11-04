@@ -4,16 +4,38 @@ Markdown here is the **seed / editorial source** for CMS posts. Live copy lives 
 
 Canonical public URLs: `https://sinexis.app/blog/:slug`
 
-| Slug | Topic |
-|------|--------|
-| `apa-itu-sinexis` | Product overview |
-| `scan-domain-website` | Domain / website scan |
-| `scan-ip-server` | IP / server scan |
-| `jadwal-scan-attach` | Scheduled attach scans |
-| `kredit-dan-paket` | Credits (no IDR) |
-| `aset-dan-workspace` | Assets + workspace |
-| `uptime-situs-nyala` | Uptime |
-| `guard-dan-siem` | Guard vs SIEM (honest scope) |
+| Slug | Topic | Pillar |
+|------|--------|--------|
+| `apa-itu-sinexis` | Product overview | `exposure` |
+| `scan-domain-website` | Domain / website scan | `exposure` |
+| `scan-ip-server` | IP / server scan | `exposure` |
+| `jadwal-scan-attach` | Scheduled attach scans | `exposure` |
+| `kredit-dan-paket` | Credits (no IDR) | `exposure` |
+| `aset-dan-workspace` | Assets + workspace | `exposure` |
+| `uptime-situs-nyala` | Uptime | `availability` |
+| `guard-dan-siem` | Guard vs SIEM (honest scope) | `onbox` |
+
+## Pillar rules
+
+`blog_posts.pillar` is a nullable `String(32)` with a CHECK constraint. The only
+allowed values are the four public pillars:
+
+| Pillar | Meaning |
+|--------|---------|
+| `exposure` | Outside-in scan / attach / assets / credits |
+| `onbox` | Guard, on-box visibility, SIEM scope |
+| `availability` | Uptime and status-page topics |
+| `ai` | AI Gateway topics |
+
+`/blog` groups published posts in that order and renders `NULL` under **More**.
+New posts should set a pillar in the admin form. Leave it empty only when the
+post genuinely spans pillars or predates this taxonomy — do not invent a fifth
+id. The migration backfills the eight seeded rows above by slug; it is a no-op
+when a slug is missing, so renamed/deleted posts keep working.
+
+S3 decision: the shared island footer keeps `Sinexis · Scan · Guard` for now
+(`_shell` is also used by `/terms` and `/privacy`). Changing the footer line is
+deferred so this slice does not alter legal-page chrome.
 
 Publish via admin JWT (`POST /api/admin/blog/posts` then `.../publish`). Idempotent on slug (409 if exists).
 

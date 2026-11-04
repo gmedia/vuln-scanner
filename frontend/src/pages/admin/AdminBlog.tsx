@@ -37,6 +37,7 @@ import { adminRailClass, blogListTone, blogStatusTone } from "@/components/admin
 import { SiemRail } from "@/components/siem/siemChrome";
 import {
   adminApi,
+  type BlogPillar,
   type BlogPostAdmin,
   type BlogPostWrite,
 } from "@/api/admin";
@@ -50,6 +51,7 @@ const emptyForm: BlogPostWrite = {
   excerpt: "",
   body_md: "",
   locale: "id",
+  pillar: null,
 };
 
 function AdminBlog() {
@@ -116,6 +118,7 @@ function AdminBlog() {
       excerpt: p.excerpt,
       body_md: p.body_md,
       locale: p.locale,
+      pillar: p.pillar,
     });
   };
 
@@ -184,6 +187,37 @@ function AdminBlog() {
                 <SelectContent>
                   <SelectItem value="id">id</SelectItem>
                   <SelectItem value="en">en</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="blog-pillar">{t("blogPillar")}</Label>
+              <Select
+                value={form.pillar ?? "none"}
+                onValueChange={(v) =>
+                  setForm({
+                    ...form,
+                    pillar: v === "none" ? null : (v as BlogPillar),
+                  })
+                }
+              >
+                <SelectTrigger
+                  id="blog-pillar"
+                  data-testid="blog-pillar"
+                  className="h-10 w-full"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{t("blogPillarNone")}</SelectItem>
+                  <SelectItem value="exposure">
+                    {t("blogPillarExposure")}
+                  </SelectItem>
+                  <SelectItem value="onbox">{t("blogPillarOnbox")}</SelectItem>
+                  <SelectItem value="availability">
+                    {t("blogPillarAvailability")}
+                  </SelectItem>
+                  <SelectItem value="ai">{t("blogPillarAi")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

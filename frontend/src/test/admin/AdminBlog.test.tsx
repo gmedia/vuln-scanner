@@ -34,6 +34,7 @@ function post(overrides: Partial<Record<string, string>> = {}) {
     excerpt: "",
     body_md: "",
     locale: "id",
+    pillar: null,
     status: "draft",
     published_at: null,
     created_at: "",
@@ -55,6 +56,7 @@ describe("AdminBlog", () => {
     renderPage();
     expect(screen.getByText("Blog")).toBeInTheDocument();
     expect(screen.getByTestId("blog-slug")).toBeInTheDocument();
+    expect(screen.getByTestId("blog-pillar")).toBeInTheDocument();
     expect(screen.getByTestId("blog-save")).toBeInTheDocument();
   });
 
@@ -86,6 +88,7 @@ describe("AdminBlog", () => {
         excerpt: "Short",
         body_md: "# Body",
         locale: "id",
+        pillar: null,
       }),
     );
     await waitFor(() =>
@@ -103,6 +106,7 @@ describe("AdminBlog", () => {
           title: "Live",
           excerpt: "Short",
           body_md: "# Body",
+          pillar: "exposure",
           status: "published",
         }),
       ],
@@ -116,6 +120,7 @@ describe("AdminBlog", () => {
     await user.click(await screen.findByTestId("blog-edit-p1"));
 
     expect(screen.getByTestId("blog-slug")).toHaveValue("live");
+    expect(screen.getByTestId("blog-pillar")).toHaveTextContent("Exposure");
     expect(screen.getByText("Edit")).toBeInTheDocument();
 
     await user.clear(screen.getByTestId("blog-title"));
@@ -129,6 +134,7 @@ describe("AdminBlog", () => {
         excerpt: "Short",
         body_md: "# Body",
         locale: "id",
+        pillar: "exposure",
       }),
     );
     await waitFor(() => expect(screen.getByText("New article")).toBeInTheDocument());

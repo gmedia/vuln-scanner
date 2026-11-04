@@ -89,6 +89,7 @@ async def create_post(
         body_md=body.body_md,
         body_html=html_body,
         locale=body.locale,
+        pillar=body.pillar,
         status="draft",
         author_user_id=current_admin.id,
         created_at=now,
@@ -151,6 +152,8 @@ async def update_post(
         if body.locale not in BLOG_LOCALES:
             raise HTTPException(status_code=422, detail="Invalid locale")
         post.locale = body.locale
+    if "pillar" in body.model_fields_set:
+        post.pillar = body.pillar
     if body.body_md is not None:
         try:
             post.body_html = render_body_html(body.body_md)

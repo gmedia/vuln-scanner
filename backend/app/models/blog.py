@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
 BLOG_STATUSES = ("draft", "published", "archived")
 BLOG_LOCALES = ("id", "en")
+BLOG_PILLARS = ("exposure", "onbox", "availability", "ai")
 SLUG_MAX = 80
 
 
@@ -27,6 +28,7 @@ class BlogPost(Base):
     body_html: Mapped[str] = mapped_column(Text, nullable=False, default="")
     locale: Mapped[str] = mapped_column(String(8), nullable=False, default="id")
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="draft")
+    pillar: Mapped[str | None] = mapped_column(String(32), nullable=True)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     author_user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
@@ -43,5 +45,10 @@ class BlogPost(Base):
     __table_args__ = (
         CheckConstraint("status IN ('draft', 'published', 'archived')", name="ck_blog_posts_status"),
         CheckConstraint("locale IN ('id', 'en')", name="ck_blog_posts_locale"),
+        CheckConstraint(
+            "pillar IS NULL OR pillar IN ('exposure', 'onbox', 'availability', 'ai')",
+            name="ck_blog_posts_pillar",
+        ),
         Index("ix_blog_posts_status_published_at", "status", "published_at"),
+        Index("ix_blog_posts_pillar", "pillar"),
     )
