@@ -20,7 +20,7 @@ export function Footer() {
       <div className="mx-auto w-full max-w-6xl px-4 pb-8 pt-10 2xl:max-w-[90rem]">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between lg:gap-12">
           <div className="max-w-sm">
-            <BrandMark to="/" />
+            <BrandMark to="/" className="min-h-11" />
             <p className="mt-3 text-pretty text-sm leading-relaxed text-muted-foreground">
               {t("footerBlurb")}
             </p>
