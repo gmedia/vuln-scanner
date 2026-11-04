@@ -122,6 +122,8 @@ class InvoiceItem(BaseModel):
     updated_at: datetime
     organization_name: str | None = None
     bank: InvoiceBankCopy | None = None
+    payment_status: str | None = None
+    can_pay: bool = False
 
 
 class InvoiceListResponse(BaseModel):

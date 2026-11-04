@@ -48,6 +48,8 @@ celery_app.conf.update(
         "billing.finalize_periods": {"queue": "ip_scan"},
         "billing.send_reminders": {"queue": "ip_scan"},
         "billing.draft_annual_renewals": {"queue": "ip_scan"},
+        "payment.expire_stale_checkouts": {"queue": "ip_scan"},
+        "payment.reconcile_attempts": {"queue": "ip_scan"},
         "ai_fx.refresh": {"queue": "ip_scan"},
         "ai_reservations.reap": {"queue": "ip_scan"},
         "ai_providers.probe": {"queue": "ip_scan"},
@@ -101,6 +103,14 @@ celery_app.conf.update(
         "billing-draft-annual-renewals-daily": {
             "task": "billing.draft_annual_renewals",
             "schedule": 86400.0,
+        },
+        "payment-expire-stale-checkouts-hourly": {
+            "task": "payment.expire_stale_checkouts",
+            "schedule": 3600.0,
+        },
+        "payment-reconcile-attempts-every-10m": {
+            "task": "payment.reconcile_attempts",
+            "schedule": 600.0,
         },
         "ai-fx-refresh-daily": {
             "task": "ai_fx.refresh",

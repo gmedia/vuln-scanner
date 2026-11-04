@@ -252,7 +252,13 @@ class InvoiceService:
         await self.db.refresh(inv)
         return inv
 
-    async def mark_paid(self, invoice_id: uuid.UUID, bank_ref: str | None) -> OrgInvoice:
+    async def _mark_paid(self, invoice_id: uuid.UUID, bank_ref: str | None) -> OrgInvoice:
+        """Apply the paid transition without committing.
+
+        The gateway path needs to mark the invoice paid and activate the
+        subscription in one transaction; the public wrapper keeps the original
+        commit+refresh contract for every existing caller.
+        """
         inv = await self.get(invoice_id)
         if inv.status not in ("draft", "sent"):
             raise HTTPException(status_code=409, detail="Invoice cannot be marked paid")
@@ -278,16 +284,27 @@ class InvoiceService:
             org.sku = inv.sku
             org.updated_at = datetime.now(UTC)
         inv.updated_at = datetime.now(UTC)
+        await self.db.flush()
+        return inv
+
+    async def mark_paid(self, invoice_id: uuid.UUID, bank_ref: str | None) -> OrgInvoice:
+        inv = await self._mark_paid(invoice_id, bank_ref)
         await self.db.commit()
         await self.db.refresh(inv)
         return inv
 
-    async def void(self, invoice_id: uuid.UUID) -> OrgInvoice:
+    async def _void(self, invoice_id: uuid.UUID) -> OrgInvoice:
+        """Apply the void transition without committing (see ``_mark_paid``)."""
         inv = await self.get(invoice_id)
         if inv.status not in ("draft", "sent"):
             raise HTTPException(status_code=409, detail="Only draft or sent invoices can be voided")
         inv.status = "void"
         inv.updated_at = datetime.now(UTC)
+        await self.db.flush()
+        return inv
+
+    async def void(self, invoice_id: uuid.UUID) -> OrgInvoice:
+        inv = await self._void(invoice_id)
         await self.db.commit()
         await self.db.refresh(inv)
         return inv
