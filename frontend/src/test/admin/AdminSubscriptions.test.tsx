@@ -171,6 +171,7 @@ describe("AdminSubscriptions", () => {
           sku: "pro",
           seats: 3,
           amount_idr: 650_000,
+          total_idr: 715_000,
           period_start: "2026-10-01T00:00:00Z",
           period_end: "2026-10-31T23:59:59Z",
           status: "sent",
@@ -252,6 +253,43 @@ describe("AdminSubscriptions", () => {
         reference: "TF-9",
       }),
     );
+  });
+
+  it("shows the payable total when the invoice total is zero", async () => {
+    const user = userEvent.setup();
+    vi.mocked(listAdminInvoices).mockResolvedValue({
+      items: [
+        {
+          id: "inv-zero",
+          organization_id: "org-a",
+          number: "SX-202610-0010",
+          product: "scan",
+          sku: "pro",
+          seats: 3,
+          amount_idr: 650_000,
+          total_idr: 0,
+          period_start: "2026-10-01T00:00:00Z",
+          period_end: "2026-10-31T23:59:59Z",
+          status: "sent",
+          bank_ref: null,
+          notes: "",
+          paid_at: null,
+          created_at: "2026-10-01T00:00:00Z",
+          updated_at: "2026-10-01T00:00:00Z",
+        },
+      ],
+      total: 1,
+    });
+    renderPage();
+
+    await screen.findByTestId("admin-subscriptions-table");
+    await user.click(screen.getByTestId("admin-subscription-pay-sub-1"));
+
+    const option = await screen.findByRole("option", {
+      name: /SX-202610-0010/,
+    });
+    expect(option).toHaveTextContent("Rp 0");
+    expect(option).not.toHaveTextContent("Rp 650.000");
   });
 
   it("cancels at period end by default", async () => {

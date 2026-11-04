@@ -592,6 +592,7 @@ def _sample_invoice(*, status: str, product: str = "host", sku: str = "multi") -
         product=product,
         sku=sku,
         amount_idr=900_000,
+        total_idr=900_000,
         period_start=datetime(2026, 9, 1, tzinfo=UTC),
         period_end=datetime(2026, 9, 30, tzinfo=UTC),
         due_date=datetime(2026, 9, 1, tzinfo=UTC),
@@ -599,6 +600,57 @@ def _sample_invoice(*, status: str, product: str = "host", sku: str = "multi") -
         bank_ref="TF-UNIT" if status == "paid" else None,
         created_at=datetime(2026, 9, 2, tzinfo=UTC),
     )
+
+
+_GRAND_TOTAL = re.compile(
+    r'<p class="inv-totals-row inv-totals-grand"><span>[^<]*</span>'
+    r'<span class="num">([^<]+)</span>'
+)
+
+
+def _grand_total(html: str) -> str:
+    match = _GRAND_TOTAL.search(html)
+    assert match is not None
+    return match.group(1)
+
+
+def test_render_invoice_html_zero_total_shows_zero_not_list_price() -> None:
+    inv = _sample_invoice(status="sent", product="scan", sku="pro")
+    inv.amount_idr = 650_000
+    inv.total_idr = 0
+
+    html = render_invoice_html(
+        inv,
+        org_name="Acme",
+        bank=None,
+        sku_label="PRO",
+        seats=3,
+    )
+
+    assert _grand_total(html) == "Rp 0"
+    # The list/subtotal line still carries amount_idr; only the payable line is zero.
+    assert html.count("Rp 650.000") == 2
+
+
+def test_render_invoice_html_total_differs_from_amount_for_pkp() -> None:
+    inv = _sample_invoice(status="sent", product="scan", sku="pro")
+    inv.amount_idr = 650_000
+    inv.dpp_idr = 595_833
+    inv.ppn_idr = 65_917
+    inv.total_idr = 715_917
+
+    html = render_invoice_html(
+        inv,
+        org_name="Acme",
+        bank=None,
+        sku_label="PRO",
+        seats=3,
+    )
+
+    assert _grand_total(html) == "Rp 715.917"
+    assert html.count("Rp 650.000") == 2
+    assert "Rp 595.833" in html
+    assert "Rp 65.917" in html
 
 
 def test_render_invoice_html_sent_includes_bank_and_host_seats() -> None:
