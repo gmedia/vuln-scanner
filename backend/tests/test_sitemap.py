@@ -42,7 +42,7 @@ async def test_sitemap_returns_xml_with_public_urls(client, db_session):
     resp = client.get("/sitemap.xml")
 
     assert resp.status_code == 200
-    assert "application/xml" in resp.headers["content-type"]
+    assert resp.headers["content-type"] == "text/xml"
     assert resp.headers["cache-control"] == "public, max-age=300"
 
     body = resp.text
