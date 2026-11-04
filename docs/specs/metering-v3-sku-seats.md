@@ -1,6 +1,6 @@
 # Spec: Metering v3 — Scan/Host/Uptime = SKU seats only
 
-**Status:** **shipped** on `main` (#742 seats / `credit_cost = 0`, #743 hide Scan credit chrome, #744 admin pricing read-only archive). Owner: drop the Scan **credit wallet** as a customer meter. Everything attach-shaped uses **org SKU seats** (Scan assets / Host sites / Guard agents Basic 1 / Pro 3 / Multi 10; **Uptime monitors are the exception — 10 / 50 / 200**, locked 2026-10-12, [`pricing-architecture-v1.md`](../commercial/pricing-architecture-v1.md) §2/§7).
+**Status:** **shipped** on `main` (#742 seats / `credit_cost = 0`, #743 hide Scan credit chrome, #744 admin pricing read-only archive). Owner: drop the Scan **credit wallet** as a customer meter. Everything attach-shaped uses **org SKU seats** — Scan assets / Host sites / Guard agents / Uptime monitors all read `sku_tiers.limit_<product>`, so the caps are **data, not constants**: the seeded values (Basic 1/1/1, Pro 3/3/3, Multi 10/10/10 for Scan/Host/Guard; Uptime 10/50/200) can be changed and new tiers added from `/admin/skus` → **Tier & Fitur** without a deploy. Locked reference values: [`pricing-architecture-v1.md`](../commercial/pricing-architecture-v1.md) §2/§7.
 **Does not** change AI Gateway (org **IDR wallet** stays). Does **not** invent Guard/SIEM invoice `service_id`.
 **Supersedes:** metering v2 **M4** (credits as overage for ip/domain/mobile/`statushost`). Scheduled attach already `credit_cost = 0` (v2 M2).
 

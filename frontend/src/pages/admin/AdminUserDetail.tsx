@@ -11,6 +11,7 @@ import {
   Check,
   Radar,
   Send,
+  Layers,
   UserX,
   KeyRound,
 } from "lucide-react";
@@ -185,6 +186,17 @@ function AdminUserDetail() {
                     className="text-[10px]"
                   >
                     {user.is_verified ? t("verified") : t("unverified")}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-muted-foreground" />
+                  <Badge
+                    variant="default"
+                    className="text-[10px]"
+                    data-testid="admin-user-detail-tier"
+                    title={user.sku ?? undefined}
+                  >
+                    {user.sku_label ?? t("tierNone")}
                   </Badge>
                 </div>
               </div>

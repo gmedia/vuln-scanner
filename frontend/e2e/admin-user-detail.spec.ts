@@ -95,6 +95,18 @@ test.describe("Admin — User Detail @admin", () => {
     await expect(verifiedBadge.first()).toBeVisible();
   });
 
+  test("shows the personal workspace tier", async ({ page }) => {
+    await goToFirstUserDetail(page);
+    await page
+      .waitForSelector("[data-slot='skeleton']", {
+        state: "hidden",
+        timeout: 15_000,
+      })
+      .catch(() => {});
+
+    await expect(page.getByTestId("admin-user-detail-tier")).toBeVisible();
+  });
+
   test("credits count is visible", async ({ page }) => {
     await goToFirstUserDetail(page);
     await page
