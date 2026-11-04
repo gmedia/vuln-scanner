@@ -125,14 +125,13 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
             )
             return await self._check_rate_and_forward(request, call_next, MASTER_KEY_ID, 1000)
 
-        # Master key didn't match — log both values (truncated) for debugging
+        # Never log key material, not even a prefix: the expected value is the platform
+        # master key, and 8 characters of it narrow a brute-force search enormously.
         logger.warning(
-            "API key mismatch for %s %s (ip=%s): received=%r, expected=%r",
+            "API key mismatch for %s %s (ip=%s)",
             request.method,
             request.url.path,
             client_ip,
-            api_key_header[:8] + "..." if len(api_key_header) > 8 else api_key_header,
-            settings.api_key[:8] + "..." if len(settings.api_key) > 8 else settings.api_key,
         )
 
         key_hash = hash_key(api_key_header)
