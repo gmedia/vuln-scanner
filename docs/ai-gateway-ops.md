@@ -1,4 +1,4 @@
-# AI Gateway — operator note (S7.3.2)
+# AI Gateway — operator note (S1–S7.3.7)
 
 Short ops reference. No secrets, hosts, or wholesale keys in this file. Set values via env / host `.env`.
 
@@ -188,6 +188,12 @@ Reading the counter:
   refuses the request (retired model, unsupported parameter). Failover never retries these by design.
 - A rising `retried` share with flat `failed` means a primary is degraded and failover is hiding it —
   that is the case that silently costs duplicate COGS.
+
+> **These rules are a template, not an active deployment.** Nothing in this repo ships
+> Prometheus or Alertmanager — `docker-compose.yml` and `docker-compose.prod.yml` contain neither,
+> and `monitoring/` holds example files only. Until an operator deploys them
+> (`monitoring/prometheus-scrape.example.yml` + these rules) and the target shows `up`, **none of
+> these alerts fire**. Treat `/metrics` as data you have collected, not as monitoring you have.
 
 | Alert | Expression | For | Severity |
 |-------|------------|-----|----------|

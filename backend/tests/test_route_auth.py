@@ -136,6 +136,63 @@ def _routes() -> list[tuple[str, str, bool, str]]:
     return rows
 
 
+def _routes_with_deps() -> list[tuple[str, str, set[str], str]]:
+    """(method, path, dependency names, source) for every route decorator."""
+    rows: list[tuple[str, str, set[str], str]] = []
+    for path in sorted(API_DIR.glob("*_routes.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        prefixes = _router_prefixes(tree)
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+                continue
+            names = _depends_names(node)
+            for decorator in node.decorator_list:
+                if not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Attribute):
+                    continue
+                if decorator.func.attr not in ROUTE_METHODS:
+                    continue
+                router = decorator.func.value
+                if not isinstance(router, ast.Name):
+                    continue
+                route_path = ""
+                if decorator.args and isinstance(decorator.args[0], ast.Constant):
+                    route_path = str(decorator.args[0].value)
+                full = re.sub(r"//+", "/", (prefixes.get(router.id, "") + route_path) or "/")
+                rows.append((decorator.func.attr.upper(), full, names, f"{path.name}:{node.name}"))
+    return rows
+
+
+ADMIN_ROUTE_FILE = re.compile(r"admin[a-z_]*_routes\.py$")
+
+
+def _is_admin_file(source: str) -> bool:
+    """``source`` is "file.py:function", so match the file part only."""
+    return bool(ADMIN_ROUTE_FILE.match(source.split(":", 1)[0]))
+
+
+def test_admin_routes_require_the_platform_admin() -> None:
+    """Being logged in is not enough to reach /api/admin/*.
+
+    A route that authenticates with ``get_current_user`` but forgets
+    ``get_current_admin`` is reachable by any customer — the classic IDOR shape, and the
+    route-auth test above would pass it happily because it only asks "is there auth".
+    """
+    offenders = [
+        (method, path, source, sorted(names & {"get_current_user", "get_current_admin"}))
+        for method, path, names, source in _routes_with_deps()
+        if _is_admin_file(source)
+    ]
+    unchecked = [
+        (method, path, source)
+        for method, path, names, source in _routes_with_deps()
+        if _is_admin_file(source) and "get_current_admin" not in names
+    ]
+    assert len(offenders) >= 50, f"only {len(offenders)} admin routes found — scan looks broken"
+    assert not unchecked, "admin route(s) without get_current_admin:\n  " + "\n  ".join(
+        f"{m} {p}  ({s})" for m, p, s in unchecked
+    )
+
+
 def test_every_route_authenticates_or_is_allowlisted() -> None:
     unguarded = [
         (method, path, source)
