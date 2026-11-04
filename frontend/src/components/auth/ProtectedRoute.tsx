@@ -22,8 +22,11 @@ function ProtectedRoute() {
 
   if (!isAuthenticated) {
     const token = captureInviteFromSearch(location.search);
-    const to = token ? `/login?invite=${encodeURIComponent(token)}` : "/login";
-    return <Navigate to={to} replace />;
+    const params = new URLSearchParams({
+      next: `${location.pathname}${location.search}`,
+    });
+    if (token) params.set("invite", token);
+    return <Navigate to={`/login?${params.toString()}`} replace />;
   }
 
   return <Outlet />;

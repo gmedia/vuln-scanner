@@ -87,6 +87,7 @@ Nav groups match Sidebar: **Scan** · **Attach** · **Account** · **Admin** (ad
 | `/profile` | `pages/Profile.tsx` | Account | Identity band (initials + verified/admin badges + org) + KPI tiles + password/email cards. Frozen form ids: `current-password`, `new-password`, `confirm-password`, `profile-email`, `profile-password`. | `Profile.test.tsx`, `e2e/profile.spec.ts` |
 | `/settings/workspace` | `pages/WorkspaceSettings.tsx` | Account | Org members, invites, P6 pilot checklist, Billing card (`workspace-billing`). Invoice HTML print = S1b [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md). | `WorkspaceSettings.test.tsx` |
 | `/settings/subscription` | `pages/Subscription.tsx` | Account | Plan summary, capacity meters, plan catalog, request-only change flow, invoice list. Contract: `frontend/design/subscription.md`. | `Subscription.test.tsx` |
+| `/pay/:invoiceId` | `pages/PayInvoice.tsx` | — | Authenticated invoice payment (invoice resolved from the id, so multi-org admins work). Breakdown, provider redirect checkout, return polling, manual bank fallback. Inert while the gateway is off: `can_pay=false`. Spec [`payments-v1.md`](specs/payments-v1.md) §8. | `PayInvoice.test.tsx` |
 | `/org/members` | **same** `WorkspaceSettings.tsx` | — | Alias route; keep in sync | same |
 
 ### Admin (`AdminRoute`)
@@ -135,7 +136,7 @@ Minimum authenticated set (2k + mobile, light + dark) after a chrome/token chang
 4. `/scan/ip` `/scan/domain` `/scan/mobile`
 5. `/schedules` `/assets` `/host`
 6. `/guard` `/siem` `/uptime` `/uptime/:id` `/uptime/status-page`
-7. `/credit-history` `/profile` `/settings/workspace` `/settings/subscription` `/guide`
+7. `/credit-history` `/profile` `/settings/workspace` `/settings/subscription` `/pay/:invoiceId` `/guide`
 8. Admin: `/admin` `/admin/users` `/admin/hpp` `/admin/skus` (tabs: Harga · Tier & Fitur) `/admin/simulator` `/admin/invoices` `/admin/subscription-requests` `/admin/subscriptions` `/admin/blog`
 
 Auth for prod visual: `E2E_EMAIL` / `E2E_PASSWORD` from **tc1 env** — never commit. Do not `POST /register` for the shared mailbox.

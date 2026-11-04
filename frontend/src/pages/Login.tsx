@@ -28,6 +28,11 @@ function isUnverifiedError(message: string | null): boolean {
 function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const rawNext = searchParams.get("next");
+  const safeNext =
+    rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//")
+      ? rawNext
+      : null;
   const { t } = useTranslation("auth");
   const { t: tc } = useTranslation("common");
   const { login, resendVerification, error, isAuthenticated, clearError } =
@@ -45,9 +50,9 @@ function Login() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(postAuthPath());
+      navigate(safeNext ?? postAuthPath());
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, safeNext]);
 
   useEffect(() => {
     return () => {
@@ -61,7 +66,7 @@ function Login() {
     setIsSubmitting(true);
     const success = await login(email, password);
     if (success) {
-      navigate(postAuthPath());
+      navigate(safeNext ?? postAuthPath());
     } else {
       setIsSubmitting(false);
     }
