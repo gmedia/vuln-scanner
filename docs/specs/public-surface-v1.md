@@ -24,6 +24,8 @@ The public SPA is a branded house on one domain. `/products` is the hub; each pr
 
 Unknown product slugs render the existing 404 component and set `meta[name="robots"]` to `noindex`.
 
+`/` now uses the umbrella home: 4 pillar cards, a 3-step attach model (`Connect → Watch → Prove`), and a 6-item FAQ, with the same header/footer nav as `/products`.
+
 ### Nav budget
 
 - Header: `Products`, `Blog`, theme, language, `Sign in`, `Get started`.

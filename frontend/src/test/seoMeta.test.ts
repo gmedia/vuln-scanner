@@ -92,6 +92,16 @@ describe("static and per-page metadata", () => {
         .querySelector('meta[name="description"]')
         ?.getAttribute("content"),
     ).toBe(BRAND.metaDescription);
+    expect(
+      parsed
+        .querySelector('meta[property="og:title"]')
+        ?.getAttribute("content"),
+    ).toBe(BRAND.metaTitle);
+    expect(
+      parsed
+        .querySelector('meta[property="og:description"]')
+        ?.getAttribute("content"),
+    ).toBe(BRAND.metaDescription);
   });
 
   it("sets page tags, makes the canonical absolute, and restores on unmount", () => {

@@ -32,7 +32,7 @@
 
 | Path | Page file | Auth | Notes | Tests |
 |------|-----------|------|-------|-------|
-| `/` | `pages/Landing.tsx` | Public | Hero, pipeline, 9 feature cards, FAQ Accordion (triggers are **buttons**, not `h3`). | `src/test/Landing.test.tsx`, `e2e/landing.spec.ts` |
+| `/` | `pages/Landing.tsx` | Public | Hero, 4 pillar cards, 3-step attach, 6-item FAQ Accordion (triggers are **buttons**, not `h3`). | `src/test/Landing.test.tsx`, `e2e/landing.spec.ts` |
 | `/products` | `pages/Products.tsx` | Public | Hub: 4 pillar sections (`exposure`, `onbox`, `availability`, `ai`), 5 cards, editorial status badges. | `src/test/Products.test.tsx`, `e2e/products.spec.ts` |
 | `/products/:slug` | `pages/products/ProductPage.tsx` | Public | Shared template for the 5 slugs. Unknown slug renders `NotFound` + `noindex`. | `src/test/ProductPage.test.tsx`, `e2e/products.spec.ts` |
 | `/products/scan` | same `ProductPage.tsx` | Public | Scan + Attach + Assets. Status `Live`. | `src/test/ProductPage.test.tsx` |

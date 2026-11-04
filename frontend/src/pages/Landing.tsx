@@ -1,17 +1,5 @@
 import { Link } from "react-router-dom";
-import {
-  Radar,
-  Globe,
-  Smartphone,
-  CalendarClock,
-  Users,
-  Shield,
-  Coins,
-  ArrowRight,
-  Server,
-  Activity,
-  Menu,
-} from "lucide-react";
+import { ArrowRight, Menu } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import {
@@ -34,24 +22,12 @@ import ThemeSwitcher from "@/components/theme/ThemeSwitcher";
 import { useTranslation } from "react-i18next";
 import { BRAND } from "@/lib/brand";
 import { usePageMeta } from "@/lib/seo";
+import { getService, PILLARS } from "@/lib/services";
 
-const pipelineSteps = [
-  { titleKey: "stepScan", descKey: "stepScanDesc" },
-  { titleKey: "stepAttach", descKey: "stepAttachDesc" },
-  { titleKey: "stepWorkspace", descKey: "stepWorkspaceDesc" },
-  { titleKey: "stepGuard", descKey: "stepGuardDesc" },
-] as const;
-
-const featureKeys = [
-  { icon: Radar, titleKey: "featIp", descKey: "featIpDesc" },
-  { icon: Globe, titleKey: "featDomain", descKey: "featDomainDesc" },
-  { icon: Smartphone, titleKey: "featMobile", descKey: "featMobileDesc" },
-  { icon: CalendarClock, titleKey: "featAttach", descKey: "featAttachDesc" },
-  { icon: Users, titleKey: "featWorkspace", descKey: "featWorkspaceDesc" },
-  { icon: Server, titleKey: "featAssets", descKey: "featAssetsDesc" },
-  { icon: Shield, titleKey: "featGuard", descKey: "featGuardDesc" },
-  { icon: Activity, titleKey: "featUptime", descKey: "featUptimeDesc" },
-  { icon: Coins, titleKey: "featCredits", descKey: "featCreditsDesc" },
+const attachSteps = [
+  { titleKey: "stepConnect", descKey: "stepConnectDesc" },
+  { titleKey: "stepWatch", descKey: "stepWatchDesc" },
+  { titleKey: "stepProve", descKey: "stepProveDesc" },
 ] as const;
 
 const faqKeys = [
@@ -60,11 +36,16 @@ const faqKeys = [
   { q: "faqDataQ", a: "faqDataA" },
   { q: "faqGuardQ", a: "faqGuardA" },
   { q: "faqAgentQ", a: "faqAgentA" },
+  { q: "faqAiQ", a: "faqAiA" },
 ] as const;
+
+const navLinkClass =
+  "hidden sm:inline-flex min-h-11 items-center text-xs text-muted-foreground transition-colors hover:text-foreground";
 
 function Landing() {
   const { t } = useTranslation("landing");
   const { t: tc } = useTranslation("common");
+  const { t: tp } = useTranslation("products");
 
   usePageMeta({
     title: BRAND.metaTitle,
@@ -80,10 +61,10 @@ function Landing() {
             <BrandMark to="/" />
           </div>
           <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
-            <a
-              href="/blog"
-              className="hidden sm:inline-flex min-h-11 items-center text-xs text-muted-foreground transition-colors hover:text-foreground"
-            >
+            <Link to="/products" className={navLinkClass}>
+              {tp("nav.products")}
+            </Link>
+            <a href="/blog" className={navLinkClass}>
               {t("blog")}
             </a>
             <div className="hidden sm:flex sm:items-center sm:gap-2">
@@ -124,6 +105,12 @@ function Landing() {
                   <SheetTitle>{tc("menu", { defaultValue: "Menu" })}</SheetTitle>
                 </SheetHeader>
                 <nav className="flex flex-col gap-3 px-4 pb-6">
+                  <Link
+                    to="/products"
+                    className="inline-flex min-h-11 items-center text-sm text-foreground"
+                  >
+                    {tp("nav.products")}
+                  </Link>
                   <a
                     href="/blog"
                     className="inline-flex min-h-11 items-center text-sm text-foreground"
@@ -183,7 +170,7 @@ function Landing() {
               data-testid="landing-loop"
               className="mx-auto flex w-full max-w-2xl flex-wrap items-center justify-center gap-x-2 gap-y-1.5 rounded-lg border border-border bg-card px-4 py-3"
             >
-              {pipelineSteps.map((step, i) => (
+              {attachSteps.map((step, i) => (
                 <span key={step.titleKey} className="inline-flex items-center gap-2">
                   {i > 0 ? (
                     <ArrowRight
@@ -202,16 +189,68 @@ function Landing() {
 
         <section className="px-4 py-12">
           <div className="mx-auto max-w-6xl 2xl:max-w-[90rem]">
-            <div className="text-center mb-10 space-y-2">
-              <p className="text-xs tracking-wide text-muted-foreground uppercase">
-                {tc("pipeline")}
-              </p>
+            <div className="mb-10 text-center space-y-2">
               <h2 className="text-2xl font-bold tracking-wide text-foreground">
-                {t("howItWorks")}
+                {t("pillarsTitle")}
               </h2>
             </div>
-            <ol className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {pipelineSteps.map((step, i) => (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
+              {PILLARS.map((pillar) => {
+                const productNames = pillar.slugs
+                  .map((slug) => {
+                    const service = getService(slug);
+                    return service ? tp(service.nameKey) : null;
+                  })
+                  .filter((name): name is string => Boolean(name));
+
+                return (
+                  <Link
+                    key={pillar.id}
+                    to={`/products#${pillar.id}`}
+                    className="block h-full"
+                  >
+                    <Card
+                      data-testid="pillar-card"
+                      className="h-full transition-colors hover:border-primary/40"
+                    >
+                      <CardHeader>
+                        <CardTitle className="text-sm tracking-wide">
+                          {tp(pillar.titleKey)}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="flex flex-1 flex-col gap-3">
+                        <p className="text-pretty text-sm leading-relaxed text-muted-foreground">
+                          {tp(pillar.blurbKey)}
+                        </p>
+                        <p className="mt-auto font-mono text-xs tracking-wide text-foreground">
+                          {productNames.join(" · ")}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section className="px-4 pb-12">
+          <div className="mx-auto max-w-6xl 2xl:max-w-[90rem]">
+            <p className="rounded-lg border border-border bg-card px-4 py-4 text-center text-pretty text-sm leading-relaxed text-foreground">
+              {t("honestyBand")}
+            </p>
+          </div>
+        </section>
+
+        <section className="px-4 py-12 bg-card/50">
+          <div className="mx-auto max-w-6xl 2xl:max-w-[90rem]">
+            <div className="text-center mb-10 space-y-2">
+              <h2 className="text-2xl font-bold tracking-wide text-foreground">
+                {t("howItAttaches")}
+              </h2>
+            </div>
+            <ol className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {attachSteps.map((step, i) => (
                 <li
                   key={step.titleKey}
                   className="flex h-full min-h-[8.5rem] flex-col rounded-lg border border-border bg-card p-4 text-left transition-colors hover:border-primary/40"
@@ -228,44 +267,6 @@ function Landing() {
                 </li>
               ))}
             </ol>
-            <p className="mt-6 text-center text-sm leading-relaxed text-foreground">
-              {t("siemNote")}
-            </p>
-          </div>
-        </section>
-
-        <section className="px-4 py-12 bg-card/50">
-          <div className="mx-auto max-w-6xl 2xl:max-w-[90rem]">
-            <div className="text-center mb-10 space-y-2">
-              <h2 className="text-2xl font-bold tracking-wide text-foreground">
-                {t("whatShips")}
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
-              {featureKeys.map((feature) => (
-                <Card
-                  key={feature.titleKey}
-                  className="h-full transition-colors hover:border-primary/40"
-                >
-                  <CardHeader>
-                    <span
-                      className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-muted/40"
-                      aria-hidden
-                    >
-                      <feature.icon className="h-4 w-4 text-primary-text" />
-                    </span>
-                    <CardTitle className="text-sm tracking-wide">
-                      {t(feature.titleKey)}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-pretty text-sm leading-relaxed text-muted-foreground">
-                      {t(feature.descKey)}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
           </div>
         </section>
 
