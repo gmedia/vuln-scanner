@@ -4,10 +4,11 @@ import Login from "@/pages/Login";
 import { useAuthStore } from "@/store/authStore";
 
 const mockNavigate = vi.fn();
+const { mockSearch } = vi.hoisted(() => ({ mockSearch: { value: "" } }));
 
 vi.mock("react-router-dom", () => ({
   useNavigate: vi.fn(() => mockNavigate),
-  useSearchParams: () => [new URLSearchParams(), vi.fn()],
+  useSearchParams: () => [new URLSearchParams(mockSearch.value), vi.fn()],
   Link: ({ to, children }: { to: string; children: React.ReactNode }) => (
     <a href={to}>{children}</a>
   ),
@@ -48,6 +49,7 @@ const mockUseAuthStore = useAuthStore as unknown as ReturnType<typeof vi.fn>;
 describe("Login", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSearch.value = "";
     mockUseAuthStore.mockReturnValue(defaultAuthState);
     defaultAuthState.login = vi.fn().mockResolvedValue(true);
     defaultAuthState.resendVerification = vi.fn().mockResolvedValue({
@@ -162,6 +164,36 @@ describe("Login", () => {
   });
 
   it("redirects to /dashboard on successful login", async () => {
+    render(<Login />);
+    fireEvent.change(screen.getByLabelText("Email"), {
+      target: { value: "test@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
+    });
+  });
+
+  it("honours a same-origin next path after login", async () => {
+    mockSearch.value = `?next=${encodeURIComponent("/pay/inv-1?status=finish")}`;
+    render(<Login />);
+    fireEvent.change(screen.getByLabelText("Email"), {
+      target: { value: "test@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith("/pay/inv-1?status=finish");
+    });
+  });
+
+  it("ignores a protocol-relative next path", async () => {
+    mockSearch.value = "?next=//evil.example/pay";
     render(<Login />);
     fireEvent.change(screen.getByLabelText("Email"), {
       target: { value: "test@example.com" },

@@ -137,7 +137,10 @@ test.describe("Auth — Logout @smoke", () => {
     });
     const freshPage = await freshContext.newPage();
     await freshPage.goto("/dashboard");
-    await freshPage.waitForURL("/login", { timeout: 10_000 });
+    await freshPage.waitForURL((url) => url.pathname === "/login", {
+      timeout: 10_000,
+    });
+    expect(new URL(freshPage.url()).searchParams.get("next")).toBe("/dashboard");
     await expect(freshPage.locator("h1")).toContainText(
       /Masuk ke akun scan|Open your scan account/,
     );

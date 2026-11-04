@@ -1,4 +1,11 @@
-import { CalendarDays, Download, Landmark, Printer } from "lucide-react";
+import {
+  CalendarDays,
+  CreditCard,
+  Download,
+  Landmark,
+  Printer,
+} from "lucide-react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -41,6 +48,9 @@ export function WorkspaceInvoiceCard({
   const locale = i18n.language === "en" ? "en-US" : "id-ID";
   const showActions = invoice.status === "sent" || invoice.status === "paid";
   const showBank = invoice.status === "sent";
+  const total = invoice.total_idr ?? invoice.amount_idr;
+  const showPay =
+    invoice.status === "sent" && total > 0 && invoice.can_pay !== false;
   const statusText = t(`invoicePrintStatus_${invoice.status}`, {
     defaultValue: invoice.status,
   });
@@ -124,6 +134,19 @@ export function WorkspaceInvoiceCard({
         </div>
         {showActions ? (
           <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+            {showPay ? (
+              <Button
+                asChild
+                size="sm"
+                className="col-span-2 min-h-11 w-full sm:w-auto"
+                data-testid="invoice-pay"
+              >
+                <Link to={`/pay/${invoice.id}`}>
+                  <CreditCard className="mr-1 h-3.5 w-3.5 shrink-0" aria-hidden />
+                  {t("invoicePay")}
+                </Link>
+              </Button>
+            ) : null}
             <Button
               type="button"
               size="sm"

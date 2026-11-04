@@ -3,6 +3,10 @@ import { render, screen } from "@testing-library/react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useAuthStore } from "@/store/authStore";
 
+const { mockLocation } = vi.hoisted(() => ({
+  mockLocation: { pathname: "/settings/workspace", search: "" },
+}));
+
 const defaultAuthState = {
   isLoading: true,
   isAuthenticated: false,
@@ -20,7 +24,7 @@ vi.mock("react-router-dom", () => ({
     <div data-testid="navigate" data-to={to} />
   ),
   Outlet: () => <div data-testid="outlet">Outlet content</div>,
-  useLocation: () => ({ search: "", pathname: "/settings/workspace" }),
+  useLocation: () => mockLocation,
 }));
 
 vi.mock("lucide-react", () => ({
@@ -35,6 +39,8 @@ describe("ProtectedRoute", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseAuthStore.mockReturnValue(defaultAuthState);
+    mockLocation.pathname = "/settings/workspace";
+    mockLocation.search = "";
   });
 
   it("shows loading spinner when isLoading is true", () => {
@@ -55,7 +61,25 @@ describe("ProtectedRoute", () => {
     render(<ProtectedRoute />);
     const navigate = screen.getByTestId("navigate");
     expect(navigate).toBeInTheDocument();
-    expect(navigate).toHaveAttribute("data-to", "/login");
+    expect(navigate).toHaveAttribute(
+      "data-to",
+      `/login?next=${encodeURIComponent("/settings/workspace")}`,
+    );
+  });
+
+  it("preserves the attempted path and query in next", () => {
+    mockLocation.pathname = "/pay/inv-1";
+    mockLocation.search = "?status=finish";
+    mockUseAuthStore.mockReturnValue({
+      ...defaultAuthState,
+      isLoading: false,
+      isAuthenticated: false,
+    });
+    render(<ProtectedRoute />);
+    expect(screen.getByTestId("navigate")).toHaveAttribute(
+      "data-to",
+      `/login?next=${encodeURIComponent("/pay/inv-1?status=finish")}`,
+    );
   });
 
   it("renders Outlet when authenticated", () => {

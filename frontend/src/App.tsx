@@ -38,6 +38,7 @@ const Profile = lazy(() => import("@/pages/Profile"));
 const UserGuide = lazy(() => import("@/pages/UserGuide"));
 const WorkspaceSettings = lazy(() => import("@/pages/WorkspaceSettings"));
 const Subscription = lazy(() => import("@/pages/Subscription"));
+const PayInvoice = lazy(() => import("@/pages/PayInvoice"));
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
 const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
 const AdminUserDetail = lazy(() => import("@/pages/admin/AdminUserDetail"));
@@ -182,6 +183,10 @@ function App() {
             <Route
               path="/settings/subscription"
               element={<PageBoundary component={Subscription} />}
+            />
+            <Route
+              path="/pay/:invoiceId"
+              element={<PageBoundary component={PayInvoice} />}
             />
             <Route
               path="/settings/workspace"

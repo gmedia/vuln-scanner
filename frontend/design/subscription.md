@@ -73,6 +73,23 @@ Over-seat precedence: `used > limit` renders "Over by N" instead of "Capacity fu
 
 Frozen testids: `subscription-page`, `subscription-summary`, `subscription-usage-over-{product}`, `subscription-past-due`, `subscription-cancel-scheduled`, `subscription-grace`, `subscription-attempts`, `subscription-attempts-empty`, `subscription-usage-{product}`, `subscription-usage-workspace`, `subscription-plans`, `subscription-plan-{tier}`, `subscription-plan-enterprise`, `subscription-alacarte-table`, `subscription-invoices`, `subscription-invoices-empty`, `subscription-cancel-request`, `subscription-request-note`, `subscription-request-submit`, `subscription-no-org`, `subscription-error`.
 
+### Payment route (`/pay/:invoiceId`)
+
+`pages/PayInvoice.tsx` reuses this account surface: `PageHeader`, one `WorkspaceShell` rail, `WorkspaceNotice`, and the invoice breakdown grammar. It fetches `GET /api/invoices/{id}` (not the active-org path) so a multi-org admin can pay from a deep link.
+
+| Primitive | Anatomy | States |
+|---|---|---|
+| Breakdown | `dl` rows + mono tabular values; a row renders only when non-zero | subtotal / discount + code / DPP / PPN / total |
+| Payment panel (`pay-invoice-panel`) | provider label + kit `Select` (only when >1) + primary `Button` | payable / `can_pay=false` reason / submitting |
+| Return polling (`pay-invoice-polling`) | `WorkspaceNotice tone="info"` spinner, 3s × 60s | pending / finish return / expired → `pay-invoice-refresh` |
+| Manual fallback (`pay-invoice-bank`) | bank/account/holder rows + copy + ops note | present only when `bank` and `sent` |
+| Settled (`pay-invoice-paid`) | success notice with paid date, method, total | `paid` / sent + zero total (`pay-invoice-zero`) |
+| Unavailable | `WorkspaceNotice` with the reason | `draft` / `void` / not found |
+
+Frozen testids: `pay-invoice-page`, `pay-invoice-total`, `pay-invoice-discount`, `pay-invoice-provider`, `pay-invoice-submit`, `pay-invoice-polling`, `pay-invoice-bank`, `pay-invoice-paid`. No Snap.js, iframe, or external script: the only checkout action is `window.location.assign(redirect_url)`. The client never marks an invoice paid.
+
+The invoice card adds a single `Bayar` link (`invoice-pay`) only for `sent` with `total_idr > 0`; Print and PDF stay visible.
+
 ## 6. Motion
 
 - Hover on plan cards: border colour only, `transition-colors` 150ms.

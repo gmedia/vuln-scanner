@@ -83,6 +83,7 @@
   "billingBank": "Transfer to {{name}} {{account}} ({{holder}})",
   "invoicePrint": "Print",
   "invoicePdf": "PDF",
+  "invoicePay": "Pay",
   "invoicePdfFail": "Could not download invoice PDF",
   "invoicePrintTitle": "Invoice",
   "invoicePrintNumber": "Number",

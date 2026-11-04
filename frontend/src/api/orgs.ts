@@ -151,6 +151,16 @@ export async function revokeInvite(
   await api.delete(`/api/orgs/${orgId}/invites/${inviteId}`);
 }
 
+export type InvoiceStatus = "draft" | "sent" | "paid" | "void";
+
+export type InvoicePaymentStatus =
+  | "pending"
+  | "succeeded"
+  | "failed"
+  | "expired"
+  | "refunded"
+  | null;
+
 export interface OrgInvoiceItem {
   id: string;
   organization_id: string;
@@ -163,15 +173,20 @@ export interface OrgInvoiceItem {
   ppn_idr?: number;
   pph23_idr?: number;
   total_idr?: number;
+  discount_idr?: number;
+  promo_code?: string | null;
+  payment_status?: InvoicePaymentStatus;
+  can_pay?: boolean;
   period_start: string;
   period_end: string;
   due_date?: string;
   sent_at?: string | null;
-  status: string;
+  status: InvoiceStatus | string;
   bank_ref: string | null;
   notes: string;
   paid_at: string | null;
   created_at: string;
+  organization_name?: string | null;
   bank?: {
     bank_name: string | null;
     bank_account: string | null;
@@ -179,11 +194,69 @@ export interface OrgInvoiceItem {
   } | null;
 }
 
+/**
+ * `GET /api/invoices/{id}` resolves the org from the invoice, so a multi-org
+ * admin can open `/pay/:invoiceId` without the active-org path.
+ */
+export interface PayableInvoice extends OrgInvoiceItem {
+  payment_status: InvoicePaymentStatus;
+  can_pay: boolean;
+  discount_idr: number;
+  promo_code: string | null;
+  /** Optional server hint; the contract does not require it. */
+  payment_method?: string | null;
+}
+
+export interface PaymentProvider {
+  name: string;
+  label: string;
+  mode: "sandbox" | "production";
+}
+
+export interface PaymentProvidersResponse {
+  items: PaymentProvider[];
+}
+
+export interface CheckoutResponse {
+  attempt_id: string;
+  provider: string;
+  redirect_url: string;
+  expires_at: string | null;
+  amount_idr: number;
+  status: string;
+}
+
 export async function listOrgInvoices(
   orgId: string,
 ): Promise<{ items: OrgInvoiceItem[]; total: number }> {
   const { data } = await api.get<{ items: OrgInvoiceItem[]; total: number }>(
     `/api/orgs/${orgId}/invoices`,
+  );
+  return data;
+}
+
+export async function getInvoice(invoiceId: string): Promise<PayableInvoice> {
+  const { data } = await api.get<PayableInvoice>(
+    `/api/invoices/${invoiceId}`,
+  );
+  return data;
+}
+
+export async function listPaymentProviders(): Promise<PaymentProvidersResponse> {
+  const { data } = await api.get<PaymentProvidersResponse>(
+    "/api/payments/providers",
+  );
+  return data;
+}
+
+export async function checkoutInvoice(
+  orgId: string,
+  invoiceId: string,
+  provider: string,
+): Promise<CheckoutResponse> {
+  const { data } = await api.post<CheckoutResponse>(
+    `/api/orgs/${orgId}/invoices/${invoiceId}/checkout`,
+    { provider },
   );
   return data;
 }
