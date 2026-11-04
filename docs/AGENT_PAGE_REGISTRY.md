@@ -86,7 +86,8 @@ Nav groups match Sidebar: **Scan** · **Attach** · **Account** · **Admin** (ad
 | `/inbox` | `pages/Inbox.tsx` | Account | User SMTP Sent/Failed log (`nav-inbox`). Spec [`inbox-delivered-v1.md`](specs/inbox-delivered-v1.md) S1b. **Not** Guard Discover. | `Inbox.test.tsx`, `Sidebar.test.tsx` |
 | `/profile` | `pages/Profile.tsx` | Account | Identity band (initials + verified/admin badges + org) + KPI tiles + password/email cards. Frozen form ids: `current-password`, `new-password`, `confirm-password`, `profile-email`, `profile-password`. | `Profile.test.tsx`, `e2e/profile.spec.ts` |
 | `/settings/workspace` | `pages/WorkspaceSettings.tsx` | Account | Org members, invites, P6 pilot checklist, Billing card (`workspace-billing`). Invoice HTML print = S1b [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md). | `WorkspaceSettings.test.tsx` |
-| `/settings/subscription` | `pages/Subscription.tsx` | Account | Plan summary, capacity meters, plan catalog, request-only change flow, invoice list. Contract: `frontend/design/subscription.md`. | `Subscription.test.tsx` |
+| `/settings/subscription` | `pages/Subscription.tsx` | Account | Plan summary, capacity meters, plan catalog, request-only change flow (optional promo code), invoice list. Contract: `frontend/design/subscription.md`. Spec: [`promo-codes-v1.md`](specs/promo-codes-v1.md). | `Subscription.test.tsx` |
+| `/pay/:invoiceId` | `pages/PayInvoice.tsx` | — | Authenticated invoice payment page. `can_pay` only when `sent` + `total_idr > 0`. Provider selector, redirect to Midtrans, manual bank fallback. Spec: [`payments-v1.md`](specs/payments-v1.md). **No Snap.js/iframe.** | `PayInvoice.test.tsx` |
 | `/org/members` | **same** `WorkspaceSettings.tsx` | — | Alias route; keep in sync | same |
 
 ### Admin (`AdminRoute`)
@@ -97,7 +98,8 @@ Nav groups match Sidebar: **Scan** · **Attach** · **Account** · **Admin** (ad
 | `/admin/users` | `pages/admin/AdminUsers.tsx` | Admin | | `admin/AdminUsers.test.tsx`, `e2e/admin-users.spec.ts` |
 | `/admin/users/:id` | `pages/admin/AdminUserDetail.tsx` | — | | `admin/AdminUserDetail.test.tsx`, `e2e/admin-user-detail.spec.ts` |
 | `/admin/hpp` | `pages/admin/AdminHpp.tsx` | Admin | IDR unit rates + monthly overhead + cost journal + date-range report + SKU overlay **estimasi**. Separate COGS/margin tool; retained after the pricing archive retired. `nav-admin-hpp`. Spec: `docs/specs/admin-hpp-v1.md`. | `admin/AdminHpp.test.tsx` |
-| `/admin/invoices` | `pages/admin/AdminInvoices.tsx` | Admin | Sinexis Scan invoices (bank transfer). Catalog + draft/send/paid/void. `nav-admin-invoices`. Pay loop: `docs/specs/sinexis-invoice-v1.md`. HTML print: S1b [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md). | `admin/AdminInvoices.test.tsx` |
+| `/admin/invoices` | `pages/admin/AdminInvoices.tsx` | Admin | Sinexis Scan invoices (bank transfer, optional gateway). Catalog + draft/send/paid/void; optional promo code. `nav-admin-invoices`. Pay loop: `docs/specs/sinexis-invoice-v1.md` + [`payments-v1.md`](specs/payments-v1.md). HTML print: S1b [`scan-pdf-invoice-print-v1.md`](specs/scan-pdf-invoice-print-v1.md). | `admin/AdminInvoices.test.tsx` |
+| `/admin/promo-codes` | `pages/admin/AdminPromoCodes.tsx` | Admin | Promo code CRUD, deactivate/reactivate, redemptions, history. `nav-admin-promo-codes`. Spec: [`promo-codes-v1.md`](specs/promo-codes-v1.md). | `admin/AdminPromoCodes.test.tsx` |
 | `/admin/subscription-requests` | `pages/admin/AdminSubscriptionRequests.tsx` | Admin | Plan upgrade/downgrade queue; approve/reject with note. `nav-admin-subscription-requests`. | `admin/AdminSubscriptionRequests.test.tsx` |
 | `/admin/subscriptions` | `pages/admin/AdminSubscriptions.tsx` | Admin | Billing lifecycle per org: status, period, cancel flag, payment attempts; record payment + cancel. `nav-admin-subscriptions`. Spec: `docs/specs/billing-core-v1.md`. | `admin/AdminSubscriptions.test.tsx` |
 | `/admin/blog` | `pages/admin/AdminBlog.tsx` | Admin | CMS; `nav-admin-blog`. Locale key `blogStatus`. | `admin/AdminBlog.test.tsx` |
@@ -135,8 +137,8 @@ Minimum authenticated set (2k + mobile, light + dark) after a chrome/token chang
 4. `/scan/ip` `/scan/domain` `/scan/mobile`
 5. `/schedules` `/assets` `/host`
 6. `/guard` `/siem` `/uptime` `/uptime/:id` `/uptime/status-page`
-7. `/credit-history` `/profile` `/settings/workspace` `/settings/subscription` `/guide`
-8. Admin: `/admin` `/admin/users` `/admin/hpp` `/admin/skus` (tabs: Harga · Tier & Fitur) `/admin/simulator` `/admin/invoices` `/admin/subscription-requests` `/admin/subscriptions` `/admin/blog`
+7. `/credit-history` `/profile` `/settings/workspace` `/settings/subscription` `/pay/:invoiceId` `/guide`
+8. Admin: `/admin` `/admin/users` `/admin/hpp` `/admin/skus` (tabs: Harga · Tier & Fitur) `/admin/simulator` `/admin/invoices` `/admin/promo-codes` `/admin/subscription-requests` `/admin/subscriptions` `/admin/blog`
 
 Auth for prod visual: `E2E_EMAIL` / `E2E_PASSWORD` from **tc1 env** — never commit. Do not `POST /register` for the shared mailbox.
 
@@ -153,8 +155,8 @@ Run **locally after deploy of S0–S8** (light + dark, 2k + mobile). Compare to 
 | S3 header | `/dashboard` | `h2` PageHeader + description `div` |
 | S4 scan | `/scan/ip` `/scan/domain` `/scan/mobile` `/scan/:id` `/schedules` `/assets` `/host` | Density + PageHeader; frozen testids |
 | S5 account | `/profile` `/credit-history` `/settings/workspace` | Two-pane / filter-bar rhythm |
-| S6 attach | `/guard` `/siem` `/uptime` `/uptime/:id` `/uptime/status-page` `/ai` `/guide` | Same chrome family |
-| S7 admin | `/admin` `/admin/users` `/admin/hpp` `/admin/skus` `/admin/simulator` `/admin/invoices` `/admin/blog` `/admin/email-logs` `/admin/ai` | PageHeader |
+| S6 attach | `/guard` `/siem` `/uptime` `/uptime/:id` `/uptime/status-page` `/ai` `/guide` `/pay/:invoiceId` | Same chrome family |
+| S7 admin | `/admin` `/admin/users` `/admin/hpp` `/admin/skus` `/admin/simulator` `/admin/invoices` `/admin/promo-codes` `/admin/blog` `/admin/email-logs` `/admin/ai` | PageHeader |
 | S8 auth | `/login` `/register` `/forgot-password` `/reset-password` `/verify-email` 404 | Hairline `border-border/80 shadow-none`; **Landing `h-12` unchanged** |
 
 Also recapture `/` logged-out only to confirm Landing was **not** restyled in this epic.
