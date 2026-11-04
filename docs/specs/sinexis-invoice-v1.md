@@ -42,7 +42,6 @@ PK `(product, sku)`. Products = `scan` + `host` (both `invoicable=true` after H9
 | product | `scan` \| `host` \| `uptime` \| `guard` |
 | sku | `varchar(20)` → FK `sku_tiers.code` (`ON DELETE CASCADE`) |
 | list_idr | int ≥ 0 |
-| seats | int ≥ 1 — mirror of `sku_tiers.limit_<product>`; written on every tier write, read by no API path |
 | invoicable | bool |
 | updated_at | timestamptz |
 | updated_by | uuid → `users.id` (nullable, `ON DELETE SET NULL`) — audit actor, added 2026-10-13 |
@@ -57,7 +56,7 @@ Seed Scan from I2. Seed Host 150_000 / 350_000 / 900_000. Alembic `host_sku_invo
 
 **Retire vs delete (2026-11-02):** deactivate (`active=false`) is the normal "remove a plan" action. Grandfathered orgs keep their caps/features, keep receiving annual renewal drafts, and can still pay an existing invoice for that tier. New orgs and upgrade requests are rejected. Hard delete is only allowed when `organizations`, `subscriptions`, `org_invoices` and `subscription_requests` have **zero** references (the API returns `409` with per-table counts); `sku_catalog` rows are owned by the tier and cascade.
 
-**Uptime / Guard list prices (2026-10-13, invoicable 2026-10-14):** the owner locked à-la-carte list prices for Uptime (75_000 / 200_000 / 500_000) and Guard (100_000 / 250_000 / 600_000) in [`pricing-architecture-v1.md`](../commercial/pricing-architecture-v1.md) §4. They are **seeded as `sku_catalog` rows** with `invoicable=true` (migration `add_uptime_guard_catalog`), so `/admin/invoices` can bill them and `/admin/skus` can edit them. `seats` carries the tier capacity (Uptime 10/50/200, Guard 1/3/10) and is synchronised from `sku_tiers.limit_*` on every tier write. **It is a write-only mirror as of 2026-11-03:** no API path reads the column — `GET /api/admin/sku-catalog`, `GET /api/admin/sku-prices` and the subscription catalog all derive `seats` from `sku_tiers.limit_*` instead, so a drifted value can never reach a customer or an invoice.
+**Uptime / Guard list prices (2026-10-13, invoicable 2026-10-14):** the owner locked à-la-carte list prices for Uptime (75_000 / 200_000 / 500_000) and Guard (100_000 / 250_000 / 600_000) in [`pricing-architecture-v1.md`](../commercial/pricing-architecture-v1.md) §4. They are **seeded as `sku_catalog` rows** with `invoicable=true` (migration `add_uptime_guard_catalog`), so `/admin/invoices` can bill them and `/admin/skus` can edit them. Capacity (Uptime 10/50/200, Guard 1/3/10) is **not stored on the catalog row**: every `seats` value in an API response is derived from `sku_tiers.limit_*` at read time. The former `sku_catalog.seats` mirror column was dropped in `drop_sku_catalog_seats` (2026-11-03), so a drifted copy can no longer exist.
 
 HPP overlay `_SCAN_LIST_IDR` / `_HOST_LIST_IDR` **read from catalog** only; the constant fallbacks were removed on 2026-11-02. A tier with no catalog row is reported as unpriced instead of borrowing another tier's price. **HPP audit trail (2026-11-03):** `hpp_rates` and `hpp_overhead` now have an append-only `hpp_setting_history` — every amount change writes one row (previous amount, new amount, actor), readable at `GET /api/admin/hpp/history`, while `updated_by` remains the last-writer pointer.
 
@@ -108,14 +107,14 @@ Admin (`get_current_admin` + existing limiter):
 | GET | `/api/admin/sku-catalog` | all rows, each with `label` + `active` joined from `sku_tiers` |
 | GET | `/api/admin/sku-prices` | read-only list price for every **non-sales-led** tier × all four services (added 2026-10-13). Rows and bundles are built from `sku_tiers` + `sku_catalog`; a missing catalog row renders as `0` / non-invoicable rather than borrowing a fallback. Also returns `bundles` (tier `bundle_idr` vs derived à-la-carte sum + saving) and `annual` (P2 policy), added 2026-10-14. Single source for the `/admin/simulator` prefill. |
 | GET | `/api/admin/sku-tiers` | all tiers incl. inactive, with `usage` (orgs/subscriptions/invoices/requests) and `has_catalog` |
-| POST | `/api/admin/sku-tiers` | create a tier; `sales_led=false` requires prices for all four products (catalog rows are created with `seats = limit_*`) |
+| POST | `/api/admin/sku-tiers` | create a tier; `sales_led=false` requires prices for all four products (four `sku_catalog` rows are created; capacity lives on the tier, not the catalog) |
 | PATCH | `/api/admin/sku-tiers/{code}` | edit tier; code is immutable; catalog rows are synchronised |
 | POST | `/api/admin/sku-tiers/{code}/deactivate` | retire (default tier cannot be retired) |
 | POST | `/api/admin/sku-tiers/{code}/reactivate` | un-retire |
 | DELETE | `/api/admin/sku-tiers/{code}` | 204 only when unused; else 409 with per-table counts |
 | GET | `/api/admin/sku-tiers/{code}/history` | append-only tier/price/assignment change log; `page`/`page_size` (default 20, max 100); returns empty after a hard delete |
 | GET | `/api/admin/orgs/{org_id}/tier-history` | the same rows filtered to one organization (`assigned` entries); same pagination; unknown org returns `200` with an empty page, because history is append-only and `organization_id` is `ON DELETE SET NULL` |
-| PUT | `/api/admin/sku-catalog/{product}/{sku}` | `{ list_idr, invoicable? }`; `seats` follows `sku_tiers.limit_*`; records `updated_by` |
+| PUT | `/api/admin/sku-catalog/{product}/{sku}` | `{ list_idr, invoicable? }`; capacity is not stored here; records `updated_by` |
 | GET | `/api/admin/invoices` | filter `status`, `organization_id`; page |
 | POST | `/api/admin/invoices` | `{ organization_id, sku, product?, period_start?, due_date? }` `product` = `scan` (default) \| `host` \| `uptime` \| `guard`; amount from catalog; `due_date` defaults to `period_start` + `INVOICE_DEFAULT_TERM_DAYS` |
 | POST | `/api/admin/invoices/{id}/send` | draft→sent |
@@ -137,7 +136,7 @@ Bank payload on customer GET when `sent`: `{ bank_name, bank_account, bank_holde
 
 - `/admin/invoices` — catalog table + invoice list + create/send/paid/void. Filter bar = Credit History (`gap-3`, `h-10`). `nav-admin-invoices`.
 - `/admin/skus` (added 2026-10-13) — two tabs, `nav-admin-skus`:
-  - **Harga** — edit catalog `list_idr` + `invoicable` per `scan|host|uptime|guard` × every non-sales-led tier; `seats` read-only from `sku_tiers.limit_*`. Confirm-before-write; existing invoices keep their `amount_idr` snapshot. Plus the **read-only** "Bundle & annual (locked)" card (`sku-bundle-card`, added 2026-10-14).
+  - **Harga** — edit catalog `list_idr` + `invoicable` per `scan|host|uptime|guard` × every non-sales-led tier; `seats` displayed from `sku_tiers.limit_*`. Confirm-before-write; existing invoices keep their `amount_idr` snapshot. Plus the **read-only** "Bundle & annual (locked)" card (`sku-bundle-card`, added 2026-10-14).
   - **Tier & Fitur** (added 2026-11-02) — create/edit/retire tiers, feature gates, product caps, workspace seat limits and prices. Delete is irreversible and only enabled for unused tiers; retire is one click. Enterprise stays `sales_led`, quote-only, no catalog row. Each row's `…` menu has **Riwayat** (the tier's change log); the **Pemakaian** cell opens a drill-down of the organizations still on that tier (including retired ones), and each of those rows has its own **Riwayat** showing that organization's tier assignments.
 - Workspace: card **Billing** (owner/admin) — list invoices; if `sent`, show bank copy. No pay button. Empty: ops-issued, no self-serve upgrade. Load error is not painted as empty. Platform admin may link to `/admin/invoices`.
 
