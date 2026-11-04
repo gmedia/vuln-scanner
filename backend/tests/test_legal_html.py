@@ -11,7 +11,9 @@ def test_terms_html_public(client):
     assert 'aria-current="page"' in resp.text
     assert "footer-nav" in resp.text
     assert "footer-grid" not in resp.text
-    assert "Sinexis · Scan · Guard" in resp.text
+    assert "Sinexis · Security & operations attach" in resp.text
+    assert 'href="/products"' in resp.text
+    assert ">Produk<" in resp.text
 
 
 def test_privacy_html_public(client):
