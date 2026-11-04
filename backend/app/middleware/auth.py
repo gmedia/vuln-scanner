@@ -68,6 +68,7 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
             or path == "/blog"
             or path.startswith("/blog/")
             or path in ("/terms", "/privacy")
+            or path == "/sitemap.xml"
             or path == "/status"
             or path.startswith("/status/")
             or path == "/install/sinexis-install.sh"

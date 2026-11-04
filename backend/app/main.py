@@ -13,6 +13,7 @@ from app.api.install_routes import router as install_router
 from app.api.legal_html import html_router as legal_html_router
 from app.api.openai_v1_routes import router as openai_v1_router
 from app.api.router import api_router
+from app.api.sitemap_html import html_router as sitemap_html_router
 from app.api.status_html import html_router as status_html_router
 from app.config import check_settings, settings
 from app.middleware.auth import ApiKeyMiddleware
@@ -38,8 +39,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = FastAPI(
-    title="VulnScanner API",
-    description="""Vulnerability scanner with IP, domain, and mobile scan modes.
+    title="Sinexis API",
+    description="""Security and operations attach for infrastructure you already run.
 
 ## Authentication
 
@@ -51,11 +52,12 @@ app = FastAPI(
 **JWT auth** is the primary auth for the dashboard. See `/api/auth/*` endpoints.
 **API Key auth** bypasses user auth for service-to-service calls.
 
-## Scan Types
+## Services
 
-- **IP Scan** — Port scan via nmap (`-sV -sC -O`), CVE lookup via OSV.dev
-- **Domain Scan** — DNS resolution, subdomain enum (crt.sh), SSL/TLS analysis
-- **Mobile Scan** — APK/IPA manifest analysis, permission classification
+- **Scan** — outside-in exposure scans for IP, domain, and mobile targets, plus scheduled attach scans
+- **Guard** — one thin agent for on-host inventory and critical alerts
+- **Uptime** — reachability probes and public status pages
+- **AI Gateway** — an org-scoped wallet and keys for your team's models
 """,
     version="0.1.0",
     lifespan=lifespan,
@@ -123,6 +125,7 @@ app.include_router(api_router, prefix="/api")
 app.include_router(openai_v1_router)
 app.include_router(blog_html_router)
 app.include_router(legal_html_router)
+app.include_router(sitemap_html_router)
 app.include_router(status_html_router)
 app.include_router(install_router)
 
