@@ -49,12 +49,14 @@ async def sitemap(db: AsyncSession = Depends(get_db)) -> Response:
 
     xml = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-        + "\n".join(urls)
-        + "\n</urlset>\n"
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + "\n".join(urls) + "\n</urlset>\n"
     )
     return Response(
         content=xml,
-        media_type="application/xml",
-        headers={"Cache-Control": "public, max-age=300"},
+        # Serve an exact `text/xml` (Starlette would append `; charset=utf-8` if this
+        # went through media_type); the XML prolog already declares UTF-8.
+        headers={
+            "Content-Type": "text/xml",
+            "Cache-Control": "public, max-age=300",
+        },
     )
