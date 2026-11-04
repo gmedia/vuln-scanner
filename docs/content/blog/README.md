@@ -33,9 +33,9 @@ post genuinely spans pillars or predates this taxonomy — do not invent a fifth
 id. The migration backfills the eight seeded rows above by slug; it is a no-op
 when a slug is missing, so renamed/deleted posts keep working.
 
-S3 decision: the shared island footer keeps `Sinexis · Scan · Guard` for now
-(`_shell` is also used by `/terms` and `/privacy`). Changing the footer line is
-deferred so this slice does not alter legal-page chrome.
+S3 leaves the shared island footer unchanged. The umbrella slice owns the footer
+line (`_shell` is also used by `/terms` and `/privacy`), so this slice does not
+alter legal-page chrome.
 
 Publish via admin JWT (`POST /api/admin/blog/posts` then `.../publish`). Idempotent on slug (409 if exists).
 
