@@ -158,8 +158,14 @@ redis-cli --scan --pattern 'ai:cb:<provider_id>:*' | xargs -r redis-cli del
 ## Monitoring
 
 
-Every sample is on `/metrics` (API-key protected) and ignores scrape failures: when a read fails the
-sample is **omitted** rather than reported as `0`, so a gap is "unknown", never "healthy".
+Every sample is on `/metrics` and ignores scrape failures: when a read fails the sample is
+**omitted** rather than reported as `0`, so a gap is "unknown", never "healthy".
+
+`/metrics` authenticates with the platform key — `X-API-Key: $API_KEY`, compared in constant time.
+Any other header, including `Authorization: Bearer …`, gets `401`. Optional hardening on the host:
+add an `allow <scraper-cidr>; deny all;` line to the `/metrics` location, but only once the scraper's
+address is known — a wrong allowlist makes the scrape fail silently, which looks exactly like a
+healthy stack.
 
 | Metric | Type | Meaning |
 |--------|------|---------|
@@ -250,9 +256,10 @@ ticket or chat.
 5. **Billing landed once.** In `/admin/ai?tab=usage` the new row must show one row per request with
    `billed_idr > 0`, `cogs_idr > 0`, and `provider_id` equal to the provider that actually served —
    not necessarily the primary, if a fallback was used.
-6. **Counter moved.**
+6. **Counter moved.** `/metrics` takes the **platform** key in `X-API-Key`, not a bearer token —
+   the API rejects anything else, so a `Bearer` header returns `401`.
    ```bash
-   curl -s https://<host>/metrics -H "Authorization: Bearer <metrics-token>" \
+   curl -s https://<host>/metrics -H "X-API-Key: $API_KEY" \
      | grep vuln_ai_upstream_attempts_total
    ```
    Expect `outcome="served"` to increase by exactly 1. Any `retried`/`failed` on a healthy stack means
