@@ -50,7 +50,7 @@ def render_invoice_html(
     number = _esc(inv.number)
     bill_to = _esc(org_name or "—")
     amount = _esc(_idr(inv.amount_idr))
-    total = _esc(_idr(inv.total_idr or inv.amount_idr))
+    total = _esc(_idr(inv.total_idr))
     tax_rows = ""
     if inv.ppn_idr:
         tax_rows = (

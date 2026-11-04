@@ -189,6 +189,38 @@ async def test_record_payment_endpoint_returns_billing_state(db_session, ctx):
 
 
 @pytest.mark.asyncio
+async def test_record_payment_uses_total_idr_when_total_is_zero(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            invoice = await _create_invoice(client, ctx["admin"], ctx["org"], sku="pro")
+            inv = await db_session.get(OrgInvoice, uuid.UUID(str(invoice["id"])))
+            assert inv is not None
+            inv.amount_idr = 650_000
+            inv.total_idr = 0
+            await db_session.commit()
+
+            response = await client.post(
+                f"/api/admin/subscriptions/{ctx['org'].id}/record-payment",
+                headers=_auth(ctx["admin"]),
+                json={
+                    "invoice_id": invoice["id"],
+                    "method": "bank_transfer",
+                    "reference": "TF-ZERO-1",
+                },
+            )
+            assert response.status_code == 200, response.text
+
+            attempt = (
+                await db_session.execute(select(PaymentAttempt).where(PaymentAttempt.provider_ref == "TF-ZERO-1"))
+            ).scalar_one()
+            assert attempt.amount_idr == 0
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
 async def test_host_invoice_does_not_overwrite_scan_subscription(db_session, ctx):
     _bind(db_session)
     transport = ASGITransport(app=app)

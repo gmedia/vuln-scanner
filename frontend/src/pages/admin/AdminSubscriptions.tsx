@@ -440,7 +440,7 @@ function AdminSubscriptions() {
                 <SelectContent>
                   {invoices.map((invoice) => (
                     <SelectItem key={invoice.id} value={invoice.id}>
-                      {invoice.number} · {formatIdr(invoice.amount_idr)}
+                      {invoice.number} · {formatIdr(invoice.total_idr ?? 0)}
                     </SelectItem>
                   ))}
                 </SelectContent>

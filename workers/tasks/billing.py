@@ -213,7 +213,7 @@ async def _send_all(
                 stage=stage,
                 invoice_number=inv.number,
                 organization_name=organization_name,
-                amount_idr=inv.amount_idr,
+                amount_idr=inv.total_idr,
                 due_date=inv.due_date,
                 period_start=inv.period_start,
                 period_end=inv.period_end,

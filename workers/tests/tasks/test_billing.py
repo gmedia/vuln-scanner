@@ -119,6 +119,7 @@ def _invoice(*, days_ago: int = 1) -> SimpleNamespace:
         organization_id=uuid.uuid4(),
         number="SX-202610-0001",
         amount_idr=1_000_000,
+        total_idr=1_000_000,
         due_date=now - timedelta(days=days_ago),
         period_start=now - timedelta(days=30),
         period_end=now + timedelta(days=1),
@@ -194,6 +195,7 @@ class TestSendDueRemindersRun:
         assert kwargs["stage"] == "due_today"
         assert kwargs["invoice_number"] == "SX-202610-0001"
         assert kwargs["organization_name"] == "Acme"
+        assert kwargs["amount_idr"] == invoice.total_idr
 
         recorded = session.add.call_args[0][0]
         assert recorded.stage == "due_today"
@@ -201,6 +203,17 @@ class TestSendDueRemindersRun:
         assert recorded.attempts == 1
         session.commit.assert_called_once()
         session.close.assert_called_once()
+
+    def test_reminder_uses_total_idr_when_total_is_zero(self):
+        invoice = _invoice(days_ago=1)
+        invoice.amount_idr = 650_000
+        invoice.total_idr = 0
+        session = _session(invoice=invoice)
+
+        _, send = self._run(session)
+
+        send.assert_awaited_once()
+        assert send.await_args.kwargs["amount_idr"] == 0
 
     def test_skips_a_stage_that_was_already_sent(self):
         invoice = _invoice(days_ago=1)
