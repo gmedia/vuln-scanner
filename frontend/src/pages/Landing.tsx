@@ -32,6 +32,8 @@ import { Footer } from "@/components/Footer";
 import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
 import ThemeSwitcher from "@/components/theme/ThemeSwitcher";
 import { useTranslation } from "react-i18next";
+import { BRAND } from "@/lib/brand";
+import { usePageMeta } from "@/lib/seo";
 
 const pipelineSteps = [
   { titleKey: "stepScan", descKey: "stepScanDesc" },
@@ -63,6 +65,13 @@ const faqKeys = [
 function Landing() {
   const { t } = useTranslation("landing");
   const { t: tc } = useTranslation("common");
+
+  usePageMeta({
+    title: BRAND.metaTitle,
+    description: BRAND.metaDescription,
+    canonical: "/",
+  });
+
   return (
     <div className="min-h-dvh bg-background flex flex-col">
       <header className="border-b border-border pt-[env(safe-area-inset-top)]">

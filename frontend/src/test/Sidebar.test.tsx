@@ -166,7 +166,7 @@ describe("Sidebar", () => {
 
   it("renders version text at bottom", () => {
     renderSidebar(true);
-    expect(screen.getByText("Sinexis Scan v1.2.0")).toBeInTheDocument();
+    expect(screen.getByText("Sinexis v1.2.0")).toBeInTheDocument();
   });
 
   it("does not mark Uptime active on Status page", () => {
