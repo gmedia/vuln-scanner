@@ -166,6 +166,18 @@
   "workspaceSeatsUsage": "{{editors}} / {{editorLimit}} editor · {{viewers}} / {{viewerLimit}} viewer",
   "unlimited": "Unlimited",
   "perTier": "Per tier",
+  "promo": {
+    "label": "Promo code",
+    "placeholder": "LAUNCH2026",
+    "apply": "Apply",
+    "applying": "Checking…",
+    "invalid": "This code cannot be used",
+    "estimate": "Estimate only; the final discount follows the per-product invoice.",
+    "discount": "Discount",
+    "total": "Total after discount",
+    "annualLocked": "Promo codes do not apply to annual subscriptions.",
+    "pending": "Promo code: {{code}}"
+  },
   "pay": {
     "title": "Invoice payment",
     "subtitle": "Review the breakdown and settle the invoice for this workspace.",

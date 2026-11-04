@@ -125,6 +125,7 @@ export interface SubscriptionCapabilities {
   can_self_serve: boolean;
   read_only: boolean;
   read_only_reason: string | null;
+  promo_codes?: boolean;
 }
 
 export interface SubscriptionPaymentAttempt {
@@ -153,6 +154,7 @@ export interface SubscriptionRequestItem {
   current_sku: SubscriptionTier;
   target_sku: SubscriptionTier;
   cycle: SubscriptionCycle;
+  promo_code?: string | null;
   note: string;
   status: "pending" | "approved" | "rejected" | "canceled";
   resolution_note: string;
@@ -182,6 +184,20 @@ export interface SubscriptionRequestCreate {
   target_sku: SubscriptionTier;
   cycle?: SubscriptionCycle;
   note?: string;
+  promo_code?: string | null;
+}
+
+export interface CustomerPromoValidateInput {
+  code: string;
+  target_sku: string;
+  cycle: SubscriptionCycle;
+}
+
+export interface PromoValidateResult {
+  valid: boolean;
+  description: string;
+  discount_idr: number;
+  total_idr: number;
 }
 
 export interface SubscriptionRequestListResponse {
@@ -209,6 +225,17 @@ export async function createSubscriptionRequest(
 ): Promise<SubscriptionRequestItem> {
   const { data } = await api.post<SubscriptionRequestItem>(
     `/api/orgs/${orgId}/subscription/requests`,
+    body,
+  );
+  return data;
+}
+
+export async function validateOrgPromoCode(
+  orgId: string,
+  body: CustomerPromoValidateInput,
+): Promise<PromoValidateResult> {
+  const { data } = await api.post<PromoValidateResult>(
+    `/api/orgs/${orgId}/promo-codes/validate`,
     body,
   );
   return data;

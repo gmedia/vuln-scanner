@@ -19,6 +19,7 @@ import {
   Inbox,
   Bot,
   Receipt,
+  BadgePercent,
   Tags,
   CreditCard,
   Wallet,
@@ -257,6 +258,12 @@ function Sidebar() {
                   labelKey="invoices"
                   icon={Receipt}
                   testId="nav-admin-invoices"
+                />
+                <NavItem
+                  to="/admin/promo-codes"
+                  labelKey="promoCodes"
+                  icon={BadgePercent}
+                  testId="nav-admin-promo-codes"
                 />
                 <NavItem
                   to="/admin/subscription-requests"

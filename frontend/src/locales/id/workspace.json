@@ -107,6 +107,7 @@
   "invoicePrintItem_uptime": "Sinexis Uptime — {{sku}}",
   "invoicePrintItem_guard": "Sinexis Guard — {{sku}}",
   "invoicePrintSubtotal": "Subtotal",
+  "invoicePrintDiscount": "Diskon ({{code}})",
   "invoicePrintTotal": "Total",
   "invoicePrintAmountDue": "Jumlah tagihan",
   "invoicePrintAmountPaid": "Jumlah dibayar",

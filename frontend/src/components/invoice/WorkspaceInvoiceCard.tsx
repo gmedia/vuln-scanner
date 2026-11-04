@@ -128,6 +128,15 @@ export function WorkspaceInvoiceCard({
           <p className="font-mono text-lg font-semibold tabular-nums text-foreground">
             Rp {(invoice.total_idr ?? invoice.amount_idr).toLocaleString("id-ID")}
           </p>
+          {(invoice.discount_idr ?? 0) > 0 ? (
+            <p
+              className="mt-0.5 text-xs text-muted-foreground"
+              data-testid={`workspace-invoice-discount-${invoice.id}`}
+            >
+              {t("invoicePrintDiscount", { code: invoice.promo_code ?? "—" })}: Rp{" "}
+              {(invoice.discount_idr ?? 0).toLocaleString("id-ID")}
+            </p>
+          ) : null}
           <p className="mt-0.5 text-xs text-muted-foreground">
             {t("invoicePrintIssued")} {issued}
           </p>
