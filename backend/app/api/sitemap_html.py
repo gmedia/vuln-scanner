@@ -15,7 +15,8 @@ from app.services.blog import escape_text
 
 html_router = APIRouter(tags=["sitemap-html"])
 
-STATIC_PATHS = ("/", "/terms", "/privacy")
+PRODUCT_SLUGS = ("scan", "guard", "host", "uptime", "ai-gateway")
+STATIC_PATHS = ("/terms", "/privacy")
 
 
 def _url(path: str) -> str:
@@ -24,12 +25,14 @@ def _url(path: str) -> str:
 
 @html_router.get("/sitemap.xml")
 async def sitemap(db: AsyncSession = Depends(get_db)) -> Response:
-    """Sitewide sitemap: static public pages plus published blog posts.
+    """Sitewide sitemap: static pages, product pages, and published blog posts.
 
-    Blog URLs are omitted when the blog is disabled. Product URLs arrive in S1,
-    once those pages actually exist.
+    Blog URLs are omitted when the blog is disabled. Product slugs mirror the
+    published entries in the frontend registry; the CI sync check keeps them
+    aligned.
     """
-    urls = [_url("/")]
+    urls = [_url("/"), _url("/products")]
+    urls.extend(_url(f"/products/{slug}") for slug in PRODUCT_SLUGS)
     if settings.blog_enabled:
         urls.append(_url("/blog"))
         now = datetime.now(UTC)
@@ -42,7 +45,7 @@ async def sitemap(db: AsyncSession = Depends(get_db)) -> Response:
         )
         for post in result.scalars().all():
             urls.append(_url(f"/blog/{post.slug}"))
-    urls.extend(_url(path) for path in STATIC_PATHS[1:])
+    urls.extend(_url(path) for path in STATIC_PATHS)
 
     xml = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'

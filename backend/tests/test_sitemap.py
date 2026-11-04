@@ -52,6 +52,10 @@ async def test_sitemap_returns_xml_with_public_urls(client, db_session):
     assert "<loc>https://sinexis.app/terms</loc>" in body
     assert "<loc>https://sinexis.app/privacy</loc>" in body
 
+    assert "<loc>https://sinexis.app/products</loc>" in body
+    for slug in ("scan", "guard", "host", "uptime", "ai-gateway"):
+        assert f"<loc>https://sinexis.app/products/{slug}</loc>" in body
+
     assert "<loc>https://sinexis.app/blog/published-post</loc>" in body
     assert "draft-post" not in body
     assert "future-post" not in body
@@ -62,7 +66,7 @@ def test_sitemap_excludes_non_public_surface(client):
 
     assert resp.status_code == 200
     body = resp.text
-    assert "/products" not in body
+    assert "<loc>https://sinexis.app/products</loc>" in body
     assert "/admin" not in body
     assert "/status" not in body
     assert "/login" not in body
@@ -78,4 +82,6 @@ def test_sitemap_omits_blog_when_disabled(client, monkeypatch):
     assert "<loc>https://sinexis.app/</loc>" in body
     assert "<loc>https://sinexis.app/terms</loc>" in body
     assert "<loc>https://sinexis.app/privacy</loc>" in body
+    assert "<loc>https://sinexis.app/products</loc>" in body
+    assert "<loc>https://sinexis.app/products/scan</loc>" in body
     assert "/blog" not in body

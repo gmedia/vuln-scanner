@@ -12,6 +12,7 @@ const ctaClass =
 export function Footer() {
   const { t } = useTranslation("landing");
   const { t: tc } = useTranslation("common");
+  const { t: tp } = useTranslation("products");
   const year = new Date().getFullYear();
 
   return (
@@ -31,6 +32,9 @@ export function Footer() {
             <a href="/" className={linkClass}>
               {t("footerHome")}
             </a>
+            <Link to="/products" className={linkClass}>
+              {tp("nav.products")}
+            </Link>
             <a href="/blog" className={linkClass}>
               {t("blog")}
             </a>

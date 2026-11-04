@@ -1,0 +1,270 @@
+{
+  "nav": {
+    "products": "Products"
+  },
+  "hub": {
+    "eyebrow": "Product map",
+    "title": "Five products on one account",
+    "sub": "Sinexis attaches to the infrastructure you already run. Pick the surface you need today; each page states what the product does, what it does not do, and the plan or prerequisite behind it.",
+    "metaTitle": "Sinexis products — security and operations attach",
+    "metaDescription": "Scan, Guard, Host Protect, Uptime, and AI Gateway on one account. Each product page states its status, limits, and what it does not do.",
+    "pillarsLabel": "Four pillars",
+    "cardsLabel": "Products",
+    "cardLink": "Open {{name}}",
+    "statusLabel": "Status"
+  },
+  "pillars": {
+    "exposure": {
+      "title": "Exposure",
+      "blurb": "Find what the internet can already see."
+    },
+    "onbox": {
+      "title": "On-box security",
+      "blurb": "Inventory, critical alerts, on-box malware, WAF in your nginx."
+    },
+    "availability": {
+      "title": "Availability",
+      "blurb": "Know it is down before a customer tells you."
+    },
+    "ai": {
+      "title": "AI",
+      "blurb": "One wallet and keys for your team's models."
+    }
+  },
+  "status": {
+    "live": "Live",
+    "limited": "Limited",
+    "byRequest": "By request",
+    "beta": "Beta",
+    "mixed": "Mixed"
+  },
+  "labels": {
+    "whatItDoes": "What it does",
+    "whatItDoesNot": "What it does not do",
+    "howItWorks": "How it works",
+    "requirements": "Requirements and limits",
+    "capabilities": "Capabilities",
+    "related": "Related products",
+    "nextStep": "Next step",
+    "backToProducts": "Back to products",
+    "enablementNote": "Enablement is handled per account after you create the account.",
+    "notFoundTitle": "Page not found",
+    "notFoundBody": "That product page does not exist. Open the product list to see the five pages that do.",
+    "notFoundMetaTitle": "Product not found — Sinexis",
+    "notFoundMetaDescription": "This product page does not exist. See the Sinexis product list."
+  },
+  "cta": {
+    "getStarted": "Get started",
+    "requestAccess": "Create an account and request access"
+  },
+  "services": {
+    "scan": {
+      "name": "Sinexis Scan",
+      "summary": "Outside-in scans for IPs, domains, and mobile builds, with schedules that diff each run and named assets.",
+      "metaTitle": "Sinexis Scan — exposure scan with scheduled attach",
+      "metaDescription": "Outside-in scans for IPs, domains, and mobile builds. Schedule each target, diff every run, and keep assets under names your team already uses.",
+      "intro": "Scan is the exposure surface. You point it at a host, domain, or mobile build you already operate, and it reports what the internet can see. Scheduled attach keeps the result current instead of leaving one forgotten report.",
+      "capabilities": {
+        "scan": "Exposure scan",
+        "attach": "Scheduled attach",
+        "assets": "Asset registry"
+      },
+      "capabilityNotes": {},
+      "whatItDoes": [
+        "Scans IPs, domains, and mobile builds from the outside and reports ports, TLS, headers, permissions, and known CVEs.",
+        "Schedules a target on an interval and diffs each run against the previous one.",
+        "Keeps IPs, domains, and apps in a named asset registry with the plan cap shown."
+      ],
+      "doesNotDo": [
+        "Does not log into the host or read files from inside the machine.",
+        "Does not test application business logic or booking flows.",
+        "Does not offer unlimited assets; each plan has a hard cap."
+      ],
+      "steps": [
+        {
+          "title": "Connect",
+          "body": "Pick one IP, domain, or mobile build you own and start a run."
+        },
+        {
+          "title": "Attach",
+          "body": "Set the interval that matches how often the infrastructure changes."
+        },
+        {
+          "title": "Prove",
+          "body": "Read the diff, then hand the report to a client or an auditor."
+        }
+      ],
+      "requirements": [
+        "Scan only hosts, domains, and apps you own or are authorized in writing to test.",
+        "Asset counts follow the hard cap on the account plan."
+      ]
+    },
+    "guard": {
+      "name": "Sinexis Guard",
+      "summary": "One wazuh-agent per VM for machine inventory and critical alerts. Not a SIEM console.",
+      "metaTitle": "Sinexis Guard — inventory and alerts on the box",
+      "metaDescription": "One wazuh-agent per VM reports inventory and critical alerts. SIEM log search is available by request and never included.",
+      "intro": "Guard is the thin agent view. One wazuh-agent per VM reports what is installed and running, then raises critical alerts. Log search and cases are a by-request add-on.",
+      "capabilities": {
+        "guard": "Guard",
+        "siem": "SIEM"
+      },
+      "capabilityNotes": {
+        "siem": "By request. Log search and cases are enabled per account; never included in the Guard plan."
+      },
+      "whatItDoes": [
+        "Reports installed packages and running services from one wazuh-agent per VM.",
+        "Raises critical alerts when the machine reports a change that matters.",
+        "Enrolls the host into one organization, with one agent per machine."
+      ],
+      "doesNotDo": [
+        "Is not a SIEM console. Log search and cases are by request.",
+        "Does not ship a second agent; Host Protect is a helper on the same machine.",
+        "Does not provide a staffed incident response team."
+      ],
+      "steps": [
+        {
+          "title": "Enroll",
+          "body": "Install one wazuh-agent on the VM and enroll it to your organization."
+        },
+        {
+          "title": "Report",
+          "body": "The agent sends inventory and critical events."
+        },
+        {
+          "title": "Review",
+          "body": "Read hosts and alerts on the Guard page."
+        }
+      ],
+      "requirements": [
+        "One wazuh-agent per VM, enrolled to one organization.",
+        "SIEM log search and cases are by request; they are never included in Guard.",
+        "Host Protect is a separate add-on that requires this agent."
+      ]
+    },
+    "host": {
+      "name": "Sinexis Host Protect",
+      "summary": "An on-box helper for web malware, and a WAF that runs in your own nginx.",
+      "metaTitle": "Sinexis Host Protect + WAF — on-box and in your nginx",
+      "metaDescription": "Host Protect is an add-on that requires a Guard agent and returns empty on a clean disk. Host WAF runs in your nginx on Pro and Multi.",
+      "intro": "Host Protect reads web roots through a helper on the machine that already runs the Guard agent. Host WAF adds detection and protection inside your own nginx. Both are add-ons with plan gates.",
+      "capabilities": {
+        "hostProtect": "Host Protect",
+        "hostWaf": "Host WAF"
+      },
+      "capabilityNotes": {
+        "hostProtect": "Host add-on. Requires a Guard agent on the same VM. Returns empty on a clean disk.",
+        "hostWaf": "Pro and Multi. Runs in your nginx, never on the Sinexis edge."
+      },
+      "whatItDoes": [
+        "Reads web directories through a helper and flags files that match malware rules.",
+        "Runs WAF detection and protection in the customer's nginx.",
+        "Shows an honest empty result when the disk is clean."
+      ],
+      "doesNotDo": [
+        "Does not install itself. Host Protect is an add-on and needs a Guard agent on the same VM.",
+        "WAF does not run on the Sinexis edge; the snippet goes into your own nginx.",
+        "Does not invent malware hits when the disk is clean."
+      ],
+      "steps": [
+        {
+          "title": "Install",
+          "body": "Make sure the Guard agent is active, then install the Host Protect helper on the same VM."
+        },
+        {
+          "title": "Scan",
+          "body": "Run the web-directory check and review the result."
+        },
+        {
+          "title": "Protect",
+          "body": "Enable the WAF rules in your nginx on a supported plan."
+        }
+      ],
+      "requirements": [
+        "Host add-on. Requires a Guard agent on the same VM. Returns empty on a clean disk.",
+        "Pro and Multi. Runs in your nginx, never on the Sinexis edge."
+      ]
+    },
+    "uptime": {
+      "name": "Sinexis Uptime",
+      "summary": "HTTP, TCP, DNS, and heartbeat probes, plus a public status page with plan gates.",
+      "metaTitle": "Sinexis Uptime — reachability probes and status page",
+      "metaDescription": "HTTP, TCP, DNS, and heartbeat probes from outside. Publish a public status page on the plans that support it.",
+      "intro": "Uptime hits a URL, TCP port, DNS record, or heartbeat from outside and records when it stops answering. The public status page uses a customer slug, with a clear plan gate.",
+      "capabilities": {
+        "uptime": "Uptime",
+        "statusPage": "Status page"
+      },
+      "capabilityNotes": {
+        "statusPage": "Publish on Pro, Multi, and Enterprise. Custom hostname on Multi and Enterprise."
+      },
+      "whatItDoes": [
+        "Monitors HTTP, TCP, DNS, and heartbeat targets from outside.",
+        "Records when the target stops answering and keeps the outage history.",
+        "Publishes a public status page on a customer slug."
+      ],
+      "doesNotDo": [
+        "Does not read CVEs or scan the host.",
+        "Does not promise an uptime guarantee.",
+        "Does not publish a status page on every plan; publishing is gated by plan."
+      ],
+      "steps": [
+        {
+          "title": "Add",
+          "body": "Register the URL, TCP port, DNS record, or heartbeat you want to watch."
+        },
+        {
+          "title": "Watch",
+          "body": "Probes run from outside and record when the service stops answering."
+        },
+        {
+          "title": "Publish",
+          "body": "Turn on the public status page on a supported plan."
+        }
+      ],
+      "requirements": [
+        "Publish on Pro, Multi, and Enterprise. Custom hostname on Multi and Enterprise."
+      ]
+    },
+    "ai-gateway": {
+      "name": "Sinexis AI Gateway",
+      "summary": "One wallet and API keys per organization for your team's models. Beta, by request.",
+      "metaTitle": "Sinexis AI Gateway — wallet and keys per organization",
+      "metaDescription": "Beta. One wallet and API keys per organization for your team's models. Access is requested and enabled per account.",
+      "intro": "AI Gateway puts one wallet and one set of API keys around the models your team uses. Access is still Beta and requested per account.",
+      "capabilities": {
+        "aiGateway": "AI Gateway"
+      },
+      "capabilityNotes": {
+        "aiGateway": "Beta. Request access; wallet and keys are issued per org."
+      },
+      "whatItDoes": [
+        "Provides one wallet per organization for model usage.",
+        "Issues API keys scoped to the organization.",
+        "Records usage against that wallet."
+      ],
+      "doesNotDo": [
+        "Is not generally available; access is Beta and requested per account.",
+        "Does not bundle credits with an account.",
+        "Does not replace your model provider's bill."
+      ],
+      "steps": [
+        {
+          "title": "Request",
+          "body": "Create an account, then request AI Gateway access."
+        },
+        {
+          "title": "Enable",
+          "body": "The wallet and keys are issued for your organization."
+        },
+        {
+          "title": "Connect",
+          "body": "Use those keys from your team's application."
+        }
+      ],
+      "requirements": [
+        "Beta. Request access; wallet and keys are issued per org."
+      ]
+    }
+  }
+}

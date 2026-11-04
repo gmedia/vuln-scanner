@@ -2,7 +2,7 @@
 
 **Purpose:** After session reset, know **every user-facing URL**, who owns it (SPA vs FastAPI HTML), auth, chrome, and where to recapture / e2e. Source of truth for **routes** is `frontend/src/App.tsx` plus FastAPI HTML routers. This file is a **map**, not a backlog — epic order still [`AGENT_EXECUTION_GUIDE.md`](AGENT_EXECUTION_GUIDE.md).
 
-**Last updated:** 2026-09-17
+**Last updated:** 2026-11-04
 **Do not** put production hosts/ports, emails, passwords, enroll keys, or customer IPs here.
 
 ---
@@ -33,6 +33,13 @@
 | Path | Page file | Auth | Notes | Tests |
 |------|-----------|------|-------|-------|
 | `/` | `pages/Landing.tsx` | Public | Hero, pipeline, 9 feature cards, FAQ Accordion (triggers are **buttons**, not `h3`). | `src/test/Landing.test.tsx`, `e2e/landing.spec.ts` |
+| `/products` | `pages/Products.tsx` | Public | Hub: 4 pillar sections (`exposure`, `onbox`, `availability`, `ai`), 5 cards, editorial status badges. | `src/test/Products.test.tsx`, `e2e/products.spec.ts` |
+| `/products/:slug` | `pages/products/ProductPage.tsx` | Public | Shared template for the 5 slugs. Unknown slug renders `NotFound` + `noindex`. | `src/test/ProductPage.test.tsx`, `e2e/products.spec.ts` |
+| `/products/scan` | same `ProductPage.tsx` | Public | Scan + Attach + Assets. Status `Live`. | `src/test/ProductPage.test.tsx` |
+| `/products/guard` | same `ProductPage.tsx` | Public | Guard. SIEM is `By request`, never included. | `src/test/ProductPage.test.tsx` |
+| `/products/host` | same `ProductPage.tsx` | Public | Host Protect + Host WAF. Page status `Mixed`; add-on + Guard prerequisite; customer nginx. | `src/test/ProductPage.test.tsx` |
+| `/products/uptime` | same `ProductPage.tsx` | Public | Uptime + status page. Publish gate by plan; custom host on Multi/Enterprise. | `src/test/ProductPage.test.tsx` |
+| `/products/ai-gateway` | same `ProductPage.tsx` | Public | AI Gateway. Status `Beta`, by request. | `src/test/ProductPage.test.tsx` |
 | `/login` | `pages/Login.tsx` | Public | Invite query `?invite=` | `Login.test.tsx`, `e2e/auth-flow.spec.ts` |
 | `/register` | `pages/Register.tsx` | Public | | `Register.test.tsx`, `e2e/auth-flow.spec.ts` |
 | `/verify-email` | `pages/VerifyEmail.tsx` | Public | Token in query | `VerifyEmail.test.tsx`, `e2e/verify-email.spec.ts` |
