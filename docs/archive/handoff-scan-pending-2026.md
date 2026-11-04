@@ -49,7 +49,7 @@ WORK COMPLETED
 CURRENT STATE
 -------------
 - Tidak ada perubahan code di repo terkait diagnosis ini (hanya read-only analysis)
-- Ada file .bak: backend/app/services/auth.py.bak (uncommitted)
+- ~~Ada file .bak: backend/app/services/auth.py.bak (uncommitted)~~ — **resolved**: file itu ternyata *tracked* di git, dan sudah dihapus
 - Branch saat ini: tidak diketahui (belum ada branch baru untuk fix ini)
 - Git history 10 commit terakhir: mostly test files untuk backend (test_scan_routes.py, test_auth_routes.py, dll)
 
