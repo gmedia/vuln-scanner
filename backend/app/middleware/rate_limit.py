@@ -23,10 +23,18 @@ class RateLimiter:
     window_seconds: int
     prefix: str
 
-    def __init__(self, max_requests: int, window_seconds: int, prefix: str):
+    def __init__(
+        self,
+        max_requests: int,
+        window_seconds: int,
+        prefix: str,
+        *,
+        bypass_e2e: bool = True,
+    ):
         self.max_requests = max_requests
         self.window_seconds = window_seconds
         self.prefix = prefix
+        self.bypass_e2e = bypass_e2e
         self._redis: redis.Redis[str] | None = None
 
     async def _get_redis(self) -> redis.Redis[str]:
@@ -35,8 +43,8 @@ class RateLimiter:
         return self._redis
 
     async def __call__(self, request: Request) -> JSONResponse | None:
-        # Bypass rate limiting for e2e test requests
-        if request.headers.get("X-E2E-Test"):
+        # Bypass rate limiting for e2e test requests (opt-out per limiter).
+        if self.bypass_e2e and request.headers.get("X-E2E-Test"):
             return None
 
         client_ip = request.client.host if request.client else "unknown"

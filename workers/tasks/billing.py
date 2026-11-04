@@ -26,7 +26,13 @@ _BACKEND = os.path.join(os.path.dirname(__file__), "..", "..", "backend")
 if _BACKEND not in sys.path:
     sys.path.insert(0, os.path.abspath(_BACKEND))
 
-from app.models.billing import BillingRecipient, BillingReminder, OrgBillingProfile  # noqa: E402
+from app.config import settings  # noqa: E402
+from app.models.billing import (  # noqa: E402
+    BillingRecipient,
+    BillingReminder,
+    OrgBillingProfile,
+    PaymentAttempt,
+)
 from app.models.invoice import OrgInvoice  # noqa: E402
 from app.models.organization import Organization, OrganizationMembership  # noqa: E402
 from app.models.user import User  # noqa: E402
@@ -499,3 +505,99 @@ def draft_annual_renewals(self: Any) -> dict[str, int]:
         raise
     finally:
         session.close()
+
+def _run(coro: Any) -> Any:
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            raise RuntimeError("closed")
+        if loop.is_running():
+            return asyncio.run_coroutine_threadsafe(coro, loop).result()
+        return loop.run_until_complete(coro)
+    except RuntimeError:
+        return asyncio.run(coro)
+
+
+_EXPIRE_STALE_CHECKOUTS = text(
+    """
+    UPDATE payment_attempts
+    SET status = 'expired',
+        provider_status = 'expired',
+        updated_at = :now
+    WHERE status = 'pending'
+      AND expires_at IS NOT NULL
+      AND expires_at < :now
+    """
+)
+
+
+@shared_task(bind=True, name="payment.expire_stale_checkouts", acks_late=True, max_retries=1)  # type: ignore
+def expire_stale_checkouts(self: Any) -> dict[str, int]:
+    now = datetime.now(UTC)
+    session = get_sync_session()
+    try:
+        result = cast(CursorResult[Any], session.execute(_EXPIRE_STALE_CHECKOUTS, {"now": now}))
+        expired = int(result.rowcount or 0)
+        session.commit()
+        if expired:
+            logger.info("Expired stale payment checkouts: count={count}", count=expired)
+        return {"expired_count": expired}
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+async def _reconcile_gateway_attempts() -> dict[str, int]:
+    from app.database import async_session
+    from app.services.billing import BillingService
+    from app.services.payments.base import ProviderUnavailable
+    from app.services.payments.registry import build_provider
+
+    cutoff = datetime.now(UTC) - timedelta(minutes=10)
+    reconciled = 0
+    errors = 0
+    skipped = 0
+    async with async_session() as db:
+        rows = (
+            await db.execute(
+                select(PaymentAttempt)
+                .where(
+                    PaymentAttempt.status == "pending",
+                    PaymentAttempt.created_at < cutoff,
+                )
+                .order_by(PaymentAttempt.created_at.asc())
+                .limit(50)
+            )
+        ).scalars().all()
+        for attempt in rows:
+            try:
+                provider = build_provider(attempt.provider)
+            except ProviderUnavailable:
+                skipped += 1
+                continue
+            try:
+                status = await provider.fetch_status(attempt)
+                if not status.found or status.event is None:
+                    continue
+                await BillingService(db).apply_gateway_event(provider.name, status.event)
+                await db.commit()
+                reconciled += 1
+            except Exception as exc:  # noqa: BLE001 - one attempt must not stop the sweep
+                await db.rollback()
+                errors += 1
+                logger.warning(
+                    "Payment reconcile failed: attempt={attempt} error={error}",
+                    attempt=attempt.id,
+                    error=str(exc)[:200],
+                )
+    return {"reconciled_count": reconciled, "error_count": errors, "skipped_count": skipped}
+
+
+@shared_task(bind=True, name="payment.reconcile_attempts", acks_late=True, max_retries=1)  # type: ignore
+def reconcile_gateway_attempts(self: Any) -> dict[str, Any]:
+    if not settings.payment_gateway_enabled:
+        return {"skipped": True, "reason": "gateway disabled", "reconciled_count": 0}
+    return cast(dict[str, Any], _run(_reconcile_gateway_attempts()))
+

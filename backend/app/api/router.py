@@ -21,6 +21,7 @@ from app.api.host_waf_routes import router as host_waf_router
 from app.api.inbox_routes import router as inbox_router
 from app.api.key_routes import router as key_router
 from app.api.org_routes import router as org_router
+from app.api.payment_routes import router as payment_router
 from app.api.payment_webhook_routes import router as payment_webhook_router
 from app.api.scan_routes import router as scan_router
 from app.api.schedule_routes import router as schedule_router
@@ -54,6 +55,7 @@ api_router.include_router(admin_ai_fx_router)
 api_router.include_router(ai_router)
 api_router.include_router(blog_router)
 api_router.include_router(org_router)
+api_router.include_router(payment_router)
 api_router.include_router(subscription_router)
 api_router.include_router(guard_router)
 api_router.include_router(siem_router)

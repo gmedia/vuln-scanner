@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
@@ -21,7 +23,49 @@ from app.schemas.billing import (
     SubscriptionItem,
 )
 from app.services.invoice import InvoiceService
+from app.services.payments.base import NormalizedEvent
 from app.services.sku_tier import SkuTierService
+
+logger = logging.getLogger(__name__)
+
+# Monotonic attempt rank (spec PY11). ``canceled`` is not a persisted attempt
+# status (the model allows pending/succeeded/failed/expired/refunded), so a
+# canceled gateway event is stored as ``expired`` with the provider status kept.
+_ATTEMPT_RANK: dict[str, int] = {
+    "pending": 0,
+    "failed": 1,
+    "expired": 1,
+    "canceled": 1,
+    "succeeded": 2,
+    "refunded": 3,
+}
+
+_KIND_RANK: dict[str, int] = {
+    "pending": 0,
+    "failed": 1,
+    "expired": 1,
+    "canceled": 1,
+    "succeeded": 2,
+    "refunded": 3,
+    "partially_refunded": 3,
+    "chargeback": 3,
+}
+
+# Never persist customer PII or the webhook signature (spec PY16 / §4).
+_REDACTED_KEYS = (
+    "order_id",
+    "transaction_id",
+    "transaction_status",
+    "status_code",
+    "fraud_status",
+    "gross_amount",
+    "payment_type",
+    "currency",
+)
+
+
+def _redacted_payload(raw: Mapping[str, object]) -> dict[str, object]:
+    return {key: raw[key] for key in _REDACTED_KEYS if key in raw}
 
 
 class BillingTransitionError(ValueError):
@@ -401,6 +445,234 @@ class BillingService:
             status=record.status,
             event_id=event.id,
         )
+
+    async def apply_gateway_event(self, provider: str, event: NormalizedEvent) -> PaymentEventResult:
+        """Apply one normalized gateway event exactly once.
+
+        Dedupe is the ``payment_events (provider, event_id)`` unique key. Every
+        guard (amount, monotonic rank, invoice state) resolves to a recorded
+        event status; only a transient failure commits a ``failed`` event and
+        re-raises so the provider retries.
+        """
+        existing = (
+            await self.db.execute(
+                select(PaymentEvent).where(
+                    PaymentEvent.provider == provider,
+                    PaymentEvent.event_id == event.event_id,
+                )
+            )
+        ).scalar_one_or_none()
+        if existing is not None and existing.status != "failed":
+            return PaymentEventResult(status="duplicate", event_id=event.event_id)
+
+        if existing is None:
+            record = PaymentEvent(
+                provider=provider,
+                event_id=event.event_id,
+                event_type=event.kind,
+                payload=_redacted_payload(event.raw),
+                status="received",
+            )
+            self.db.add(record)
+            try:
+                await self.db.flush()
+            except IntegrityError:
+                await self.db.rollback()
+                return PaymentEventResult(status="duplicate", event_id=event.event_id)
+        else:
+            record = existing
+            record.status = "received"
+            record.error = None
+            record.processed_at = None
+
+        try:
+            outcome = await self._apply_gateway_event(record, provider, event)
+        except Exception as exc:  # noqa: BLE001 - the webhook must record the failure
+            await self.db.rollback()
+            failed = (
+                await self.db.execute(
+                    select(PaymentEvent).where(
+                        PaymentEvent.provider == provider,
+                        PaymentEvent.event_id == event.event_id,
+                    )
+                )
+            ).scalar_one_or_none()
+            if failed is None:
+                failed = PaymentEvent(
+                    provider=provider,
+                    event_id=event.event_id,
+                    event_type=event.kind,
+                    payload=_redacted_payload(event.raw),
+                    status="failed",
+                )
+                self.db.add(failed)
+            failed.status = "failed"
+            failed.error = str(exc)[:500]
+            failed.processed_at = _now()
+            await self.db.commit()
+            raise
+
+        record.status = outcome
+        record.processed_at = _now()
+        await self.db.commit()
+        return PaymentEventResult(status=outcome, event_id=event.event_id)
+
+    async def _find_gateway_attempt(self, provider: str, event: NormalizedEvent) -> PaymentAttempt | None:
+        order_id = (event.provider_order_id or "").strip()
+        if not order_id:
+            return None
+        attempt = (
+            await self.db.execute(
+                select(PaymentAttempt)
+                .where(
+                    PaymentAttempt.provider == provider,
+                    PaymentAttempt.provider_order_id == order_id,
+                )
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        if attempt is not None:
+            return attempt
+        return (
+            await self.db.execute(
+                select(PaymentAttempt)
+                .where(
+                    PaymentAttempt.provider == provider,
+                    PaymentAttempt.provider_ref == order_id,
+                )
+                .order_by(PaymentAttempt.created_at.desc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+
+    def _fail_attempt(self, attempt: PaymentAttempt, code: str, message: str | None = None) -> None:
+        attempt.status = "failed"
+        attempt.failed_at = _now()
+        attempt.failure_code = code[:64]
+        attempt.failure_message = (message or code)[:255]
+        attempt.updated_at = _now()
+
+    async def _apply_gateway_event(
+        self,
+        record: PaymentEvent,
+        provider: str,
+        event: NormalizedEvent,
+    ) -> str:
+        if event.kind == "ignored":
+            return "ignored"
+
+        attempt = await self._find_gateway_attempt(provider, event)
+        if attempt is None:
+            record.error = "unknown attempt"
+            return "failed"
+        if attempt.invoice_id is None:
+            record.error = "attempt has no invoice"
+            return "failed"
+        inv = await self.db.get(OrgInvoice, attempt.invoice_id)
+        if inv is None:
+            record.error = "unknown invoice"
+            return "failed"
+
+        if event.amount_idr != inv.total_idr:
+            attempt.status = "failed"
+            attempt.failed_at = _now()
+            attempt.failure_code = "amount_mismatch"
+            attempt.failure_message = "provider amount does not match the invoice"
+            attempt.updated_at = _now()
+            return "failed"
+
+        if _KIND_RANK.get(event.kind, 0) < _ATTEMPT_RANK.get(attempt.status, 0):
+            return "ignored"
+
+        if event.kind == "succeeded":
+            return await self._apply_gateway_succeeded(attempt, inv, provider, event)
+        if event.kind == "pending":
+            attempt.provider_status = "pending"
+            attempt.provider_payment_id = event.provider_payment_id or attempt.provider_payment_id
+            attempt.method = event.method or attempt.method
+            attempt.updated_at = _now()
+            return "processed"
+        if event.kind in ("failed", "expired", "canceled"):
+            attempt.status = "expired" if event.kind == "canceled" else event.kind
+            attempt.failed_at = _now()
+            attempt.failure_code = (event.failure_code or attempt.failure_code or "")[:64] or None
+            attempt.failure_message = (event.failure_message or attempt.failure_message or "")[:255] or None
+            attempt.provider_status = event.kind
+            attempt.provider_payment_id = event.provider_payment_id or attempt.provider_payment_id
+            attempt.updated_at = _now()
+            if self._is_current_period(inv):
+                sub = await self.get_subscription(inv.organization_id)
+                if sub is not None and sub.status == "active":
+                    self._transition(sub, "past_due")
+            return "processed"
+        if event.kind in ("refunded", "partially_refunded", "chargeback"):
+            attempt.status = "refunded"
+            attempt.refunded_amount_idr = event.refunded_amount_idr or 0
+            attempt.provider_status = event.kind
+            attempt.provider_payment_id = event.provider_payment_id or attempt.provider_payment_id
+            attempt.updated_at = _now()
+            logger.warning(
+                "Payment %s recorded: provider=%s attempt=%s amount_idr=%s",
+                event.kind,
+                provider,
+                attempt.id,
+                event.refunded_amount_idr,
+            )
+            return "processed"
+
+        record.error = f"unsupported event kind {event.kind}"
+        return "failed"
+
+    async def _apply_gateway_succeeded(
+        self,
+        attempt: PaymentAttempt,
+        inv: OrgInvoice,
+        provider: str,
+        event: NormalizedEvent,
+    ) -> str:
+        if inv.status == "paid":
+            if attempt.status != "succeeded":
+                attempt.status = "succeeded"
+                attempt.succeeded_at = attempt.succeeded_at or _now()
+            attempt.provider_status = "duplicate"
+            attempt.provider_payment_id = event.provider_payment_id or attempt.provider_payment_id
+            attempt.updated_at = _now()
+            return "processed"
+        if inv.status == "void":
+            self._fail_attempt(attempt, "invoice_void", "invoice was voided")
+            return "failed"
+        if inv.status not in ("draft", "sent"):
+            self._fail_attempt(attempt, "invoice_not_payable")
+            return "failed"
+
+        inv = await InvoiceService(self.db)._mark_paid(inv.id, event.provider_order_id)
+        if inv.product == "scan":
+            sub = await self.activate_from_invoice(
+                inv,
+                provider=provider,
+                provider_ref=event.provider_order_id,
+            )
+            attempt.subscription_id = sub.id
+        attempt.status = "succeeded"
+        attempt.succeeded_at = _now()
+        attempt.failed_at = None
+        attempt.failure_code = None
+        attempt.failure_message = None
+        attempt.method = event.method or attempt.method
+        attempt.provider_status = "succeeded"
+        attempt.provider_payment_id = event.provider_payment_id or attempt.provider_payment_id
+        attempt.fee_idr = event.fee_idr or 0
+        attempt.updated_at = _now()
+        return "processed"
+
+    @staticmethod
+    def _is_current_period(inv: OrgInvoice) -> bool:
+        if inv.product != "scan" or inv.status != "sent":
+            return False
+        start = _as_utc(inv.period_start)
+        end = _as_utc(inv.period_end)
+        now = _now()
+        return start is not None and end is not None and start <= now <= end
 
     async def list_admin(
         self,
