@@ -33,6 +33,19 @@ We will keep you informed of progress and coordinate public disclosure if applic
 
 ## Scope
 
+## Payments and promo codes (2026-11-04)
+
+The owner-named payment and promo surfaces are in scope. Their threat model:
+
+- **Card data never reaches Sinexis.** The payment page redirects to the provider's hosted page (Midtrans Snap redirect). There is no Snap.js, iframe, or hosted field. Do not add one without a CSP change and a PCI review.
+- **Webhooks are the only authority for "paid".** The Midtrans handler verifies the SHA512 signature over the raw `order_id + status_code + gross_amount` strings, the provider order id, `status_code`, `fraud_status`, and the amount against `org_invoices.total_idr`. A mismatch never activates a subscription.
+- **One pending checkout per invoice.** A manual `/paid` or a `/void` is rejected while a gateway attempt is pending (platform-admin `force` with a reason is audited).
+- **Secrets.** `MIDTRANS_SERVER_KEY` is backend-only; never in the SPA, git, logs, or error bodies. Provider webhook payloads are redacted (`customer_details`, `signature_key`) before storage.
+- **Promo codes are not secrets, but must not be enumerable.** Minimum 8 characters, generic errors, hashed logging, and a strict limiter that ignores `X-E2E-Test`.
+- **`X-E2E-Test` is not an auth bypass.** It only relaxes rate limits when the server flag is explicitly on; the SPA must not send it in production builds.
+
+Report a payment-authz, signature-bypass, amount-tampering, or double-payment issue through the process above.
+
 ### In Scope
 - The VulnScanner application (backend, frontend, workers)
 - Docker Compose deployment configurations

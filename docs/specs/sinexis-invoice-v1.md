@@ -2,7 +2,7 @@
 
 **Status:** **Shipped on `main`** (I1–I9 pay loop). Owner: Sinexis bills Scan SKU **in-app**, not as a GMD colo/VPS `service_id`.
 **Seller copy:** env `INVOICE_BANK_*` only. **Tax update:** buyer identity (NPWP/NITKU/PKP) lives in `org_billing_profiles`, and invoices store `dpp_idr`/`ppn_idr`/`pph23_idr`/`total_idr` (see [`billing-core-v1.md`](billing-core-v1.md) §2.8). Faktur pajak XML/PJAP export is still out of scope. **HTML print** = product-depth track **S1b** in [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md). **I10 PDF shipped:** `GET .../export?format=pdf` reuses `render_scan_pdf` (no new PDF library, no gateway).
-**Does not** add Midtrans/Xendit. Does **not** merge AI Gateway IDR wallet. Does **not** mix HPP COGS into invoices. Does **not** revive Scan credits as a meter.
+**Payments update (owner-named 2026-11-04):** manual bank transfer stays the default; an **optional** Midtrans redirect path is specified in [`payments-v1.md`](payments-v1.md). Does **not** merge AI Gateway IDR wallet. Does **not** mix HPP COGS into invoices. Does **not** revive Scan credits as a meter.
 
 ---
 
@@ -12,14 +12,14 @@
 |----|--------|----------|
 | **I1** | Who bills | **Sinexis** issues invoices. GMD rack/VPS invoices stay in GMD. No silent-bundle. |
 | **I2** | What is sold | **Scan SKU seats** (Basic / Pro / Multi; P0 lock 300_000 / 650_000 / 2_000_000) **and Host Protect SKU seats** (H4 **locked 2026-10-12**: 150_000 / 350_000 / 900_000). **H9 shipped:** Host catalog `invoicable=true`. Paid Host does **not** set `organizations.sku`. Unique period is per `(organization_id, product, period_start)` — Scan + Host same month OK. **Invoice-ok** for the short “ganti Imunify” line is **this Sinexis in-app path** (I1), **not** GMD `service_id` — see [`vps-displace-imunify-dev-plan.md`](vps-displace-imunify-dev-plan.md) §7.3. |
-| **I3** | Payment | **Manual bank transfer.** Admin marks `paid` after ops sees the transfer. No gateway, no auto-charge. **Updated:** DPP/PPN lines are printed for PKP buyers; non-PKP invoices keep `ppn_idr = 0`. |
+| **I3** | Payment | **Manual bank transfer is the default.** Admin marks `paid` after ops sees the transfer. **Optional gateway (2026-11-04):** an authenticated in-app payment page may collect the same `total_idr` through Midtrans Snap redirect, per [`payments-v1.md`](payments-v1.md). No auto-charge, no stored card, no public link. **Updated:** DPP/PPN lines are printed for PKP buyers; non-PKP invoices keep `ppn_idr = 0`. |
 | **I4** | Period | `cycle=monthly` → calendar month (UTC). `cycle=annual` → 12 months from the first of the start month. Invoices may not **overlap** for the same `(organization_id, product)`; Scan + Host same period OK. |
 | **I5** | SKU mutation | Org admin **cannot** `PATCH /orgs/{id}` `sku` (403). Paid Scan invoice (or platform-admin set) is the gate. |
 | **I6** | New org default | `organizations.sku` default **`basic`** for **new** rows. Existing orgs unchanged. |
 | **I7** | Unpaid | Does **not** auto-downgrade `org.sku`. Void + admin set sku is ops. Seat caps still follow current `org.sku`. |
-| **I8** | Customer surface | Org owner/admin: read-only invoice list + bank copy when `sent`. No self-serve upgrade. |
+| **I8** | Customer surface | Org owner/admin: invoice list + bank copy when `sent`, plus a **pay action** on `sent` invoices with `total_idr > 0` ([`payments-v1.md`](payments-v1.md)). Plan changes stay request-only; no self-serve upgrade/checkout. |
 | **I9** | Bank copy | Env `INVOICE_BANK_NAME` / `INVOICE_BANK_ACCOUNT` / `INVOICE_BANK_HOLDER`. CI `append_if_set` on `push` to `main` (empty GitHub secret does not wipe host). Compose **backend** must interpolate those keys (host `.env` is not auto-mounted). Never commit real account numbers. |
-| **I10** | **PDF shipped** | `format=pdf` on admin and org invoice export. Reuses `render_scan_pdf`. Bank block only when `sent`. Still **out:** gateway, dunning, PPN, auto-renew, AI top-up, GMD API, customer SID/PII in git. HTML print remains [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md) **S1b**. |
+| **I10** | **PDF shipped** | `format=pdf` on admin and org invoice export. Reuses `render_scan_pdf`. Bank block only when `sent`. Still **out:** dunning, PPN export, auto-renew, AI top-up, GMD API, customer SID/PII in git. Gateway is **in** via [`payments-v1.md`](payments-v1.md) (optional, redirect only). HTML print remains [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md) **S1b**. |
 
 List prices (do not invent):
 
@@ -150,7 +150,7 @@ Do **not** restyle kit. Tokens from `:root`. `Button` / `Select` only.
 
 ## 4) Out
 
-- Payment gateway, e-meterai, auto-renew beat job.
+- e-meterai, auto-renew beat job. Payment gateway: **optional** redirect path, specified in [`payments-v1.md`](payments-v1.md).
 - Guard/SIEM `service_id`. Host invoice is **in** (H9).
 - HTML print UI — **S1b shipped** [`scan-pdf-invoice-print-v1.md`](scan-pdf-invoice-print-v1.md) (browser `window.print`). **I10 PDF** is `format=pdf` via `render_scan_pdf`, not a second library.
 - Invoice **Send** is a **status flip**, not SMTP. User-side mail log is [`inbox-delivered-v1.md`](inbox-delivered-v1.md) — **do not** email invoices in that epic.

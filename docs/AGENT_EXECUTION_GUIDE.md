@@ -120,7 +120,7 @@ Then read, in order:
 3. **Further Guard code** only on **explicit** implement verb; stay inside **thin DoD** (D1–D10 / non-goals). Prefer bugfixes from live smoke over new surfaces.
 4. **P7 SIEM** only after user **implement** + isolation questions; never as “improve /guard”.
 5. Other code: **§1.3.1 named queue**, then **bugfix**, docs/ops hygiene, Dependabot **only if CI green + user names the PR** (do not mass-merge). Updates are grouped (`.github/dependabot.yml`), and `deps-sync` fails CI when a package pinned in both `backend/` and `workers/` drifts — workers import `app.*`, so align both files in the same PR. **Do not** re-implement P2/P3 S1–S5, Wave B, Guard S1–S5/Http, Host Protect S1–S12, P15 chrome. WAF own pack **1165–1177** shipped — **comprehensive**, no slice queued. P14 **G/H** stay research unless named.
-6. **Do not** ship SIEM-scope PRs under “Guard.” Invoice v1 pay loop is **closed** — no upgrade CTA / gateway / auto-create on signup unless named.
+6. **Do not** ship SIEM-scope PRs under “Guard.” Invoice v1 pay loop is **closed** — no upgrade CTA / gateway / auto-create on signup unless named. **Exception (owner-named 2026-11-04):** promo codes ([`specs/promo-codes-v1.md`](specs/promo-codes-v1.md)) and an authenticated Midtrans redirect payment page ([`specs/payments-v1.md`](specs/payments-v1.md)) are **named**; the pay loop stays manual-first and gateway-optional.
 
 ### 1.3.1 Development queue (agent “what next” — 2026-10-12)
 

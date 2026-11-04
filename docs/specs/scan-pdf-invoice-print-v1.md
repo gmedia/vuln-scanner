@@ -1,7 +1,7 @@
 # Spec: Scan print-to-PDF + invoice HTML print
 
 **Status:** **S0–S2 shipped** (S1a/S1b browser print; **S2** `format=pdf` WeasyPrint this PR). Invoice PDF **I10 shipped (#834)**. Do **not** re-implement.
-**Goal:** Let a GM **Print / Save as PDF** the existing executive (and technical) scan HTML, download executive **`.pdf` bytes**, and let org admin / platform admin **print a Scan or Host invoice** — without an invoice PDF library or payment gateway.
+**Goal:** Let a GM **Print / Save as PDF** the existing executive (and technical) scan HTML, download executive **`.pdf` bytes**, and let org admin / platform admin **print a Scan or Host invoice** — without an invoice PDF library. Payment gateway is a separate spec ([`payments-v1.md`](payments-v1.md)) and is **not** part of this print track.
 **Epic:** product-depth follow-on to P1 S4 + invoice v1. **Not** a new P-letter. Does **not** replace Scan attach, invoice pay loop, or P15 chrome.
 **Depends:** `GET /api/scan/{id}/export` (`json` \| `html` \| `executive` \| **`pdf`**) · `render_executive_html` · `render_scan_pdf` · `_render_pdf_html` (legacy name — technical **HTML**, not PDF) · `org_invoices` + `InvoiceItem` · bank env `INVOICE_BANK_*` · i18n executive locale (`id` default).
 **Commercial:** not a new list-price SKU. Guide §1.3.1 **#1** = **Inbox S2**. Print S2 **shipped**. Invoice PDF **I10 shipped (#834)**. Host invoice = **H9 shipped**.
@@ -62,7 +62,7 @@ This is **print chrome on documents we already have** (scan) plus **one new prin
 
 | Out | Why |
 |-----|-----|
-| Payment gateway, pay button, upgrade CTA, auto-create on signup | Invoice v1 pay loop **closed** |
+| Payment gateway, pay button, upgrade CTA, auto-create on signup | **Not this print track.** Gateway is owner-named 2026-11-04 and lives in [`payments-v1.md`](payments-v1.md); this spec still does not add a pay button or a PDF gateway dependency |
 | E-meterai / digital stamp | Guide §1.3.1 Out |
 | Host Protect / Host WAF invoice | **H9 shipped** (`invoicable=true`). HTML print covers Scan **and** Host. Invoice PDF **I10 shipped (#834)** |
 | Invoice PDF library (reportlab / shared `PdfService`) | I10 **shipped (#834)** via `render_scan_pdf` reuse; scan WeasyPrint is **S2 shipped** and must not share a service with invoices |

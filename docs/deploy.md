@@ -195,6 +195,14 @@ Set on the **app host `.env`** and/or GitHub **repository** secrets (CI overwrit
 | `UPTIME_ENABLED` / `STATUS_PAGE_*` | Uptime + custom hostname (Cloudflare secrets; no ACME in-app) |
 | `OBJECT_STORAGE_BACKEND` | `cos` for mobile uploads across hosts; default `local` |
 | `INVOICE_BANK_NAME` / `ACCOUNT` / `HOLDER` | Scan invoice bank copy (Workspace Billing on `sent`). CI `append_if_set` writes host `.env`; **compose `backend` environment must pass them** (host `.env` alone is not in the container). Never commit real numbers. |
+| `PAYMENT_GATEWAY_ENABLED` | Default **false**. When true, the authenticated pay action appears on `sent` invoices. Manual transfer stays visible. |
+| `PAYMENT_PROVIDERS_ENABLED` | Comma list, e.g. `midtrans`. Empty = no provider. Only enabled providers are returned by `GET /api/payments/providers`. |
+| `MIDTRANS_SERVER_KEY` | Server key only (backend env). **Never** put it in the SPA or git. Sandbox keys start `SB-Mid-server-`; production `Mid-server-`. Startup refuses a mode/key mismatch. |
+| `MIDTRANS_IS_PRODUCTION` | `true` for production; `false` for sandbox. |
+| `MIDTRANS_VERIFY_STATUS` | Default `true`; confirms `GET /v2/{order_id}/status` before marking paid. |
+| Webhook URL | Register `https://<public-host>/api/webhooks/payments/midtrans` in the Midtrans dashboard per environment (sandbox vs production). No shared secret header is used for Midtrans; the signature is verified from the body. |
+
+Payment rollout: keep `PAYMENT_GATEWAY_ENABLED=false` until the server key and the notification URL are configured. Turning the flag off returns the UI to manual transfer; existing `payment_attempts` rows are kept.
 
 Do not invent extra enroll daemons. Do not wipe live ERP agent `sx-erpstg`. Guard e2e enroll: wipe **tc5** first ([guide §4.1](AGENT_EXECUTION_GUIDE.md)).
 
