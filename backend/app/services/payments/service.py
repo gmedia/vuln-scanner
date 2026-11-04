@@ -231,7 +231,8 @@ class PaymentService:
         except (PaymentProviderError, ProviderUnavailable) as exc:
             attempt.status = "failed"
             attempt.failed_at = _now()
-            attempt.failure_code = str(exc.code) if getattr(exc, "code", None) else type(exc).__name__
+            error_code = getattr(exc, "code", None)
+            attempt.failure_code = str(error_code) if error_code else type(exc).__name__
             attempt.failure_message = str(exc)[:255]
             attempt.updated_at = _now()
             await self.db.commit()

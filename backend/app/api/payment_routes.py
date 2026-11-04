@@ -14,6 +14,7 @@ from app.schemas.invoice import InvoiceItem
 from app.schemas.payment import (
     CheckoutRequestIn,
     CheckoutResponse,
+    ProviderItem,
     ProviderListResponse,
 )
 from app.services.auth import get_current_admin, get_current_user
@@ -43,7 +44,9 @@ async def list_payment_providers(
     db: AsyncSession = Depends(get_db),
 ) -> ProviderListResponse:
     del current_user
-    return ProviderListResponse(items=PaymentService(db).providers())
+    return ProviderListResponse(
+        items=[ProviderItem(**item) for item in PaymentService(db).providers()]
+    )
 
 
 @router.post(
