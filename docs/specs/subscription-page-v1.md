@@ -19,7 +19,8 @@ In:
 
 Out:
 
-- Payment gateway / checkout, proration, auto-renew, dunning, self-serve cancel.
+- Self-serve upgrade/checkout, proration, auto-renew, dunning, self-serve cancel. An **optional** authenticated pay action for an issued invoice is **in** ([`payments-v1.md`](payments-v1.md)); it does not change the plan by itself.
+- Promo codes are **in** on the request form ([`promo-codes-v1.md`](promo-codes-v1.md)); the discount is applied when ops issues the invoice.
 - Annual invoice generation.
 - Per-product tier selection.
 - Bundle as an invoice line.

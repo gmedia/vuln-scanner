@@ -105,12 +105,13 @@ One line covering all four attach products at the matching tier.
 | ID | Topic | Decision |
 |----|--------|----------|
 | **P1** | Overage | More units → **upgrade tier**. Not unlimited fair-use, not a credit pack. |
-| **P2** | Annual | **LOCKED:** pay 10 months for 12 (~16,7% off). **Prepay only**; does not stack with other promos. |
-| **P3** | Pilot | **1 month sponsored** for pilot #1 only (unchanged, A2). List price still recorded in CRM. |
+| **P2** | Annual | **LOCKED:** pay 10 months for 12 (~16,7% off). **Prepay only**; **does not stack** with promo codes (P9) or the pilot (P3). |
+| **P3** | Pilot | **1 month sponsored** for pilot #1 only (unchanged, A2). List price still recorded in CRM. Does not stack with P2 or P9. |
 | **P4** | Legacy credits | `users.credits` stays as history/ops; **not** a gate; **not** customer chrome (S4). |
 | **P5** | AI Gateway | Separate `ai_wallets.balance_idr`. Never merged. |
 | **P6** | Enterprise | **custom** — **LOCKED floor ≥ 5.000.000 / mo** (~2× Multi bundle) with annual commit. Do **not** finalize a public Enterprise price card before `/admin/hpp` holds real COGS. |
-| **P7** | Discounting | Only annual (P2) + pilot (P3). No ad-hoc % off list without finance. |
+| **P7** | Discounting (superseded) | Replaced by **P9** on 2026-11-04. Retained as history: only annual (P2) + pilot (P3); no ad-hoc % off without finance. |
+| **P9** | Promo codes | **LOCKED 2026-11-04 (owner-named):** platform-admin-created promo codes in `/admin/promo-codes` are an approved discount mechanism. Rules: annual and pilot are excluded (no stacking); codes are not a payment method and never create credit balances; `percent` / `fixed` with an optional cap, window, total limit, and per-org limit; every edit is audited in `promo_code_history`; codes above **50%** or **IDR 5.000.000** total discount need a second platform admin to enable. Details: [`promo-codes-v1.md`](../specs/promo-codes-v1.md). |
 | **P8** | Invoice | Sinexis in-app `/admin/invoices` (I1/D5 preferred). GMD `service_id` optional, **not** the gate. Never silent-bundle into VPS. |
 
 ---

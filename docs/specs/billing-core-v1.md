@@ -1,6 +1,6 @@
 # Spec: Billing core v1 (provider-agnostic)
 
-**Status:** Phase 2 core shipped. Persists subscription lifecycle, payment attempts, and webhook events. **No payment gateway is called.** The manual bank-transfer invoice remains the only live collection path.
+**Status:** Phase 2 core shipped. Persists subscription lifecycle, payment attempts, and webhook events. **Manual bank transfer remains the default collection path.** An **optional** Midtrans Snap redirect adapter is specified in [`payments-v1.md`](payments-v1.md) (owner-named 2026-11-04); it uses the same `payment_attempts`/`payment_events` tables.
 
 **Related:** [`sinexis-invoice-v1.md`](sinexis-invoice-v1.md) (invoice v1, still the source of the bill), [`subscription-page-v1.md`](subscription-page-v1.md) (customer page, request-only).
 
@@ -17,11 +17,11 @@ In:
 
 Out:
 
-- Live Midtrans/Xendit/Stripe adapter.
-- Checkout, payment link, VA issuance, card tokenization.
 - Proration, credits, refunds, dunning scheduler, auto-renew beat job.
 - Tax/NPWP.
 - Per-product tiers (the organization still has one `org.sku`).
+
+**Moved out of "Out" (2026-11-04):** live Midtrans adapter and in-app checkout are specified in [`payments-v1.md`](payments-v1.md) — redirect only, authenticated, no public link, no card tokenization. Xendit/Stripe remain adapters for later.
 
 ## 2. Product rules
 
@@ -139,10 +139,12 @@ The hourly beat closes scheduled cancellations once `current_period_end <= now` 
 
 | Column | Meaning |
 |---|---|
-| `dpp_idr` | DPP nilai lain: `amount × 11/12` for a PKP buyer, else `amount` |
+| `dpp_idr` | DPP nilai lain: `(amount − discount) × 11/12` for a PKP buyer, else `amount − discount` |
 | `ppn_idr` | PPN: `12% × dpp` for a PKP buyer, else 0 |
-| `total_idr` | Amount payable: `amount + ppn` |
-| `pph23_idr` | Informational: `2% × amount` (buyer withholds; not added to total) |
+| `total_idr` | Amount payable: `amount − discount + ppn` |
+| `pph23_idr` | Informational: `2% × (amount − discount)` for a PKP buyer, else 0 (buyer withholds; not added to total) |
+
+`discount_idr` is 0 unless a promo code was applied ([`promo-codes-v1.md`](promo-codes-v1.md)). The invoice-level invariant is `total_idr = amount_idr − discount_idr + ppn_idr`.
 
 Computation happens at invoice creation from `org_billing_profiles.pkp_status`. Rounding is half-up to the rupiah. Existing invoices are backfilled with `dpp = total = amount` and zero tax, so the pay loop and historical documents are unchanged.
 
@@ -244,7 +246,7 @@ A future Midtrans/Xendit adapter translates its native event into this payload b
 
 - Webhook secret compared with `secrets.compare_digest`.
 - Webhook path bypasses the API-key middleware (same as the SES webhook).
-- No customer PII in `payment_events.payload` beyond provider refs and amounts.
+- No customer PII in `payment_events.payload` beyond provider refs and amounts. Provider payloads are redacted (`customer_details`, `signature_key`) before storage.
 - `provider_ref` is not unique: bank references can repeat; invoice-level idempotency is the guard.
 
 ## 8. Tests
@@ -298,10 +300,10 @@ the next invoice — the failure mode is silent and expensive.
 Sinexis bills **invoice-per-period**, not auto-charge:
 
 - Every renewal is an invoice with a due date and the reminder cadence in §2.4.
-- No card is stored and no debit is attempted. There is no payment gateway in this phase.
+- No card is stored and no debit is attempted. **Updated 2026-11-04:** an optional Midtrans **redirect** checkout may collect an issued invoice's `total_idr` ([`payments-v1.md`](payments-v1.md)); it does not store card data and does not auto-charge. Manual transfer stays available.
 - "Auto-renew" means the next period is invoiced automatically; it does **not** mean an automatic charge.
 - PO buyers are not renewed without a PO: if `po_required` is set and no PO is on file before the renewal window, ops must hold the renewal rather than invoice silently.
-- Card auto-collection, if ever added, is a separate motion for self-serve SMB only; it would reintroduce `trialing`/`unpaid` with real producers.
+- Card auto-collection / recurring tokens remain out of scope; they would reintroduce `trialing`/`unpaid` with real producers.
 
 **Deferred:** a dedicated `billing` role so finance can edit the billing profile without product-admin rights. The current role ladder is linear (`owner > admin > member > viewer`), and billing-only access is a permission, not a rank; adding it needs an explicit permission model rather than another level.
 
