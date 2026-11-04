@@ -64,7 +64,7 @@ test.describe("Navigation @smoke", () => {
 
   test("sidebar shows version info", async ({ page }) => {
     await page.goto("/dashboard");
-    await expect(page.locator("text=Sinexis Scan v1.2.0")).toBeVisible();
+    await expect(page.locator("text=Sinexis v1.2.0")).toBeVisible();
   });
 
   test("guide desktop toc frozen testid is present", async ({ page }) => {
