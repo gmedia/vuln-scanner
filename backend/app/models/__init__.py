@@ -29,6 +29,7 @@ from app.models.hpp_history import HppSettingHistory
 from app.models.invoice import OrgInvoice, SkuCatalog
 from app.models.organization import Organization, OrganizationInvite, OrganizationMembership
 from app.models.password_reset import PasswordResetToken
+from app.models.promo import PromoCode, PromoCodeHistory, PromoRedemption
 from app.models.scan_job import ScanJob
 from app.models.scan_schedule import ScanSchedule
 from app.models.siem import SiemCase, SiemCaseEvent, SiemCaseNote
@@ -52,6 +53,9 @@ __all__ = [
     "EmailSendLog",
     "EmailVerificationToken",
     "PasswordResetToken",
+    "PromoCode",
+    "PromoCodeHistory",
+    "PromoRedemption",
     "ScanJob",
     "ScanSchedule",
     "ScanAsset",

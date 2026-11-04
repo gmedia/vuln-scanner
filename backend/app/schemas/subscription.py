@@ -75,6 +75,7 @@ class SubscriptionCapabilities(BaseModel):
     can_self_serve: bool = False
     read_only: bool = False
     read_only_reason: str | None = None
+    promo_codes: bool = False
 
 
 class SubscriptionRequestItem(BaseModel):
@@ -86,6 +87,7 @@ class SubscriptionRequestItem(BaseModel):
     current_sku: str
     target_sku: str
     cycle: str
+    promo_code: str | None = None
     note: str = ""
     status: str
     resolution_note: str = ""
@@ -115,6 +117,7 @@ class SubscriptionRequestCreate(BaseModel):
     target_sku: str = Field(..., pattern=TIER_CODE_PATTERN)
     cycle: str = Field(default="monthly", pattern="^(monthly|annual)$")
     note: str = Field(default="", max_length=500)
+    promo_code: str | None = Field(default=None, max_length=32)
 
 
 class SubscriptionRequestListResponse(BaseModel):

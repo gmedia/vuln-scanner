@@ -78,6 +78,7 @@ class SkuUsage(BaseModel):
     subscriptions: int = 0
     invoices: int = 0
     requests: int = 0
+    promos: int = 0
 
 
 class SkuTierItem(BaseModel):

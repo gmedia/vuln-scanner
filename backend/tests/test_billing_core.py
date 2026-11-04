@@ -198,6 +198,10 @@ async def test_record_payment_uses_total_idr_when_total_is_zero(db_session, ctx)
             inv = await db_session.get(OrgInvoice, uuid.UUID(str(invoice["id"])))
             assert inv is not None
             inv.amount_idr = 650_000
+            # A zero payable amount is a 100% discount, so the invoice
+            # invariant (total = amount - discount + ppn) still holds.
+            inv.discount_idr = 650_000
+            inv.dpp_idr = 0
             inv.total_idr = 0
             await db_session.commit()
 

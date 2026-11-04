@@ -118,6 +118,7 @@ async def _invoice(
     status: str = "sent",
     total_idr: int = 715_000,
     amount_idr: int | None = None,
+    discount_idr: int = 0,
 ) -> OrgInvoice:
     now = datetime.now(UTC)
     inv = OrgInvoice(
@@ -127,6 +128,7 @@ async def _invoice(
         product="scan",
         sku="pro",
         amount_idr=total_idr if amount_idr is None else amount_idr,
+        discount_idr=discount_idr,
         dpp_idr=total_idr,
         ppn_idr=0,
         pph23_idr=0,
@@ -345,7 +347,13 @@ async def test_checkout_charges_discounted_total_not_amount(
     transport = ASGITransport(app=app)
     try:
         async with AsyncClient(transport=transport, base_url="http://test") as client:
-            inv = await _invoice(db_session, ctx["org"], amount_idr=1_000_000, total_idr=750_000)
+            inv = await _invoice(
+                db_session,
+                ctx["org"],
+                amount_idr=1_000_000,
+                discount_idr=250_000,
+                total_idr=750_000,
+            )
             response = await _post_checkout(client, inv, ctx["owner"])
             assert response.status_code == 200, response.text
             assert response.json()["amount_idr"] == 750_000

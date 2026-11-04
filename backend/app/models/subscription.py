@@ -41,6 +41,7 @@ class SubscriptionRequest(Base):
         String(20), ForeignKey("sku_tiers.code", ondelete="RESTRICT"), nullable=False, index=True
     )
     cycle: Mapped[str] = mapped_column(String(10), nullable=False, default="monthly")
+    promo_code: Mapped[str | None] = mapped_column(String(32), nullable=True)
     note: Mapped[str] = mapped_column(String(500), nullable=False, default="")
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
     resolution_note: Mapped[str] = mapped_column(String(500), nullable=False, default="")
@@ -59,4 +60,8 @@ class SubscriptionRequest(Base):
         CheckConstraint(f"direction IN {SUBSCRIPTION_REQUEST_DIRECTIONS}", name="ck_subscription_request_direction"),
         CheckConstraint(f"cycle IN {SUBSCRIPTION_REQUEST_CYCLES}", name="ck_subscription_request_cycle"),
         CheckConstraint(f"status IN {SUBSCRIPTION_REQUEST_STATUSES}", name="ck_subscription_request_status"),
+        CheckConstraint(
+            "promo_code IS NULL OR promo_code = upper(promo_code)",
+            name="ck_subscription_request_promo_code_upper",
+        ),
     )

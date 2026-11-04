@@ -47,18 +47,28 @@ def period_bounds_utc(
 
 
 def price_breakdown(
-    base_list_idr: int, *, annual: bool, pkp: bool
+    base_list_idr: int, *, annual: bool, pkp: bool, discount_idr: int = 0
 ) -> dict[str, int]:
     """Invoice amounts for a catalog list price.
 
     Shared by the async create path and the sync beat task so the two can never
-    disagree about annual pricing or tax.
+    disagree about annual pricing or tax. The promo discount reduces the
+    taxable base; it is clamped to the base so a total can never go negative.
     """
     base = int(base_list_idr) * (ANNUAL_MONTHS_PAID if annual else 1)
+    discount = max(0, min(int(discount_idr), base))
+    taxable = base - discount
     if not pkp:
-        return {"amount": base, "dpp": base, "ppn": 0, "pph23": 0, "total": base}
+        return {
+            "amount": base,
+            "discount": discount,
+            "dpp": taxable,
+            "ppn": 0,
+            "pph23": 0,
+            "total": taxable,
+        }
     dpp = int(
-        (Decimal(base) * Decimal(11) / Decimal(12)).quantize(
+        (Decimal(taxable) * Decimal(11) / Decimal(12)).quantize(
             Decimal("1"), rounding=ROUND_HALF_UP
         )
     )
@@ -68,8 +78,15 @@ def price_breakdown(
         )
     )
     pph23 = int(
-        (Decimal(base) * Decimal("0.02")).quantize(
+        (Decimal(taxable) * Decimal("0.02")).quantize(
             Decimal("1"), rounding=ROUND_HALF_UP
         )
     )
-    return {"amount": base, "dpp": dpp, "ppn": ppn, "pph23": pph23, "total": base + ppn}
+    return {
+        "amount": base,
+        "discount": discount,
+        "dpp": dpp,
+        "ppn": ppn,
+        "pph23": pph23,
+        "total": taxable + ppn,
+    }
