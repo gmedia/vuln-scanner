@@ -645,3 +645,25 @@ async def test_jwt_rate_limit_redis_error_returns_503(client, db_session, monkey
         assert "unavailable" in data["detail"].lower()
     finally:
         conftest._fake_redis.incr = original_incr
+
+
+def test_metrics_rejects_any_bearer_token(client):
+    """The middleware only checks that a header is present; JWT checks live in route deps.
+
+    /metrics had no dependency, so ``Authorization: Bearer <anything>`` returned the whole
+    metric set to an unauthenticated caller. Reproduced against production before the fix.
+    """
+    resp = client.get("/metrics", headers={"Authorization": "Bearer not-a-real-token"})
+    assert resp.status_code == 401
+    assert "vuln_ai_upstream_attempts_total" not in resp.text
+
+
+def test_metrics_rejects_wrong_api_key(client):
+    resp = client.get("/metrics", headers={"X-API-Key": "wrong-key"})
+    assert resp.status_code == 401
+
+
+def test_metrics_accepts_the_platform_key_only(client):
+    ok = client.get("/metrics", headers={"X-API-Key": API_KEY})
+    assert ok.status_code == 200
+    assert "python_gc_objects_collected_total" in ok.text

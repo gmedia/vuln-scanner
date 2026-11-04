@@ -1,9 +1,10 @@
+import hmac
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any, cast
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 
@@ -79,8 +80,26 @@ from prometheus_fastapi_instrumentator import Instrumentator  # noqa: E402
 from app.metrics import register_custom_metrics  # noqa: E402
 
 register_custom_metrics()
+
+
+def _require_metrics_key(x_api_key: str | None = Header(default=None, alias="X-API-Key")) -> None:
+    """Scrapes authenticate with the platform key, like every other non-excluded path.
+
+    The ApiKeyMiddleware only checks that a header is *present*; JWT verification lives in
+    route dependencies. This endpoint had none, so any `Authorization: Bearer <anything>`
+    reached it and the whole metric set was public.
+    """
+    if not x_api_key or not hmac.compare_digest(x_api_key, settings.api_key):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
+
+
 instrumentator = Instrumentator().instrument(app)
-instrumentator.expose(app, endpoint="/metrics", include_in_schema=True)
+instrumentator.expose(
+    app,
+    endpoint="/metrics",
+    include_in_schema=True,
+    dependencies=[Depends(_require_metrics_key)],
+)
 
 app.add_middleware(ApiKeyMiddleware)
 
