@@ -30,6 +30,7 @@ If a surface file contradicts a higher layer, the higher layer wins and the surf
 | `/settings/subscription` | [`design/subscription.md`](design/subscription.md) | ~150 |
 | `/admin`, `/admin/users`, `/admin/users/:id`, `/admin/hpp`, `/admin/invoices`, `/admin/blog`, `/admin/email-logs`, `/admin/ai` | [`design/admin.md`](design/admin.md) | ~360 |
 | `/inbox`, `/credit-history`, `/`, `/guide` | [`design/content.md`](design/content.md) | ~300 |
+| `/products`, `/products/:slug` | [`design/products.md`](design/products.md) | ~130 |
 
 ## Which file do I open?
 

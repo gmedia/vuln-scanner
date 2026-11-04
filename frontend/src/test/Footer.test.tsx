@@ -33,13 +33,17 @@ describe("Footer", () => {
       "/",
     );
     expect(
-      screen.getByText(/Attaches to colo, VPS, and hospitality/),
+      screen.getByText(/Scan from outside, one thin agent on the box/),
     ).toBeInTheDocument();
 
     expect(screen.getByRole("navigation", { name: "Site" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute(
       "href",
       "/",
+    );
+    expect(screen.getByRole("link", { name: "Products" })).toHaveAttribute(
+      "href",
+      "/products",
     );
     expect(screen.getByRole("link", { name: "Blog" })).toHaveAttribute(
       "href",
@@ -67,7 +71,7 @@ describe("Footer", () => {
     expect(getStarted).toHaveAttribute("href", "/register");
     expect(getStarted).toHaveClass("text-primary-text");
 
-    expect(screen.getByText("Sinexis · Scan · Guard")).toHaveClass("text-xs");
+    expect(screen.getByText("Sinexis · Security & operations attach")).toHaveClass("text-xs");
     expect(footer!.textContent).not.toMatch(/SIEM/);
     expect(footer!.textContent).not.toMatch(/VulnScanner/i);
     expect(screen.queryByRole("navigation", { name: "Product" })).toBeNull();

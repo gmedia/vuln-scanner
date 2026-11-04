@@ -11,6 +11,8 @@ import { AuthLoading } from "@/components/AuthLoading";
 import { Toaster } from "@/components/ui/sonner";
 
 const Landing = lazy(() => import("@/pages/Landing"));
+const Products = lazy(() => import("@/pages/Products"));
+const ProductPage = lazy(() => import("@/pages/products/ProductPage"));
 const Login = lazy(() => import("@/pages/Login"));
 const Register = lazy(() => import("@/pages/Register"));
 const VerifyEmail = lazy(() => import("@/pages/VerifyEmail"));
@@ -60,6 +62,21 @@ function App() {
           path="/"
           element={
             <PageBoundary component={Landing} fallback={<LandingLoading />} />
+          }
+        />
+        <Route
+          path="/products"
+          element={
+            <PageBoundary component={Products} fallback={<LandingLoading />} />
+          }
+        />
+        <Route
+          path="/products/:slug"
+          element={
+            <PageBoundary
+              component={ProductPage}
+              fallback={<LandingLoading />}
+            />
           }
         />
         <Route

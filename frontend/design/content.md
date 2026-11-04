@@ -96,18 +96,18 @@ Print §§0–8 and every SPA section above stay locked. This section is the **p
 
 ### 0. Research Log (Landing)
 
-- Reused the existing tokens + `BrandMark` + `Footer`. No new reference pull, no new palette.
-- Sibling harvest: `components/ops/OpsShell.tsx` icon-chip geometry (`h-8 w-8 rounded-md border border-border bg-muted/40`) — borrowed for the **feature icon chip only** as a shared visual atom; the shell/rail itself is deliberately **not** used.
-- Current diagnosis (pre-refresh): the pipeline `li` carried **`shadow-sm`**, violating the borders-only rule that every other surface follows; the 9 feature cards had a bare `h-8 w-8` icon with `mb-2` and no chip; the pipeline step number was plain text while the feature icon was not; the FAQ `h2` used `mb-8` with no header wrapper while the other two sections used `mb-10 space-y-2`. The hero was text-only with no product-loop anchor.
+- Reused the existing tokens + `BrandMark` + `Footer` + kit `Card`/`Accordion`. No new reference pull, no new palette.
+- Sibling harvest: `pages/Products.tsx` pillar-grid rhythm and `components/public/PublicHeader.tsx` nav geometry. The `products` locale namespace supplies the four pillar titles/blurbs and the product names, so the home page and the hub cannot drift.
+- Current diagnosis (pre-umbrella): the page still sold a single scanner — a feature grid, a multi-stage `Scan → Attach → Workspace → Guard` pipeline, and a footer line frozen to the scan/Guard pair. The public surface now has four pillars and five product pages, so `/` had to become the umbrella that points at them.
 - Imagen / Lazyweb: skipped — tokens + existing chrome are the reference; AGENTS.md forbids extra deps for a visual slice.
 
-**Direction (locked):** Keep the public chrome geometry exactly (`h-12` header, `BrandMark`, `max-w-6xl` / `2xl:max-w-[90rem]`, footer). Refresh inside it: **remove the shadow drift**, give the hero a bordered **attach-loop strip**, put every feature icon in a bordered chip, and unify the three section headers.
+**Direction (locked):** Keep the public chrome geometry exactly (`h-12` header, `BrandMark`, `max-w-6xl` / `2xl:max-w-[90rem]`, footer). Replace the scanner grid with **4 pillar cards**, one **honesty band**, a **3-step attach model** (`Connect → Watch → Prove`), and a **6-item FAQ**.
 
 ### 1. Atmosphere & Identity
 
 Landing is the public front door and the reference the HTML islands copy. It must stay calmer and more editorial than the ops consoles: no rails, no status chrome, no dense tables.
 
-The one memorable moment: the **hero attach-loop strip** — `Scan → Attach → Workspace → Guard` as mono chips in a bordered card, previewing the loop that the next section expands.
+The one memorable moment: the **hero attach-loop strip** — `Connect → Watch → Prove` as mono chips in a bordered card — followed by the 2×2 pillar grid that names the products behind each surface. The **honesty band** is the single allowed caveat block; it is the only place the negative litany ("not a pentest / 24/7 SOC / second agent / edge WAF") may appear.
 
 ### 2. Color
 
@@ -116,53 +116,55 @@ Reuse `frontend/src/index.css` `:root` / `.dark`. No second palette. No `#0a7`. 
 | Role | Token / class | Usage |
 |------|----------------|-------|
 | Canvas | `--background` | Page |
-| Surface | `--card` + `border-border` | Hero loop strip, pipeline steps, feature cards, FAQ accordion |
-| Ink | `--foreground` | h1/h2, step titles, card titles |
-| Meta | `--muted-foreground` | Eyebrow, hero sub, descriptions, footer |
-| Accent | `--primary` `hsl(142 71% 45%)` | Feature icons, links, primary CTA |
-| Hover | `hover:border-primary/40` | Pipeline steps + feature cards |
+| Surface | `--card` + `border-border` | Hero loop strip, pillar cards, honesty band, attach steps, FAQ accordion |
+| Ink | `--foreground` | h1/h2/h3, step titles, card titles, honesty band |
+| Meta | `--muted-foreground` | Eyebrow, hero sub, pillar blurbs, step descriptions, footer |
+| Accent | `--primary` `hsl(142 71% 45%)` | Links, primary CTA |
+| Hover | `hover:border-primary/40` | Pillar cards + attach steps |
 
 ### 3. Typography
 
-Unchanged from the existing public scale. `h1` is `text-3xl sm:text-4xl lg:text-5xl`; section `h2` is `text-2xl`; eyebrows are `text-xs uppercase tracking-wide`; card/step titles are `text-sm`; the loop strip is `font-mono text-xs`.
+Unchanged from the existing public scale. `h1` is `text-3xl sm:text-4xl lg:text-5xl`; section `h2` is `text-2xl`; eyebrows are `text-xs uppercase tracking-wide`; pillar and step titles are `text-sm`; the loop strip is `font-mono text-xs`.
 
 ### 4. Spacing & Layout
 
-Sections use `px-4 py-12` inside `mx-auto max-w-6xl 2xl:max-w-[90rem]`. All three section headers now share `mb-10 text-center space-y-2`. The hero uses `pt-16 pb-12 sm:pt-20` with `max-w-3xl 2xl:max-w-4xl`.
+Sections use `px-4 py-12` inside `mx-auto max-w-6xl 2xl:max-w-[90rem]`. The pillar grid is `grid-cols-1 sm:grid-cols-2` (2×2, never `lg:grid-cols-4`); the attach steps are `grid-cols-1 sm:grid-cols-3`. Section headers share `mb-10 text-center space-y-2`. The hero uses `pt-16 pb-12 sm:pt-20` with `max-w-3xl 2xl:max-w-4xl`. The honesty band sits between the pillar grid and the attach steps.
 
-**Frozen contracts** (`src/test/Landing.test.tsx` + `e2e/landing.spec.ts`): the `h1` copy; the hero eyebrow / sub; `/Scan → Attach → Workspace → Guard/` still present (via `stepGuardDesc`); `header` contains `SINE` + `XIS` and there are ≥ 2 of each (header + footer); Get Started → `/register`; Sign In → `/login`; header Sign In keeps `hidden sm:inline`; the mobile menu trigger keeps an `aria-label` and `sm:hidden`; `main a[href='/login']` first is not `hidden`; h2 `How you run it` / `What is open in the account` / `Straight answers`; **exactly 9 `Card` elements**; the nine module titles; no `SIEM` heading; ≥ 2 `Blog` links → `/blog`; Terms → `/terms`; Privacy → `/privacy`; footer `Sinexis · Scan · Guard`, no `SIEM` / `VulnScanner` / version; `.lg\:grid-cols-4` absent; nav `Site` present, `Product` / `Legal` / `Account` absent; root `.min-h-dvh.flex.flex-col`, `main.flex-1`, `footer.mt-auto`.
+**Frozen contracts** (`src/test/Landing.test.tsx` + `e2e/landing.spec.ts`): the `h1` copy; the hero eyebrow / sub; `landing-loop` present with **3 chips** `Connect` / `Watch` / `Prove` and **2 `ArrowRight` icons**; `header` contains `SINE` + `XIS` and there are ≥ 2 of each (header + footer); `Products` in the desktop header **and** the mobile `Sheet` (≥ 2 header `/products` links) plus the footer; Get Started → `/register`; Sign In → `/login`; header Sign In keeps `hidden sm:inline`; the mobile menu trigger keeps an `aria-label` and `sm:hidden`; `main a[href='/login']` first is not `hidden`; h2 `Four surfaces` / `How it attaches` / `Straight answers`; **exactly 4 `pillar-card`** elements, each linking to `/products#<pillar-id>` and each title an `h3` (`CardTitle`), with the product name(s) visible; honesty band copy; **6 FAQ items** including `Is AI Gateway a security product?`; the retired feature grid is gone (no `IP scan` / `Domain scan` / `Scan Attach` cards); ≥ 2 `Blog` links → `/blog`; Terms → `/terms`; Privacy → `/privacy`; footer `Sinexis · Security & operations attach`, no `SIEM` / `VulnScanner` / version, **7 links** in nav `Site`; `.lg\:grid-cols-4` absent; nav `Product` / `Legal` / `Account` absent; root `.min-h-dvh.flex.flex-col`, `main.flex-1`, `footer.mt-auto`.
 
 ### 5. Signature Components & States
 
 | Primitive | Anatomy | States |
 |-----------|---------|--------|
-| Header | `h-12` + `border-b` + `BrandMark` + blog/theme/i18n + Sign in / Get started + mobile `Sheet` | unchanged |
+| Header | `h-12` + `border-b` + `BrandMark` + Products/Blog/theme/i18n + Sign in / Get started + mobile `Sheet` | unchanged; 6 interactive on desktop |
 | Hero | eyebrow + `h1` + sub + CTA row + loop strip | static |
-| Loop strip (`landing-loop`) | `mx-auto max-w-2xl rounded-lg border bg-card px-4 py-3` + 4 mono chips separated by `ArrowRight` icons | static; 3 arrows |
-| Pipeline step | `li` `rounded-lg border bg-card p-4` + numbered `h-7 w-7` chip + title + desc | `hover:border-primary/40`; **no shadow** |
-| Feature card | kit `Card` (`h-full`) + `CardHeader` (bordered `h-9 w-9` icon chip + `CardTitle`) + `CardContent` | `hover:border-primary/40`; **9 total** |
-| FAQ | `Accordion` in `rounded-lg border bg-card px-4` | unchanged |
+| Loop strip (`landing-loop`) | `mx-auto max-w-2xl rounded-lg border bg-card px-4 py-3` + 3 mono chips separated by `ArrowRight` icons | static; 2 arrows |
+| Pillar card (`pillar-card`) | kit `Card` (`h-full`) + `CardHeader` (`CardTitle` h3) + `CardContent` (blurb + product names); whole card links to `/products#<pillar-id>` | `hover:border-primary/40`; **4 total** |
+| Honesty band | `rounded-lg border bg-card px-4 py-4` + centered paragraph | static; single caveat block |
+| Attach step | `li` `rounded-lg border bg-card p-4` + numbered `h-7 w-7` chip + title + desc | `hover:border-primary/40`; **no shadow**; 3 steps |
+| FAQ | `Accordion` in `rounded-lg border bg-card px-4` | unchanged; 6 items |
 
 ### 6. Motion
 
-Micro only: `transition-colors` on step/card hover and links. No ping, no layout animation. Respect `prefers-reduced-motion` (kit defaults).
+Micro only: `transition-colors` on pillar-card/step hover and links. No ping, no layout animation. Respect `prefers-reduced-motion` (kit defaults).
 
 ### 7. Depth & Surface
 
-**borders-only.** No drop shadows anywhere on Landing (the `shadow-sm` drift is removed and locked by a test). No glass, no gradients on content surfaces (the Footer keeps its existing `from-muted/40 to-background`). No nested Card-in-Card, no `rounded-3xl`.
+**borders-only.** No drop shadows anywhere on Landing (locked by a test). No glass, no gradients on content surfaces (the Footer keeps its existing `from-muted/40 to-background`). No nested Card-in-Card, no `rounded-3xl`.
 
 ### 8. Accessibility Constraints & Accepted Debt
 
 #### Constraints
 
 - WCAG 2.2 AA contrast on SPA tokens.
-- One `h1`; section `h2`s; card titles are `h3` (kit `CardTitle`).
-- Icon chips are `aria-hidden`; decorative loop arrows are `aria-hidden`.
+- One `h1`; section `h2`s; pillar titles are `h3` (kit `CardTitle`).
+- Decorative loop arrows are `aria-hidden`; the honesty band is a plain paragraph, not a control.
 - Interactive targets keep `min-h-11` on mobile.
+- The `Products` link has an accessible name in both the desktop header and the mobile `Sheet`.
 
 #### Personas
 
-- **Prospective customer** (primary): understand the attach loop, then start a scan.
+- **Prospective customer** (primary): understand the four surfaces and the attach model, then open the product hub or start an account.
 - **Island maintainer**: Landing is the chrome reference for `/blog`, `/terms`, `/privacy`.
 
 #### Accepted Debt
@@ -170,9 +172,9 @@ Micro only: `transition-colors` on step/card hover and links. No ping, no layout
 | Item | Location | Why accepted | Owner / Exit |
 |------|----------|--------------|--------------|
 | Landing keeps `Card` (not `OpsShell`) | page | It is marketing, not an ops console; the icon-chip atom is borrowed, the rail is not | Keep |
-| Copy is i18n (`landing` + `common`) with no new keys added | page | Refresh reuses existing keys; no copy change | Keep |
-| Feature grid is 9 `Card`s, frozen by count | test | The count assertion is the contract that the nine modules stay visible | Update only with a deliberate module change |
-| HTML islands (`/blog`, `/terms`, `/privacy`) are string templates, not React | `backend/app/api/*_html.py` | SEO + no JS hydrate; they must rhyme this section manually | Named island slice if chrome changes |
+| Copy is i18n (`landing` + `products` + `common`) | page + locale | Pillar titles/blurbs and product names come from the `products` namespace; the umbrella keys are in `landing` | Keep |
+| Pillar grid is 4 `Card`s, frozen by count | test | The count assertion is the contract that the four surfaces stay visible | Update only with a deliberate pillar change |
+| HTML islands (`/blog`, `/terms`, `/privacy`) are string templates, not React | `backend/app/api/*_html.py` | SEO + no JS hydrate; they must rhyme this section manually. Their footer line now matches Landing (`Sinexis · Security & operations attach`) and their nav includes `Produk` → `/products` | Named island slice if chrome changes |
 | Print contract stays invoice-only (see the print specs) | print specs | Multiple SPA surfaces; merging would pollute print | Keep split |
 
 ## User guide (`/guide`)
