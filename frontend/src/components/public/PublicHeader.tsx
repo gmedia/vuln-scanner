@@ -27,8 +27,8 @@ export function PublicHeader() {
       className="border-b border-border pt-[env(safe-area-inset-top)]"
     >
       <div className="mx-auto flex h-12 w-full max-w-6xl min-w-0 items-center justify-between gap-2 overflow-x-hidden px-4 2xl:max-w-[90rem]">
-        <div className="shrink-0">
-          <BrandMark to="/" />
+        <div className="flex shrink-0 items-center">
+          <BrandMark to="/" className="min-h-11" />
         </div>
         <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
           <Link
