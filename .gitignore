@@ -3,6 +3,14 @@ dist/
 __pycache__/
 *.pyc
 *.pyo
+# Editor / merge leftovers. A tracked auth.py.bak sat in app/services/ for months,
+# looking like the real module and invisible to ruff and mypy (it is not a .py file).
+*.bak
+*.orig
+*.rej
+*.swp
+*.swo
+*~
 .env
 *.egg-info/
 .venv/
