@@ -127,6 +127,22 @@ groups:
             alias points at an upstream model id that does not accept this request
             (renamed or retired model, or an unsupported parameter). Failover does not
             retry these by design. Check the model's primary and fallback upstream ids.
+      - alert: VulnScannerAiProviderNeverProbed
+        expr: vuln_ai_providers_never_probed > 0
+        for: 30m
+        labels:
+          severity: warning
+          service: vuln-scanner
+        annotations:
+          summary: "An enabled AI provider has never produced a probe verdict"
+          description: >-
+            vuln_ai_providers_never_probed is {{ $value }}. The probe runs every five
+            minutes, so half an hour means it cannot even build a request for these
+            providers: an unreadable credential, a rotated encryption key, or a malformed
+            base URL. Their status is frozen, and MIN(last_probed_at) ignores NULL, so the
+            age gauge alone cannot see them. A provider an admin disabled on purpose is
+            excluded. Check the provider row in /admin/ai?tab=providers and the
+            ai_provider_probe_failed worker log line.
       - alert: VulnScannerAiUpstreamBreakerOpen
         expr: vuln_ai_upstream_breakers_open > 0
         for: 10m

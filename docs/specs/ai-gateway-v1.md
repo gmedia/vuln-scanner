@@ -1,6 +1,6 @@
 # Spec: AI Gateway v1 (OpenAI-compatible resale)
 
-**Status:** **S1–S7.3.6 shipped** (catalog, wallet, `/v1`, SPA, Redis limits, ops notes, USD pricing, upstream failover, time budget, breaker + health probe, servable catalog, probe liveness). Git flag default **off**.
+**Status:** **S1–S7.3.7 shipped** (catalog, wallet, `/v1`, SPA, Redis limits, ops notes, USD pricing, upstream failover, time budget, breaker + health probe, servable catalog, probe liveness). Git flag default **off**.
 **Goal:** resell **contracted OpenAI-compatible** wholesale APIs to Sinexis orgs: customer keys, usage ledger, admin catalog + trial chat.
 **Epic:** **new business line** (not P14, not Guard, not Workspace). Does **not** jump attach / Host Protect / GTM.
 **Depends:** P2 Workspace (JWT `org_id`, membership) · existing admin SPA kit · host nginx + Cloudflare for a new `/v1` location.
@@ -362,9 +362,11 @@ the rules the design itself depends on and does not restate the tables.
   sample omitted when the fleet is empty **or when `AI_GATEWAY_ENABLED` / `AI_PROVIDER_PROBE_ENABLED`
   is off**, so a deliberate rollback does not page anyone. `VulnScannerAiProviderProbeStale` fires
   above 900s (three missed 5-minute cycles).
-- Known limit: `MIN(last_probed_at)` ignores `NULL`, so that gauge catches a probe that is dead for
-  **every** provider, not one provider that always errors while the rest are fine. The per-provider
-  timestamp in the Providers tab is what covers the single-provider case.
+- `MIN(last_probed_at)` ignores `NULL`, so the age gauge catches a probe that is dead for **every**
+  provider but not one provider that always errors while the rest are fine.
+  `vuln_ai_providers_never_probed` counts exactly those rows (`last_probed_at IS NULL`, enabled and
+  not disabled) so Prometheus sees the single-provider case too; the per-provider timestamp in the
+  Providers tab covers it for a human. `VulnScannerAiProviderNeverProbed` fires after 30 minutes.
 - **Single writer per state.** The probe writes `ai_providers.status` and never touches the breaker;
   only the request path writes `ai:cb:*`. Letting a probe 2xx clear the breaker erased it every five
   minutes, which made it useless against a provider whose `/models` answers while `/chat/completions`
@@ -411,6 +413,7 @@ Register both in `App.tsx` + [`AGENT_PAGE_REGISTRY.md`](../AGENT_PAGE_REGISTRY.m
 | **S7.3.4** | Providers tab shows routing state (routed / degraded / not routed) and toggles `enabled`, clearing a stale `disabled` | **done** |
 | **S7.3.5** | Probe liveness: `ai_providers.last_probed_at`, `vuln_ai_providers_probe_age_seconds`, `VulnScannerAiProviderProbeStale` | **done** |
 | **S7.3.6** | Probe stamps `last_probed_at` only on a verdict; per-provider last-check time in the Providers tab | **done** |
+| **S7.3.7** | `vuln_ai_providers_never_probed` + `VulnScannerAiProviderNeverProbed`, so a single provider the probe cannot reach is visible to Prometheus | **done** |
 
 Default order **S1 → S5**. Do not combine with Host Protect / Guard PRs.
 
@@ -445,6 +448,9 @@ Default order **S1 → S5**. Do not combine with Host Protect / Guard PRs.
 - Probe liveness: a provider that never reaches a verdict keeps `last_probed_at` unchanged, so the
   age gauge ages out and `VulnScannerAiProviderProbeStale` fires; with the gateway or the probe
   switched off the sample is omitted instead.
+- Probe liveness: `vuln_ai_providers_never_probed` counts the rows that never got a verdict, so one
+  broken provider among healthy ones is still visible; it is omitted, not zeroed, when the gateway
+  or the probe is off.
 - Providers tab: a provider is labelled routed / degraded / not routed, and turning it back on
   clears a `disabled` status so it is actually routed again.
 

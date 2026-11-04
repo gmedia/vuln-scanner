@@ -133,9 +133,10 @@ cannot even be built (an unreadable credential, a rotated encryption key, any un
 exception) the timestamp is left as-is, so it never claims a check that did not happen. That is
 what lets `vuln_ai_providers_probe_age_seconds` stay honest.
 
-Limit worth knowing: that gauge reads `MIN(last_probed_at)`, which ignores `NULL`. So it catches
+Limit worth knowing: the age gauge reads `MIN(last_probed_at)`, which ignores `NULL`. So it catches
 a probe that is dead for **every** provider, but not a single provider that always errors while
-the rest are fine — check the per-provider `last_probed_at` in the Providers tab for that case.
+the rest are fine. That gap is covered twice over: `vuln_ai_providers_never_probed` counts exactly
+those rows for Prometheus, and the Providers tab shows each provider's last check time for a human.
 
 `degraded` providers stay in rotation but are tried last. A human never sets `degraded`: the probe
 owns it. The two suppression flags are separate but have the same effect on both routing and probing:
@@ -176,6 +177,7 @@ healthy stack.
 | `vuln_ai_upstream_attempts_total` | counter | One increment per upstream attempt. `outcome` = `served` \| `retried` \| `failed` \| `rejected`; `reason` = `none` \| `transport` \| `auth` \| `rate_limit` \| `server_error` \| `client_error`; `model` = the alias. |
 | `vuln_ai_upstream_breakers_open` | gauge | Open breaker keys in Redis. Above `0` means at least one provider is being skipped. |
 | `vuln_ai_providers_degraded` | gauge | Enabled providers with `status = 'degraded'` — still used, but tried last. |
+| `vuln_ai_providers_never_probed` | gauge | Enabled, non-disabled providers with **no** `last_probed_at`. Above `0` means the probe cannot even build a request for them: unreadable credential, rotated key, malformed base URL. Sample omitted when the gateway or the probe is switched off. |
 | `vuln_ai_providers_probe_age_seconds` | gauge | Seconds since the oldest enabled, non-disabled provider was probed; `+Inf` means the probe has never run; omitted when no provider is enabled. |
 
 Reading the counter:
@@ -199,6 +201,7 @@ Reading the counter:
 | `VulnScannerAiUpstreamRejectedRequests` | `sum(rate(vuln_ai_upstream_attempts_total{outcome="rejected"}[30m])) > 0` | 30m | warning |
 | `VulnScannerAiUpstreamBreakerOpen` | `vuln_ai_upstream_breakers_open > 0` | 10m | warning |
 | `VulnScannerAiProvidersDegraded` | `vuln_ai_providers_degraded > 0` | 15m | warning |
+| `VulnScannerAiProviderNeverProbed` | `vuln_ai_providers_never_probed > 0` | 30m | warning |
 | `VulnScannerAiProviderProbeStale` | `vuln_ai_providers_probe_age_seconds > 900` | 10m | warning |
 
 First response:
@@ -222,6 +225,10 @@ First response:
 - **Providers degraded** — the probe (or an admin) marked a provider `degraded`. It is still used, only
   tried last. Verify before touching anything: a provider that answers `/models` but fails
   `/chat/completions` will not show up here.
+- **Provider never probed** — a provider has produced no verdict for 30 minutes, so the probe cannot
+  build a request for it. Rotate the credential or check `credential_enc` decryption; the provider
+  stays at its last known `status` until it does. This is the case the age gauge cannot see, because
+  `MIN(last_probed_at)` ignores `NULL`.
 - **Provider probe stale** — `ai_providers.probe` runs every 5 minutes, so 15 minutes means at least
   three cycles were missed and `status` is frozen: the fleet looks healthy while nothing is being
   checked. First check that celery beat is running and that `ai_providers.probe` is routed to the
