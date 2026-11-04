@@ -112,7 +112,7 @@ UI PRs must also fill the design change protocol in [`.github/pull_request_templ
 
 ## CI gates (required checks — all block `ci-ok`)
 
-`ci-ok` is the **only** required check. It aggregates 18 jobs, including five drift/security
+`ci-ok` is the **only** required check. It aggregates 19 jobs, including six drift/security
 gates that are easy to trip without knowing they exist. All of them run in CI; run the script
 locally before pushing.
 
@@ -123,6 +123,7 @@ locally before pushing.
 | `deps-sync` | A package declared in **both** `backend/requirements.txt` and `workers/requirements.txt` must use the **same specifier** (including ranges). Workers import `app.config` / `app.database` / `app.services.*` / `app.models.*`, so a mismatch runs one codebase against two dependency versions. | Align both files in the same PR. Dependabot bumps one file at a time, so this fires after a Dependabot merge — fix it forward, do not revert the bump. |
 | `deps-audit` | `npm audit` must have no **HIGH/CRITICAL** advisory outside `.github/dependency-audit-allowlist.json`. | Bump the package. If no patched release exists, add an allowlist entry with `id`, `package`, `reason`, `expires`. Never leave a security `overrides` floor one patch below the first patched version — that keeps the vulnerability while looking like a fix. |
 | `deps-audit-python` | `pip-audit` over both requirements files must find **no** advisory at all (pip-audit reports no severity, so there is no threshold). | Bump the pin, or allowlist with `ecosystem: "pip"`. |
+| `public-surface-sync` | Every `published: true` entry in `frontend/src/lib/services.ts` must appear in the `PRODUCT_SLUGS` tuple in `backend/app/api/sitemap_html.py`, and vice versa. Drift means `/products` links a page the sitemap omits (or the sitemap advertises a 404). | Update the Python tuple in the same PR (`node scripts/sync-public-registry.mjs` rewrites it), then re-run `node scripts/check-public-registry-sync.mjs`. |
 
 Local runs:
 
@@ -132,6 +133,8 @@ Local runs:
 node scripts/check-dependency-audit.mjs     # needs frontend/node_modules
 python3 scripts/check-pip-audit.py          # needs pip-audit installed
 node scripts/check-alert-metrics.mjs        # alert names must match metrics.py
+node scripts/check-public-registry-sync.mjs # product registry must match the sitemap tuple
+node scripts/sync-public-registry.mjs       # rewrite the sitemap tuple from the registry
 ```
 
 The two audit gates share one allowlist file. Expired entries fail; entries that no longer match

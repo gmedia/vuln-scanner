@@ -35,6 +35,11 @@ export default defineConfig(({ mode }) => {
           target: "ws://backend:8000",
           ws: true,
         },
+        // FastAPI serves the sitewide sitemap; without this, Vite returns the SPA shell.
+        "/sitemap.xml": {
+          target: "http://backend:8000",
+          changeOrigin: true,
+        },
       },
     },
   };
