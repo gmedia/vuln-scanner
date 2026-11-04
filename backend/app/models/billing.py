@@ -94,6 +94,13 @@ class PaymentAttempt(Base):
     )
     provider: Mapped[str] = mapped_column(String(32), nullable=False, default="manual")
     provider_ref: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    provider_order_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    provider_payment_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    provider_token: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    checkout_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    provider_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    attempt_seq: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="SET NULL"),
@@ -105,6 +112,8 @@ class PaymentAttempt(Base):
     method: Mapped[str | None] = mapped_column(String(32), nullable=True)
     failure_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
     failure_message: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    fee_idr: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default=text("0"))
+    refunded_amount_idr: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default=text("0"))
     next_retry_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     succeeded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     failed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -118,6 +127,23 @@ class PaymentAttempt(Base):
     __table_args__ = (
         CheckConstraint(f"status IN {PAYMENT_ATTEMPT_STATUSES}", name="ck_payment_attempt_status"),
         CheckConstraint("amount_idr >= 0", name="ck_payment_attempt_amount"),
+        CheckConstraint("fee_idr >= 0", name="ck_payment_attempt_fee"),
+        CheckConstraint("refunded_amount_idr >= 0", name="ck_payment_attempt_refunded"),
+        Index(
+            "uq_payment_attempt_provider_order",
+            "provider",
+            "provider_order_id",
+            unique=True,
+            postgresql_where=text("provider_order_id IS NOT NULL"),
+            sqlite_where=text("provider_order_id IS NOT NULL"),
+        ),
+        Index(
+            "uq_payment_attempt_pending_invoice",
+            "invoice_id",
+            unique=True,
+            postgresql_where=text("status = 'pending'"),
+            sqlite_where=text("status = 'pending'"),
+        ),
     )
 
 
