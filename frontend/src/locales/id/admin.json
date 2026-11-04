@@ -31,6 +31,7 @@
   "usersEmptyNone": "Belum ada pengguna terdaftar.",
   "colEmail": "Email",
   "colTier": "Tier",
+  "tierFilterAll": "Semua tier",
   "tierNone": "—",
   "colRole": "Peran",
   "colVerified": "Verifikasi",

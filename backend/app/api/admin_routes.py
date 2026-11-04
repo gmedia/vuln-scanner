@@ -4,7 +4,7 @@ import uuid
 from datetime import UTC, date, datetime, time, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
-from sqlalchemy import func, select, text
+from sqlalchemy import ColumnElement, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -145,6 +145,24 @@ async def _personal_tiers(
     return {user_id: (str(sku), str(label)) for user_id, sku, label in rows.all()}
 
 
+def _personal_tier_clause(sku: str) -> ColumnElement[bool]:
+    """Users whose personal workspace sits on ``sku``.
+
+    Expressed as a subquery on ``User.id`` so it can be applied to the count and
+    the page query without joining twice. An unknown tier simply matches
+    nothing, which keeps the admin filter forgiving instead of a 404.
+    """
+    return User.id.in_(
+        select(OrganizationMembership.user_id)
+        .join(Organization, Organization.id == OrganizationMembership.organization_id)
+        .where(
+            Organization.sku == sku,
+            Organization.kind == "personal",
+            OrganizationMembership.role == "owner",
+        )
+    )
+
+
 def _user_item(
     user: User, *, scan_count: int, tier: tuple[str, str] | None
 ) -> AdminUserItem:
@@ -169,6 +187,7 @@ async def get_users(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     search: str = Query(default=""),
+    sku: str | None = Query(default=None),
     current_admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
 ) -> AdminUserList | Response:
@@ -178,12 +197,16 @@ async def get_users(
     count_query = select(func.count(User.id))
     if search:
         count_query = count_query.where(User.email.ilike(f"%{search}%"))
+    if sku:
+        count_query = count_query.where(_personal_tier_clause(sku))
     total_result = await db.execute(count_query)
     total = total_result.scalar() or 0
 
     query = select(User)
     if search:
         query = query.where(User.email.ilike(f"%{search}%"))
+    if sku:
+        query = query.where(_personal_tier_clause(sku))
     query = query.order_by(User.created_at.desc())
     query = query.offset((page - 1) * page_size).limit(page_size)
 

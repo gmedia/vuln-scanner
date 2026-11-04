@@ -5,6 +5,13 @@ import { Users, Search, Eye } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import {
@@ -64,11 +71,27 @@ function AdminUsers() {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [sku, setSku] = useState("all");
+
+  const { data: tiers } = useQuery({
+    queryKey: ["admin-sku-tiers"],
+    queryFn: () => adminApi.getAdminSkuTiers(),
+    staleTime: 60_000,
+  });
+
+  const tierOptions = (Array.isArray(tiers) ? tiers : []).filter(
+    (tier) => tier.active || tier.code === sku,
+  );
 
   const { data, isLoading } = useQuery({
-    queryKey: ["admin-users", page, search],
+    queryKey: ["admin-users", page, search, sku],
     queryFn: () =>
-      adminApi.getUsers({ page, page_size: PAGE_SIZE, search: search || undefined }),
+      adminApi.getUsers({
+        page,
+        page_size: PAGE_SIZE,
+        search: search || undefined,
+        sku: sku === "all" ? undefined : sku,
+      }),
     placeholderData: keepPreviousData,
   });
 
@@ -113,6 +136,32 @@ function AdminUsers() {
                 />
               </div>
             </div>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="admin-users-tier-filter">{t("colTier")}</Label>
+              <Select
+                value={sku}
+                onValueChange={(value) => {
+                  setSku(value);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger
+                  id="admin-users-tier-filter"
+                  className="h-10 min-h-10 w-full"
+                  data-testid="admin-users-tier-filter"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("tierFilterAll")}</SelectItem>
+                  {tierOptions.map((tier) => (
+                    <SelectItem key={tier.code} value={tier.code}>
+                      {tier.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {isLoading && !data ? (
@@ -122,7 +171,11 @@ function AdminUsers() {
               testId="admin-users-empty"
               icon={Users}
               title={t("usersEmpty")}
-              hint={search ? t("usersEmptySearch") : t("usersEmptyNone")}
+              hint={
+                search || sku !== "all"
+                  ? t("usersEmptySearch")
+                  : t("usersEmptyNone")
+              }
             />
           ) : (
             <>

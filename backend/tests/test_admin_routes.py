@@ -275,6 +275,63 @@ class TestAdminUsers:
         assert user["sku_label"] == "Pro"
 
     @pytest.mark.asyncio
+    async def test_filters_users_by_personal_workspace_tier(self, client, db_session):
+        pro_owner = User(
+            id=uuid.uuid4(),
+            email="filter-pro@example.com",
+            password_hash="fake-hash",
+            is_verified=True,
+            credits=0,
+        )
+        basic_owner = User(
+            id=uuid.uuid4(),
+            email="filter-basic@example.com",
+            password_hash="fake-hash",
+            is_verified=True,
+            credits=0,
+        )
+        db_session.add_all([pro_owner, basic_owner])
+        await db_session.flush()
+        for owner, sku in ((pro_owner, "pro"), (basic_owner, "basic")):
+            org = Organization(
+                id=uuid.uuid4(),
+                name=f"{sku} workspace",
+                slug=f"filter-{sku}-{uuid.uuid4().hex[:6]}",
+                kind="personal",
+                sku=sku,
+                created_by_user_id=owner.id,
+            )
+            db_session.add(org)
+            db_session.add(
+                OrganizationMembership(
+                    id=uuid.uuid4(),
+                    organization_id=org.id,
+                    user_id=owner.id,
+                    role="owner",
+                )
+            )
+        await db_session.commit()
+
+        resp = client.get("/api/admin/users?sku=pro", headers=API_HEADERS)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total"] == 1
+        assert [u["email"] for u in data["users"]] == ["filter-pro@example.com"]
+        assert data["users"][0]["sku_label"] == "Pro"
+
+        other = client.get("/api/admin/users?sku=basic", headers=API_HEADERS)
+        assert other.status_code == 200
+        assert [u["email"] for u in other.json()["users"]] == [
+            "filter-basic@example.com"
+        ]
+
+    @pytest.mark.asyncio
+    async def test_unknown_tier_filter_returns_an_empty_page(self, client):
+        resp = client.get("/api/admin/users?sku=ghost_tier", headers=API_HEADERS)
+        assert resp.status_code == 200
+        assert resp.json() == {"users": [], "total": 0}
+
+    @pytest.mark.asyncio
     async def test_user_without_a_personal_workspace_has_no_tier(self, client, db_session):
         lone = User(
             id=uuid.uuid4(),
