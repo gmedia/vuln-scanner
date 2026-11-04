@@ -5,14 +5,17 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, Response, status
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.i18n import DEFAULT_LOCALE, AppLocale
-from app.models.billing import OrgBillingProfile
+from app.models.billing import OrgBillingProfile, PaymentAttempt
 from app.models.invoice import OrgInvoice, SkuCatalog
 from app.models.organization import Organization
+from app.models.promo import PromoRedemption
 from app.models.sku_tier_history import SkuTierHistory
+from app.models.subscription import SubscriptionRequest
 from app.models.user import User
 from app.services.invoice_html import render_invoice_html
 from app.services.invoice_math import (
@@ -22,6 +25,7 @@ from app.services.invoice_math import (
     period_bounds_utc,
     price_breakdown,
 )
+from app.services.promo import PromoQuote, PromoService
 from app.services.scan_pdf import ScanPdfUnavailableError, render_scan_pdf
 from app.services.sku_tier import SkuTierService, record_tier_assignment
 
@@ -56,6 +60,8 @@ async def to_item(
         "sku": inv.sku,
         "seats": seats,
         "amount_idr": inv.amount_idr,
+        "discount_idr": inv.discount_idr,
+        "promo_code": inv.promo_code,
         "dpp_idr": inv.dpp_idr,
         "ppn_idr": inv.ppn_idr,
         "pph23_idr": inv.pph23_idr,
@@ -163,8 +169,58 @@ class InvoiceService:
         due_date: datetime | None = None,
         cycle: str = "monthly",
         notes: str = "",
+        promo_code: str | None = None,
+        subscription_request_id: uuid.UUID | None = None,
     ) -> OrgInvoice:
-        org = await self.db.get(Organization, organization_id)
+        for attempt in range(3):
+            try:
+                return await self._create_invoice_once(
+                    organization_id=organization_id,
+                    sku=sku,
+                    actor=actor,
+                    product=product,
+                    period_start=period_start,
+                    due_date=due_date,
+                    cycle=cycle,
+                    notes=notes,
+                    promo_code=promo_code,
+                    subscription_request_id=subscription_request_id,
+                )
+            except IntegrityError as exc:
+                await self.db.rollback()
+                if attempt == 2:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail="Could not allocate a unique invoice number",
+                    ) from exc
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Could not allocate a unique invoice number",
+        )
+
+    async def _create_invoice_once(
+        self,
+        *,
+        organization_id: uuid.UUID,
+        sku: str,
+        actor: User,
+        product: str = "scan",
+        period_start: datetime | None = None,
+        due_date: datetime | None = None,
+        cycle: str = "monthly",
+        notes: str = "",
+        promo_code: str | None = None,
+        subscription_request_id: uuid.UUID | None = None,
+    ) -> OrgInvoice:
+        # Serialize invoice creation per organization. This closes both the
+        # same-period race and any promo per-org limit race in one lock.
+        org = (
+            await self.db.execute(
+                select(Organization)
+                .where(Organization.id == organization_id)
+                .with_for_update()
+            )
+        ).scalar_one_or_none()
         if org is None:
             raise HTTPException(status_code=404, detail="Organization not found")
         catalog = await self.db.execute(select(SkuCatalog).where(SkuCatalog.product == product, SkuCatalog.sku == sku))
@@ -185,6 +241,39 @@ class InvoiceService:
                 else settings.invoice_default_term_days
             )
             due = start + timedelta(days=max(0, term_days))
+
+        base_list_idr = int(cat.list_idr)
+        if cycle == "annual" and promo_code:
+            raise HTTPException(status_code=400, detail="Promo codes cannot be applied to annual invoices")
+        quote: PromoQuote | None = None
+        if promo_code:
+            quote = await PromoService(self.db).lock_and_quote(
+                promo_code,
+                product=product,
+                sku=sku,
+                cycle=cycle,
+                base_list_idr=base_list_idr,
+                org_id=organization_id,
+                now=datetime.now(UTC),
+            )
+
+        if subscription_request_id is not None:
+            request = await self.db.get(SubscriptionRequest, subscription_request_id)
+            if request is None or request.organization_id != organization_id:
+                raise HTTPException(status_code=404, detail="Subscription request not found")
+            if request.status not in ("pending", "approved"):
+                raise HTTPException(status_code=409, detail="Subscription request cannot be consumed")
+            consumed = await self.db.scalar(
+                select(PromoRedemption.id)
+                .where(PromoRedemption.subscription_request_id == subscription_request_id)
+                .limit(1)
+            )
+            if consumed is not None:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Subscription request was already used for a promo redemption",
+                )
+
         # Overlap, not exact-start: an annual invoice must not coexist with a
         # monthly invoice covering part of the same period (double billing).
         clash = await self.db.execute(
@@ -201,10 +290,12 @@ class InvoiceService:
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"{product.capitalize()} invoice already exists for this period",
             )
+        discount = quote.discount_idr if quote is not None else 0
         prices = price_breakdown(
-            int(cat.list_idr),
+            base_list_idr,
             annual=cycle == "annual",
             pkp=profile is not None and profile.pkp_status == "pkp",
+            discount_idr=discount,
         )
         base = prices["amount"]
         dpp = prices["dpp"]
@@ -219,6 +310,8 @@ class InvoiceService:
             product=product,
             sku=sku,
             amount_idr=base,
+            discount_idr=prices["discount"],
+            promo_code=quote.promo.code if quote is not None else None,
             dpp_idr=dpp,
             ppn_idr=ppn,
             pph23_idr=pph23,
@@ -230,8 +323,51 @@ class InvoiceService:
             notes=(notes or "")[:500],
             created_by_user_id=actor.id,
         )
-        self.db.add(inv)
-        await self.db.commit()
+
+        try:
+            self.db.add(inv)
+            await self.db.flush()
+
+            if quote is not None:
+                await PromoService(self.db).record_redemption(
+                    quote,
+                    invoice_id=inv.id,
+                    actor=actor,
+                    subscription_request_id=subscription_request_id,
+                )
+
+            if total == 0:
+                now = datetime.now(UTC)
+                inv.status = "paid"
+                inv.paid_at = now
+                inv.updated_at = now
+                if product == "scan":
+                    # Imported here to avoid the invoice <-> billing cycle.
+                    from app.services.billing import BillingService
+
+                    await BillingService(self.db).activate_from_invoice(
+                        inv,
+                        provider="promo",
+                        provider_ref=f"promo:{quote.promo.code}" if quote else "promo",
+                    )
+                self.db.add(
+                    PaymentAttempt(
+                        organization_id=organization_id,
+                        invoice_id=inv.id,
+                        provider="promo",
+                        method="promo",
+                        amount_idr=0,
+                        currency="IDR",
+                        status="succeeded",
+                        succeeded_at=now,
+                        created_by_user_id=actor.id,
+                    )
+                )
+
+            await self.db.commit()
+        except Exception:
+            await self.db.rollback()
+            raise
         await self.db.refresh(inv)
         return inv
 
@@ -300,6 +436,7 @@ class InvoiceService:
             raise HTTPException(status_code=409, detail="Only draft or sent invoices can be voided")
         inv.status = "void"
         inv.updated_at = datetime.now(UTC)
+        await PromoService(self.db).release_for_invoice(invoice_id)
         await self.db.flush()
         return inv
 

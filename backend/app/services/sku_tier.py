@@ -31,6 +31,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.billing import Subscription
 from app.models.invoice import INVOICE_PRODUCTS, OrgInvoice, SkuCatalog
 from app.models.organization import Organization
+from app.models.promo import PromoCode
 from app.models.sku_tier import SkuTier
 from app.models.sku_tier_history import SkuTierHistory
 from app.models.subscription import SubscriptionRequest
@@ -382,13 +383,20 @@ class SkuTierService:
             SubscriptionRequest,
             (SubscriptionRequest.current_sku == code) | (SubscriptionRequest.target_sku == code),
         )
-        return SkuUsage(orgs=orgs, subscriptions=subscriptions, invoices=invoices, requests=requests)
+        promos = await self._count(PromoCode, PromoCode.applies_to_sku == code)
+        return SkuUsage(
+            orgs=orgs,
+            subscriptions=subscriptions,
+            invoices=invoices,
+            requests=requests,
+            promos=promos,
+        )
 
     async def usage_counts_many(self, codes: builtins.list[str]) -> dict[str, SkuUsage]:
         """Usage counts for many tiers in a constant number of queries.
 
-        Five grouped statements total (orgs, subscriptions, invoices, request
-        ``current_sku`` and request ``target_sku``); the request column is
+        Six grouped statements total (orgs, subscriptions, invoices, request
+        ``current_sku``, request ``target_sku`` and promo ``applies_to_sku``); the request columns are
         summed in Python rather than expressed as a UNION so SQLite and
         PostgreSQL run the same shape. A request row is attributed to both
         columns, so a row moving from one tier to another counts under both
@@ -408,6 +416,7 @@ class SkuTierService:
         invoices = await _grouped(OrgInvoice.sku)
         requests_current = await _grouped(SubscriptionRequest.current_sku)
         requests_target = await _grouped(SubscriptionRequest.target_sku)
+        promos = await _grouped(PromoCode.applies_to_sku)
 
         return {
             code: SkuUsage(
@@ -415,6 +424,7 @@ class SkuTierService:
                 subscriptions=subscriptions.get(code, 0),
                 invoices=invoices.get(code, 0),
                 requests=requests_current.get(code, 0) + requests_target.get(code, 0),
+                promos=promos.get(code, 0),
             )
             for code in unique
         }
@@ -766,11 +776,12 @@ class SkuTierService:
         if tier.is_default:
             raise _conflict("The default tier cannot be deleted")
         usage = await self.usage_counts(code)
-        if usage.orgs or usage.subscriptions or usage.invoices or usage.requests:
+        if usage.orgs or usage.subscriptions or usage.invoices or usage.requests or usage.promos:
             raise _conflict(
                 f"Tier '{code}' is in use "
                 f"(orgs={usage.orgs}, subscriptions={usage.subscriptions}, "
-                f"invoices={usage.invoices}, requests={usage.requests})"
+                f"invoices={usage.invoices}, requests={usage.requests}, "
+                f"promos={usage.promos})"
             )
         changes = _deleted_changes(tier, await self._catalog_rows(code))
         self._record_history(code, "deleted", actor, changes)

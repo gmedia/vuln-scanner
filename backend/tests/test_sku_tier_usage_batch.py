@@ -155,6 +155,7 @@ async def test_usage_counts_many_counts_every_referencing_table(db_session: Asyn
         "subscriptions": 0,
         "invoices": 0,
         "requests": 0,
+        "promos": 0,
     }
 
 @pytest.mark.asyncio

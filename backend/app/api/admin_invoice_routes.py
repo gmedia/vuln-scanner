@@ -308,6 +308,8 @@ async def create_invoice(
         due_date=body.due_date,
         cycle=body.cycle,
         notes=body.notes,
+        promo_code=body.promo_code,
+        subscription_request_id=body.subscription_request_id,
     )
     return InvoiceItem.model_validate(await to_item(inv, org_name=None, include_bank=False, db=db))
 

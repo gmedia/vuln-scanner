@@ -94,7 +94,7 @@ async def test_create_tier_writes_four_catalog_rows(db_session, ctx):
             body = response.json()
             assert body["code"] == "pro_plus"
             assert body["has_catalog"] is True
-            assert body["usage"] == {"orgs": 0, "subscriptions": 0, "invoices": 0, "requests": 0}
+            assert body["usage"] == {"orgs": 0, "subscriptions": 0, "invoices": 0, "requests": 0, "promos": 0}
 
             rows = (
                 await db_session.execute(select(SkuCatalog).where(SkuCatalog.sku == "pro_plus"))
@@ -520,6 +520,6 @@ async def test_list_includes_inactive_tiers_with_usage_and_catalog_flag(db_sessi
             rows = {row["code"]: row for row in response.json()}
             assert rows["multi"]["active"] is False
             assert rows["multi"]["has_catalog"] is True
-            assert set(rows["multi"]["usage"]) == {"orgs", "subscriptions", "invoices", "requests"}
+            assert set(rows["multi"]["usage"]) == {"orgs", "subscriptions", "invoices", "requests", "promos"}
     finally:
         app.dependency_overrides.clear()

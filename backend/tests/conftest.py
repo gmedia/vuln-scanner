@@ -64,6 +64,7 @@ from app.models.organization import (  # noqa: F401
     OrganizationMembership,
 )
 from app.models.password_reset import PasswordResetToken  # noqa: F401
+from app.models.promo import PromoCode, PromoCodeHistory, PromoRedemption  # noqa: F401
 from app.models.scan_finding import ScanFinding
 from app.models.scan_job import ScanJob
 from app.models.scan_schedule import ScanSchedule  # noqa: F401

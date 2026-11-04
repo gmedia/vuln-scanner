@@ -1,7 +1,17 @@
 import uuid
 from datetime import UTC, datetime
+from typing import Any
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, Integer, String, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -9,6 +19,19 @@ from app.database import Base
 
 INVOICE_PRODUCTS = ("scan", "host", "uptime", "guard")
 INVOICE_STATUSES = ("draft", "sent", "paid", "void")
+
+def _total_default(context: Any) -> int:
+    """Derive the payable total when a caller does not supply one.
+
+    The database enforces ``total_idr = amount_idr - discount_idr + ppn_idr``;
+    this default keeps direct ORM fixtures (and legacy inserts) consistent with
+    that invariant instead of failing on an implicit zero.
+    """
+    params = context.get_current_parameters()
+    amount = int(params.get("amount_idr") or 0)
+    discount = int(params.get("discount_idr") or 0)
+    ppn = int(params.get("ppn_idr") or 0)
+    return amount - discount + ppn
 
 # Annual policy (P2, LOCKED): prepay 10 months, serve 12.
 ANNUAL_MONTHS_PAID = 10
@@ -48,10 +71,12 @@ class OrgInvoice(Base):
         String(20), ForeignKey("sku_tiers.code", ondelete="RESTRICT"), nullable=False, index=True
     )
     amount_idr: Mapped[int] = mapped_column(Integer, nullable=False)
+    discount_idr: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    promo_code: Mapped[str | None] = mapped_column(String(32), nullable=True)
     dpp_idr: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     ppn_idr: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     pph23_idr: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    total_idr: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    total_idr: Mapped[int] = mapped_column(Integer, nullable=False, default=_total_default)
     period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     period_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     due_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -72,6 +97,18 @@ class OrgInvoice(Base):
         CheckConstraint("product IN ('scan', 'host', 'uptime', 'guard')", name="ck_org_invoices_product"),
         CheckConstraint("status IN ('draft', 'sent', 'paid', 'void')", name="ck_org_invoices_status"),
         CheckConstraint("amount_idr >= 0", name="ck_org_invoices_amount"),
+        CheckConstraint(
+            "promo_code IS NULL OR promo_code = upper(promo_code)",
+            name="ck_org_invoices_promo_code_upper",
+        ),
+        CheckConstraint(
+            "discount_idr >= 0 AND discount_idr <= amount_idr",
+            name="ck_org_invoices_discount",
+        ),
+        CheckConstraint(
+            "total_idr = amount_idr - discount_idr + ppn_idr",
+            name="ck_org_invoices_total",
+        ),
         UniqueConstraint("number", name="uq_org_invoices_number"),
         Index("ix_org_invoices_status_due_date", "status", "due_date"),
     )

@@ -84,6 +84,8 @@ class InvoiceCreateRequest(BaseModel):
     due_date: datetime | None = None
     cycle: str = Field(default="monthly", pattern="^(monthly|annual)$")
     notes: str = Field(default="", max_length=500)
+    promo_code: str | None = Field(default=None, max_length=32)
+    subscription_request_id: uuid.UUID | None = None
 
 
 class InvoicePaidRequest(BaseModel):
@@ -106,6 +108,8 @@ class InvoiceItem(BaseModel):
     sku: str
     seats: int
     amount_idr: int
+    discount_idr: int = 0
+    promo_code: str | None = None
     dpp_idr: int = 0
     ppn_idr: int = 0
     pph23_idr: int = 0

@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.main import app
 from app.models.organization import Organization, OrganizationInvite, OrganizationMembership
+from app.models.promo import PromoCode
 from app.models.sku_tier import SkuTier
 from app.models.user import User
 from app.schemas.sku_tier import SkuTierFeatures, SkuTierWorkspaceLimits
@@ -406,3 +407,47 @@ async def test_workspace_seat_cap_accept_invite_reads_custom_tier(db_session: As
         await OrganizationService(db_session).accept_invite(invitee, raw)
     assert blocked.value.status_code == 403
     assert "Tight Accept workspace allows 1 editor and 1 viewer" in blocked.value.detail
+
+
+@pytest.mark.asyncio
+async def test_promo_usage_blocks_tier_delete_and_appears_in_both_counts(
+    db_session: AsyncSession,
+) -> None:
+    actor = await _make_user(db_session, "tier-promo-actor@example.com")
+    now = datetime.now(UTC)
+    promo = PromoCode(
+        id=uuid.uuid4(),
+        code="TIERLOCK2026",
+        description="Locks the pro tier",
+        kind="percent",
+        percent_off_bp=1000,
+        amount_idr=None,
+        min_amount_idr=0,
+        max_discount_idr=None,
+        applies_to_sku="pro",
+        applies_to_product=None,
+        starts_at=None,
+        ends_at=None,
+        max_redemptions=None,
+        max_redemptions_per_org=1,
+        active=True,
+        created_by_user_id=actor.id,
+        updated_by_user_id=actor.id,
+        created_at=now,
+        updated_at=now,
+    )
+    db_session.add(promo)
+    await db_session.commit()
+
+    service = SkuTierService(db_session)
+    usage = await service.usage_counts("pro")
+    assert usage.promos == 1
+
+    many = await service.usage_counts_many(["pro", "basic"])
+    assert many["pro"].promos == 1
+    assert many["basic"].promos == 0
+
+    with pytest.raises(HTTPException) as blocked:
+        await service.delete("pro", actor)
+    assert blocked.value.status_code == 409
+    assert "promos=1" in blocked.value.detail

@@ -17,6 +17,7 @@ from app.models.invoice import (
     ANNUAL_MONTHS_SERVED,
     INVOICE_PRODUCTS,
     OrgInvoice,
+    SkuCatalog,
 )
 from app.models.organization import Organization, OrganizationMembership
 from app.models.sku_tier import SkuTier
@@ -40,6 +41,7 @@ from app.schemas.subscription import (
 from app.services.billing_access import billing_write_block
 from app.services.invoice import InvoiceService
 from app.services.organization import role_at_least
+from app.services.promo import PromoService
 from app.services.sku_tier import (
     SkuTierService,
     record_tier_assignment,
@@ -78,6 +80,7 @@ def _request_item(
         current_sku=request.current_sku,
         target_sku=request.target_sku,
         cycle=request.cycle,
+        promo_code=request.promo_code,
         note=request.note,
         status=request.status,
         resolution_note=request.resolution_note,
@@ -397,6 +400,7 @@ class SubscriptionService:
                 can_self_serve=False,
                 read_only=read_only_reason is not None,
                 read_only_reason=read_only_reason,
+                promo_codes=await PromoService(self.db).has_active_codes(org.id),
             ),
             pending_request=await self._pending_request(org.id),
             recent_attempts=(
@@ -412,6 +416,7 @@ class SubscriptionService:
         target_sku: str,
         cycle: str,
         note: str,
+        promo_code: str | None = None,
     ) -> SubscriptionRequestItem:
         service = SkuTierService(self.db)
         target = await service.get(target_sku)
@@ -458,6 +463,28 @@ class SubscriptionService:
         if pending.scalar_one_or_none() is not None:
             raise HTTPException(status_code=409, detail="A subscription request is already pending")
 
+        stored_promo: str | None = None
+        if promo_code:
+            list_idr = await self.db.scalar(
+                select(SkuCatalog.list_idr).where(
+                    SkuCatalog.product == "scan",
+                    SkuCatalog.sku == target_sku,
+                    SkuCatalog.invoicable.is_(True),
+                )
+            )
+            if list_idr is None:
+                raise HTTPException(status_code=400, detail="SKU is not invoicable")
+            quote = await PromoService(self.db).validate(
+                promo_code,
+                product="scan",
+                sku=target_sku,
+                cycle=cycle,
+                base_list_idr=int(list_idr),
+                org_id=org.id,
+                now=datetime.now(UTC),
+            )
+            stored_promo = quote.promo.code
+
         request = SubscriptionRequest(
             organization_id=org.id,
             requested_by_user_id=user.id,
@@ -465,6 +492,7 @@ class SubscriptionService:
             current_sku=current_sku,
             target_sku=target_sku,
             cycle=cycle,
+            promo_code=stored_promo,
             note=(note or "").strip()[:500],
             status="pending",
         )

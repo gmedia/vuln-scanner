@@ -5,6 +5,7 @@ from app.api.admin_ai_routes import router as admin_ai_router
 from app.api.admin_billing_routes import router as admin_billing_router
 from app.api.admin_blog_routes import router as admin_blog_router
 from app.api.admin_invoice_routes import router as admin_invoice_router
+from app.api.admin_promo_routes import router as admin_promo_router
 from app.api.admin_routes import router as admin_router
 from app.api.admin_sku_tier_routes import org_router as admin_org_tier_history_router
 from app.api.admin_sku_tier_routes import router as admin_sku_tier_router
@@ -46,6 +47,7 @@ api_router.include_router(admin_router)
 api_router.include_router(admin_sku_tier_router)
 api_router.include_router(admin_org_tier_history_router)
 api_router.include_router(admin_invoice_router)
+api_router.include_router(admin_promo_router)
 api_router.include_router(admin_subscription_router)
 api_router.include_router(admin_billing_router)
 api_router.include_router(billing_profile_router)

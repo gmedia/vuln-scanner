@@ -132,6 +132,8 @@ class Settings(BaseSettings):
     git_sha: str = ""  # build revision written by deploy; surfaced on /health for drift checks
     admin_rate_limit: int = 60  # requests per minute per IP for admin endpoints
     admin_rate_limit_window: int = 60  # seconds
+    promo_validate_limit: int = 20  # strict: promo validation is enumeration-sensitive
+    promo_validate_window: int = 60  # seconds
     scan_submit_limit: int = 30  # scan submissions per hour per IP
     scan_submit_window: int = 3600  # seconds (1 hour)
     auth_rate_limit_window: int = 60  # seconds for auth endpoint limiters
