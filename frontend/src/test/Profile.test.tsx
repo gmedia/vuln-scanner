@@ -458,6 +458,15 @@ describe("Profile", () => {
       await waitFor(() => {
         expect(screen.getByText("Changing...")).toBeInTheDocument();
       });
+
+      // Let the 100ms promise settle inside the test. Ending here would let the
+      // success handler touch React state after jsdom is torn down, which vitest
+      // reports as an unhandled "window is not defined" error.
+      await waitFor(() => {
+        expect(
+          (document.getElementById("current-password") as HTMLInputElement).value,
+        ).toBe("");
+      });
     });
   });
 });

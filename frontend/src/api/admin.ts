@@ -37,6 +37,7 @@ export async function getAdminUsers(params: {
   page?: number;
   page_size?: number;
   search?: string;
+  sku?: string;
 }): Promise<AdminUserList> {
   const { data } = await api.get<AdminUserList>("/api/admin/users", { params });
   return data;

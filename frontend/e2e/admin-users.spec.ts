@@ -14,6 +14,18 @@ test.describe("Admin — Users @admin", () => {
     await expect(page.locator("text=Pengguna").first()).toBeVisible();
   });
 
+  test("can filter users by tier", async ({ page }) => {
+    await page.goto("/admin/users");
+    await page
+      .waitForSelector("[data-slot='skeleton']", {
+        state: "hidden",
+        timeout: 15_000,
+      })
+      .catch(() => {});
+
+    await expect(page.getByTestId("admin-users-tier-filter")).toBeVisible();
+  });
+
   test("table headers are correct", async ({ page }) => {
     await page.goto("/admin/users");
     await page
@@ -24,6 +36,7 @@ test.describe("Admin — Users @admin", () => {
       .catch(() => {});
 
     await expect(page.locator("th:has-text('Email')")).toBeVisible();
+    await expect(page.locator("th:has-text('Tier')")).toBeVisible();
     await expect(page.locator("th:has-text('Peran')")).toBeVisible();
     await expect(page.locator("th:has-text('Verifikasi')")).toBeVisible();
     await expect(page.locator("th:has-text('Kredit')")).toBeVisible();

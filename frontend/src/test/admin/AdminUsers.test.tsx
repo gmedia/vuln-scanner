@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import AdminUsers from "@/pages/admin/AdminUsers";
+import { tierFixtures } from "@/test/fixtures/skuTiers";
 
 const mockNavigate = vi.fn();
 vi.mock("react-router-dom", async () => {
@@ -21,8 +22,86 @@ vi.mock("@tanstack/react-query", () => ({
 vi.mock("@/api/admin", () => ({
   adminApi: {
     getUsers: vi.fn(),
+    getAdminSkuTiers: vi.fn(),
   },
 }));
+
+vi.mock("@/components/ui/Select", () => {
+  function collectSelectValues(node: React.ReactNode): string[] {
+    const values: string[] = [];
+    const walk = (n: React.ReactNode) => {
+      if (Array.isArray(n)) {
+        n.forEach(walk);
+        return;
+      }
+      if (!n || typeof n !== "object" || !("props" in n)) return;
+      const props = (
+        n as React.ReactElement<{ value?: unknown; children?: React.ReactNode }>
+      ).props;
+      if (typeof props.value === "string") values.push(props.value);
+      if (props.children != null) walk(props.children);
+    };
+    walk(node);
+    return [...new Set(values)];
+  }
+  return {
+    Select: ({
+      children,
+      value,
+      onValueChange,
+    }: {
+      children: React.ReactNode;
+      value: string;
+      onValueChange: (v: string) => void;
+    }) => {
+      const options = collectSelectValues(children);
+      const all = options.includes(value) ? options : [value, ...options];
+      return (
+        <div data-testid="select-root" data-value={value}>
+          {typeof children === "function" ? null : children}
+          <select
+            aria-hidden
+            value={value}
+            onChange={(e) => onValueChange(e.target.value)}
+            style={{ display: "none" }}
+          >
+            {all.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        </div>
+      );
+    },
+    SelectTrigger: ({
+      children,
+      id,
+      ...props
+    }: React.ButtonHTMLAttributes<HTMLButtonElement> & { id?: string }) => (
+      <button type="button" id={id} {...props}>
+        {children}
+      </button>
+    ),
+    SelectValue: ({ placeholder }: { placeholder?: string }) => (
+      <span>{placeholder}</span>
+    ),
+    SelectContent: ({ children }: { children: React.ReactNode }) => (
+      <div>{children}</div>
+    ),
+    SelectItem: ({
+      children,
+      value,
+    }: {
+      children: React.ReactNode;
+      value: string;
+    }) => (
+      <div role="option" aria-selected={false} data-value={value}>
+        {children}
+      </div>
+    ),
+  };
+});
 
 vi.mock("@/components/ui/Card", () => ({
   Card: ({
@@ -238,6 +317,33 @@ describe("AdminUsers", () => {
         sku_label: null,
       },
     ];
+
+    it("filters by tier through the query params", async () => {
+      vi.mocked(useQuery).mockImplementation(((options: {
+        queryKey: unknown[];
+      }) => {
+        if (options.queryKey[0] === "admin-sku-tiers") {
+          return { data: tierFixtures } as never;
+        }
+        return { data: { users: mockUsers, total: 2 } } as never;
+      }) as typeof useQuery);
+      const { container } = renderPage();
+      const hiddenSelect = container.querySelector(
+        '[data-testid="select-root"] select',
+      );
+      expect(hiddenSelect).not.toBeNull();
+      fireEvent.change(hiddenSelect as HTMLSelectElement, {
+        target: { value: "pro" },
+      });
+
+      await waitFor(() =>
+        expect(vi.mocked(useQuery)).toHaveBeenCalledWith(
+          expect.objectContaining({
+            queryKey: ["admin-users", 1, "", "pro"],
+          }),
+        ),
+      );
+    });
 
     it("shows each user's personal workspace tier", () => {
       mockUseQueryReturn({ data: { users: mockUsers, total: 2 } });
