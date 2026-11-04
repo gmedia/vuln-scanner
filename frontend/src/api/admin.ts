@@ -797,6 +797,8 @@ export interface InvoiceItem {
   sku: string;
   seats: number;
   amount_idr: number;
+  discount_idr?: number;
+  promo_code?: string | null;
   dpp_idr?: number;
   ppn_idr?: number;
   pph23_idr?: number;
@@ -813,6 +815,195 @@ export interface InvoiceItem {
   updated_at: string;
   organization_name?: string | null;
   bank?: InvoiceBankCopy | null;
+}
+
+export type PromoKind = "percent" | "fixed";
+export type PromoProduct = "scan" | "host" | "uptime" | "guard";
+export type PromoCycle = "monthly" | "annual";
+export type PromoStatusFilter = "active" | "inactive" | "expired" | "scheduled";
+
+export interface PromoCode {
+  id: string;
+  code: string;
+  description: string;
+  kind: PromoKind | string;
+  percent_off_bp: number | null;
+  amount_idr: number | null;
+  min_amount_idr: number;
+  max_discount_idr: number | null;
+  applies_to_sku: string | null;
+  applies_to_product: PromoProduct | null;
+  starts_at: string | null;
+  ends_at: string | null;
+  max_redemptions: number | null;
+  max_redemptions_per_org: number;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PromoCodeListResponse {
+  items: PromoCode[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface PromoCodeCreateInput {
+  code: string;
+  description?: string;
+  kind: PromoKind;
+  percent_off_bp?: number | null;
+  amount_idr?: number | null;
+  min_amount_idr?: number;
+  max_discount_idr?: number | null;
+  applies_to_sku?: string | null;
+  applies_to_product?: PromoProduct | null;
+  starts_at?: string | null;
+  ends_at?: string | null;
+  max_redemptions?: number | null;
+  max_redemptions_per_org?: number;
+}
+
+export type PromoCodeUpdateInput = Partial<PromoCodeCreateInput>;
+
+export interface PromoValidateInput {
+  organization_id: string;
+  code: string;
+  product: PromoProduct;
+  sku: string;
+  cycle: PromoCycle;
+}
+
+export interface PromoValidateResult {
+  valid: boolean;
+  description: string;
+  discount_idr: number;
+  total_idr: number;
+}
+
+export interface PromoRedemption {
+  id: string;
+  promo_code_id: string;
+  organization_id: string;
+  organization_name: string | null;
+  invoice_id: string;
+  invoice_number: string | null;
+  subscription_request_id: string | null;
+  code_snapshot: string;
+  discount_idr: number;
+  status: string;
+  created_at: string;
+  released_at: string | null;
+}
+
+export interface PromoRedemptionList {
+  items: PromoRedemption[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface PromoHistoryItem {
+  id: string;
+  promo_code_id: string;
+  action: string;
+  actor_email: string | null;
+  changes: Record<string, { from: unknown; to: unknown }>;
+  created_at: string;
+}
+
+export interface PromoHistoryList {
+  items: PromoHistoryItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export async function listAdminPromoCodes(params?: {
+  page?: number;
+  page_size?: number;
+  status?: PromoStatusFilter;
+  q?: string;
+}): Promise<PromoCodeListResponse> {
+  const { data } = await api.get<PromoCodeListResponse>(
+    "/api/admin/promo-codes",
+    { params },
+  );
+  return data;
+}
+
+export async function getAdminPromoCode(id: string): Promise<PromoCode> {
+  const { data } = await api.get<PromoCode>(`/api/admin/promo-codes/${id}`);
+  return data;
+}
+
+export async function createAdminPromoCode(
+  body: PromoCodeCreateInput,
+): Promise<PromoCode> {
+  const { data } = await api.post<PromoCode>("/api/admin/promo-codes", body);
+  return data;
+}
+
+export async function updateAdminPromoCode(
+  id: string,
+  body: PromoCodeUpdateInput,
+): Promise<PromoCode> {
+  const { data } = await api.patch<PromoCode>(
+    `/api/admin/promo-codes/${id}`,
+    body,
+  );
+  return data;
+}
+
+export async function deactivateAdminPromoCode(id: string): Promise<PromoCode> {
+  const { data } = await api.post<PromoCode>(
+    `/api/admin/promo-codes/${id}/deactivate`,
+  );
+  return data;
+}
+
+export async function reactivateAdminPromoCode(id: string): Promise<PromoCode> {
+  const { data } = await api.post<PromoCode>(
+    `/api/admin/promo-codes/${id}/reactivate`,
+  );
+  return data;
+}
+
+export async function deleteAdminPromoCode(id: string): Promise<void> {
+  await api.delete(`/api/admin/promo-codes/${id}`);
+}
+
+export async function listAdminPromoRedemptions(
+  id: string,
+  params: { page?: number; page_size?: number } = {},
+): Promise<PromoRedemptionList> {
+  const { data } = await api.get<PromoRedemptionList>(
+    `/api/admin/promo-codes/${id}/redemptions`,
+    { params },
+  );
+  return data;
+}
+
+export async function listAdminPromoHistory(
+  id: string,
+  params: { page?: number; page_size?: number } = {},
+): Promise<PromoHistoryList> {
+  const { data } = await api.get<PromoHistoryList>(
+    `/api/admin/promo-codes/${id}/history`,
+    { params },
+  );
+  return data;
+}
+
+export async function validateAdminPromoCode(
+  body: PromoValidateInput,
+): Promise<PromoValidateResult> {
+  const { data } = await api.post<PromoValidateResult>(
+    "/api/admin/promo-codes/validate",
+    body,
+  );
+  return data;
 }
 
 export async function getSkuCatalog(): Promise<SkuCatalogItem[]> {
@@ -875,6 +1066,8 @@ export async function createAdminInvoice(body: {
   product?: InvoiceProduct;
   cycle?: "monthly" | "annual";
   notes?: string;
+  promo_code?: string | null;
+  subscription_request_id?: string | null;
 }): Promise<InvoiceItem> {
   const { data } = await api.post<InvoiceItem>("/api/admin/invoices", body);
   return data;
@@ -985,4 +1178,14 @@ export const adminApi = {
   payAdminInvoice,
   voidAdminInvoice,
   downloadAdminInvoicePdf,
+  listAdminPromoCodes,
+  getAdminPromoCode,
+  createAdminPromoCode,
+  updateAdminPromoCode,
+  deactivateAdminPromoCode,
+  reactivateAdminPromoCode,
+  deleteAdminPromoCode,
+  listAdminPromoRedemptions,
+  listAdminPromoHistory,
+  validateAdminPromoCode,
 };

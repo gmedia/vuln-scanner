@@ -16,6 +16,8 @@ export type InvoicePrintData = {
   product: InvoiceProduct;
   seats: number;
   amount_idr: number;
+  discount_idr?: number;
+  promo_code?: string | null;
   dpp_idr?: number;
   ppn_idr?: number;
   pph23_idr?: number;
@@ -49,6 +51,7 @@ export function InvoicePrintSheet({
   const seats = invoice.seats;
   const amount = formatIdr(invoice.amount_idr);
   const total = formatIdr(invoice.total_idr ?? invoice.amount_idr);
+  const discount = invoice.discount_idr ?? 0;
   const hasTax = (invoice.ppn_idr ?? 0) > 0;
   const issued = formatPeriod(invoice.created_at ?? invoice.period_start);
   const due = invoice.due_date ? formatPeriod(invoice.due_date) : null;
@@ -130,6 +133,14 @@ export function InvoicePrintSheet({
           <span>{t("invoicePrintSubtotal")}</span>
           <span className="num">{amount}</span>
         </p>
+        {discount > 0 ? (
+          <p className="inv-totals-row" data-testid="invoice-print-discount">
+            <span>
+              {t("invoicePrintDiscount", { code: invoice.promo_code ?? "—" })}
+            </span>
+            <span className="num">−{formatIdr(discount)}</span>
+          </p>
+        ) : null}
         {hasTax ? (
           <>
             <p className="inv-totals-row">

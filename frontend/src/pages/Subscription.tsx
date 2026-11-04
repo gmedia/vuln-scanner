@@ -17,6 +17,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Progress } from "@/components/ui/Progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
@@ -59,6 +60,8 @@ import {
   createSubscriptionRequest,
   getSubscription,
   resumeSubscription,
+  validateOrgPromoCode,
+  type PromoValidateResult,
   type SkuTierInfo,
   type SubscriptionCycle,
   type SubscriptionOverview,
@@ -314,6 +317,10 @@ function Subscription() {
   const [cycle, setCycle] = useState<SubscriptionCycle>("monthly");
   const [requestTarget, setRequestTarget] = useState<SubscriptionTier | null>(null);
   const [requestNote, setRequestNote] = useState("");
+  const [promoCode, setPromoCode] = useState("");
+  const [promoResult, setPromoResult] = useState<PromoValidateResult | null>(null);
+  const [promoError, setPromoError] = useState(false);
+  const [promoLoading, setPromoLoading] = useState(false);
   const [invoiceStatus, setInvoiceStatus] = useState("all");
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelNote, setCancelNote] = useState("");
@@ -339,11 +346,17 @@ function Subscription() {
         target_sku: target,
         cycle,
         note: requestNote.trim(),
+        ...(promoResult
+          ? { promo_code: promoCode.trim().toUpperCase() }
+          : {}),
       }),
     onSuccess: () => {
       toast.success(t("requestSent"));
       setRequestTarget(null);
       setRequestNote("");
+      setPromoCode("");
+      setPromoResult(null);
+      setPromoError(false);
       void qc.invalidateQueries({ queryKey: ["org-subscription", orgId] });
     },
     onError: (err: unknown) => {
@@ -398,6 +411,25 @@ function Subscription() {
       await downloadOrgInvoicePdf(orgId, invoice.id, invoice.number);
     } catch {
       toast.error(t("invoicesLoadError"));
+    }
+  }
+
+  async function applyPromo() {
+    if (!orgId || !requestTarget || !promoCode.trim()) return;
+    setPromoLoading(true);
+    setPromoError(false);
+    setPromoResult(null);
+    try {
+      const result = await validateOrgPromoCode(orgId, {
+        code: promoCode.trim().toUpperCase(),
+        target_sku: requestTarget,
+        cycle,
+      });
+      setPromoResult(result);
+    } catch {
+      setPromoError(true);
+    } finally {
+      setPromoLoading(false);
     }
   }
 
@@ -670,6 +702,16 @@ function Subscription() {
                           cycle: data.pending_request.cycle,
                         })}
                       </p>
+                      {data.pending_request.promo_code ? (
+                        <p
+                          className="text-xs text-muted-foreground"
+                          data-testid="subscription-pending-promo"
+                        >
+                          {t("promo.pending", {
+                            code: data.pending_request.promo_code,
+                          })}
+                        </p>
+                      ) : null}
                     </div>
                     <Button
                       type="button"
@@ -1049,6 +1091,9 @@ function Subscription() {
             setRequestTarget(null);
             setRequestNote("");
           }
+          setPromoCode("");
+          setPromoResult(null);
+          setPromoError(false);
         }}
       >
         <AlertDialogContent>
@@ -1081,6 +1126,81 @@ function Subscription() {
                 data-testid="subscription-request-note"
               />
             </div>
+            {data?.capabilities.promo_codes ? (
+              <div className="space-y-2" data-testid="subscription-promo">
+                <Label htmlFor="subscription-promo-code">
+                  {t("promo.label")}
+                </Label>
+                <div className="flex items-start gap-2">
+                  <Input
+                    id="subscription-promo-code"
+                    className="h-10 min-h-10 font-mono uppercase"
+                    value={promoCode}
+                    placeholder={t("promo.placeholder")}
+                    disabled={cycle === "annual" || promoLoading}
+                    onChange={(event) => {
+                      setPromoCode(event.target.value.toUpperCase());
+                      setPromoResult(null);
+                      setPromoError(false);
+                    }}
+                    data-testid="subscription-promo-code"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-10 min-h-10 shrink-0"
+                    disabled={
+                      cycle === "annual" ||
+                      promoLoading ||
+                      !promoCode.trim()
+                    }
+                    onClick={() => void applyPromo()}
+                    data-testid="subscription-promo-apply"
+                  >
+                    {promoLoading ? (
+                      <Loader2
+                        className="mr-1 h-3.5 w-3.5 animate-spin"
+                        aria-hidden
+                      />
+                    ) : null}
+                    {promoLoading ? t("promo.applying") : t("promo.apply")}
+                  </Button>
+                </div>
+                {cycle === "annual" ? (
+                  <p
+                    className="text-[11px] text-muted-foreground"
+                    data-testid="subscription-promo-annual"
+                  >
+                    {t("promo.annualLocked")}
+                  </p>
+                ) : null}
+                {promoResult ? (
+                  <div
+                    className="rounded-md border border-border bg-muted/30 p-2"
+                    data-testid="subscription-promo-result"
+                  >
+                    <p className="text-xs text-foreground">
+                      {promoResult.description || t("promo.label")}
+                    </p>
+                    <p className="mt-1 font-mono text-xs tabular-nums text-foreground">
+                      {t("promo.discount")}: {formatIdr(promoResult.discount_idr)} ·{" "}
+                      {t("promo.total")}: {formatIdr(promoResult.total_idr)}
+                    </p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {t("promo.estimate")}
+                    </p>
+                  </div>
+                ) : null}
+                {promoError ? (
+                  <p
+                    className="text-[11px] text-destructive"
+                    data-testid="subscription-promo-error"
+                  >
+                    {t("promo.invalid")}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel type="button">{t("cancel")}</AlertDialogCancel>

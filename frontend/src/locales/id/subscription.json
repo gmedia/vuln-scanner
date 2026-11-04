@@ -166,6 +166,18 @@
   "workspaceSeatsUsage": "{{editors}} / {{editorLimit}} editor · {{viewers}} / {{viewerLimit}} viewer",
   "unlimited": "Tanpa batas",
   "perTier": "Per tier",
+  "promo": {
+    "label": "Kode promo",
+    "placeholder": "LAUNCH2026",
+    "apply": "Terapkan",
+    "applying": "Memeriksa…",
+    "invalid": "Kode tidak dapat digunakan",
+    "estimate": "Hanya estimasi; diskon final mengikuti invoice per produk.",
+    "discount": "Diskon",
+    "total": "Total setelah diskon",
+    "annualLocked": "Kode promo tidak berlaku untuk langganan tahunan.",
+    "pending": "Kode promo: {{code}}"
+  },
   "pay": {
     "title": "Pembayaran invoice",
     "subtitle": "Tinjau rincian dan selesaikan pembayaran untuk workspace ini.",

@@ -46,6 +46,7 @@ const AdminHpp = lazy(() => import("@/pages/admin/AdminHpp"));
 const AdminSkuCatalog = lazy(() => import("@/pages/admin/AdminSkuCatalog"));
 const AdminHppSimulator = lazy(() => import("@/pages/admin/AdminHppSimulator"));
 const AdminInvoices = lazy(() => import("@/pages/admin/AdminInvoices"));
+const AdminPromoCodes = lazy(() => import("@/pages/admin/AdminPromoCodes"));
 const AdminSubscriptionRequests = lazy(() => import("@/pages/admin/AdminSubscriptionRequests"));
 const AdminSubscriptions = lazy(() => import("@/pages/admin/AdminSubscriptions"));
 const AdminBlog = lazy(() => import("@/pages/admin/AdminBlog"));
@@ -226,6 +227,10 @@ function App() {
               <Route
                 path="/admin/invoices"
                 element={<PageBoundary component={AdminInvoices} />}
+              />
+              <Route
+                path="/admin/promo-codes"
+                element={<PageBoundary component={AdminPromoCodes} />}
               />
               <Route
                 path="/admin/subscription-requests"

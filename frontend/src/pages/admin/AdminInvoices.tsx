@@ -57,6 +57,7 @@ import {
   downloadAdminInvoicePdf,
   type InvoiceItem,
   type InvoiceProduct,
+  type PromoValidateResult,
 } from "@/api/admin";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -85,6 +86,10 @@ function AdminInvoices() {
   const [sku, setSku] = useState("");
   const [cycle, setCycle] = useState<"monthly" | "annual">("monthly");
   const [bankRef, setBankRef] = useState("");
+  const [promoCode, setPromoCode] = useState("");
+  const [promoResult, setPromoResult] = useState<PromoValidateResult | null>(null);
+  const [promoError, setPromoError] = useState(false);
+  const [promoLoading, setPromoLoading] = useState(false);
   const { printing, startPrint } = useInvoicePrint();
 
   const catalogQ = useQuery({
@@ -119,9 +124,37 @@ function AdminInvoices() {
     ? sku
     : (skuOptions[0]?.sku ?? "");
 
+  function clearPromo() {
+    setPromoCode("");
+    setPromoResult(null);
+    setPromoError(false);
+  }
+
+  async function applyPromo() {
+    if (!orgId || !skuValue || !promoCode.trim()) return;
+    setPromoLoading(true);
+    setPromoError(false);
+    setPromoResult(null);
+    try {
+      const result = await adminApi.validateAdminPromoCode({
+        organization_id: orgId,
+        code: promoCode.trim().toUpperCase(),
+        product,
+        sku: skuValue,
+        cycle,
+      });
+      setPromoResult(result);
+    } catch {
+      setPromoError(true);
+    } finally {
+      setPromoLoading(false);
+    }
+  }
+
   function onProductChange(value: string) {
     if (!isInvoiceProduct(value)) return;
     setProduct(value);
+    clearPromo();
     const nextSkus = catalog.filter(
       (row) => row.product === value && row.invoicable && row.active !== false,
     );
@@ -137,9 +170,13 @@ function AdminInvoices() {
         sku: skuValue,
         product,
         cycle,
+        ...(promoResult
+          ? { promo_code: promoCode.trim().toUpperCase() }
+          : {}),
       }),
     onSuccess: () => {
       toast.success(t("invoiceCreated"));
+      clearPromo();
       void qc.invalidateQueries({ queryKey: ["admin-invoices"] });
     },
     onError: () => toast.error(t("invoiceCreateFail")),
@@ -262,7 +299,13 @@ function AdminInvoices() {
           <div className="grid gap-3 sm:grid-cols-5">
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="inv-org">{t("colOrg")}</Label>
-              <Select value={orgId} onValueChange={setOrgId}>
+              <Select
+                value={orgId}
+                onValueChange={(value) => {
+                  setOrgId(value);
+                  clearPromo();
+                }}
+              >
                 <SelectTrigger id="inv-org" className="h-10 min-h-10">
                   <SelectValue placeholder={t("pickOrg")} />
                 </SelectTrigger>
@@ -298,7 +341,10 @@ function AdminInvoices() {
               <Label htmlFor="inv-sku">{t("colSku")}</Label>
               <Select
                 value={skuValue}
-                onValueChange={setSku}
+                onValueChange={(value) => {
+                  setSku(value);
+                  clearPromo();
+                }}
                 disabled={skuOptions.length === 0}
               >
                 <SelectTrigger
@@ -321,9 +367,10 @@ function AdminInvoices() {
               <Label htmlFor="inv-cycle">{t("invoiceCycle")}</Label>
               <Select
                 value={cycle}
-                onValueChange={(value) =>
-                  setCycle(value === "annual" ? "annual" : "monthly")
-                }
+                onValueChange={(value) => {
+                  setCycle(value === "annual" ? "annual" : "monthly");
+                  clearPromo();
+                }}
               >
                 <SelectTrigger
                   id="inv-cycle"
@@ -351,6 +398,75 @@ function AdminInvoices() {
                 )}
                 {t("invoiceCreate")}
               </Button>
+            </div>
+          </div>
+          <div className="space-y-2 border-t border-border pt-3">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="flex min-w-0 flex-col gap-1.5">
+                <Label htmlFor="inv-promo">{t("invoicePromoLabel")}</Label>
+                <Input
+                  id="inv-promo"
+                  className="h-10 min-h-10 font-mono uppercase"
+                  value={promoCode}
+                  placeholder="LAUNCH2026"
+                  disabled={promoLoading || cycle === "annual"}
+                  onChange={(event) => {
+                    setPromoCode(event.target.value.toUpperCase());
+                    setPromoResult(null);
+                    setPromoError(false);
+                  }}
+                  data-testid="invoice-promo-code"
+                />
+              </div>
+              <div className="flex items-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="min-h-11 w-full sm:min-h-10 sm:w-auto"
+                  disabled={
+                    !orgId ||
+                    !skuValue ||
+                    cycle === "annual" ||
+                    promoLoading ||
+                    !promoCode.trim()
+                  }
+                  onClick={() => void applyPromo()}
+                  data-testid="invoice-promo-apply"
+                >
+                  {promoLoading && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  {t("promoApply")}
+                </Button>
+              </div>
+              <div className="flex min-w-0 flex-col justify-end text-xs">
+                {cycle === "annual" ? (
+                  <p className="text-[11px] text-muted-foreground">
+                    {t("invoicePromoAnnual")}
+                  </p>
+                ) : promoResult ? (
+                  <div data-testid="invoice-promo-result">
+                    <p className="text-foreground">
+                      {promoResult.description || t("invoicePromoLabel")}
+                    </p>
+                    <p className="font-mono tabular-nums text-muted-foreground">
+                      {t("invoiceDiscount")}:{" "}
+                      {formatIdr(promoResult.discount_idr)} ·{" "}
+                      {t("invoiceTotal")}: {formatIdr(promoResult.total_idr)}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {t("invoicePromoEstimate")}
+                    </p>
+                  </div>
+                ) : promoError ? (
+                  <p
+                    className="text-[11px] text-destructive"
+                    data-testid="invoice-promo-error"
+                  >
+                    {t("invoicePromoInvalid")}
+                  </p>
+                ) : null}
+              </div>
             </div>
           </div>
         </AdminShellBody>
@@ -424,6 +540,16 @@ function AdminInvoices() {
                       {inv.product} · {tierLabel(inv.sku)} ·{" "}
                       {formatIdr(inv.total_idr ?? inv.amount_idr)}
                     </p>
+                    {(inv.discount_idr ?? 0) > 0 ? (
+                      <p
+                        className="mt-1 text-[11px] text-muted-foreground"
+                        data-testid={`invoice-discount-${inv.id}`}
+                      >
+                        {t("invoiceDiscount")}
+                        {inv.promo_code ? ` (${inv.promo_code})` : ""}:{" "}
+                        {formatIdr(inv.discount_idr ?? 0)}
+                      </p>
+                    ) : null}
                     <div className="mt-3 flex justify-end">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -504,6 +630,7 @@ function AdminInvoices() {
                       <TableHead>{t("colProduct")}</TableHead>
                       <TableHead>{t("colSku")}</TableHead>
                       <TableHead>{t("colListIdr")}</TableHead>
+                      <TableHead>{t("invoiceDiscount")}</TableHead>
                       <TableHead>{t("colStatus")}</TableHead>
                       <TableHead className="text-right">
                         {t("colActions")}
@@ -524,6 +651,14 @@ function AdminInvoices() {
                       <TableCell>{tierLabel(inv.sku)}</TableCell>
                       <TableCell className="font-mono tabular-nums">
                         {formatIdr(inv.total_idr ?? inv.amount_idr)}
+                      </TableCell>
+                      <TableCell
+                        className="font-mono text-xs tabular-nums text-muted-foreground"
+                        data-testid={`invoice-discount-desktop-${inv.id}`}
+                      >
+                        {(inv.discount_idr ?? 0) > 0
+                          ? `${formatIdr(inv.discount_idr ?? 0)}${inv.promo_code ? ` (${inv.promo_code})` : ""}`
+                          : "—"}
                       </TableCell>
                       <TableCell>
                         <Badge variant="default">{inv.status}</Badge>

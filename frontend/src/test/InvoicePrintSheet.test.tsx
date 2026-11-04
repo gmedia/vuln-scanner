@@ -67,6 +67,28 @@ describe("InvoicePrintSheet", () => {
     expect(screen.getByText("TRX-1")).toBeInTheDocument();
   });
 
+  it("renders a discount row when discount_idr is positive", () => {
+    const discounted: InvoicePrintData = {
+      ...sent,
+      discount_idr: 50_000,
+      promo_code: "LAUNCH2026",
+      total_idr: 250_000,
+    };
+    render(<InvoicePrintSheet invoice={discounted} />);
+
+    const row = screen.getByTestId("invoice-print-discount");
+    expect(row).toHaveTextContent("Discount (LAUNCH2026)");
+    expect(row).toHaveTextContent("Rp 50.000");
+    expect(
+      screen.getByText("Total").closest(".inv-totals-row"),
+    ).toHaveTextContent("Rp 250.000");
+  });
+
+  it("omits the discount row at zero", () => {
+    render(<InvoicePrintSheet invoice={sent} />);
+    expect(screen.queryByTestId("invoice-print-discount")).not.toBeInTheDocument();
+  });
+
   it("renders nothing when invoice is null", () => {
     const { container } = render(<InvoicePrintSheet invoice={null} />);
     expect(container).toBeEmptyDOMElement();

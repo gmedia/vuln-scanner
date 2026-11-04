@@ -64,14 +64,17 @@ All status colours route through `components/subscription/subscriptionChrome.ts`
 | Enterprise card | `Card` with no price | quote-only |
 | À-la-carte table (`subscription-alacarte-table`) | 4 products × 3 tiers, list price + seats | static |
 | Invoice shell (`subscription-invoices`) | `WorkspaceShell` + status `Select` + card grid | loading / error / empty / list / admin-only |
-| Request dialog | controlled `AlertDialog` + `Textarea` + submit | idle / pending / error |
+| Request dialog | controlled `AlertDialog` + `Textarea` + optional promo field + submit | idle / pending / error |
+| Promo field (`subscription-promo`) | `Input` (uppercase) + outline `Button` `Terapkan`; accepted state shows description + estimate | hidden without capability / disabled on annual / idle / checking / accepted / rejected |
 | FAQ | `Accordion` | collapsed / expanded |
 
 Notice precedence: `read_only` → `past_due` → `cancel_at_period_end` → `grace`. The read-only notice is informational and may stack with a plan notice; the other three never stack.
 
 Over-seat precedence: `used > limit` renders "Over by N" instead of "Capacity full". The bar stays capped at 100%.
 
-Frozen testids: `subscription-page`, `subscription-summary`, `subscription-usage-over-{product}`, `subscription-past-due`, `subscription-cancel-scheduled`, `subscription-grace`, `subscription-attempts`, `subscription-attempts-empty`, `subscription-usage-{product}`, `subscription-usage-workspace`, `subscription-plans`, `subscription-plan-{tier}`, `subscription-plan-enterprise`, `subscription-alacarte-table`, `subscription-invoices`, `subscription-invoices-empty`, `subscription-cancel-request`, `subscription-request-note`, `subscription-request-submit`, `subscription-no-org`, `subscription-error`.
+Frozen testids: `subscription-page`, `subscription-summary`, `subscription-usage-over-{product}`, `subscription-past-due`, `subscription-cancel-scheduled`, `subscription-grace`, `subscription-attempts`, `subscription-attempts-empty`, `subscription-usage-{product}`, `subscription-usage-workspace`, `subscription-plans`, `subscription-plan-{tier}`, `subscription-plan-enterprise`, `subscription-alacarte-table`, `subscription-invoices`, `subscription-invoices-empty`, `subscription-cancel-request`, `subscription-request-note`, `subscription-request-submit`, `subscription-promo`, `subscription-promo-code`, `subscription-promo-apply`, `subscription-promo-result`, `subscription-promo-error`, `subscription-promo-annual`, `subscription-pending-promo`, `subscription-no-org`, `subscription-error`.
+
+Promo copy must say **estimate**: plan cards show a bundle while invoices are per-product. The SPA never computes the final bundle price, and annual requests disable the field (`PC8`).
 
 ### Payment route (`/pay/:invoiceId`)
 
