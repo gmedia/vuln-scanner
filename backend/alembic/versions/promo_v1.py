@@ -140,6 +140,7 @@ def upgrade() -> None:
             name="ck_promo_codes_max_redemptions_per_org",
         ),
     )
+    op.create_index("ix_promo_codes_active", "promo_codes", ["active"])
 
     op.create_table(
         "promo_redemptions",
@@ -346,4 +347,5 @@ def downgrade() -> None:
     )
     op.drop_table("promo_redemptions")
 
+    op.drop_index("ix_promo_codes_active", table_name="promo_codes")
     op.drop_table("promo_codes")
