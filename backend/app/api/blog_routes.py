@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from hashlib import sha256
+from typing import cast
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlalchemy import ColumnElement, func, select
@@ -11,7 +12,12 @@ from app.config import settings
 from app.database import get_db
 from app.middleware.rate_limit import RateLimiter
 from app.models.blog import BLOG_LOCALES, BlogPost
-from app.schemas.blog import BlogPostPublicDetail, BlogPostPublicList, BlogPostPublicListItem
+from app.schemas.blog import (
+    BlogPillar,
+    BlogPostPublicDetail,
+    BlogPostPublicList,
+    BlogPostPublicListItem,
+)
 from app.services.blog import is_publicly_visible
 
 router = APIRouter(tags=["blog"])
@@ -83,6 +89,7 @@ async def list_public_posts(
                 title=p.title,
                 excerpt=p.excerpt,
                 locale=p.locale,
+                pillar=cast(BlogPillar | None, p.pillar),
                 published_at=p.published_at,  # type: ignore[arg-type]
             )
             for p in posts
@@ -114,6 +121,7 @@ async def get_public_post(
         excerpt=post.excerpt,
         body_html=post.body_html,
         locale=post.locale,
+        pillar=cast(BlogPillar | None, post.pillar),
         published_at=post.published_at,  # type: ignore[arg-type]
     )
     _cache_headers(response, _etag_for(body.model_dump_json()))

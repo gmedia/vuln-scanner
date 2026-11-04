@@ -1,7 +1,10 @@
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+
+BlogPillar = Literal["exposure", "onbox", "availability", "ai"]
 
 
 class BlogPostCreate(BaseModel):
@@ -10,6 +13,7 @@ class BlogPostCreate(BaseModel):
     excerpt: str = Field(..., min_length=1, max_length=2000)
     body_md: str = Field(..., min_length=1)
     locale: str = Field(default="id")
+    pillar: BlogPillar | None = None
 
 
 class BlogPostUpdate(BaseModel):
@@ -18,6 +22,7 @@ class BlogPostUpdate(BaseModel):
     excerpt: str | None = Field(default=None, min_length=1, max_length=2000)
     body_md: str | None = Field(default=None, min_length=1)
     locale: str | None = None
+    pillar: BlogPillar | None = None
 
 
 class BlogUnpublishRequest(BaseModel):
@@ -35,6 +40,7 @@ class BlogPostAdminOut(BaseModel):
     body_html: str
     locale: str
     status: str
+    pillar: BlogPillar | None
     published_at: datetime | None
     author_user_id: uuid.UUID | None
     created_at: datetime
@@ -51,6 +57,7 @@ class BlogPostPublicListItem(BaseModel):
     title: str
     excerpt: str
     locale: str
+    pillar: BlogPillar | None
     published_at: datetime
 
 
@@ -65,4 +72,5 @@ class BlogPostPublicDetail(BaseModel):
     excerpt: str
     body_html: str
     locale: str
+    pillar: BlogPillar | None
     published_at: datetime

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, Response
@@ -22,6 +24,14 @@ public_limiter = RateLimiter(
 )
 
 CANONICAL_HOST = "https://sinexis.app"
+
+_PILLAR_LABELS = {
+    "exposure": "Exposure",
+    "onbox": "Keamanan on-box",
+    "availability": "Ketersediaan",
+    "ai": "AI",
+}
+_MORE_LABEL = "More"
 
 _SHELL_CSS = """
 :root{
@@ -128,6 +138,11 @@ ol.index .read{
   display:inline-flex;align-items:center;gap:0.35rem;margin-top:0.85rem;
   font-size:0.8125rem;font-weight:600;color:var(--primary);
 }
+.pillar + .pillar{margin-top:2rem}
+.pillar > h2{
+  font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;
+  text-transform:uppercase;color:var(--muted-foreground);margin:0 0 0.75rem;
+}
 .body{margin-top:2rem;font-size:1.0625rem;line-height:1.75}
 .body p{margin:0 0 1.1rem}
 .body h2{margin:2.25rem 0 0.75rem;font-size:1.2rem}
@@ -226,11 +241,35 @@ def _shell(
     *,
     rail: bool = False,
     current: str = "blog",
+    description: str | None = None,
+    og_type: str | None = None,
+    og_url: str | None = None,
+    jsonld: dict[str, Any] | None = None,
 ) -> str:
     main_class = "rail" if rail else "measure"
     blog_cur = ' aria-current="page"' if current == "blog" else ""
     terms_cur = ' aria-current="page"' if current == "terms" else ""
     privacy_cur = ' aria-current="page"' if current == "privacy" else ""
+    description_meta = ""
+    og_meta = ""
+    if description is not None:
+        safe_description = escape_text(description)
+        safe_url = escape_text(og_url or canonical)
+        safe_type = escape_text(og_type or "website")
+        description_meta = f'<meta name="description" content="{safe_description}"/>\n'
+        og_meta = (
+            f'<meta property="og:title" content="{escape_text(title)}"/>\n'
+            f'<meta property="og:description" content="{safe_description}"/>\n'
+            f'<meta property="og:url" content="{safe_url}"/>\n'
+            f'<meta property="og:type" content="{safe_type}"/>\n'
+        )
+    jsonld_block = ""
+    if jsonld is not None:
+        serialized = json.dumps(jsonld, ensure_ascii=False)
+        serialized = (
+            serialized.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+        )
+        jsonld_block = f'<script type="application/ld+json">{serialized}</script>\n'
     return f"""<!DOCTYPE html>
 <html lang="{escape_text(locale)}">
 <head>
@@ -240,6 +279,7 @@ def _shell(
 <title>{escape_text(title)}</title>
 <link rel="canonical" href="{escape_text(canonical)}"/>
 <meta name="robots" content="index,follow"/>
+{description_meta}{og_meta}{jsonld_block}
 <style>{_SHELL_CSS}</style>
 </head>
 <body>
@@ -320,19 +360,37 @@ async def blog_index_html(
 <p class="cta-row"><a class="cta" href="/register">Get started</a>
 <a class="cta-ghost" href="/">Kembali ke Sinexis</a></p>"""
     else:
-        items = []
-        for p in posts:
-            pub = p.published_at.isoformat() if p.published_at else ""
-            human = _human_date(p.published_at)
-            items.append(
-                "<li>"
-                f"<a class='card' href='/blog/{escape_text(p.slug)}'>"
-                f"<time datetime='{escape_text(pub)}'>{escape_text(human)}</time>"
-                f"<h2>{escape_text(p.title)}</h2>"
-                f"<p class='excerpt'>{escape_text(plain_excerpt(p.excerpt))}</p>"
-                "<span class='read'>Baca artikel →</span>"
-                "</a>"
-                "</li>"
+        groups: dict[str | None, list[BlogPost]] = {pillar: [] for pillar in _PILLAR_LABELS}
+        groups[None] = []
+        for post in posts:
+            key = post.pillar if post.pillar in _PILLAR_LABELS else None
+            groups[key].append(post)
+        sections = []
+        for pillar in (*_PILLAR_LABELS, None):
+            group = groups[pillar]
+            if not group:
+                continue
+            items = []
+            for p in group:
+                pub = p.published_at.isoformat() if p.published_at else ""
+                human = _human_date(p.published_at)
+                items.append(
+                    "<li>"
+                    f"<a class='card' href='/blog/{escape_text(p.slug)}'>"
+                    f"<time datetime='{escape_text(pub)}'>{escape_text(human)}</time>"
+                    f"<h2>{escape_text(p.title)}</h2>"
+                    f"<p class='excerpt'>{escape_text(plain_excerpt(p.excerpt))}</p>"
+                    "<span class='read'>Baca artikel →</span>"
+                    "</a>"
+                    "</li>"
+                )
+            label = _PILLAR_LABELS[pillar] if pillar else _MORE_LABEL
+            data_key = pillar or "none"
+            sections.append(
+                f"<section class='pillar' data-pillar='{escape_text(data_key)}'>"
+                f"<h2>{escape_text(label)}</h2>"
+                "<ol class='index'>" + "".join(items) + "</ol>"
+                "</section>"
             )
         inner = (
             "<div class='page-intro'><p class='eyebrow'>Blog</p>"
@@ -340,9 +398,20 @@ async def blog_index_html(
             "<p class='lede'>Scan Attach memotret permukaan (port, DNS/TLS, CVE dikenal) ke workspace. "
             "Guard satu wazuh-agent, alarm kritis. Host Protect helper di VPS Anda. "
             "Bukan SIEM 24/7, bukan agen kedua.</p></div>"
-            "<ol class='index'>" + "".join(items) + "</ol>"
+            + "".join(sections)
         )
-    html = _shell("Blog — Sinexis", f"{CANONICAL_HOST}/blog", inner, rail=True)
+    html = _shell(
+        "Blog — Sinexis",
+        f"{CANONICAL_HOST}/blog",
+        inner,
+        rail=True,
+        description=(
+            "Artikel Sinexis soal exposure, keamanan on-box, ketersediaan, dan AI "
+            "untuk colo, VPS, dan hospitality."
+        ),
+        og_type="website",
+        og_url=f"{CANONICAL_HOST}/blog",
+    )
     return HTMLResponse(
         html,
         headers={
@@ -393,6 +462,18 @@ async def blog_article_html(
         raise HTTPException(status_code=404, detail="Not found")
     pub = post.published_at.isoformat() if post.published_at else ""
     human = _human_date(post.published_at)
+    article_url = f"{CANONICAL_HOST}/blog/{post.slug}"
+    description = plain_excerpt(post.excerpt, 160)
+    jsonld = {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": post.title,
+        "description": description,
+        "datePublished": pub,
+        "url": article_url,
+        "inLanguage": post.locale,
+        "publisher": {"@type": "Organization", "name": "Sinexis"},
+    }
     inner = (
         f"<article data-testid='blog-article-title'>"
         f"<p class='eyebrow'>Blog</p>"
@@ -406,9 +487,13 @@ async def blog_article_html(
     )
     html = _shell(
         f"{post.title} — Sinexis",
-        f"{CANONICAL_HOST}/blog/{post.slug}",
+        article_url,
         inner,
         post.locale,
+        description=description,
+        og_type="article",
+        og_url=article_url,
+        jsonld=jsonld,
     )
     return HTMLResponse(
         html,

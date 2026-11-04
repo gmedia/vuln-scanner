@@ -75,6 +75,8 @@ export async function resendVerification(
   return data;
 }
 
+export type BlogPillar = "exposure" | "onbox" | "availability" | "ai";
+
 export interface BlogPostAdmin {
   id: string;
   slug: string;
@@ -84,6 +86,7 @@ export interface BlogPostAdmin {
   body_html: string;
   locale: "id" | "en";
   status: string;
+  pillar: BlogPillar | null;
   published_at: string | null;
   author_user_id: string | null;
   created_at: string;
@@ -96,6 +99,7 @@ export interface BlogPostWrite {
   excerpt: string;
   body_md: string;
   locale: "id" | "en";
+  pillar: BlogPillar | null;
 }
 
 export interface AiProviderAdmin {
