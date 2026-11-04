@@ -12,6 +12,11 @@ export type PageMeta = {
   description: string;
   canonical: string;
   og?: PageMetaOg;
+  /**
+   * Optional indexing policy. Omit it to leave the existing robots tag alone;
+   * public product pages set `index`, and unknown product slugs set `noindex`.
+   */
+  robots?: "index" | "noindex";
 };
 
 export function absoluteUrl(canonical: string): string {
@@ -69,7 +74,13 @@ function findCanonical(): HTMLLinkElement | null {
  * The original title/description/OG/canonical are snapshotted and restored on
  * unmount, including removing tags that `index.html` never had.
  */
-export function usePageMeta({ title, description, canonical, og }: PageMeta): void {
+export function usePageMeta({
+  title,
+  description,
+  canonical,
+  og,
+  robots,
+}: PageMeta): void {
   const ogTitle = og?.title;
   const ogDescription = og?.description;
 
@@ -77,6 +88,8 @@ export function usePageMeta({ title, description, canonical, og }: PageMeta): vo
     const originalTitle = document.title;
     const descriptionSnapshot = snapshotMeta("name", "description");
     const originalDescription = descriptionSnapshot.element?.getAttribute("content") ?? null;
+    const robotsSnapshot = snapshotMeta("name", "robots");
+    const originalRobots = robotsSnapshot.element?.getAttribute("content") ?? null;
     const ogTitleSnapshot = snapshotMeta("property", "og:title");
     const originalOgTitle = ogTitleSnapshot.element?.getAttribute("content") ?? null;
     const ogDescriptionSnapshot = snapshotMeta("property", "og:description");
@@ -88,6 +101,9 @@ export function usePageMeta({ title, description, canonical, og }: PageMeta): vo
     writeMeta(descriptionSnapshot, description);
     writeMeta(ogTitleSnapshot, ogTitle ?? title);
     writeMeta(ogDescriptionSnapshot, ogDescription ?? description);
+    if (robots) {
+      writeMeta(robotsSnapshot, robots);
+    }
     const href = absoluteUrl(canonical);
     if (originalCanonicalElement) {
       originalCanonicalElement.setAttribute("href", href);
@@ -103,6 +119,9 @@ export function usePageMeta({ title, description, canonical, og }: PageMeta): vo
       restoreMeta(descriptionSnapshot, originalDescription);
       restoreMeta(ogTitleSnapshot, originalOgTitle);
       restoreMeta(ogDescriptionSnapshot, originalOgDescription);
+      if (robots) {
+        restoreMeta(robotsSnapshot, originalRobots);
+      }
       if (originalCanonicalElement) {
         if (originalCanonical === null) {
           originalCanonicalElement.removeAttribute("href");
@@ -113,5 +132,5 @@ export function usePageMeta({ title, description, canonical, og }: PageMeta): vo
         findCanonical()?.remove();
       }
     };
-  }, [title, description, canonical, ogTitle, ogDescription]);
+  }, [title, description, canonical, ogTitle, ogDescription, robots]);
 }

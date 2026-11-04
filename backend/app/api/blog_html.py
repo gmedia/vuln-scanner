@@ -307,11 +307,12 @@ def _shell(
           {_CROSSHAIR_SVG}
           <span class="brand-text">SINE<span class="brand-accent">XIS</span></span>
         </a>
-        <p class="blurb">Menempel di colo, VPS, dan hospitality yang sudah di tagihan.
-        Scan dari luar, lalu satu agen tipis di mesin.</p>
+        <p class="blurb">Menempel di colo, VPS, dan hospitality. Scan dari luar, satu agen tipis di mesin,
+        probe ketersediaan, dan AI gateway di akun yang sama.</p>
       </div>
       <nav class="footer-nav" aria-label="Situs">
         <a href="/">Beranda</a>
+        <a href="/products">Produk</a>
         <a href="/blog"{blog_cur}>Blog</a>
         <a href="/terms"{terms_cur}>Syarat</a>
         <a href="/privacy"{privacy_cur}>Privasi</a>
@@ -320,7 +321,7 @@ def _shell(
       </nav>
     </div>
     <div class="footer-meta">
-      <p>Sinexis · Scan · Guard</p>
+      <p>Sinexis · Security & operations attach</p>
       <p>© {datetime.now(UTC).year} Sinexis</p>
     </div>
   </div>

@@ -1,0 +1,270 @@
+{
+  "nav": {
+    "products": "Produk"
+  },
+  "hub": {
+    "eyebrow": "Peta produk",
+    "title": "Lima produk di satu akun",
+    "sub": "Sinexis menempel ke infrastruktur yang sudah Anda jalankan. Pilih permukaan yang Anda butuhkan hari ini; setiap halaman menyebutkan apa yang dilakukan produk, apa yang tidak dilakukannya, dan paket atau prasyarat di belakangnya.",
+    "metaTitle": "Produk Sinexis — security dan operasi yang menempel",
+    "metaDescription": "Scan, Guard, Host Protect, Uptime, dan AI Gateway di satu akun. Setiap halaman produk menyebutkan status, batas, dan apa yang tidak dilakukannya.",
+    "pillarsLabel": "Empat pilar",
+    "cardsLabel": "Produk",
+    "cardLink": "Buka {{name}}",
+    "statusLabel": "Status"
+  },
+  "pillars": {
+    "exposure": {
+      "title": "Paparan",
+      "blurb": "Temukan apa yang sudah terlihat dari internet."
+    },
+    "onbox": {
+      "title": "Keamanan on-box",
+      "blurb": "Inventaris, alarm kritis, malware on-box, WAF di nginx Anda."
+    },
+    "availability": {
+      "title": "Ketersediaan",
+      "blurb": "Tahu situs mati sebelum pelanggan memberi tahu."
+    },
+    "ai": {
+      "title": "AI",
+      "blurb": "Satu dompet dan kunci untuk model tim Anda."
+    }
+  },
+  "status": {
+    "live": "Aktif",
+    "limited": "Terbatas",
+    "byRequest": "Berdasarkan permintaan",
+    "beta": "Beta",
+    "mixed": "Campuran"
+  },
+  "labels": {
+    "whatItDoes": "Yang dilakukannya",
+    "whatItDoesNot": "Yang tidak dilakukannya",
+    "howItWorks": "Cara kerjanya",
+    "requirements": "Persyaratan dan batas",
+    "capabilities": "Kemampuan",
+    "related": "Produk terkait",
+    "nextStep": "Langkah berikutnya",
+    "backToProducts": "Kembali ke produk",
+    "enablementNote": "Aktivasi ditangani per akun setelah Anda membuat akun.",
+    "notFoundTitle": "Halaman tidak ditemukan",
+    "notFoundBody": "Halaman produk itu tidak ada. Buka daftar produk untuk melihat lima halaman yang ada.",
+    "notFoundMetaTitle": "Produk tidak ditemukan — Sinexis",
+    "notFoundMetaDescription": "Halaman produk ini tidak ada. Lihat daftar produk Sinexis."
+  },
+  "cta": {
+    "getStarted": "Mulai",
+    "requestAccess": "Buat akun dan minta akses"
+  },
+  "services": {
+    "scan": {
+      "name": "Sinexis Scan",
+      "summary": "Scan dari luar untuk IP, domain, dan build mobile, dengan jadwal yang membandingkan setiap hasil dan aset bernama.",
+      "metaTitle": "Sinexis Scan — scan paparan dengan attach terjadwal",
+      "metaDescription": "Scan dari luar untuk IP, domain, dan build mobile. Jadwalkan setiap target, bandingkan setiap hasil, dan simpan aset dengan nama yang tim Anda sudah pakai.",
+      "intro": "Scan adalah permukaan paparan. Arahkan ke host, domain, atau build mobile yang sudah Anda jalankan, dan ia melaporkan apa yang terlihat dari internet. Attach terjadwal menjaga hasilnya tetap baru, bukan satu laporan yang lalu dilupakan.",
+      "capabilities": {
+        "scan": "Scan paparan",
+        "attach": "Attach terjadwal",
+        "assets": "Registri aset"
+      },
+      "capabilityNotes": {},
+      "whatItDoes": [
+        "Memindai IP, domain, dan build mobile dari luar lalu melaporkan port, TLS, header, izin, dan CVE yang diketahui.",
+        "Menjadwalkan target pada interval dan membandingkan setiap hasil dengan hasil sebelumnya.",
+        "Menyimpan IP, domain, dan aplikasi di registri aset bernama, dengan batas paket yang terlihat."
+      ],
+      "doesNotDo": [
+        "Tidak login ke host atau membaca berkas dari dalam mesin.",
+        "Tidak menguji logika bisnis aplikasi atau alur booking.",
+        "Tidak menawarkan aset tanpa batas; setiap paket punya batas tegas."
+      ],
+      "steps": [
+        {
+          "title": "Hubungkan",
+          "body": "Pilih satu IP, domain, atau build mobile yang Anda miliki lalu jalankan."
+        },
+        {
+          "title": "Tempelkan",
+          "body": "Atur interval yang sesuai dengan seberapa sering infrastruktur berubah."
+        },
+        {
+          "title": "Buktikan",
+          "body": "Baca selisihnya, lalu serahkan laporan ke klien atau auditor."
+        }
+      ],
+      "requirements": [
+        "Hanya pindai host, domain, dan aplikasi yang Anda miliki atau diizinkan tertulis untuk diuji.",
+        "Jumlah aset mengikuti batas tegas pada paket akun."
+      ]
+    },
+    "guard": {
+      "name": "Sinexis Guard",
+      "summary": "Satu wazuh-agent per VM untuk inventaris mesin dan alarm kritis. Bukan konsol SIEM.",
+      "metaTitle": "Sinexis Guard — inventaris dan alarm di mesin",
+      "metaDescription": "Satu wazuh-agent per VM melaporkan inventaris dan alarm kritis. Pencarian log SIEM tersedia berdasarkan permintaan, tidak pernah termasuk.",
+      "intro": "Guard adalah tampilan agen tipis. Satu wazuh-agent per VM melaporkan apa yang terpasang dan berjalan, lalu memunculkan alarm kritis. Pencarian log dan cases tersedia sebagai add-on berdasarkan permintaan.",
+      "capabilities": {
+        "guard": "Guard",
+        "siem": "SIEM"
+      },
+      "capabilityNotes": {
+        "siem": "Berdasarkan permintaan. Pencarian log dan cases diaktifkan per akun; tidak pernah termasuk dalam paket Guard."
+      },
+      "whatItDoes": [
+        "Melaporkan paket terpasang dan layanan yang berjalan dari satu wazuh-agent per VM.",
+        "Memunculkan alarm kritis saat mesin melaporkan perubahan yang penting.",
+        "Mendaftarkan host ke satu organisasi, dengan satu agen per mesin."
+      ],
+      "doesNotDo": [
+        "Bukan konsol SIEM. Pencarian log dan cases berdasarkan permintaan.",
+        "Tidak memasang agen kedua; Host Protect adalah helper di mesin yang sama.",
+        "Tidak menyediakan tim respons insiden."
+      ],
+      "steps": [
+        {
+          "title": "Daftarkan",
+          "body": "Pasang satu wazuh-agent di VM dan daftarkan ke organisasi Anda."
+        },
+        {
+          "title": "Laporkan",
+          "body": "Agen mengirim inventaris dan peristiwa kritis."
+        },
+        {
+          "title": "Tinjau",
+          "body": "Lihat host dan alarm di halaman Guard."
+        }
+      ],
+      "requirements": [
+        "Satu wazuh-agent per VM, didaftarkan ke satu organisasi.",
+        "Pencarian log dan cases SIEM berdasarkan permintaan; tidak pernah termasuk di Guard.",
+        "Host Protect adalah add-on terpisah yang membutuhkan agen ini."
+      ]
+    },
+    "host": {
+      "name": "Sinexis Host Protect",
+      "summary": "Helper on-box untuk malware web, dan WAF yang berjalan di nginx Anda sendiri.",
+      "metaTitle": "Sinexis Host Protect + WAF — on-box dan di nginx Anda",
+      "metaDescription": "Host Protect adalah add-on yang membutuhkan agen Guard dan mengembalikan hasil kosong pada disk bersih. Host WAF berjalan di nginx Anda untuk paket Pro dan Multi.",
+      "intro": "Host Protect membaca direktori web lewat helper di mesin yang sudah menjalankan agen Guard. Host WAF menambahkan deteksi dan proteksi di nginx milik Anda. Keduanya add-on dengan batas paket.",
+      "capabilities": {
+        "hostProtect": "Host Protect",
+        "hostWaf": "Host WAF"
+      },
+      "capabilityNotes": {
+        "hostProtect": "Add-on host. Membutuhkan agen Guard di VM yang sama. Mengembalikan hasil kosong pada disk bersih.",
+        "hostWaf": "Pro dan Multi. Berjalan di nginx Anda, tidak pernah di edge Sinexis."
+      },
+      "whatItDoes": [
+        "Membaca direktori web lewat helper dan menandai berkas yang cocok dengan aturan malware.",
+        "Menjalankan WAF deteksi dan proteksi di nginx milik pelanggan.",
+        "Menampilkan hasil kosong yang jujur saat disk bersih."
+      ],
+      "doesNotDo": [
+        "Tidak memasang dirinya sendiri. Host Protect adalah add-on dan butuh agen Guard di VM yang sama.",
+        "WAF tidak berjalan di edge Sinexis; snippet dipasang di nginx Anda.",
+        "Tidak mengarang temuan malware saat disk bersih."
+      ],
+      "steps": [
+        {
+          "title": "Pasang",
+          "body": "Pastikan agen Guard aktif, lalu pasang helper Host Protect di VM yang sama."
+        },
+        {
+          "title": "Pindai",
+          "body": "Jalankan pemeriksaan direktori web dan tinjau hasilnya."
+        },
+        {
+          "title": "Lindungi",
+          "body": "Aktifkan aturan WAF di nginx Anda untuk paket yang mendukung."
+        }
+      ],
+      "requirements": [
+        "Add-on host. Membutuhkan agen Guard di VM yang sama. Mengembalikan hasil kosong pada disk bersih.",
+        "Pro dan Multi. Berjalan di nginx Anda, tidak pernah di edge Sinexis."
+      ]
+    },
+    "uptime": {
+      "name": "Sinexis Uptime",
+      "summary": "Probe HTTP, TCP, DNS, dan heartbeat, plus status page publik dengan batas paket.",
+      "metaTitle": "Sinexis Uptime — probe ketersediaan dan status page",
+      "metaDescription": "Probe HTTP, TCP, DNS, dan heartbeat dari luar. Terbitkan status page publik pada paket yang mendukung.",
+      "intro": "Uptime memukul URL, port TCP, DNS, atau heartbeat dari luar dan mencatat kapan berhenti menjawab. Status page publik memakai slug pelanggan, dengan batas paket yang jelas.",
+      "capabilities": {
+        "uptime": "Uptime",
+        "statusPage": "Status page"
+      },
+      "capabilityNotes": {
+        "statusPage": "Terbitkan pada Pro, Multi, dan Enterprise. Hostname kustom pada Multi dan Enterprise."
+      },
+      "whatItDoes": [
+        "Memantau HTTP, TCP, DNS, dan heartbeat dari luar.",
+        "Mencatat waktu berhenti menjawab dan riwayat insiden.",
+        "Menerbitkan status page publik pada slug pelanggan."
+      ],
+      "doesNotDo": [
+        "Tidak membaca CVE atau memindai host.",
+        "Tidak menjanjikan jaminan uptime.",
+        "Status page tidak tersedia di semua paket; penerbitan dibatasi paket."
+      ],
+      "steps": [
+        {
+          "title": "Tambah",
+          "body": "Daftarkan URL, port TCP, DNS, atau heartbeat yang ingin dipantau."
+        },
+        {
+          "title": "Pantau",
+          "body": "Probe berjalan dari luar dan mencatat kapan layanan berhenti menjawab."
+        },
+        {
+          "title": "Terbitkan",
+          "body": "Aktifkan status page publik pada paket yang mendukung."
+        }
+      ],
+      "requirements": [
+        "Terbitkan pada Pro, Multi, dan Enterprise. Hostname kustom pada Multi dan Enterprise."
+      ]
+    },
+    "ai-gateway": {
+      "name": "Sinexis AI Gateway",
+      "summary": "Satu dompet dan kunci API per organisasi untuk model tim Anda. Beta, berdasarkan permintaan.",
+      "metaTitle": "Sinexis AI Gateway — dompet dan kunci per organisasi",
+      "metaDescription": "Beta. Satu dompet dan kunci API per organisasi untuk model tim Anda. Akses diminta dan diaktifkan per akun.",
+      "intro": "AI Gateway menyatukan satu dompet dan satu set kunci API untuk model yang tim Anda pakai. Akses masih Beta dan diminta per akun.",
+      "capabilities": {
+        "aiGateway": "AI Gateway"
+      },
+      "capabilityNotes": {
+        "aiGateway": "Beta. Minta akses; dompet dan kunci diterbitkan per organisasi."
+      },
+      "whatItDoes": [
+        "Menyediakan satu dompet per organisasi untuk pemakaian model.",
+        "Menerbitkan kunci API per organisasi.",
+        "Mencatat pemakaian terhadap dompet tersebut."
+      ],
+      "doesNotDo": [
+        "Bukan produk yang tersedia umum; akses masih Beta dan diminta per akun.",
+        "Tidak menyertakan kredit bawaan.",
+        "Tidak menggantikan tagihan penyedia model Anda."
+      ],
+      "steps": [
+        {
+          "title": "Minta",
+          "body": "Buat akun lalu minta akses AI Gateway."
+        },
+        {
+          "title": "Aktifkan",
+          "body": "Dompet dan kunci diterbitkan untuk organisasi Anda."
+        },
+        {
+          "title": "Hubungkan",
+          "body": "Pakai kunci itu dari aplikasi tim Anda."
+        }
+      ],
+      "requirements": [
+        "Beta. Minta akses; dompet dan kunci diterbitkan per organisasi."
+      ]
+    }
+  }
+}

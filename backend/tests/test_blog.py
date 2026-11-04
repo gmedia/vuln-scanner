@@ -78,7 +78,10 @@ def test_public_html_index(client):
     assert "footer-nav" in resp.text
     assert "footer-grid" not in resp.text
     assert "footer-col" not in resp.text
-    assert "Sinexis · Scan · Guard" in resp.text
+    assert "Sinexis · Security & operations attach" in resp.text
+    assert 'href="/products"' in resp.text
+    assert ">Produk<" in resp.text
+    assert "probe ketersediaan" in resp.text
     assert "page-intro" in resp.text or "Belum ada artikel" in resp.text
     assert "brand-text" in resp.text
     assert 'rel="canonical"' in resp.text
