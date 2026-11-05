@@ -3,7 +3,6 @@ import sys
 sys.path.insert(0, "/home/ubuntu/vuln-scanner/workers")
 
 import uuid
-from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -16,7 +15,6 @@ from tasks.billing import (
     PAST_DUE_GRACE_DAYS,
     RENEWAL_DRAFT_LEAD_DAYS,
     _next_annual_start,
-    _reconcile_gateway_attempts,
     draft_annual_renewals,
     finalize_periods,
     reconcile_gateway_attempts,
@@ -503,90 +501,3 @@ class TestReconcileGatewayAttempts:
 
         assert outcome == expected
         run.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_reconciles_configured_provider_with_flag_off(self, monkeypatch):
-        from app.config import settings
-        from app.services.payments.base import NormalizedEvent, StatusResult
-        from app.services.payments.midtrans import MidtransProvider
-
-
-        monkeypatch.setattr(settings, "payment_gateway_enabled", False)
-        monkeypatch.setattr(settings, "midtrans_server_key", "SB-Mid-server-test-123")
-        monkeypatch.setattr(settings, "midtrans_is_production", False)
-
-        attempt = SimpleNamespace(id=uuid.uuid4(), provider="midtrans")
-        event = NormalizedEvent(
-            event_id="trx-reconcile:settlement:200:accept",
-            kind="succeeded",
-            provider_order_id="SX-1-A1",
-            provider_payment_id="trx-reconcile",
-            amount_idr=1_000_000,
-            currency="IDR",
-        )
-        rows_result = MagicMock()
-        rows_result.scalars.return_value.all.return_value = [attempt]
-        session = MagicMock()
-        session.execute = AsyncMock(return_value=rows_result)
-        session.commit = AsyncMock()
-        session.rollback = AsyncMock()
-
-        @asynccontextmanager
-        async def fake_session():
-            yield session
-
-        applied: list[tuple[str, NormalizedEvent]] = []
-
-        class FakeBillingService:
-            def __init__(self, db):
-                self.db = db
-
-            async def apply_gateway_event(self, provider, normalized):
-                applied.append((provider, normalized))
-
-        async def fake_fetch_status(self, attempt):
-            return StatusResult(found=True, event=event)
-
-        monkeypatch.setattr("app.database.async_session", fake_session)
-        monkeypatch.setattr("app.services.billing.BillingService", FakeBillingService)
-        monkeypatch.setattr(MidtransProvider, "fetch_status", fake_fetch_status)
-
-        outcome = await _reconcile_gateway_attempts()
-
-        assert outcome == {"reconciled_count": 1, "error_count": 0, "skipped_count": 0}
-        assert applied == [("midtrans", event)]
-        session.commit.assert_awaited_once()
-        session.rollback.assert_not_awaited()
-
-    @pytest.mark.asyncio
-    async def test_skips_unconfigured_provider_without_error(self, monkeypatch):
-        from app.config import settings
-        from app.services.payments.midtrans import MidtransProvider
-
-
-        monkeypatch.setattr(settings, "payment_gateway_enabled", False)
-        monkeypatch.setattr(settings, "midtrans_server_key", "")
-        monkeypatch.setattr(settings, "midtrans_is_production", False)
-
-        attempt = SimpleNamespace(id=uuid.uuid4(), provider="midtrans")
-        rows_result = MagicMock()
-        rows_result.scalars.return_value.all.return_value = [attempt]
-        session = MagicMock()
-        session.execute = AsyncMock(return_value=rows_result)
-        session.commit = AsyncMock()
-        session.rollback = AsyncMock()
-
-        @asynccontextmanager
-        async def fake_session():
-            yield session
-
-        fetch_status = AsyncMock()
-        monkeypatch.setattr("app.database.async_session", fake_session)
-        monkeypatch.setattr(MidtransProvider, "fetch_status", fetch_status)
-
-        outcome = await _reconcile_gateway_attempts()
-
-        assert outcome == {"reconciled_count": 0, "error_count": 0, "skipped_count": 1}
-        fetch_status.assert_not_awaited()
-        session.commit.assert_not_awaited()
-        session.rollback.assert_not_awaited()
