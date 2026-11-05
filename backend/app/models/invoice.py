@@ -11,6 +11,7 @@ from sqlalchemy import (
     Integer,
     String,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -70,6 +71,11 @@ class OrgInvoice(Base):
     sku: Mapped[str] = mapped_column(
         String(20), ForeignKey("sku_tiers.code", ondelete="RESTRICT"), nullable=False, index=True
     )
+    subscription_request_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("subscription_requests.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     amount_idr: Mapped[int] = mapped_column(Integer, nullable=False)
     discount_idr: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     promo_code: Mapped[str | None] = mapped_column(String(32), nullable=True)
@@ -111,4 +117,15 @@ class OrgInvoice(Base):
         ),
         UniqueConstraint("number", name="uq_org_invoices_number"),
         Index("ix_org_invoices_status_due_date", "status", "due_date"),
+        Index("ix_org_invoices_subscription_request_id", "subscription_request_id"),
+        # A request backs at most one invoice row. Voiding clears the column,
+        # so the predicate stays on the (stable) link column rather than on the
+        # mutable ``status`` column; see the migration docstring.
+        Index(
+            "uq_org_invoices_subscription_request",
+            "subscription_request_id",
+            unique=True,
+            postgresql_where=text("subscription_request_id IS NOT NULL"),
+            sqlite_where=text("subscription_request_id IS NOT NULL"),
+        ),
     )

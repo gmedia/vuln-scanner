@@ -106,6 +106,7 @@ class InvoiceItem(BaseModel):
     number: str
     product: str
     sku: str
+    subscription_request_id: uuid.UUID | None = None
     seats: int
     amount_idr: int
     discount_idr: int = 0
