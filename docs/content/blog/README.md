@@ -48,6 +48,21 @@ python -m scripts.seed_blog_posts --update    # refresh copy; status/published_a
 python -m scripts.seed_blog_posts --publish   # create AND publish
 ```
 
+Inside the backend image those paths do not exist: it builds from `./backend`, so
+`docs/` is not copied and the default resolves to `/docs/content/blog`. Mount the
+directory and point at it:
+
+```bash
+docker run --rm --network <project>_vuln-net \
+  -v "$PWD/docs/content/blog:/seed:ro" \
+  -e BLOG_SEED_DIR=/seed \
+  --env-file <(docker inspect vuln-backend --format '{{range .Config.Env}}{{println .}}{{end}}') \
+  --entrypoint python "$(docker inspect vuln-backend --format '{{.Config.Image}}')" \
+  -m scripts.seed_blog_posts --dry-run
+```
+
+`--dir /seed` works the same way when you would rather not set the variable.
+
 Safe by default: new rows are drafts, an existing slug is skipped unless
 `--update` is passed, and `--update` never changes `status` or `published_at`.
 The importer refuses a slug without an entry in `PILLAR_BY_SLUG`, so a new file
