@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import os
 import re
 import sys
 from dataclasses import dataclass
@@ -46,8 +47,10 @@ from app.services.blog import (
     validate_slug,
 )
 
-# Repo root: backend/scripts/seed_blog_posts.py -> parents[2]
-BLOG_DIR = Path(__file__).resolve().parents[2] / "docs" / "content" / "blog"
+# Repo root: backend/scripts/seed_blog_posts.py -> parents[2].
+# The backend image builds from ./backend, so docs/ is absent there and this
+# resolves to /docs/content/blog. BLOG_SEED_DIR (or --dir) points at a mount.
+BLOG_DIR = Path(os.environ.get("BLOG_SEED_DIR") or Path(__file__).resolve().parents[2] / "docs" / "content" / "blog")
 
 # Pillar per slug, mirroring docs/content/blog/README.md.
 # Kept explicit (not derived from the files) so an unknown slug fails loudly
@@ -128,7 +131,11 @@ def build_excerpt(body_md: str) -> str:
 
 def load_posts(blog_dir: Path = BLOG_DIR) -> list[SeedPost]:
     if not blog_dir.is_dir():
-        raise SystemExit(f"blog source directory not found: {blog_dir}")
+        raise SystemExit(
+            f"blog source directory not found: {blog_dir}\n"
+            "The backend image ships only backend/, so docs/content/blog is not inside it.\n"
+            "Pass --dir, or set BLOG_SEED_DIR, to a mounted copy of the repo directory."
+        )
 
     posts: list[SeedPost] = []
     for path in sorted(blog_dir.glob("*.md")):
@@ -193,10 +200,7 @@ async def import_posts(
     created = skipped = updated = 0
     try:
         async with session_factory() as session:
-            existing = {
-                row.slug: row
-                for row in (await session.execute(select(BlogPost))).scalars().all()
-            }
+            existing = {row.slug: row for row in (await session.execute(select(BlogPost))).scalars().all()}
 
             for post in posts:
                 current = existing.get(post.slug)
@@ -229,16 +233,12 @@ async def import_posts(
                 if not update:
                     skipped += 1
                     print(
-                        f"  skip    {post.slug:<24} already exists "
-                        f"(status={current.status}); use --update to refresh"
+                        f"  skip    {post.slug:<24} already exists (status={current.status}); use --update to refresh"
                     )
                     continue
 
                 updated += 1
-                print(
-                    f"  update  {post.slug:<24} pillar={post.pillar} "
-                    f"status={current.status} (preserved)"
-                )
+                print(f"  update  {post.slug:<24} pillar={post.pillar} status={current.status} (preserved)")
                 if dry_run:
                     continue
                 current.title = post.title
@@ -294,9 +294,7 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     print(f"source: {args.dir} ({len(posts)} post(s))")
-    return asyncio.run(
-        import_posts(posts, dry_run=args.dry_run, publish=args.publish, update=args.update)
-    )
+    return asyncio.run(import_posts(posts, dry_run=args.dry_run, publish=args.publish, update=args.update))
 
 
 if __name__ == "__main__":

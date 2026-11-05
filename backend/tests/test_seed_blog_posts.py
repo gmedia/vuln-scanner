@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import importlib
 from pathlib import Path
 
 import pytest
 
 from app.models.blog import BLOG_PILLARS
+from scripts import seed_blog_posts
 from scripts.seed_blog_posts import (
     BLOG_DIR,
     PILLAR_BY_SLUG,
@@ -92,9 +94,7 @@ def test_every_seed_file_has_a_pillar_and_parses() -> None:
 
     posts = load_posts(BLOG_DIR)
     slugs = {p.slug for p in posts}
-    md_files = {
-        p.stem for p in Path(BLOG_DIR).glob("*.md") if p.name.lower() != "readme.md"
-    }
+    md_files = {p.stem for p in Path(BLOG_DIR).glob("*.md") if p.name.lower() != "readme.md"}
 
     assert slugs == md_files
     assert slugs == set(PILLAR_BY_SLUG)
@@ -126,3 +126,26 @@ def test_load_posts_rejects_missing_title(tmp_path: Path) -> None:
 
     with pytest.raises(SystemExit):
         load_posts(tmp_path)
+
+
+def test_blog_seed_dir_env_overrides_the_repo_default(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("BLOG_SEED_DIR", str(tmp_path))
+
+    reloaded = importlib.reload(seed_blog_posts)
+    try:
+        assert tmp_path == reloaded.BLOG_DIR
+    finally:
+        monkeypatch.delenv("BLOG_SEED_DIR")
+        importlib.reload(seed_blog_posts)
+
+
+def test_missing_directory_names_the_container_cause(tmp_path: Path) -> None:
+    missing = tmp_path / "tidak-ada"
+
+    with pytest.raises(SystemExit) as exc:
+        load_posts(missing)
+
+    message = str(exc.value)
+    assert str(missing) in message
+    assert "--dir" in message
+    assert "BLOG_SEED_DIR" in message
