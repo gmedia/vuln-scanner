@@ -253,6 +253,7 @@ export async function cancelSubscriptionRequest(
 export async function listAdminSubscriptionRequests(params?: {
   status?: string;
   page?: number;
+  page_size?: number;
 }): Promise<SubscriptionRequestListResponse> {
   const { data } = await api.get<SubscriptionRequestListResponse>(
     "/api/admin/subscription-requests",

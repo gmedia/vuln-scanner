@@ -715,6 +715,12 @@
   "invoicePromoInvalid": "This code cannot be used for the selected invoice.",
   "invoicePromoEstimate": "Preview from the current organization, product, SKU and cycle.",
   "invoicePromoAnnual": "Promo codes do not apply to annual invoices.",
+  "invoiceRequestLabel": "Link pending request (optional)",
+  "invoiceRequestNone": "No request",
+  "invoiceRequestHint": "The invoice applies the discount; the request only carries the intent.",
+  "invoiceRequestPromoHint": "This request carries promo code {{code}}.",
+  "invoiceRequestPromoInvalid": "The code from this request is no longer valid. The invoice will be created at list price unless you clear or link another code.",
+  "invoiceRequestEmpty": "No pending requests for this organization.",
   "invoiceDiscount": "Discount",
   "invoiceTotal": "Total"
 }
