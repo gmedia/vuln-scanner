@@ -153,12 +153,16 @@ cmd_claim() {
   [ "$(issue_state "$issue")" = "OPEN" ] || die "issue #$issue is not open"
   claim_exists "$issue" && die "issue #$issue already claimed (ref ${CLAIM_PREFIX}$issue exists)"
 
-  if issue_labels "$issue" | grep -qx 'state:claimed'; then
-    die "issue #$issue is labelled state:claimed without a ref - resolve manually (release then claim)"
-  fi
-  if issue_labels "$issue" | grep -qx 'state:human'; then
-    die "issue #$issue is state:human - owner/ops work, not agent work"
-  fi
+  local labels
+  labels=$(issue_labels "$issue")
+  grep -qx 'state:human' <<<"$labels" \
+    && die "issue #$issue is state:human - owner/ops work, not agent work"
+  grep -qx 'state:blocked' <<<"$labels" \
+    && die "issue #$issue is state:blocked - the owner has not named it yet"
+  grep -qx 'state:claimed' <<<"$labels" \
+    && die "issue #$issue is labelled state:claimed without a ref - resolve manually (release then claim)"
+  grep -qx 'state:ready' <<<"$labels" \
+    || die "issue #$issue is not state:ready - only ready slices are claimable"
 
   local prs
   prs=$(gh pr list --repo "$REPO" --state open --json number,headRefName \
