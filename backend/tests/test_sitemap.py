@@ -1,9 +1,20 @@
 from datetime import UTC, datetime, timedelta
+from xml.etree import ElementTree as ET
 
 import pytest
 
 from app.config import settings
 from app.models.blog import BlogPost
+
+SITEMAP_NS = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+
+
+def _entries(xml_text: str) -> dict[str, str | None]:
+    root = ET.fromstring(xml_text)
+    return {
+        url.findtext("s:loc", namespaces=SITEMAP_NS) or "": url.findtext("s:lastmod", namespaces=SITEMAP_NS)
+        for url in root.findall("s:url", SITEMAP_NS)
+    }
 
 
 def _add_post(
@@ -85,3 +96,28 @@ def test_sitemap_omits_blog_when_disabled(client, monkeypatch):
     assert "<loc>https://sinexis.app/products</loc>" in body
     assert "<loc>https://sinexis.app/products/scan</loc>" in body
     assert "/blog" not in body
+
+
+@pytest.mark.asyncio
+async def test_sitemap_lastmod_covers_blog_and_only_dated_entries(client, db_session):
+    await _seed_posts(db_session)
+
+    resp = client.get("/sitemap.xml")
+
+    entries = _entries(resp.text)
+    assert entries["https://sinexis.app/blog/published-post"] is not None
+    assert entries["https://sinexis.app/blog"] is not None
+    for loc in ("https://sinexis.app/blog/published-post", "https://sinexis.app/blog"):
+        datetime.fromisoformat(entries[loc] or "")
+
+    # No truthful modification timestamp exists for static/product pages, so
+    # they must stay bare rather than invent one.
+    for path in ("/", "/products", "/products/scan", "/terms", "/privacy"):
+        assert entries[f"https://sinexis.app{path}"] is None
+
+
+def test_sitemap_is_well_formed_xml(client):
+    root = ET.fromstring(client.get("/sitemap.xml").text)
+
+    assert root.tag == "{http://www.sitemaps.org/schemas/sitemap/0.9}urlset"
+    assert len(root.findall("s:url", SITEMAP_NS)) >= 10
