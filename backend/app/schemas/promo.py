@@ -84,6 +84,7 @@ class PromoCodeItem(BaseModel):
     ends_at: datetime | None = None
     max_redemptions: int | None = None
     max_redemptions_per_org: int = 1
+    redemption_count: int = 0
     active: bool = True
     created_by_user_id: uuid.UUID | None = None
     updated_by_user_id: uuid.UUID | None = None

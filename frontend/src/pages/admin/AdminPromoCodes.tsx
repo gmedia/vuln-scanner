@@ -130,6 +130,12 @@ function AdminPromoCodes() {
   const pages = Math.max(1, Math.ceil((listQ.data?.total ?? 0) / PAGE_SIZE));
   const errors = useMemo(() => (form ? validatePromoForm(form) : {}), [form]);
   const invalid = Object.keys(errors).length > 0;
+  const termsLocked = (editing?.redemption_count ?? 0) > 0;
+  const usedLabel = (item: PromoCode) =>
+    t("promoUsedOf", {
+      used: item.redemption_count,
+      limit: item.max_redemptions ?? "∞",
+    });
 
   function refresh() {
     void qc.invalidateQueries({ queryKey: ["admin-promo-codes"] });
@@ -237,7 +243,7 @@ function AdminPromoCodes() {
           </div>
 
           {listQ.isLoading ? (
-            <TableRowSkeleton rows={5} columns={6} />
+            <TableRowSkeleton rows={5} columns={7} />
           ) : listQ.isError ? (
             <EmptyState testId="promo-error" icon={BadgePercent} title={t("promoLoadError")} action={<Button type="button" variant="outline" size="sm" onClick={() => void listQ.refetch()}>{t("promoRetry")}</Button>} />
           ) : items.length === 0 ? (
@@ -256,6 +262,9 @@ function AdminPromoCodes() {
                     <p className="mt-1 text-[11px] text-muted-foreground">
                       {formatDiscount(item)} · {item.applies_to_product ?? t("promoScopeAll")} · {formatWindow(item)}
                     </p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {usedLabel(item)}
+                    </p>
                     <div className="mt-3 flex justify-end">
                       <PromoRowActions item={item} onEdit={openEdit} onToggle={(row) => toggleMut.mutate(row)} onRedemptions={setRedemptionsTarget} onHistory={setHistoryTarget} onDelete={setDeleteTarget} />
                     </div>
@@ -272,6 +281,7 @@ function AdminPromoCodes() {
                       <TableHead>{t("promoColScope")}</TableHead>
                       <TableHead>{t("promoColWindow")}</TableHead>
                       <TableHead>{t("promoColLimits")}</TableHead>
+                      <TableHead>{t("promoUsed")}</TableHead>
                       <TableHead>{t("promoColStatus")}</TableHead>
                       <TableHead className="text-right">{t("colActions")}</TableHead>
                     </TableRow>
@@ -289,6 +299,9 @@ function AdminPromoCodes() {
                         <TableCell className="text-xs text-muted-foreground">{formatWindow(item)}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {item.max_redemptions == null ? "∞" : item.max_redemptions} / {item.max_redemptions_per_org}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground" data-testid={`promo-used-${item.id}`}>
+                          {usedLabel(item)}
                         </TableCell>
                         <TableCell>
                           <Badge variant={item.active ? "success" : "default"} className="text-[10px] uppercase">{item.active ? t("promoActive") : t("promoInactive")}</Badge>
@@ -344,8 +357,8 @@ function AdminPromoCodes() {
                 </div>
                 <div className="flex min-w-0 flex-col gap-1.5">
                   <Label htmlFor="promo-kind">{t("promoFieldKind")}</Label>
-                  <Select value={form.kind} onValueChange={(v) => patch({ kind: v === "fixed" ? "fixed" : "percent" })} disabled={editing != null}>
-                    <SelectTrigger id="promo-kind" data-testid="promo-kind" className="h-10 min-h-10"><SelectValue /></SelectTrigger>
+                  <Select value={form.kind} onValueChange={(v) => patch({ kind: v === "fixed" ? "fixed" : "percent" })} disabled={termsLocked}>
+                    <SelectTrigger id="promo-kind" data-testid="promo-kind" aria-disabled={termsLocked} className="h-10 min-h-10"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="percent">{t("promoKindPercent")}</SelectItem>
                       <SelectItem value="fixed">{t("promoKindFixed")}</SelectItem>
@@ -361,28 +374,28 @@ function AdminPromoCodes() {
                 {form.kind === "percent" ? (
                   <div className="flex min-w-0 flex-col gap-1.5">
                     <Label htmlFor="promo-percent">{t("promoFieldPercent")}</Label>
-                    <Input id="promo-percent" data-testid="promo-percent" className="h-10 min-h-10 font-mono text-xs" inputMode="decimal" value={form.percent} onChange={(e) => patch({ percent: e.target.value })} placeholder="12.5" aria-invalid={!!errors.percent} />
+                    <Input id="promo-percent" data-testid="promo-percent" className="h-10 min-h-10 font-mono text-xs" inputMode="decimal" value={form.percent} disabled={termsLocked} aria-disabled={termsLocked} onChange={(e) => patch({ percent: e.target.value })} placeholder="12.5" aria-invalid={!!errors.percent} />
                     {errors.percent ? <p className="text-[11px] text-destructive">{t("promoPercentInvalid")}</p> : null}
                   </div>
                 ) : (
                   <div className="flex min-w-0 flex-col gap-1.5">
                     <Label htmlFor="promo-amount">{t("promoFieldAmount")}</Label>
-                    <Input id="promo-amount" data-testid="promo-amount" className="h-10 min-h-10 font-mono text-xs" inputMode="numeric" value={form.amount} onChange={(e) => patch({ amount: e.target.value })} placeholder="100000" aria-invalid={!!errors.amount} />
+                    <Input id="promo-amount" data-testid="promo-amount" className="h-10 min-h-10 font-mono text-xs" inputMode="numeric" value={form.amount} disabled={termsLocked} aria-disabled={termsLocked} onChange={(e) => patch({ amount: e.target.value })} placeholder="100000" aria-invalid={!!errors.amount} />
                     {errors.amount ? <p className="text-[11px] text-destructive">{t("promoAmountInvalid")}</p> : null}
                   </div>
                 )}
                 <div className="flex min-w-0 flex-col gap-1.5">
                   <Label htmlFor="promo-min">{t("promoFieldMin")}</Label>
-                  <Input id="promo-min" data-testid="promo-min" className="h-10 min-h-10 font-mono text-xs" inputMode="numeric" value={form.min} onChange={(e) => patch({ min: e.target.value })} />
+                  <Input id="promo-min" data-testid="promo-min" className="h-10 min-h-10 font-mono text-xs" inputMode="numeric" value={form.min} disabled={termsLocked} aria-disabled={termsLocked} onChange={(e) => patch({ min: e.target.value })} />
                 </div>
                 <div className="flex min-w-0 flex-col gap-1.5">
                   <Label htmlFor="promo-max-discount">{t("promoFieldMaxDiscount")}</Label>
-                  <Input id="promo-max-discount" data-testid="promo-max-discount" className="h-10 min-h-10 font-mono text-xs" inputMode="numeric" value={form.maxDiscount} onChange={(e) => patch({ maxDiscount: e.target.value })} placeholder={t("promoOptional")} aria-invalid={!!errors.maxDiscount} />
+                  <Input id="promo-max-discount" data-testid="promo-max-discount" className="h-10 min-h-10 font-mono text-xs" inputMode="numeric" value={form.maxDiscount} disabled={termsLocked} aria-disabled={termsLocked} onChange={(e) => patch({ maxDiscount: e.target.value })} placeholder={t("promoOptional")} aria-invalid={!!errors.maxDiscount} />
                 </div>
                 <div className="flex min-w-0 flex-col gap-1.5">
                   <Label htmlFor="promo-product">{t("promoFieldProduct")}</Label>
-                  <Select value={form.product || "all"} onValueChange={(v) => patch({ product: v === "all" ? "" : (v as PromoProduct) })} disabled={editing != null}>
-                    <SelectTrigger id="promo-product" data-testid="promo-product" className="h-10 min-h-10"><SelectValue /></SelectTrigger>
+                  <Select value={form.product || "all"} onValueChange={(v) => patch({ product: v === "all" ? "" : (v as PromoProduct) })} disabled={termsLocked}>
+                    <SelectTrigger id="promo-product" data-testid="promo-product" aria-disabled={termsLocked} className="h-10 min-h-10"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t("promoScopeAll")}</SelectItem>
                       {PRODUCTS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
@@ -391,8 +404,8 @@ function AdminPromoCodes() {
                 </div>
                 <div className="flex min-w-0 flex-col gap-1.5">
                   <Label htmlFor="promo-sku">{t("promoFieldSku")}</Label>
-                  <Select value={form.sku || "all"} onValueChange={(v) => patch({ sku: v === "all" ? "" : v })} disabled={editing != null}>
-                    <SelectTrigger id="promo-sku" data-testid="promo-sku" className="h-10 min-h-10"><SelectValue /></SelectTrigger>
+                  <Select value={form.sku || "all"} onValueChange={(v) => patch({ sku: v === "all" ? "" : v })} disabled={termsLocked}>
+                    <SelectTrigger id="promo-sku" data-testid="promo-sku" aria-disabled={termsLocked} className="h-10 min-h-10"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t("promoScopeAll")}</SelectItem>
                       {(tiersQ.data ?? []).map((tier) => <SelectItem key={tier.code} value={tier.code}>{tier.label || tier.code}</SelectItem>)}
@@ -417,7 +430,7 @@ function AdminPromoCodes() {
                   <Input id="promo-max-per-org" data-testid="promo-max-per-org" className="h-10 min-h-10 font-mono text-xs" inputMode="numeric" value={form.maxPerOrg} onChange={(e) => patch({ maxPerOrg: e.target.value })} aria-invalid={!!errors.maxPerOrg} />
                 </div>
               </div>
-              <p className="text-[11px] text-muted-foreground">{t("promoImmutableHint")}</p>
+              <p className="text-[11px] text-muted-foreground" data-testid={termsLocked ? "promo-terms-locked" : undefined}>{termsLocked ? t("promoTermsLocked") : t("promoImmutableHint")}</p>
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => { setForm(null); setEditing(null); }}>{t("cancel")}</Button>
                 <Button type="submit" disabled={invalid || saveMut.isPending} data-testid="promo-form-submit">{editing ? t("promoSave") : t("promoCreate")}</Button>
