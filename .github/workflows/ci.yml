@@ -1179,15 +1179,23 @@ jobs:
             sudo apt-get update -qq
             sudo apt-get install -y -qq netcat-openbsd
           fi
+          # A TCP connect alone is not proof the bastion can serve SSH: the
+          # 2026-11-05 deploy passed `nc -z` and then hung for 16 minutes on
+          # `kex_exchange_identification`. Read the banner too.
           for attempt in 1 2 3; do
-            if nc -z -w 10 "$JUMP_HOST" "$JUMP_PORT"; then
-              echo "jump host reachable (attempt ${attempt})"
-              exit 0
+            if ! nc -z -w 10 "$JUMP_HOST" "$JUMP_PORT"; then
+              echo "attempt ${attempt}/3: TCP connect failed; retrying in 15s"
+            else
+              banner=$(timeout 10 bash -c "exec 3<>/dev/tcp/${JUMP_HOST}/${JUMP_PORT}; head -c 4 <&3" 2>/dev/null || true)
+              if [ "$banner" = "SSH-" ]; then
+                echo "jump host reachable and serving SSH (attempt ${attempt})"
+                exit 0
+              fi
+              echo "attempt ${attempt}/3: TCP open but no SSH banner (got '${banner:-<none>}'); retrying in 15s"
             fi
-            echo "attempt ${attempt}/3 failed; retrying in 15s"
             sleep 15
           done
-          echo "::error::Cannot reach the deploy jump host after 3 attempts. Check bastion health and the runner IP allowlist."
+          echo "::error::Cannot reach the deploy jump host after 3 attempts (SSH banner missing). Check bastion health and the runner IP allowlist."
           exit 1
 
       - name: Write .env on server
@@ -1334,16 +1342,38 @@ jobs:
           DEPLOY_USER="${{ secrets.DEPLOY_USER }}"
           DEPLOY_PORT="${{ secrets.DEPLOY_PORT || 22 }}"
           DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+          trap 'rm -f ~/.ssh/deploy_key ~/.ssh/jump_key' EXIT
           # Tunnel through bastion: runner never needs direct SSH to app host.
-          PROXY_CMD="ssh -i $HOME/.ssh/jump_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p ${JUMP_PORT} -W %h:%p ${JUMP_USER}@${JUMP_HOST}"
-          ssh -i ~/.ssh/deploy_key \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            -o "ProxyCommand=${PROXY_CMD}" \
-            -p "${DEPLOY_PORT}" \
-            "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "cd '${DEPLOY_PATH}' && git fetch origin ${{ github.sha }} && git reset --hard ${{ github.sha }} && COMPOSE_PROJECT_NAME=vuln-scanner REMOTE_DATA=1 PULL_ONLY=1 REGISTRY=ghcr.io/${{ github.repository_owner }} GIT_SHA=${{ github.sha }} IMAGE_TAG=sha-${{ github.sha }} ./scripts/deploy-services.sh backend frontend celery_beat"
-          rm -f ~/.ssh/deploy_key ~/.ssh/jump_key
+          PROXY_CMD="ssh -i $HOME/.ssh/jump_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 -p ${JUMP_PORT} -W %h:%p ${JUMP_USER}@${JUMP_HOST}"
+          REMOTE_CMD="cd '${DEPLOY_PATH}' && git fetch origin ${{ github.sha }} && git reset --hard ${{ github.sha }} && COMPOSE_PROJECT_NAME=vuln-scanner REMOTE_DATA=1 PULL_ONLY=1 REGISTRY=ghcr.io/${{ github.repository_owner }} GIT_SHA=${{ github.sha }} IMAGE_TAG=sha-${{ github.sha }} ./scripts/deploy-services.sh backend frontend celery_beat"
+          # Timeouts stop a stalled handshake from eating the 20m job budget.
+          # Retry transport failures only: ssh exits 255 for its own errors,
+          # anything else came from the remote command and would fail again.
+          for attempt in 1 2 3; do
+            rc=0
+            ssh -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=no \
+              -o UserKnownHostsFile=/dev/null \
+              -o ConnectTimeout=15 \
+              -o ServerAliveInterval=10 \
+              -o ServerAliveCountMax=3 \
+              -o "ProxyCommand=${PROXY_CMD}" \
+              -p "${DEPLOY_PORT}" \
+              "${DEPLOY_USER}@${DEPLOY_HOST}" \
+              "${REMOTE_CMD}" || rc=$?
+            if [ "$rc" -eq 0 ]; then
+              echo "deploy ${GITHUB_SHA} succeeded (attempt ${attempt}/3)"
+              exit 0
+            fi
+            if [ "$rc" -ne 255 ]; then
+              echo "::error::remote deploy command exited ${rc}; not retrying (only SSH transport errors are retried)"
+              exit "$rc"
+            fi
+            echo "attempt ${attempt}/3: SSH transport error; retrying in $((attempt * 15))s"
+            sleep $((attempt * 15))
+          done
+          echo "::error::SSH to the deploy host failed 3 times (transport). Check bastion banner and the runner IP allowlist."
+          exit 1
 
   deploy-workers:
     name: deploy-workers
@@ -1370,15 +1400,23 @@ jobs:
             sudo apt-get update -qq
             sudo apt-get install -y -qq netcat-openbsd
           fi
+          # A TCP connect alone is not proof the bastion can serve SSH: the
+          # 2026-11-05 deploy passed `nc -z` and then hung for 16 minutes on
+          # `kex_exchange_identification`. Read the banner too.
           for attempt in 1 2 3; do
-            if nc -z -w 10 "$JUMP_HOST" "$JUMP_PORT"; then
-              echo "jump host reachable (attempt ${attempt})"
-              exit 0
+            if ! nc -z -w 10 "$JUMP_HOST" "$JUMP_PORT"; then
+              echo "attempt ${attempt}/3: TCP connect failed; retrying in 15s"
+            else
+              banner=$(timeout 10 bash -c "exec 3<>/dev/tcp/${JUMP_HOST}/${JUMP_PORT}; head -c 4 <&3" 2>/dev/null || true)
+              if [ "$banner" = "SSH-" ]; then
+                echo "jump host reachable and serving SSH (attempt ${attempt})"
+                exit 0
+              fi
+              echo "attempt ${attempt}/3: TCP open but no SSH banner (got '${banner:-<none>}'); retrying in 15s"
             fi
-            echo "attempt ${attempt}/3 failed; retrying in 15s"
             sleep 15
           done
-          echo "::error::Cannot reach the deploy jump host after 3 attempts. Check bastion health and the runner IP allowlist."
+          echo "::error::Cannot reach the deploy jump host after 3 attempts (SSH banner missing). Check bastion health and the runner IP allowlist."
           exit 1
 
       - name: Pull and recreate workers on gm-s1
@@ -1396,12 +1434,31 @@ jobs:
           WORKER_USER="${{ secrets.DEPLOY_WORKER_USER }}"
           WORKER_PORT="${{ secrets.DEPLOY_WORKER_PORT || 22 }}"
           WORKER_PATH="${{ secrets.DEPLOY_WORKER_PATH }}"
-          PROXY_CMD="ssh -i $HOME/.ssh/jump_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p ${JUMP_PORT} -W %h:%p ${JUMP_USER}@${JUMP_HOST}"
-          ssh -i ~/.ssh/deploy_key \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            -o "ProxyCommand=${PROXY_CMD}" \
-            -p "${WORKER_PORT}" \
-            "${WORKER_USER}@${WORKER_HOST}" \
-            "cd '${WORKER_PATH}' && git fetch origin ${{ github.sha }} && git reset --hard ${{ github.sha }} && COMPOSE_PROJECT_NAME=vuln-scanner REMOTE_DATA=1 PULL_ONLY=1 REGISTRY=ghcr.io/${{ github.repository_owner }} IMAGE_TAG=sha-${{ github.sha }} ./scripts/deploy-services.sh worker_ip worker_domain worker_mobile worker_uptime worker_dead_letter"
-          rm -f ~/.ssh/deploy_key ~/.ssh/jump_key
+          trap 'rm -f ~/.ssh/deploy_key ~/.ssh/jump_key' EXIT
+          PROXY_CMD="ssh -i $HOME/.ssh/jump_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 -p ${JUMP_PORT} -W %h:%p ${JUMP_USER}@${JUMP_HOST}"
+          REMOTE_CMD="cd '${WORKER_PATH}' && git fetch origin ${{ github.sha }} && git reset --hard ${{ github.sha }} && COMPOSE_PROJECT_NAME=vuln-scanner REMOTE_DATA=1 PULL_ONLY=1 REGISTRY=ghcr.io/${{ github.repository_owner }} IMAGE_TAG=sha-${{ github.sha }} ./scripts/deploy-services.sh worker_ip worker_domain worker_mobile worker_uptime worker_dead_letter"
+          for attempt in 1 2 3; do
+            rc=0
+            ssh -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=no \
+              -o UserKnownHostsFile=/dev/null \
+              -o ConnectTimeout=15 \
+              -o ServerAliveInterval=10 \
+              -o ServerAliveCountMax=3 \
+              -o "ProxyCommand=${PROXY_CMD}" \
+              -p "${WORKER_PORT}" \
+              "${WORKER_USER}@${WORKER_HOST}" \
+              "${REMOTE_CMD}" || rc=$?
+            if [ "$rc" -eq 0 ]; then
+              echo "deploy ${GITHUB_SHA} to workers succeeded (attempt ${attempt}/3)"
+              exit 0
+            fi
+            if [ "$rc" -ne 255 ]; then
+              echo "::error::remote worker deploy command exited ${rc}; not retrying (only SSH transport errors are retried)"
+              exit "$rc"
+            fi
+            echo "attempt ${attempt}/3: SSH transport error; retrying in $((attempt * 15))s"
+            sleep $((attempt * 15))
+          done
+          echo "::error::SSH to the worker host failed 3 times (transport). Check bastion banner and the runner IP allowlist."
+          exit 1
