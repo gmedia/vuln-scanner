@@ -25,6 +25,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.errors import ApiError, ErrorCode, api_error
 from app.models.invoice import OrgInvoice
 from app.models.organization import Organization
 from app.models.promo import (
@@ -47,6 +48,12 @@ _IMMUTABLE_TERMS = (
     "applies_to_sku",
     "applies_to_product",
 )
+
+# Finance cap from promo-codes-v1 §1 item 5. A discount *above* these limits
+# needs a second platform admin; the boundary values themselves do not.
+_APPROVAL_PERCENT_BP = 5000
+_APPROVAL_AMOUNT_IDR = 5_000_000
+_APPROVAL_TERMS = ("kind", "percent_off_bp", "amount_idr", "max_discount_idr")
 
 @dataclass(frozen=True)
 class PromoQuote:
@@ -76,6 +83,8 @@ def _normalize(code: str) -> str:
 def _json_value(value: Any) -> Any:
     if isinstance(value, datetime):
         return as_utc(value).isoformat()
+    if isinstance(value, uuid.UUID):
+        return str(value)
     return value
 
 def _changes(before: dict[str, Any], after: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -98,6 +107,47 @@ def _check_kind(kind: str, percent_off_bp: int | None, amount_idr: int | None) -
             raise _bad_request("fixed promos require amount_idr and no percent_off_bp")
     else:
         raise _bad_request("kind must be 'percent' or 'fixed'")
+
+def _requires_approval(
+    *,
+    kind: str,
+    percent_off_bp: int | None,
+    amount_idr: int | None,
+    max_discount_idr: int | None,
+) -> bool:
+    if kind == "percent" and (percent_off_bp or 0) > _APPROVAL_PERCENT_BP:
+        return True
+    if kind == "fixed" and (amount_idr or 0) > _APPROVAL_AMOUNT_IDR:
+        return True
+    return max_discount_idr is not None and max_discount_idr > _APPROVAL_AMOUNT_IDR
+
+def _approval_required() -> ApiError:
+    return api_error(
+        status.HTTP_409_CONFLICT,
+        ErrorCode.PROMO_APPROVAL_REQUIRED,
+        "Promo code requires a second admin approval before it can be enabled",
+    )
+
+def _self_approval() -> ApiError:
+    return api_error(
+        status.HTTP_409_CONFLICT,
+        ErrorCode.PROMO_SELF_APPROVAL,
+        "A promo code must be approved by a different platform admin",
+    )
+
+def _approval_not_required() -> ApiError:
+    return api_error(
+        status.HTTP_400_BAD_REQUEST,
+        ErrorCode.PROMO_APPROVAL_NOT_REQUIRED,
+        "This promo code does not require approval",
+    )
+
+def _already_approved() -> ApiError:
+    return api_error(
+        status.HTTP_409_CONFLICT,
+        ErrorCode.PROMO_ALREADY_APPROVED,
+        "This promo code has already been approved",
+    )
 
 def _window_clause(now: datetime) -> Any:
     return (
@@ -431,6 +481,12 @@ class PromoService:
         _check_window(body.starts_at, body.ends_at)
         if await self._get_by_code(body.code) is not None:
             raise _conflict(f"Promo code '{body.code}' already exists")
+        requires_approval = _requires_approval(
+            kind=body.kind,
+            percent_off_bp=body.percent_off_bp,
+            amount_idr=body.amount_idr,
+            max_discount_idr=body.max_discount_idr,
+        )
         now = datetime.now(UTC)
         promo = PromoCode(
             code=body.code,
@@ -446,7 +502,10 @@ class PromoService:
             ends_at=as_utc(body.ends_at) if body.ends_at else None,
             max_redemptions=body.max_redemptions,
             max_redemptions_per_org=body.max_redemptions_per_org,
-            active=True,
+            active=not requires_approval,
+            requires_approval=requires_approval,
+            approved_by_user_id=None,
+            approved_at=None,
             created_by_user_id=actor.id,
             updated_by_user_id=actor.id,
             created_at=now,
@@ -454,12 +513,15 @@ class PromoService:
         )
         self.db.add(promo)
         await self.db.flush()
-        self._record_history(
-            promo.id,
-            "created",
-            actor,
-            {field: {"from": None, "to": _json_value(value)} for field, value in _redemption_values(promo).items()},
-        )
+        created_changes = {
+            field: {"from": None, "to": _json_value(value)}
+            for field, value in _redemption_values(promo).items()
+        }
+        if requires_approval:
+            created_changes["requires_approval"] = {"from": None, "to": True}
+            created_changes["approved_by_user_id"] = {"from": None, "to": None}
+            created_changes["approved_at"] = {"from": None, "to": None}
+        self._record_history(promo.id, "created", actor, created_changes)
         try:
             await self.db.commit()
         except IntegrityError as exc:
@@ -478,6 +540,12 @@ class PromoService:
 
         has_redemptions = await self._has_redemptions(promo.id)
         before = _redemption_values(promo)
+        approval_before = {
+            "requires_approval": promo.requires_approval,
+            "approved_by_user_id": promo.approved_by_user_id,
+            "approved_at": promo.approved_at,
+            "active": promo.active,
+        }
 
         values = dict(before)
         if "description" in present and body.description is not None:
@@ -514,14 +582,69 @@ class PromoService:
         _check_kind(values["kind"], values["percent_off_bp"], values["amount_idr"])
         _check_window(values["starts_at"], values["ends_at"])
 
+        requires_approval = _requires_approval(
+            kind=values["kind"],
+            percent_off_bp=values["percent_off_bp"],
+            amount_idr=values["amount_idr"],
+            max_discount_idr=values["max_discount_idr"],
+        )
+        terms_changed = any(values[field] != before[field] for field in _APPROVAL_TERMS)
+
         for field, value in values.items():
             setattr(promo, field, value)
+        promo.requires_approval = requires_approval
         promo.updated_by_user_id = actor.id
         promo.updated_at = datetime.now(UTC)
 
         changes = _changes(before, values)
+        if requires_approval != approval_before["requires_approval"]:
+            changes["requires_approval"] = {
+                "from": approval_before["requires_approval"],
+                "to": requires_approval,
+            }
+
+        reset_approval = requires_approval and terms_changed
+        if reset_approval:
+            promo.active = False
+            promo.approved_by_user_id = None
+            promo.approved_at = None
+        elif not requires_approval:
+            if approval_before["approved_by_user_id"] is not None:
+                changes["approved_by_user_id"] = {
+                    "from": _json_value(approval_before["approved_by_user_id"]),
+                    "to": None,
+                }
+            if approval_before["approved_at"] is not None:
+                changes["approved_at"] = {
+                    "from": _json_value(approval_before["approved_at"]),
+                    "to": None,
+                }
+            promo.approved_by_user_id = None
+            promo.approved_at = None
+
         if changes:
             self._record_history(promo.id, "updated", actor, changes)
+        if reset_approval:
+            self._record_history(
+                promo.id,
+                "approval_reset",
+                actor,
+                {
+                    "requires_approval": {
+                        "from": approval_before["requires_approval"],
+                        "to": True,
+                    },
+                    "approved_by_user_id": {
+                        "from": _json_value(approval_before["approved_by_user_id"]),
+                        "to": None,
+                    },
+                    "approved_at": {
+                        "from": _json_value(approval_before["approved_at"]),
+                        "to": None,
+                    },
+                    "active": {"from": approval_before["active"], "to": False},
+                },
+            )
 
         try:
             await self.db.commit()
@@ -546,12 +669,41 @@ class PromoService:
 
     async def reactivate(self, promo_id: uuid.UUID, actor: User) -> PromoCode:
         promo = await self.get(promo_id)
+        if promo.requires_approval and promo.approved_at is None:
+            raise _approval_required()
         previous = promo.active
         promo.active = True
         promo.updated_by_user_id = actor.id
         promo.updated_at = datetime.now(UTC)
         self._record_history(
             promo.id, "reactivated", actor, {"active": {"from": previous, "to": True}}
+        )
+        await self.db.commit()
+        await self.db.refresh(promo)
+        return promo
+
+    async def approve(self, promo_id: uuid.UUID, actor: User) -> PromoCode:
+        promo = await self.get(promo_id)
+        if actor.id == promo.created_by_user_id:
+            raise _self_approval()
+        if not promo.requires_approval:
+            raise _approval_not_required()
+        if promo.approved_at is not None:
+            raise _already_approved()
+        now = datetime.now(UTC)
+        promo.approved_by_user_id = actor.id
+        promo.approved_at = now
+        promo.active = True
+        promo.updated_by_user_id = actor.id
+        promo.updated_at = now
+        self._record_history(
+            promo.id,
+            "approved",
+            actor,
+            {
+                "approved_by_user_id": {"from": None, "to": str(actor.id)},
+                "approved_at": {"from": None, "to": now.isoformat()},
+            },
         )
         await self.db.commit()
         await self.db.refresh(promo)

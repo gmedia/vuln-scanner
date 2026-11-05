@@ -154,6 +154,14 @@ function AdminPromoCodes() {
     },
     onError: (err: unknown) => toast.error(apiDetail(err, t("promoSaveFail"))),
   });
+  const approveMut = useMutation({
+    mutationFn: (item: PromoCode) => adminApi.approveAdminPromoCode(item.id),
+    onSuccess: () => {
+      toast.success(t("promoApproved"));
+      refresh();
+    },
+    onError: (err: unknown) => toast.error(apiDetail(err, t("promoApproveFail"))),
+  });
   const toggleMut = useMutation({
     mutationFn: (item: PromoCode) =>
       item.active ? adminApi.deactivateAdminPromoCode(item.id) : adminApi.reactivateAdminPromoCode(item.id),
@@ -257,6 +265,9 @@ function AdminPromoCodes() {
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-mono text-sm text-foreground">{item.code}</p>
                       <Badge variant={item.active ? "success" : "default"} className="text-[10px] uppercase">{item.active ? t("promoActive") : t("promoInactive")}</Badge>
+                      {item.requires_approval && !item.approved_at ? (
+                        <Badge variant="pending" className="text-[10px] uppercase" data-testid={`promo-needs-approval-${item.id}`}>{t("promoNeedsApproval")}</Badge>
+                      ) : null}
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">{item.description || "—"}</p>
                     <p className="mt-1 text-[11px] text-muted-foreground">
@@ -266,7 +277,7 @@ function AdminPromoCodes() {
                       {usedLabel(item)}
                     </p>
                     <div className="mt-3 flex justify-end">
-                      <PromoRowActions item={item} onEdit={openEdit} onToggle={(row) => toggleMut.mutate(row)} onRedemptions={setRedemptionsTarget} onHistory={setHistoryTarget} onDelete={setDeleteTarget} />
+                      <PromoRowActions item={item} onEdit={openEdit} onApprove={(row) => approveMut.mutate(row)} onToggle={(row) => toggleMut.mutate(row)} onRedemptions={setRedemptionsTarget} onHistory={setHistoryTarget} onDelete={setDeleteTarget} />
                     </div>
                   </div>
                 ))}
@@ -304,11 +315,16 @@ function AdminPromoCodes() {
                           {usedLabel(item)}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={item.active ? "success" : "default"} className="text-[10px] uppercase">{item.active ? t("promoActive") : t("promoInactive")}</Badge>
+                          <div className="flex flex-wrap items-center gap-1">
+                            <Badge variant={item.active ? "success" : "default"} className="text-[10px] uppercase">{item.active ? t("promoActive") : t("promoInactive")}</Badge>
+                            {item.requires_approval && !item.approved_at ? (
+                              <Badge variant="pending" className="text-[10px] uppercase" data-testid={`promo-needs-approval-${item.id}`}>{t("promoNeedsApproval")}</Badge>
+                            ) : null}
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end">
-                            <PromoRowActions item={item} onEdit={openEdit} onToggle={(row) => toggleMut.mutate(row)} onRedemptions={setRedemptionsTarget} onHistory={setHistoryTarget} onDelete={setDeleteTarget} />
+                            <PromoRowActions item={item} onEdit={openEdit} onApprove={(row) => approveMut.mutate(row)} onToggle={(row) => toggleMut.mutate(row)} onRedemptions={setRedemptionsTarget} onHistory={setHistoryTarget} onDelete={setDeleteTarget} />
                           </div>
                         </TableCell>
                       </TableRow>

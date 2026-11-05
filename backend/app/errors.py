@@ -21,6 +21,10 @@ class ErrorCode(StrEnum):
     GUARD_NOT_ENABLED = "guard_not_enabled"
     HOST_SITE_DUPLICATE = "host_site_duplicate"
     UPTIME_SEAT_LIMIT = "uptime_seat_limit"
+    PROMO_APPROVAL_REQUIRED = "promo_approval_required"
+    PROMO_SELF_APPROVAL = "promo_self_approval"
+    PROMO_APPROVAL_NOT_REQUIRED = "promo_approval_not_required"
+    PROMO_ALREADY_APPROVED = "promo_already_approved"
 
 
 class ApiError(HTTPException):

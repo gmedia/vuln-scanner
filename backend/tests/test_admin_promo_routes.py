@@ -170,6 +170,207 @@ async def test_pagination(db_session: AsyncSession) -> None:
         app.dependency_overrides.clear()
 
 @pytest.mark.asyncio
+async def test_finance_cap_marks_high_value_codes_for_approval(
+    db_session: AsyncSession,
+) -> None:
+    admin = await _make_user(db_session, "promo-cap@example.com", admin=True)
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    headers = _auth(admin)
+    cases = [
+        ("PERCENTHIGH2026", {"percent_off_bp": 6000}, True),
+        ("PERCENTBOUND2026", {"percent_off_bp": 5000}, False),
+        (
+            "FIXEDHIGH2026",
+            {"kind": "fixed", "percent_off_bp": None, "amount_idr": 6_000_000},
+            True,
+        ),
+        (
+            "FIXEDBOUND2026",
+            {"kind": "fixed", "percent_off_bp": None, "amount_idr": 5_000_000},
+            False,
+        ),
+        ("CEILHIGH2026", {"max_discount_idr": 6_000_000}, True),
+        ("CEILBOUND2026", {"max_discount_idr": 5_000_000}, False),
+    ]
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            for code, overrides, expected in cases:
+                response = await client.post(
+                    "/api/admin/promo-codes",
+                    headers=headers,
+                    json=_create_body(code, **overrides),
+                )
+                assert response.status_code == 201, response.text
+                body = response.json()
+                assert body["requires_approval"] is expected, code
+                assert body["active"] is (not expected), code
+                assert body["approved_by_user_id"] is None
+                assert body["approved_at"] is None
+                if expected:
+                    history = await client.get(
+                        f"/api/admin/promo-codes/{body['id']}/history",
+                        headers=headers,
+                    )
+                    changes = history.json()["items"][0]["changes"]
+                    assert changes["requires_approval"] == {
+                        "from": None,
+                        "to": True,
+                    }
+    finally:
+        app.dependency_overrides.clear()
+
+@pytest.mark.asyncio
+async def test_second_admin_approval_unblocks_high_value_code(
+    db_session: AsyncSession,
+) -> None:
+    creator = await _make_user(db_session, "promo-creator@example.com", admin=True)
+    approver = await _make_user(db_session, "promo-approver@example.com", admin=True)
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    creator_headers = _auth(creator)
+    approver_headers = _auth(approver)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            created = await client.post(
+                "/api/admin/promo-codes",
+                headers=creator_headers,
+                json=_create_body("APPROVE2026", percent_off_bp=6000),
+            )
+            assert created.status_code == 201, created.text
+            promo_id = created.json()["id"]
+            assert created.json()["active"] is False
+
+            blocked = await client.post(
+                f"/api/admin/promo-codes/{promo_id}/reactivate",
+                headers=creator_headers,
+            )
+            assert blocked.status_code == 409
+            assert blocked.json()["code"] == "promo_approval_required"
+
+            self_approval = await client.post(
+                f"/api/admin/promo-codes/{promo_id}/approve",
+                headers=creator_headers,
+            )
+            assert self_approval.status_code == 409
+            assert self_approval.json()["code"] == "promo_self_approval"
+
+            approved = await client.post(
+                f"/api/admin/promo-codes/{promo_id}/approve",
+                headers=approver_headers,
+            )
+            assert approved.status_code == 200, approved.text
+            body = approved.json()
+            assert body["active"] is True
+            assert body["approved_by_user_id"] == str(approver.id)
+            assert body["approved_at"] is not None
+
+            again = await client.post(
+                f"/api/admin/promo-codes/{promo_id}/approve",
+                headers=approver_headers,
+            )
+            assert again.status_code == 409
+            assert again.json()["code"] == "promo_already_approved"
+
+            off = await client.post(
+                f"/api/admin/promo-codes/{promo_id}/deactivate",
+                headers=approver_headers,
+            )
+            assert off.status_code == 200
+            on = await client.post(
+                f"/api/admin/promo-codes/{promo_id}/reactivate",
+                headers=approver_headers,
+            )
+            assert on.status_code == 200
+            assert on.json()["active"] is True
+
+            low = await client.post(
+                "/api/admin/promo-codes",
+                headers=creator_headers,
+                json=_create_body("LOWCODE2026"),
+            )
+            low_approval = await client.post(
+                f"/api/admin/promo-codes/{low.json()['id']}/approve",
+                headers=approver_headers,
+            )
+            assert low_approval.status_code == 400
+            assert low_approval.json()["code"] == "promo_approval_not_required"
+    finally:
+        app.dependency_overrides.clear()
+
+@pytest.mark.asyncio
+async def test_update_recomputes_approval_and_preserves_it_for_descriptions(
+    db_session: AsyncSession,
+) -> None:
+    creator = await _make_user(db_session, "promo-patch@example.com", admin=True)
+    approver = await _make_user(db_session, "promo-patch-approver@example.com", admin=True)
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    creator_headers = _auth(creator)
+    approver_headers = _auth(approver)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            created = await client.post(
+                "/api/admin/promo-codes",
+                headers=creator_headers,
+                json=_create_body("PATCHCAP2026", percent_off_bp=6000),
+            )
+            promo_id = created.json()["id"]
+            approved = await client.post(
+                f"/api/admin/promo-codes/{promo_id}/approve",
+                headers=approver_headers,
+            )
+            assert approved.status_code == 200, approved.text
+
+            raised = await client.patch(
+                f"/api/admin/promo-codes/{promo_id}",
+                headers=creator_headers,
+                json={"percent_off_bp": 7000},
+            )
+            assert raised.status_code == 200, raised.text
+            body = raised.json()
+            assert body["requires_approval"] is True
+            assert body["active"] is False
+            assert body["approved_by_user_id"] is None
+            assert body["approved_at"] is None
+
+            history = await client.get(
+                f"/api/admin/promo-codes/{promo_id}/history", headers=creator_headers
+            )
+            assert "approval_reset" in [
+                row["action"] for row in history.json()["items"]
+            ]
+
+            reapproved = await client.post(
+                f"/api/admin/promo-codes/{promo_id}/approve",
+                headers=approver_headers,
+            )
+            assert reapproved.status_code == 200, reapproved.text
+
+            described = await client.patch(
+                f"/api/admin/promo-codes/{promo_id}",
+                headers=creator_headers,
+                json={"description": "Still approved"},
+            )
+            assert described.status_code == 200
+            assert described.json()["approved_at"] is not None
+            assert described.json()["active"] is True
+
+            lowered = await client.patch(
+                f"/api/admin/promo-codes/{promo_id}",
+                headers=creator_headers,
+                json={"percent_off_bp": 4000},
+            )
+            assert lowered.status_code == 200
+            body = lowered.json()
+            assert body["requires_approval"] is False
+            assert body["approved_by_user_id"] is None
+            assert body["approved_at"] is None
+            assert body["active"] is True
+    finally:
+        app.dependency_overrides.clear()
+
+@pytest.mark.asyncio
 async def test_admin_validate_returns_discount_and_total(
     db_session: AsyncSession,
 ) -> None:

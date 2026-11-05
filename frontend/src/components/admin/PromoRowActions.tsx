@@ -1,4 +1,4 @@
-import { History, MoreHorizontal, Users } from "lucide-react";
+import { CheckCircle2, History, MoreHorizontal, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import type { PromoCode } from "@/api/admin";
@@ -14,6 +14,7 @@ import {
 export function PromoRowActions({
   item,
   onEdit,
+  onApprove,
   onToggle,
   onRedemptions,
   onHistory,
@@ -21,6 +22,7 @@ export function PromoRowActions({
 }: {
   item: PromoCode;
   onEdit: (item: PromoCode) => void;
+  onApprove: (item: PromoCode) => void;
   onToggle: (item: PromoCode) => void;
   onRedemptions: (item: PromoCode) => void;
   onHistory: (item: PromoCode) => void;
@@ -28,6 +30,8 @@ export function PromoRowActions({
 }) {
   const { t } = useTranslation("admin");
   const isUsed = item.redemption_count > 0;
+  const needsApproval = item.requires_approval && item.approved_at == null;
+  const reactivateBlocked = needsApproval && !item.active;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -39,7 +43,20 @@ export function PromoRowActions({
         <DropdownMenuItem data-testid={`promo-edit-${item.id}`} onSelect={() => onEdit(item)}>
           {t("promoEdit")}
         </DropdownMenuItem>
-        <DropdownMenuItem data-testid={`promo-toggle-${item.id}`} onSelect={() => onToggle(item)}>
+        {needsApproval ? (
+          <DropdownMenuItem data-testid={`promo-approve-${item.id}`} onSelect={() => onApprove(item)}>
+            <CheckCircle2 className="mr-2 h-4 w-4" />
+            {t("promoApprove")}
+          </DropdownMenuItem>
+        ) : null}
+        <DropdownMenuItem
+          data-testid={`promo-toggle-${item.id}`}
+          disabled={reactivateBlocked}
+          title={reactivateBlocked ? t("promoReactivateBlocked") : undefined}
+          onSelect={() => {
+            if (!reactivateBlocked) onToggle(item);
+          }}
+        >
           {item.active ? t("promoDeactivate") : t("promoReactivate")}
         </DropdownMenuItem>
         <DropdownMenuItem data-testid={`promo-redemptions-${item.id}`} onSelect={() => onRedemptions(item)}>
