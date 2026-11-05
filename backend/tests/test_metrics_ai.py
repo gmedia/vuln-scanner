@@ -331,7 +331,7 @@ class TestRegisterCustomMetrics:
             register_custom_metrics()
             register_custom_metrics()
 
-        assert mock_reg.call_count == 9
+        assert mock_reg.call_count == 14
         classes = [type(call.args[0]).__name__ for call in mock_reg.call_args_list]
         assert sorted(classes) == sorted(
             [
@@ -344,9 +344,14 @@ class TestRegisterCustomMetrics:
                 "AiStaleReservationsCollector",
                 "AiUpstreamBreakersOpenCollector",
                 "AiWalletLedgerDriftCollector",
+                "PaymentAmountMismatchCollector",
+                "PaymentDuplicateSettlementCollector",
+                "PaymentFailedEventsCollector",
+                "PaymentPendingAgeCollector",
+                "PaymentPendingAttemptsCollector",
             ]
         )
-        assert len(set(classes)) == 9
+        assert len(set(classes)) == 14
 
 
 class TestAiProvidersNeverProbedReader:
