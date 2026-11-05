@@ -1,6 +1,6 @@
 # Spec: Uptime check types v2 (P8.x)
 
-**Status:** Draft — planning only. **Do not implement** until an explicit implement verb + this spec is named.
+**Status:** **shipped on `main`** — the check-type set is `http | tcp | heartbeat | dns | ping` (`backend/app/models/uptime.py`, `backend/app/services/uptime_apply.py`). Do **not** re-implement; a new check type still needs an explicit implement verb + this spec named.
 **Goal:** Extend P8 Uptime beyond GET+TCP so colo/VPS and hospitality attach can cover **200-but-wrong**, **authenticated health**, **NAT/cron jobs**, and (later) **DNS integrity** — without becoming Pingdom/Checkly.
 **Epic:** **P8.x** (follow-on to [`uptime-v1.md`](uptime-v1.md) S1–S5 + [`status-page-v1.md`](status-page-v1.md)). Does **not** replace Scan, Guard, SIEM, or public status HTML.
 **Depends:** v1 monitors (`http` \| `tcp`), SKU seats, SSRF `assert_public_host`, queue `uptime_check`, SPA `/uptime`.
