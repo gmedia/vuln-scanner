@@ -241,4 +241,6 @@ MIDTRANS_VERIFY_STATUS=true
 
 ## 13) Tests
 
-See the plan's test matrix: adapter payload/signature/status mapping/status API, webhook duplicate/forged/mismatch/void/out-of-order/late settlement, checkout reuse/one-pending/zero-total/disabled, `/paid` and `/void` guards, money display (`total_idr`), and Postgres-only concurrency (skipped without `TEST_POSTGRES_URL`).
+See the plan's test matrix: adapter payload/signature/status mapping/status API, webhook duplicate/forged/mismatch/void/out-of-order/late settlement, checkout reuse/one-pending/zero-total/disabled, `/paid` and `/void` guards, money display (`total_idr`), and the Postgres concurrency suite in `backend/tests/test_pg_concurrency.py`.
+
+That suite runs in CI as the `postgres-concurrency-tests` job against a `postgres:16-alpine` service, so the row-lock and partial-unique-index invariants are executed, not merely reasoned about. It skips locally when `TEST_POSTGRES_URL` is unset; the normal SQLite suite stays Postgres-free. Its sync metadata test (index predicates) runs in every CI run.
