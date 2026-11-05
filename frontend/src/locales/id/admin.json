@@ -719,6 +719,12 @@
   "invoicePromoInvalid": "Kode tidak dapat digunakan untuk invoice yang dipilih.",
   "invoicePromoEstimate": "Pratinjau dari organisasi, produk, SKU, dan siklus yang dipilih.",
   "invoicePromoAnnual": "Kode promo tidak berlaku untuk invoice tahunan.",
+  "invoiceRequestLabel": "Tautkan permintaan tertunda (opsional)",
+  "invoiceRequestNone": "Tanpa permintaan",
+  "invoiceRequestHint": "Diskon diterapkan pada invoice; permintaan hanya membawa niat.",
+  "invoiceRequestPromoHint": "Permintaan ini membawa kode promo {{code}}.",
+  "invoiceRequestPromoInvalid": "Kode dari permintaan ini tidak lagi berlaku. Invoice akan dibuat dengan harga normal kecuali Anda menghapus atau menautkan kode lain.",
+  "invoiceRequestEmpty": "Tidak ada permintaan tertunda untuk organisasi ini.",
   "invoiceDiscount": "Diskon",
   "invoiceTotal": "Total"
 }

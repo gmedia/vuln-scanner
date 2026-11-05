@@ -1,11 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import AdminInvoices from "@/pages/admin/AdminInvoices";
 import { adminApi } from "@/api/admin";
 import type { InvoiceItem, SkuCatalogItem } from "@/api/admin";
+import {
+  listAdminSubscriptionRequests,
+  type SubscriptionRequestItem,
+} from "@/api/subscription";
 
 vi.mock("@/api/admin", () => ({
   adminApi: {
@@ -26,7 +30,11 @@ vi.mock("@/api/subscription", async () => {
     await vi.importActual<typeof import("@/api/subscription")>(
       "@/api/subscription",
     );
-  return { ...actual, getSkuTiers: vi.fn(async () => []) };
+  return {
+    ...actual,
+    getSkuTiers: vi.fn(async () => []),
+    listAdminSubscriptionRequests: vi.fn(),
+  };
 });
 
 vi.mock("@/components/ui/Select", () => {
@@ -142,6 +150,51 @@ function renderPage() {
   );
 }
 
+const requests: SubscriptionRequestItem[] = [
+  {
+    id: "11111111-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    organization_id: "org-1",
+    direction: "upgrade",
+    current_sku: "basic",
+    target_sku: "pro",
+    cycle: "monthly",
+    promo_code: "LINKED2026",
+    note: "",
+    status: "pending",
+    resolution_note: "",
+    created_at: "2026-11-01T00:00:00Z",
+    resolved_at: null,
+  },
+  {
+    id: "22222222-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    organization_id: "org-2",
+    direction: "upgrade",
+    current_sku: "basic",
+    target_sku: "basic",
+    cycle: "annual",
+    promo_code: null,
+    note: "",
+    status: "pending",
+    resolution_note: "",
+    created_at: "2026-11-01T00:00:00Z",
+    resolved_at: null,
+  },
+  {
+    id: "33333333-cccc-4ccc-8ccc-cccccccccccc",
+    organization_id: "org-1",
+    direction: "downgrade",
+    current_sku: "pro",
+    target_sku: "basic",
+    cycle: "monthly",
+    promo_code: null,
+    note: "",
+    status: "approved",
+    resolution_note: "",
+    created_at: "2026-11-01T00:00:00Z",
+    resolved_at: null,
+  },
+];
+
 function changeSelectById(id: string, value: string) {
   const trigger = document.getElementById(id);
   const root = trigger?.closest("[data-testid=select-root]");
@@ -156,8 +209,13 @@ beforeEach(() => {
   vi.mocked(adminApi.listAdminOrgs).mockResolvedValue({
     items: [
       { id: "org-1", name: "Acme", slug: "acme", sku: "basic", kind: "team" },
+      { id: "org-2", name: "Beta", slug: "beta", sku: "basic", kind: "team" },
     ],
-    total: 1,
+    total: 2,
+  });
+  vi.mocked(listAdminSubscriptionRequests).mockResolvedValue({
+    items: requests,
+    total: requests.length,
   });
   vi.mocked(adminApi.listAdminInvoices).mockResolvedValue({
     items: [invoice],
@@ -233,5 +291,119 @@ describe("AdminInvoices promo", () => {
     expect(await screen.findByTestId("invoice-promo-error")).toHaveTextContent(
       "This code cannot be used for the selected invoice",
     );
+  });
+
+  it("lists only pending requests for the selected organization", async () => {
+    renderPage();
+
+    await screen.findByTestId("invoices-list-desktop");
+    changeSelectById("inv-org", "org-1");
+
+    const requestRoot = () =>
+      document
+        .getElementById("inv-request")
+        ?.closest("[data-testid=select-root]") as HTMLElement;
+
+    expect(
+      await within(requestRoot()).findByText(
+        "#11111111 · pro · monthly · LINKED2026",
+      ),
+    ).toBeInTheDocument();
+    expect(within(requestRoot()).queryByText(/22222222/)).not.toBeInTheDocument();
+    expect(within(requestRoot()).queryByText(/33333333/)).not.toBeInTheDocument();
+
+    changeSelectById("inv-org", "org-2");
+
+    expect(
+      await within(requestRoot()).findByText("#22222222 · basic · annual"),
+    ).toBeInTheDocument();
+    expect(within(requestRoot()).queryByText(/11111111/)).not.toBeInTheDocument();
+  });
+
+  it("prefills SKU/cycle and validates the linked request promo code", async () => {
+    renderPage();
+
+    await screen.findByTestId("invoices-list-desktop");
+    changeSelectById("inv-org", "org-1");
+    changeSelectById("inv-request", requests[0].id);
+
+    await waitFor(() =>
+      expect(adminApi.validateAdminPromoCode).toHaveBeenCalledWith({
+        organization_id: "org-1",
+        code: "LINKED2026",
+        product: "scan",
+        sku: "pro",
+        cycle: "monthly",
+      }),
+    );
+    expect(await screen.findByTestId("invoice-promo-result")).toHaveTextContent(
+      "Launch discount",
+    );
+    expect(
+      document
+        .getElementById("inv-sku")
+        ?.closest("[data-testid=select-root]"),
+    ).toHaveAttribute("data-value", "pro");
+    expect(screen.getByTestId("invoice-promo-code")).toHaveValue("LINKED2026");
+  });
+
+  it("surfaces a linked code that no longer validates", async () => {
+    vi.mocked(adminApi.validateAdminPromoCode).mockRejectedValue(
+      new Error("expired"),
+    );
+    renderPage();
+
+    await screen.findByTestId("invoices-list-desktop");
+    changeSelectById("inv-org", "org-1");
+    changeSelectById("inv-request", requests[0].id);
+
+    expect(
+      await screen.findByTestId("invoice-request-promo-invalid"),
+    ).toHaveTextContent("no longer valid");
+    expect(screen.queryByTestId("invoice-promo-result")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("invoice-promo-error")).not.toBeInTheDocument();
+  });
+
+  it("sends the linked request id with the validated promo code", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await screen.findByTestId("invoices-list-desktop");
+    changeSelectById("inv-org", "org-1");
+    changeSelectById("inv-request", requests[0].id);
+    await screen.findByTestId("invoice-promo-result");
+
+    await user.click(screen.getByTestId("invoice-create"));
+
+    await waitFor(() =>
+      expect(adminApi.createAdminInvoice).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organization_id: "org-1",
+          sku: "pro",
+          promo_code: "LINKED2026",
+          subscription_request_id: requests[0].id,
+        }),
+      ),
+    );
+  });
+
+  it("clears the linked request when the SKU changes", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await screen.findByTestId("invoices-list-desktop");
+    changeSelectById("inv-org", "org-1");
+    changeSelectById("inv-request", requests[0].id);
+    await screen.findByTestId("invoice-promo-result");
+
+    changeSelectById("inv-sku", "basic");
+    await user.click(screen.getByTestId("invoice-create"));
+
+    await waitFor(() => expect(adminApi.createAdminInvoice).toHaveBeenCalled());
+    const calls = vi.mocked(adminApi.createAdminInvoice).mock.calls;
+    const body = calls[calls.length - 1]?.[0];
+    expect(body).toBeDefined();
+    expect(body).not.toHaveProperty("subscription_request_id");
+    expect(body).not.toHaveProperty("promo_code");
   });
 });

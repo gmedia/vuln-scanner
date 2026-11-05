@@ -59,6 +59,10 @@ import {
   type InvoiceProduct,
   type PromoValidateResult,
 } from "@/api/admin";
+import {
+  listAdminSubscriptionRequests,
+  type SubscriptionRequestItem,
+} from "@/api/subscription";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
@@ -75,6 +79,13 @@ function isInvoiceProduct(value: string): value is InvoiceProduct {
   return value === "scan" || value === "host" || value === "uptime" || value === "guard";
 }
 
+function apiDetail(err: unknown, fallback: string): string {
+  const detail = (
+    err as { response?: { data?: { detail?: unknown } } }
+  )?.response?.data?.detail;
+  return typeof detail === "string" && detail ? detail : fallback;
+}
+
 function AdminInvoices() {
   const { t } = useTranslation("admin");
   const { label: tierLabel } = useTierMap();
@@ -89,7 +100,9 @@ function AdminInvoices() {
   const [promoCode, setPromoCode] = useState("");
   const [promoResult, setPromoResult] = useState<PromoValidateResult | null>(null);
   const [promoError, setPromoError] = useState(false);
+  const [promoLinkError, setPromoLinkError] = useState(false);
   const [promoLoading, setPromoLoading] = useState(false);
+  const [requestId, setRequestId] = useState("");
   const { printing, startPrint } = useInvoicePrint();
 
   const catalogQ = useQuery({
@@ -99,6 +112,16 @@ function AdminInvoices() {
   const orgsQ = useQuery({
     queryKey: ["admin-orgs"],
     queryFn: () => adminApi.listAdminOrgs(),
+  });
+  const pendingRequestsQuery = useQuery({
+    queryKey: ["admin-subscription-requests", "pending", 100],
+    queryFn: () =>
+      listAdminSubscriptionRequests({
+        status: "pending",
+        page: 1,
+        page_size: 100,
+      }),
+    retry: false,
   });
   const invoicesQ = useQuery({
     queryKey: ["admin-invoices", status],
@@ -123,11 +146,78 @@ function AdminInvoices() {
   const skuValue = skuOptions.some((row) => row.sku === sku)
     ? sku
     : (skuOptions[0]?.sku ?? "");
+  const pendingForOrg = (pendingRequestsQuery.data?.items ?? []).filter(
+    (r) => r.organization_id === orgId && r.status === "pending",
+  );
+  const linkedRequest = pendingForOrg.find((r) => r.id === requestId);
+  const promoHintRequest =
+    linkedRequest?.promo_code
+      ? linkedRequest
+      : pendingForOrg.length === 1 && pendingForOrg[0].promo_code
+        ? pendingForOrg[0]
+        : undefined;
 
   function clearPromo() {
     setPromoCode("");
     setPromoResult(null);
     setPromoError(false);
+  }
+
+  function clearRequest() {
+    setRequestId("");
+    setPromoLinkError(false);
+  }
+
+  async function validateLinkedPromo(
+    code: string,
+    targetSku: string,
+    targetCycle: "monthly" | "annual",
+  ) {
+    if (!orgId) return;
+    setPromoLoading(true);
+    setPromoLinkError(false);
+    setPromoError(false);
+    setPromoResult(null);
+    try {
+      const result = await adminApi.validateAdminPromoCode({
+        organization_id: orgId,
+        code: code.trim().toUpperCase(),
+        product,
+        sku: targetSku,
+        cycle: targetCycle,
+      });
+      setPromoResult(result);
+    } catch {
+      setPromoLinkError(true);
+    } finally {
+      setPromoLoading(false);
+    }
+  }
+
+  function applyRequest(req: SubscriptionRequestItem) {
+    setRequestId(req.id);
+    // Plan requests are scan-only; never consume one against a host/uptime line.
+    setProduct("scan");
+    setSku(req.target_sku);
+    setCycle(req.cycle);
+    setPromoLinkError(false);
+    if (req.promo_code) {
+      setPromoCode(req.promo_code.toUpperCase());
+      setPromoResult(null);
+      setPromoError(false);
+      void validateLinkedPromo(req.promo_code, req.target_sku, req.cycle);
+    } else {
+      clearPromo();
+    }
+  }
+
+  function onRequestChange(value: string) {
+    if (value === "none") {
+      clearRequest();
+      return;
+    }
+    const req = pendingForOrg.find((r) => r.id === value);
+    if (req) applyRequest(req);
   }
 
   async function applyPromo() {
@@ -155,6 +245,7 @@ function AdminInvoices() {
     if (!isInvoiceProduct(value)) return;
     setProduct(value);
     clearPromo();
+    clearRequest();
     const nextSkus = catalog.filter(
       (row) => row.product === value && row.invoicable && row.active !== false,
     );
@@ -173,13 +264,19 @@ function AdminInvoices() {
         ...(promoResult
           ? { promo_code: promoCode.trim().toUpperCase() }
           : {}),
+        ...(requestId ? { subscription_request_id: requestId } : {}),
       }),
     onSuccess: () => {
       toast.success(t("invoiceCreated"));
       clearPromo();
+      clearRequest();
       void qc.invalidateQueries({ queryKey: ["admin-invoices"] });
+      void qc.invalidateQueries({
+        queryKey: ["admin-subscription-requests"],
+      });
     },
-    onError: () => toast.error(t("invoiceCreateFail")),
+    onError: (err: unknown) =>
+      toast.error(apiDetail(err, t("invoiceCreateFail"))),
   });
   const sendMut = useMutation({
     mutationFn: (id: string) => adminApi.sendAdminInvoice(id),
@@ -304,6 +401,7 @@ function AdminInvoices() {
                 onValueChange={(value) => {
                   setOrgId(value);
                   clearPromo();
+                  clearRequest();
                 }}
               >
                 <SelectTrigger id="inv-org" className="h-10 min-h-10">
@@ -344,6 +442,7 @@ function AdminInvoices() {
                 onValueChange={(value) => {
                   setSku(value);
                   clearPromo();
+                  clearRequest();
                 }}
                 disabled={skuOptions.length === 0}
               >
@@ -370,6 +469,7 @@ function AdminInvoices() {
                 onValueChange={(value) => {
                   setCycle(value === "annual" ? "annual" : "monthly");
                   clearPromo();
+                  clearRequest();
                 }}
               >
                 <SelectTrigger
@@ -403,6 +503,63 @@ function AdminInvoices() {
           <div className="space-y-2 border-t border-border pt-3">
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="flex min-w-0 flex-col gap-1.5">
+                <Label htmlFor="inv-request">{t("invoiceRequestLabel")}</Label>
+                <Select
+                  value={requestId || "none"}
+                  onValueChange={onRequestChange}
+                  disabled={
+                    !orgId ||
+                    pendingRequestsQuery.isLoading ||
+                    pendingForOrg.length === 0
+                  }
+                >
+                  <SelectTrigger
+                    id="inv-request"
+                    className="h-10 min-h-10"
+                    data-testid="invoice-request"
+                  >
+                    <SelectValue placeholder={t("invoiceRequestNone")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">
+                      {t("invoiceRequestNone")}
+                    </SelectItem>
+                    {pendingForOrg.map((req) => (
+                      <SelectItem key={req.id} value={req.id}>
+                        {`#${req.id.slice(0, 8)} · ${req.target_sku} · ${req.cycle}${
+                          req.promo_code ? ` · ${req.promo_code}` : ""
+                        }`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex min-w-0 flex-col justify-end text-xs sm:col-span-2">
+                {!orgId ? null : pendingRequestsQuery.isLoading ? null : pendingForOrg.length === 0 ? (
+                  <p
+                    className="text-[11px] text-muted-foreground"
+                    data-testid="invoice-request-empty"
+                  >
+                    {t("invoiceRequestEmpty")}
+                  </p>
+                ) : promoHintRequest && !promoCode ? (
+                  <p
+                    className="text-[11px] text-muted-foreground"
+                    data-testid="invoice-request-promo-hint"
+                  >
+                    {t("invoiceRequestPromoHint", {
+                      code: promoHintRequest.promo_code,
+                    })}
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground">
+                    {t("invoiceRequestHint")}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="flex min-w-0 flex-col gap-1.5">
                 <Label htmlFor="inv-promo">{t("invoicePromoLabel")}</Label>
                 <Input
                   id="inv-promo"
@@ -414,6 +571,7 @@ function AdminInvoices() {
                     setPromoCode(event.target.value.toUpperCase());
                     setPromoResult(null);
                     setPromoError(false);
+                    clearRequest();
                   }}
                   data-testid="invoice-promo-code"
                 />
@@ -458,6 +616,13 @@ function AdminInvoices() {
                       {t("invoicePromoEstimate")}
                     </p>
                   </div>
+                ) : promoLinkError ? (
+                  <p
+                    className="text-[11px] text-destructive"
+                    data-testid="invoice-request-promo-invalid"
+                  >
+                    {t("invoiceRequestPromoInvalid")}
+                  </p>
                 ) : promoError ? (
                   <p
                     className="text-[11px] text-destructive"
