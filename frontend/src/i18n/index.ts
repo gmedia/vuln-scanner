@@ -29,6 +29,7 @@ import enProfile from "@/locales/en/profile.json";
 import enGuardEnroll from "@/locales/en/guardEnroll.json";
 import enSubscription from "@/locales/en/subscription.json";
 import enProducts from "@/locales/en/products.json";
+import enErrors from "@/locales/en/errors.json";
 import idCommon from "@/locales/id/common.json";
 import idAuth from "@/locales/id/auth.json";
 import idLanding from "@/locales/id/landing.json";
@@ -51,6 +52,7 @@ import idProfile from "@/locales/id/profile.json";
 import idGuardEnroll from "@/locales/id/guardEnroll.json";
 import idSubscription from "@/locales/id/subscription.json";
 import idProducts from "@/locales/id/products.json";
+import idErrors from "@/locales/id/errors.json";
 
 export const resources = {
   en: {
@@ -76,6 +78,7 @@ export const resources = {
     guardEnroll: enGuardEnroll,
     subscription: enSubscription,
     products: enProducts,
+    errors: enErrors,
   },
   id: {
     common: idCommon,
@@ -100,6 +103,7 @@ export const resources = {
     guardEnroll: idGuardEnroll,
     subscription: idSubscription,
     products: idProducts,
+    errors: idErrors,
   },
 } as const;
 

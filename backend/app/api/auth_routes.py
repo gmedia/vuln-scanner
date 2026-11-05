@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
+from app.errors import ErrorCode, api_error
 from app.i18n import normalize_lang
 from app.middleware.rate_limit import RateLimiter
 from app.models.credit_log import CreditLog
@@ -164,9 +165,10 @@ async def register(
         return limit_response
 
     if body.password != body.confirm_password:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Kata sandi tidak cocok",
+        raise api_error(
+            status.HTTP_400_BAD_REQUEST,
+            ErrorCode.AUTH_PASSWORD_MISMATCH,
+            "Kata sandi tidak cocok",
         )
 
     result = await db.execute(select(User).where(User.email == body.email))

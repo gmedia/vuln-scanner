@@ -11,6 +11,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.errors import ErrorCode, api_error
 from app.models.asset import ScanAsset
 from app.models.guard import GuardAgent
 from app.models.host_protect import (
@@ -136,7 +137,7 @@ class HostProtectService:
             )
         )
         if dup.scalar_one_or_none() is not None:
-            raise HTTPException(status_code=409, detail="Site already exists for this path")
+            raise api_error(409, ErrorCode.HOST_SITE_DUPLICATE, "Site already exists for this path")
 
         site = HostSite(
             id=uuid.uuid4(),

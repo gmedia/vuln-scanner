@@ -12,6 +12,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.errors import ErrorCode, api_error
 from app.models.organization import Organization
 from app.models.uptime import (
     DEFAULT_INTERVAL_SECONDS,
@@ -181,7 +182,12 @@ class UptimeService:
         if body.check_type == "ping" and not settings.uptime_icmp:
             raise HTTPException(status_code=501, detail="ICMP ping is disabled")
         if body.enabled and count >= limit:
-            raise HTTPException(status_code=400, detail=f"Uptime seat limit for {org.sku} tier is {limit}")
+            raise api_error(
+                400,
+                ErrorCode.UPTIME_SEAT_LIMIT,
+                f"Uptime seat limit for {org.sku} tier is {limit}",
+                params={"tier": org.sku, "limit": limit},
+            )
         if body.enabled:
             existing = await self.db.execute(
                 select(UptimeMonitor.id).where(
