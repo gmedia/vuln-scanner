@@ -784,3 +784,310 @@ async def test_pending_and_expired_events_never_verify(
             assert calls == []
     finally:
         app.dependency_overrides.clear()
+
+
+async def _settle(db_session: AsyncSession, client: AsyncClient, *, transaction_id: str = "trx-settle-1") -> None:
+    response = await _post(client, _payload(transaction_id=transaction_id))
+    assert response.status_code == 200, response.text
+    assert response.json()["status"] == "processed"
+
+
+async def _subscription(db_session: AsyncSession, org_id: object) -> Subscription | None:
+    return (
+        await db_session.execute(select(Subscription).where(Subscription.organization_id == org_id))
+    ).scalar_one_or_none()
+
+
+@pytest.mark.asyncio
+async def test_refund_after_settlement_marks_attempt_refunded_without_revoking(
+    db_session: AsyncSession,
+) -> None:
+    _bind(db_session)
+    seeded = await _seed(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            await _settle(db_session, client)
+            response = await _post(
+                client,
+                _payload(transaction_id="trx-refund-1", transaction_status="refund"),
+            )
+            assert response.status_code == 200, response.text
+            assert response.json()["status"] == "processed"
+
+            invoice = await db_session.get(OrgInvoice, seeded["invoice"].id)
+            attempt = await db_session.get(PaymentAttempt, seeded["attempt"].id)
+            sub = await _subscription(db_session, seeded["org"].id)
+            assert invoice is not None and invoice.status == "paid"
+            assert attempt is not None and attempt.status == "refunded"
+            assert attempt.refunded_amount_idr == attempt.amount_idr == TOTAL
+            assert attempt.provider_status == "refunded"
+            assert sub is not None and sub.status == "active"
+            event = (
+                await db_session.execute(
+                    select(PaymentEvent).where(PaymentEvent.event_id == "trx-refund-1:refund:200:accept")
+                )
+            ).scalar_one()
+            assert event.status == "processed"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_partial_refund_stores_exact_amount_without_revoking(db_session: AsyncSession) -> None:
+    _bind(db_session)
+    seeded = await _seed(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            await _settle(db_session, client)
+            response = await _post(
+                client,
+                _payload(
+                    transaction_id="trx-partial-1",
+                    transaction_status="partial_refund",
+                    refund_amount="100000.00",
+                ),
+            )
+            assert response.status_code == 200, response.text
+            assert response.json()["status"] == "processed"
+
+            invoice = await db_session.get(OrgInvoice, seeded["invoice"].id)
+            attempt = await db_session.get(PaymentAttempt, seeded["attempt"].id)
+            sub = await _subscription(db_session, seeded["org"].id)
+            assert invoice is not None and invoice.status == "paid"
+            assert attempt is not None and attempt.status == "refunded"
+            assert attempt.refunded_amount_idr == 100_000
+            assert attempt.provider_status == "partially_refunded"
+            assert sub is not None and sub.status == "active"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_chargeback_keeps_invoice_and_subscription(db_session: AsyncSession) -> None:
+    _bind(db_session)
+    seeded = await _seed(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            await _settle(db_session, client)
+            response = await _post(
+                client,
+                _payload(transaction_id="trx-chargeback-1", transaction_status="chargeback"),
+            )
+            assert response.status_code == 200, response.text
+            assert response.json()["status"] == "processed"
+
+            invoice = await db_session.get(OrgInvoice, seeded["invoice"].id)
+            attempt = await db_session.get(PaymentAttempt, seeded["attempt"].id)
+            sub = await _subscription(db_session, seeded["org"].id)
+            assert invoice is not None and invoice.status == "paid"
+            assert attempt is not None and attempt.status == "refunded"
+            assert attempt.provider_status == "chargeback"
+            assert attempt.refunded_amount_idr == TOTAL
+            assert sub is not None and sub.status == "active"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_refund_on_pending_attempt_is_ignored_and_settlement_still_pays(
+    db_session: AsyncSession,
+) -> None:
+    """Regression: a premature refund must not block the real settlement.
+
+    Pre-fix the refund moved the pending attempt to rank 3 (``refunded``), so the
+    later settlement (rank 2) was dropped and the invoice never became paid.
+    """
+    _bind(db_session)
+    seeded = await _seed(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            premature = await _post(
+                client,
+                _payload(transaction_id="trx-refund-early", transaction_status="refund"),
+            )
+            assert premature.status_code == 200, premature.text
+            assert premature.json()["status"] == "ignored"
+
+            attempt = await db_session.get(PaymentAttempt, seeded["attempt"].id)
+            invoice = await db_session.get(OrgInvoice, seeded["invoice"].id)
+            assert attempt is not None and attempt.status == "pending"
+            assert attempt.refunded_amount_idr == 0
+            assert invoice is not None and invoice.status == "sent"
+            assert await _subscription(db_session, seeded["org"].id) is None
+            early_event = (
+                await db_session.execute(
+                    select(PaymentEvent).where(
+                        PaymentEvent.event_id == "trx-refund-early:refund:200:accept"
+                    )
+                )
+            ).scalar_one()
+            assert early_event.status == "ignored"
+            assert early_event.error == "refund for a non-settled attempt (pending)"
+
+            settlement = await _post(client, _payload(transaction_id="trx-settle-after-refund"))
+            assert settlement.status_code == 200, settlement.text
+            assert settlement.json()["status"] == "processed"
+
+            invoice = await db_session.get(OrgInvoice, seeded["invoice"].id)
+            attempt = await db_session.get(PaymentAttempt, seeded["attempt"].id)
+            sub = await _subscription(db_session, seeded["org"].id)
+            assert invoice is not None and invoice.status == "paid"
+            assert attempt is not None and attempt.status == "succeeded"
+            assert attempt.refunded_amount_idr == 0
+            assert sub is not None and sub.status == "active"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_refund_over_paid_amount_fails_without_changing_attempt(db_session: AsyncSession) -> None:
+    _bind(db_session)
+    seeded = await _seed(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            await _settle(db_session, client)
+            response = await _post(
+                client,
+                _payload(
+                    transaction_id="trx-refund-over",
+                    transaction_status="refund",
+                    refund_amount="800000.00",
+                ),
+            )
+            assert response.status_code == 200, response.text
+            assert response.json()["status"] == "failed"
+
+            invoice = await db_session.get(OrgInvoice, seeded["invoice"].id)
+            attempt = await db_session.get(PaymentAttempt, seeded["attempt"].id)
+            assert invoice is not None and invoice.status == "paid"
+            assert attempt is not None and attempt.status == "succeeded"
+            assert attempt.refunded_amount_idr == 0
+            event = (
+                await db_session.execute(
+                    select(PaymentEvent).where(
+                        PaymentEvent.event_id == "trx-refund-over:refund:200:accept"
+                    )
+                )
+            ).scalar_one()
+            assert event.status == "failed"
+            assert event.error == f"invalid refund amount 800000 for paid {TOTAL}"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_partial_refund_zero_or_missing_amount_fails_without_changing_attempt(
+    db_session: AsyncSession,
+) -> None:
+    _bind(db_session)
+    seeded = await _seed(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            await _settle(db_session, client)
+            zero = await _post(
+                client,
+                _payload(
+                    transaction_id="trx-partial-zero",
+                    transaction_status="partial_refund",
+                    refund_amount="0.00",
+                ),
+            )
+            assert zero.status_code == 200, zero.text
+            assert zero.json()["status"] == "failed"
+
+            missing = await _post(
+                client,
+                _payload(
+                    transaction_id="trx-partial-missing",
+                    transaction_status="partial_refund",
+                ),
+            )
+            assert missing.status_code == 200, missing.text
+            assert missing.json()["status"] == "failed"
+
+            attempt = await db_session.get(PaymentAttempt, seeded["attempt"].id)
+            assert attempt is not None and attempt.status == "succeeded"
+            assert attempt.refunded_amount_idr == 0
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_duplicate_refund_event_is_deduplicated(db_session: AsyncSession) -> None:
+    _bind(db_session)
+    seeded = await _seed(db_session)
+    payload = _payload(transaction_id="trx-refund-dup", transaction_status="refund")
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            await _settle(db_session, client)
+            first = await _post(client, payload)
+            second = await _post(client, payload)
+            assert first.json()["status"] == "processed"
+            assert second.json()["status"] == "duplicate"
+
+            attempt = await db_session.get(PaymentAttempt, seeded["attempt"].id)
+            assert attempt is not None and attempt.status == "refunded"
+            assert attempt.refunded_amount_idr == TOTAL
+            events = (
+                await db_session.execute(
+                    select(PaymentEvent).where(
+                        PaymentEvent.event_id == "trx-refund-dup:refund:200:accept"
+                    )
+                )
+            ).scalars().all()
+            assert len(events) == 1
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_second_refund_after_refunded_is_ignored_and_amount_stays_deterministic(
+    db_session: AsyncSession,
+) -> None:
+    """Only a settled attempt may transition, so the first valid refund amount wins."""
+    _bind(db_session)
+    seeded = await _seed(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            await _settle(db_session, client)
+            first = await _post(
+                client,
+                _payload(transaction_id="trx-refund-first", transaction_status="refund"),
+            )
+            assert first.json()["status"] == "processed"
+
+            second = await _post(
+                client,
+                _payload(
+                    transaction_id="trx-refund-second",
+                    transaction_status="refund",
+                    refund_amount="300000.00",
+                ),
+            )
+            assert second.status_code == 200, second.text
+            assert second.json()["status"] == "ignored"
+
+            invoice = await db_session.get(OrgInvoice, seeded["invoice"].id)
+            attempt = await db_session.get(PaymentAttempt, seeded["attempt"].id)
+            assert invoice is not None and invoice.status == "paid"
+            assert attempt is not None and attempt.status == "refunded"
+            assert attempt.refunded_amount_idr == TOTAL
+            event = (
+                await db_session.execute(
+                    select(PaymentEvent).where(
+                        PaymentEvent.event_id == "trx-refund-second:refund:200:accept"
+                    )
+                )
+            ).scalar_one()
+            assert event.status == "ignored"
+            assert event.error == "refund for a non-settled attempt (refunded)"
+    finally:
+        app.dependency_overrides.clear()

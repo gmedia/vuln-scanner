@@ -669,8 +669,39 @@ class BillingService:
                     self._transition(sub, "past_due")
             return "processed"
         if event.kind in ("refunded", "partially_refunded", "chargeback"):
+            # Only a settled payment can be refunded. A refund/chargeback that
+            # arrives while the attempt is still pending (provider correction,
+            # replay, or a sibling transaction) must not move the attempt to the
+            # terminal ``refunded`` rank: the monotonic guard would then drop the
+            # real settlement and strand a paid invoice. Leave the attempt alone
+            # so a later settlement still activates the subscription.
+            if attempt.status != "succeeded":
+                record.error = f"refund for a non-settled attempt ({attempt.status})"[:500]
+                logger.warning(
+                    "Ignoring %s for non-settled payment: provider=%s attempt=%s status=%s amount_idr=%s",
+                    event.kind,
+                    provider,
+                    attempt.id,
+                    attempt.status,
+                    event.refunded_amount_idr,
+                )
+                return "ignored"
+
+            paid = int(attempt.amount_idr or 0)
+            refunded: int | None = event.refunded_amount_idr
+            if event.kind in ("refunded", "chargeback") and not refunded:
+                # A full refund/chargeback notification may omit refund_amount;
+                # the whole payment is the amount that left the business.
+                refunded = paid
+            if refunded is None or refunded <= 0 or refunded > paid:
+                record.error = f"invalid refund amount {refunded} for paid {paid}"[:500]
+                return "failed"
+            if event.kind == "partially_refunded" and refunded >= paid:
+                record.error = f"partial refund {refunded} covers the full payment {paid}"[:500]
+                return "failed"
+
             attempt.status = "refunded"
-            attempt.refunded_amount_idr = event.refunded_amount_idr or 0
+            attempt.refunded_amount_idr = refunded
             attempt.provider_status = event.kind
             attempt.provider_payment_id = event.provider_payment_id or attempt.provider_payment_id
             attempt.updated_at = _now()
@@ -679,8 +710,10 @@ class BillingService:
                 event.kind,
                 provider,
                 attempt.id,
-                event.refunded_amount_idr,
+                refunded,
             )
+            # Spec PY14: a refund/chargeback never revokes access automatically.
+            # Operators decide manually; the invoice and subscription stay as-is.
             return "processed"
 
         record.error = f"unsupported event kind {event.kind}"

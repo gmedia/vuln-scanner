@@ -146,6 +146,33 @@ class TestPaymentRefundsReader:
         with patch("app.metrics._ai_engine", return_value=_engine_with_scalar(None)):
             assert _read_payment_refunds_24h() == 0.0
 
+    @pytest.mark.filterwarnings("ignore:The default datetime adapter is deprecated")
+    def test_reader_counts_only_settled_refunds_not_pending_attempts(self, tmp_path):
+        from sqlalchemy import create_engine, text
+
+        engine = create_engine(f"sqlite:///{tmp_path / 'refunds.db'}")
+        now = datetime.now(UTC)
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    "CREATE TABLE payment_attempts "
+                    "(id VARCHAR PRIMARY KEY, status VARCHAR NOT NULL, updated_at DATETIME NOT NULL)"
+                )
+            )
+            conn.execute(
+                text(
+                    "INSERT INTO payment_attempts (id, status, updated_at) "
+                    "VALUES (:id, :status, :updated_at)"
+                ),
+                [
+                    {"id": "pending", "status": "pending", "updated_at": now},
+                    {"id": "refunded", "status": "refunded", "updated_at": now},
+                ],
+            )
+        with patch("app.metrics._ai_engine", return_value=engine):
+            assert _read_payment_refunds_24h() == 1.0
+        engine.dispose()
+
 
 @pytest.mark.parametrize("reader", PAYMENT_METRIC_READERS)
 def test_reader_returns_none_when_engine_raises(reader, caplog):
