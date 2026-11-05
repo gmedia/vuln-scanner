@@ -27,6 +27,13 @@ _UPSTREAM_BREAKERS_OPEN_NAME = "vuln_ai_upstream_breakers_open"
 _PROVIDERS_DEGRADED_NAME = "vuln_ai_providers_degraded"
 _PROVIDERS_PROBE_AGE_NAME = "vuln_ai_providers_probe_age_seconds"
 _PROVIDERS_NEVER_PROBED_NAME = "vuln_ai_providers_never_probed"
+
+_PAYMENT_PENDING_ATTEMPTS_NAME = "vuln_payment_pending_attempts"
+_PAYMENT_PENDING_AGE_NAME = "vuln_payment_pending_age_seconds"
+_PAYMENT_FAILED_EVENTS_NAME = "vuln_payment_failed_events_24h"
+_PAYMENT_AMOUNT_MISMATCH_NAME = "vuln_payment_amount_mismatches_24h"
+_PAYMENT_DUPLICATE_SETTLEMENT_NAME = "vuln_payment_duplicate_settlements_24h"
+
 # Mirrors workers/tasks/ai_reservations.STALE_RESERVATION_MINUTES; kept local so metrics never imports the worker.
 STALE_RESERVATION_MINUTES = 20
 # Also local by the same rule; documents the 15-minute VulnScannerAiProviderProbeStale threshold.
@@ -294,6 +301,113 @@ def _read_ai_providers_probe_age_seconds() -> float | None:
         return None
 
 
+def _read_payment_pending_attempts() -> float | None:
+    """Count gateway attempts still pending; a standing backlog means checkouts outrun expiry."""
+    try:
+        from sqlalchemy import text
+
+        with _ai_engine().connect() as conn:
+            raw = conn.execute(
+                text("SELECT COUNT(*) FROM payment_attempts WHERE status = 'pending'")
+            ).scalar()
+        return float(raw or 0)
+    except Exception as e:
+        logger.debug("payment pending attempts metric scrape failed: %s", e)
+        return None
+
+
+def _read_payment_pending_age_seconds() -> float | None:
+    """Age of the oldest pending attempt.
+
+    A pending attempt older than the 24h checkout expiry (and the 10-minute reconciliation
+    sweep) means webhooks are being missed and nothing is reconciling it. Reported as 0
+    when there is no pending row, so an idle gateway does not look stale.
+    """
+    try:
+        from sqlalchemy import text
+
+        with _ai_engine().connect() as conn:
+            oldest = conn.execute(
+                text("SELECT MIN(created_at) FROM payment_attempts WHERE status = 'pending'")
+            ).scalar()
+        if oldest is None:
+            return 0.0
+        created_at = _as_datetime(oldest)
+        if created_at is None:
+            return None
+        return max((datetime.now(UTC) - created_at).total_seconds(), 0.0)
+    except Exception as e:
+        logger.debug("payment pending age metric scrape failed: %s", e)
+        return None
+
+
+def _read_payment_failed_events_24h() -> float | None:
+    """Failed webhook events in the last 24h; each one is a payment that did not activate."""
+    try:
+        from sqlalchemy import text
+
+        cutoff = datetime.now(UTC) - timedelta(hours=24)
+        with _ai_engine().connect() as conn:
+            raw = conn.execute(
+                text(
+                    "SELECT COUNT(*) FROM payment_events "
+                    "WHERE status = 'failed' AND received_at >= :cutoff"
+                ),
+                {"cutoff": cutoff},
+            ).scalar()
+        return float(raw or 0)
+    except Exception as e:
+        logger.debug("payment failed events metric scrape failed: %s", e)
+        return None
+
+
+def _read_payment_amount_mismatches_24h() -> float | None:
+    """Attempts failed because the provider amount differed from the invoice in the last 24h.
+
+    The webhook refuses to mark the invoice paid on a mismatch, so every row here is a
+    customer who paid something the gateway and the invoice disagree on.
+    """
+    try:
+        from sqlalchemy import text
+
+        cutoff = datetime.now(UTC) - timedelta(hours=24)
+        with _ai_engine().connect() as conn:
+            raw = conn.execute(
+                text(
+                    "SELECT COUNT(*) FROM payment_attempts "
+                    "WHERE failure_code = 'amount_mismatch' AND failed_at >= :cutoff"
+                ),
+                {"cutoff": cutoff},
+            ).scalar()
+        return float(raw or 0)
+    except Exception as e:
+        logger.debug("payment amount mismatch metric scrape failed: %s", e)
+        return None
+
+
+def _read_payment_duplicate_settlements_24h() -> float | None:
+    """Second successful settlements against an already-paid invoice in the last 24h.
+
+    Access was not re-activated, so the customer has paid twice and needs a manual refund.
+    """
+    try:
+        from sqlalchemy import text
+
+        cutoff = datetime.now(UTC) - timedelta(hours=24)
+        with _ai_engine().connect() as conn:
+            raw = conn.execute(
+                text(
+                    "SELECT COUNT(*) FROM payment_attempts "
+                    "WHERE provider_status = 'duplicate' AND updated_at >= :cutoff"
+                ),
+                {"cutoff": cutoff},
+            ).scalar()
+        return float(raw or 0)
+    except Exception as e:
+        logger.debug("payment duplicate settlement metric scrape failed: %s", e)
+        return None
+
+
 class AutoFailCollector:
     def collect(self) -> Iterable[Metric]:
         counts = _read_auto_fail_counts()
@@ -443,6 +557,91 @@ class AiProvidersProbeAgeCollector:
         yield gauge
 
 
+class PaymentPendingAttemptsCollector:
+    def collect(self) -> Iterable[Metric]:
+        try:
+            value = _read_payment_pending_attempts()
+        except Exception as e:
+            logger.debug("payment pending attempts collector failed: %s", e)
+            return
+        if value is None:
+            return
+        gauge = GaugeMetricFamily(
+            _PAYMENT_PENDING_ATTEMPTS_NAME,
+            "Gateway attempts still pending; a standing backlog means checkouts outrun expiry",
+        )
+        gauge.add_metric([], value)
+        yield gauge
+
+
+class PaymentPendingAgeCollector:
+    def collect(self) -> Iterable[Metric]:
+        try:
+            value = _read_payment_pending_age_seconds()
+        except Exception as e:
+            logger.debug("payment pending age collector failed: %s", e)
+            return
+        if value is None:
+            return
+        gauge = GaugeMetricFamily(
+            _PAYMENT_PENDING_AGE_NAME,
+            "Age in seconds of the oldest pending payment attempt; stale means webhooks were missed",
+        )
+        gauge.add_metric([], value)
+        yield gauge
+
+
+class PaymentFailedEventsCollector:
+    def collect(self) -> Iterable[Metric]:
+        try:
+            value = _read_payment_failed_events_24h()
+        except Exception as e:
+            logger.debug("payment failed events collector failed: %s", e)
+            return
+        if value is None:
+            return
+        gauge = GaugeMetricFamily(
+            _PAYMENT_FAILED_EVENTS_NAME,
+            "Failed payment webhook events in the last 24h; each one failed to activate access",
+        )
+        gauge.add_metric([], value)
+        yield gauge
+
+
+class PaymentAmountMismatchCollector:
+    def collect(self) -> Iterable[Metric]:
+        try:
+            value = _read_payment_amount_mismatches_24h()
+        except Exception as e:
+            logger.debug("payment amount mismatch collector failed: %s", e)
+            return
+        if value is None:
+            return
+        gauge = GaugeMetricFamily(
+            _PAYMENT_AMOUNT_MISMATCH_NAME,
+            "Attempts failed on an amount mismatch in the last 24h; the invoice was not marked paid",
+        )
+        gauge.add_metric([], value)
+        yield gauge
+
+
+class PaymentDuplicateSettlementCollector:
+    def collect(self) -> Iterable[Metric]:
+        try:
+            value = _read_payment_duplicate_settlements_24h()
+        except Exception as e:
+            logger.debug("payment duplicate settlement collector failed: %s", e)
+            return
+        if value is None:
+            return
+        gauge = GaugeMetricFamily(
+            _PAYMENT_DUPLICATE_SETTLEMENT_NAME,
+            "Second settlements against an already-paid invoice in the last 24h; refund manually",
+        )
+        gauge.add_metric([], value)
+        yield gauge
+
+
 def register_custom_metrics() -> None:
     global _collector_registered
     if _collector_registered:
@@ -456,4 +655,9 @@ def register_custom_metrics() -> None:
     REGISTRY.register(AiProvidersDegradedCollector())
     REGISTRY.register(AiProvidersProbeAgeCollector())
     REGISTRY.register(AiProvidersNeverProbedCollector())
+    REGISTRY.register(PaymentPendingAttemptsCollector())
+    REGISTRY.register(PaymentPendingAgeCollector())
+    REGISTRY.register(PaymentFailedEventsCollector())
+    REGISTRY.register(PaymentAmountMismatchCollector())
+    REGISTRY.register(PaymentDuplicateSettlementCollector())
     _collector_registered = True

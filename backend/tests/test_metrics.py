@@ -57,5 +57,5 @@ class TestRegisterCustomMetrics:
         with patch.object(metrics_mod.REGISTRY, "register") as mock_reg:
             register_custom_metrics()
             register_custom_metrics()
-            assert mock_reg.call_count == 9
+            assert mock_reg.call_count == 14
         metrics_mod._collector_registered = True
