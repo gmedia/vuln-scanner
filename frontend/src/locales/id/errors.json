@@ -1,0 +1,8 @@
+{
+  "auth_missing_token": "Sesi Anda tidak menyertakan token masuk. Silakan masuk lagi.",
+  "auth_invalid_token": "Sesi Anda sudah kedaluwarsa. Silakan masuk lagi.",
+  "auth_password_mismatch": "Kata sandi tidak cocok.",
+  "guard_not_enabled": "Aktifkan Guard sebelum membuat token pendaftaran.",
+  "host_site_duplicate": "Situs dengan path ini sudah ada.",
+  "uptime_seat_limit": "Paket {{tier}} mengizinkan {{limit}} monitor uptime. Nonaktifkan satu atau tingkatkan paket untuk menambah."
+}

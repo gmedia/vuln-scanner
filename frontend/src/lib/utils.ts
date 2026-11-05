@@ -6,6 +6,8 @@ export interface ApiError {
     status?: number;
     data?: {
       detail?: string;
+      code?: string;
+      params?: Record<string, string | number>;
     };
   };
 }

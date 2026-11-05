@@ -13,6 +13,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.errors import ErrorCode, api_error
 from app.models.asset import ScanAsset
 from app.models.guard import (
     GuardAgent,
@@ -242,9 +243,10 @@ class GuardService:
         org_id = await self._require_org(user, organization_id, min_role="admin")
         binding = await self.get_binding(org_id)
         if binding is None or not binding.enabled:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Enable Guard before creating enroll tokens",
+            raise api_error(
+                status.HTTP_400_BAD_REQUEST,
+                ErrorCode.GUARD_NOT_ENABLED,
+                "Enable Guard before creating enroll tokens",
             )
         raw, token_hash = generate_enroll_token()
         row = GuardEnrollToken(

@@ -1,0 +1,8 @@
+{
+  "auth_missing_token": "Your session is missing a sign-in token. Sign in again.",
+  "auth_invalid_token": "Your session has expired. Sign in again.",
+  "auth_password_mismatch": "The passwords do not match.",
+  "guard_not_enabled": "Enable Guard before creating enroll tokens.",
+  "host_site_duplicate": "A site with this path already exists.",
+  "uptime_seat_limit": "The {{tier}} plan allows {{limit}} uptime monitors. Disable one or upgrade to add another."
+}

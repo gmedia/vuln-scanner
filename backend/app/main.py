@@ -16,6 +16,7 @@ from app.api.router import api_router
 from app.api.sitemap_html import html_router as sitemap_html_router
 from app.api.status_html import html_router as status_html_router
 from app.config import check_settings, settings
+from app.errors import ApiError, api_error_handler
 from app.middleware.auth import ApiKeyMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.services.payments.registry import validate_payment_config
@@ -106,6 +107,9 @@ instrumentator.expose(
 )
 
 app.add_middleware(ApiKeyMiddleware)
+
+
+app.add_exception_handler(ApiError, api_error_handler)
 
 
 @app.exception_handler(Exception)

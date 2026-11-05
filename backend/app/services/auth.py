@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
+from app.errors import ErrorCode, api_error
 from app.models.user import User
 
 logger = logging.getLogger(__name__)
@@ -297,9 +298,10 @@ async def get_current_user(
 
     authorization: str | None = request.headers.get("Authorization")
     if not authorization:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing Authorization header",
+        raise api_error(
+            status.HTTP_401_UNAUTHORIZED,
+            ErrorCode.AUTH_MISSING_TOKEN,
+            "Missing Authorization header",
         )
 
     scheme, _, token = authorization.partition(" ")
@@ -312,9 +314,10 @@ async def get_current_user(
     try:
         payload = await decode_token_async(token)
     except jwt.PyJWTError as err:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
+        raise api_error(
+            status.HTTP_401_UNAUTHORIZED,
+            ErrorCode.AUTH_INVALID_TOKEN,
+            "Invalid or expired token",
         ) from err
 
     token_type: str | None = cast(str | None, payload.get("type"))

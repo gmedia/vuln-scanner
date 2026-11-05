@@ -1,4 +1,7 @@
+import { apiErrorMessage, apiErrorCode } from "@/api/apiErrors";
 import type { ApiError } from "@/lib/utils";
+
+const AUTH_SESSION_CODES = new Set(["auth_missing_token", "auth_invalid_token"]);
 
 const AUTH_SESSION_DETAILS = new Set([
   "Invalid or expired token",
@@ -8,6 +11,8 @@ const AUTH_SESSION_DETAILS = new Set([
 ]);
 
 export function isAuthSessionError(err: unknown): boolean {
+  const code = apiErrorCode(err);
+  if (code && AUTH_SESSION_CODES.has(code)) return true;
   if (!err || typeof err !== "object" || !("response" in err)) return false;
   const res = (err as ApiError).response;
   if (res?.status === 401) return true;
@@ -16,9 +21,5 @@ export function isAuthSessionError(err: unknown): boolean {
 }
 
 export function apiDetail(err: unknown, fallback: string): string {
-  if (err && typeof err === "object" && "response" in err) {
-    const detail = (err as ApiError).response?.data?.detail;
-    if (typeof detail === "string" && detail.trim()) return detail;
-  }
-  return fallback;
+  return apiErrorMessage(err, fallback);
 }
