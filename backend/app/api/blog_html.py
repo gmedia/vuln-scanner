@@ -412,10 +412,7 @@ async def blog_index_html(
     )
     return HTMLResponse(
         html,
-        headers={
-            "Cache-Control": "public, max-age=60, s-maxage=300",
-            "X-Robots-Tag": "index, follow",
-        },
+        headers={"Cache-Control": "public, max-age=60, s-maxage=300"},
     )
 
 
@@ -497,8 +494,5 @@ async def blog_article_html(
     )
     return HTMLResponse(
         html,
-        headers={
-            "Cache-Control": "public, max-age=60, s-maxage=300",
-            "X-Robots-Tag": "index, follow",
-        },
+        headers={"Cache-Control": "public, max-age=60, s-maxage=300"},
     )

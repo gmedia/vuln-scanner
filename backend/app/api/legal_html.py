@@ -16,7 +16,6 @@ public_limiter = RateLimiter(
 
 _CACHE = {
     "Cache-Control": "public, max-age=300, s-maxage=3600",
-    "X-Robots-Tag": "index, follow",
 }
 
 
