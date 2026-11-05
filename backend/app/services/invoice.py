@@ -58,6 +58,7 @@ async def to_item(
         "number": inv.number,
         "product": inv.product,
         "sku": inv.sku,
+        "subscription_request_id": inv.subscription_request_id,
         "seats": seats,
         "amount_idr": inv.amount_idr,
         "discount_idr": inv.discount_idr,
@@ -263,6 +264,19 @@ class InvoiceService:
                 raise HTTPException(status_code=404, detail="Subscription request not found")
             if request.status not in ("pending", "approved"):
                 raise HTTPException(status_code=409, detail="Subscription request cannot be consumed")
+            linked = await self.db.scalar(
+                select(OrgInvoice.id)
+                .where(
+                    OrgInvoice.subscription_request_id == subscription_request_id,
+                    OrgInvoice.status != "void",
+                )
+                .limit(1)
+            )
+            if linked is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Subscription request already has an invoice",
+                )
             consumed = await self.db.scalar(
                 select(PromoRedemption.id)
                 .where(PromoRedemption.subscription_request_id == subscription_request_id)
@@ -309,6 +323,7 @@ class InvoiceService:
             number=await next_invoice_number(self.db, start),
             product=product,
             sku=sku,
+            subscription_request_id=subscription_request_id,
             amount_idr=base,
             discount_idr=prices["discount"],
             promo_code=quote.promo.code if quote is not None else None,
@@ -454,6 +469,7 @@ class InvoiceService:
         if inv.status not in ("draft", "sent"):
             raise HTTPException(status_code=409, detail="Only draft or sent invoices can be voided")
         inv.status = "void"
+        inv.subscription_request_id = None
         inv.updated_at = datetime.now(UTC)
         await PromoService(self.db).release_for_invoice(invoice_id)
         await self.db.flush()
