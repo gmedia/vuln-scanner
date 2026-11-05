@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { resources } from "@/i18n";
 
 // Raw color literals are only allowed for third-party brand marks and data
 // palettes. See docs/specs/design-invariants.md §2.
@@ -90,12 +91,16 @@ function report(violations: readonly Violation[]): string {
   return violations.map((v) => `${v.file}:${v.line} ${v.text}`).join("\n");
 }
 
+type JsxBlock = {
+  readonly line: number;
+  readonly block: string;
+  readonly start: number;
+  readonly end: number;
+};
+
 // Character walk, not regex: `=>` and string props contain `>`.
-function jsxTagBlocks(
-  source: string,
-  name: string,
-): Array<{ readonly line: number; readonly block: string }> {
-  const blocks: Array<{ line: number; block: string }> = [];
+function jsxTagBlocks(source: string, name: string): JsxBlock[] {
+  const blocks: JsxBlock[] = [];
   const opener = new RegExp(`<${name}(?=[\\s/>])`, "g");
   for (const match of source.matchAll(opener)) {
     const start = match.index ?? 0;
@@ -126,16 +131,15 @@ function jsxTagBlocks(
     blocks.push({
       line: source.slice(0, start).split("\n").length,
       block,
+      start,
+      end: index + 1,
     });
   }
   return blocks;
 }
 
-function jsxBlocks(
-  source: string,
-  name: string,
-): Array<{ readonly line: number; readonly block: string }> {
-  const blocks: Array<{ line: number; block: string }> = [];
+function jsxBlocks(source: string, name: string): JsxBlock[] {
+  const blocks: JsxBlock[] = [];
   const open = new RegExp(`<${name}(?=[\\s/>])`, "g");
   const nested = new RegExp(`<${name}(?=[\\s/>])`, "g");
   const closeTag = `</${name}>`;
@@ -166,6 +170,8 @@ function jsxBlocks(
     blocks.push({
       line: source.slice(0, start).split("\n").length,
       block: source.slice(start, end),
+      start,
+      end,
     });
   }
   return blocks;
@@ -196,8 +202,139 @@ function rowActionViolations(): { total: number; bad: Violation[] } {
         });
       }
     }
+
+    for (const { line, block } of jsxBlocks(source, "DropdownMenuTrigger")) {
+      if (!block.includes("MoreHorizontal")) continue;
+      if (!/\baria-label=/.test(block)) {
+        bad.push({
+          file,
+          line,
+          text: "Row-action trigger needs aria-label from an actionsMenu key",
+        });
+      }
+    }
+
+    for (const { line, block } of jsxBlocks(source, "DropdownMenuContent")) {
+      const items = jsxTagBlocks(block, "DropdownMenuItem");
+      for (const [index, item] of items.entries()) {
+        const itemLine = line + item.line - 1;
+        if (/\bonClick=/.test(item.block)) {
+          bad.push({
+            file,
+            line: itemLine,
+            text: "DropdownMenuItem must use onSelect, not onClick",
+          });
+        }
+        if (!/variant="destructive"/.test(item.block)) continue;
+        const laterItems = items.slice(index + 1);
+        if (laterItems.some((next) => !/variant="destructive"/.test(next.block))) {
+          bad.push({
+            file,
+            line: itemLine,
+            text: "Destructive item must be the last menu item",
+          });
+        }
+        const previous = items[index - 1];
+        if (!previous) continue;
+        const between = block.slice(previous.end, item.start);
+        if (!between.includes("<DropdownMenuSeparator")) {
+          bad.push({
+            file,
+            line: itemLine,
+            text: "Add DropdownMenuSeparator before the destructive item",
+          });
+        }
+      }
+    }
   }
   return { total, bad };
+}
+
+const ACTION_HEAD_TEXT = /\bcolActions?\b/;
+const ACTION_CELL_SIGNAL =
+  /(?:<[A-Z]\w*(?:Actions|ActionMenu|ActionsMenu|RowMenu|RowActions|CommandsMenu)\b|DropdownMenu|MoreHorizontal)/;
+const ALIGN_SIGNAL = /\b(?:text-right|justify-end)\b/;
+
+function alignedComponentNames(): ReadonlySet<string> {
+  const aligned = new Set<string>();
+  for (const [, source] of FILES) {
+    const declaration = /^(?:export\s+)?(?:function|const)\s+([A-Z]\w*)/gm;
+    const matches = [...source.matchAll(declaration)];
+    for (const [index, match] of matches.entries()) {
+      const name = match[1];
+      if (!name) continue;
+      const start = match.index ?? 0;
+      const end = matches[index + 1]?.index ?? source.length;
+      if (ALIGN_SIGNAL.test(source.slice(start, end))) aligned.add(name);
+    }
+  }
+  return aligned;
+}
+
+function actionAlignmentViolations(): {
+  heads: number;
+  cells: number;
+  bad: Violation[];
+} {
+  const aligned = alignedComponentNames();
+  const bad: Violation[] = [];
+  let heads = 0;
+  let cells = 0;
+  for (const [path, source] of FILES) {
+    const file = rel(path);
+    for (const { line, block } of jsxBlocks(source, "TableHead")) {
+      if (!ACTION_HEAD_TEXT.test(block)) continue;
+      heads += 1;
+      if (!/\btext-right\b/.test(block)) {
+        bad.push({
+          file,
+          line,
+          text: "Action TableHead needs text-right",
+        });
+      }
+    }
+    for (const { line, block } of jsxBlocks(source, "TableCell")) {
+      if (!ACTION_CELL_SIGNAL.test(block)) continue;
+      cells += 1;
+      if (ALIGN_SIGNAL.test(block)) continue;
+      const references = [...block.matchAll(/<([A-Z]\w+)/g)]
+        .map((match) => match[1])
+        .filter((name): name is string => Boolean(name));
+      if (references.some((name) => aligned.has(name))) continue;
+      bad.push({
+        file,
+        line,
+        text: "Action TableCell needs text-right, or justify-end on its flex wrapper",
+      });
+    }
+  }
+  return { heads, cells, bad };
+}
+
+function actionsMenuParity(): { checked: number; bad: Violation[] } {
+  const catalogs = resources as unknown as Record<
+    string,
+    Record<string, Record<string, string>>
+  >;
+  const bad: Violation[] = [];
+  let checked = 0;
+  for (const [path, source] of FILES) {
+    if (!source.includes('t("actionsMenu")')) continue;
+    const namespace = source.match(/useTranslation\("([^"]+)"\)/)?.[1];
+    if (!namespace) continue;
+    checked += 1;
+    for (const language of ["en", "id"]) {
+      const catalog = catalogs[language]?.[namespace];
+      if (!catalog || !("actionsMenu" in catalog)) {
+        bad.push({
+          file: rel(path),
+          line: 1,
+          text: `actionsMenu missing from locales/${language}/${namespace}.json`,
+        });
+      }
+    }
+  }
+  return { checked, bad };
 }
 
 function ringOffsetViolations(): { total: number; bad: Violation[] } {
@@ -336,7 +473,26 @@ describe("design invariants", () => {
     expect(total).toBeGreaterThan(10);
     expect(
       bad,
-      `One action = visible Button; 2+ = menu; confirm with a sibling AlertDialog:\n${report(bad)}`,
+      `One action = visible Button; 2+ = menu; destructive last + separator; onSelect not onClick; trigger labelled:\n${report(bad)}`,
+    ).toEqual([]);
+  });
+
+  it("aligns row-action heads and cells", () => {
+    const { heads, cells, bad } = actionAlignmentViolations();
+    expect(heads).toBeGreaterThan(10);
+    expect(cells).toBeGreaterThan(8);
+    expect(
+      bad,
+      `Action column: text-right on the head and cell, or justify-end on a block-level flex wrapper:\n${report(bad)}`,
+    ).toEqual([]);
+  });
+
+  it("has an actionsMenu key in both catalogs for every labelled row-action trigger", () => {
+    const { checked, bad } = actionsMenuParity();
+    expect(checked).toBeGreaterThan(3);
+    expect(
+      bad,
+      `Add actionsMenu to both locales for the component namespace:\n${report(bad)}`,
     ).toEqual([]);
   });
 

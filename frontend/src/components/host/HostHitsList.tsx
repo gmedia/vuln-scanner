@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SiemRail } from "@/components/siem/siemChrome";
 import {
   hitClassVariant,
@@ -117,19 +117,24 @@ function HitActions({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            {hit.status === "open" ? (
-              <DropdownMenuItem
-                variant="destructive"
-                data-testid={desktop ? "host-ignore" : `host-ignore-m-${hit.id}`}
-                onSelect={() => setIgnoreOpen(true)}
-              >
-                {t("ignore")}
-              </DropdownMenuItem>
-            ) : null}
             {hit.class === "webshell" || hit.class === "backdoor" ? (
               <DropdownMenuItem asChild>
                 <Link to="/guard">{t("openGuard")}</Link>
               </DropdownMenuItem>
+            ) : null}
+            {hit.status === "open" ? (
+              <>
+                {hit.class === "webshell" || hit.class === "backdoor" ? (
+                  <DropdownMenuSeparator />
+                ) : null}
+                <DropdownMenuItem
+                  variant="destructive"
+                  data-testid={desktop ? "host-ignore" : `host-ignore-m-${hit.id}`}
+                  onSelect={() => setIgnoreOpen(true)}
+                >
+                  {t("ignore")}
+                </DropdownMenuItem>
+              </>
             ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
