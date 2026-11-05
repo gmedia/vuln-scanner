@@ -26,10 +26,11 @@ public_limiter = RateLimiter(
 
 CANONICAL_HOST = "https://sinexis.app"
 
-# Google requires `image` on BlogPosting at >=300x200 (prefers 1200x630). The
-# 512x512 app icon is the only raster asset served from the public origin, so it
-# is the honest default; a dedicated 1200x630 cover can replace it later.
-DEFAULT_SOCIAL_IMAGE = f"{CANONICAL_HOST}/icon-512.png"
+# Google accepts either for `image` but prefers ~1.91:1; the 1200x630 card is
+# served from frontend/public/ so it lands at the web root.
+DEFAULT_SOCIAL_IMAGE = f"{CANONICAL_HOST}/og-image.png"
+# Publisher logo stays square: Google renders it as a small avatar.
+PUBLISHER_LOGO = f"{CANONICAL_HOST}/icon-512.png"
 
 _PILLAR_LABELS = {
     "exposure": "Exposure",
@@ -498,7 +499,7 @@ async def blog_article_html(
             "@type": "Organization",
             "name": "Sinexis",
             "url": CANONICAL_HOST,
-            "logo": {"@type": "ImageObject", "url": DEFAULT_SOCIAL_IMAGE},
+            "logo": {"@type": "ImageObject", "url": PUBLISHER_LOGO},
         },
     }
     inner = (
