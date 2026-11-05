@@ -41,11 +41,39 @@ const EXACT = [...ROUTE_BLOCK.matchAll(/location = (\S+)\s*\{/g)].map(
   (m) => m[1],
 );
 
-const allowed = (path: string) => EXACT.includes(path) || ALLOWLIST.test(path);
+const PRODUCT_BLOCK = (() => {
+  const start = NGINX_SOURCE.indexOf("PRODUCT-SLUGS-BEGIN");
+  const end = NGINX_SOURCE.indexOf("PRODUCT-SLUGS-END");
+  expect(start).toBeGreaterThan(-1);
+  expect(end).toBeGreaterThan(start);
+  return NGINX_SOURCE.slice(start, end);
+})();
 
-const ROUTES = [...APP_SOURCE.matchAll(/path="([^"]+)"/g)].map((m) => m[1]);
+const PRODUCT_SLUGS = (() => {
+  const match = /location ~ "\^\/products\/\(([^)]+)\)/.exec(PRODUCT_BLOCK);
+  expect(match).not.toBeNull();
+  return match![1].split("|").map((slug) => slug.trim());
+})();
 
-// Concrete shape of a `:param` route, e.g. /products/:slug -> /products/abc123.
+const PRODUCT_ALLOWLIST = (() => {
+  const match = /location ~ "([^"]+)"/.exec(PRODUCT_BLOCK);
+  expect(match).not.toBeNull();
+  return new RegExp(match![1]);
+})();
+
+const allowed = (path: string) =>
+  EXACT.includes(path) || ALLOWLIST.test(path) || PRODUCT_ALLOWLIST.test(path);
+
+// `:param` routes are validated server-side against real data, not by nginx.
+// `/products/:slug` is the exception: its slug set is a fixed registry, so nginx
+// can and must answer 404 for an unknown slug.
+const DATA_VALIDATED_ROUTES = ["/products/:slug"];
+
+const ROUTES = [...APP_SOURCE.matchAll(/path="([^"]+)"/g)]
+  .map((m) => m[1])
+  .filter((route) => !DATA_VALIDATED_ROUTES.includes(route));
+
+// Concrete shape of a `:param` route, e.g. /scan/:id -> /scan/abc123.
 function sample(path: string): string {
   return path.replace(/:[A-Za-z0-9_]+/g, "abc123");
 }
@@ -54,9 +82,9 @@ describe("SPA route allowlist (nginx)", () => {
   it("parsed a meaningful route set", () => {
     expect(ROUTES.length).toBeGreaterThan(30);
     expect(ROUTES).toContain("/dashboard");
-    expect(ROUTES).toContain("/products/:slug");
     expect(ROUTES).toContain("/admin/users/:id");
     expect(ROUTES).toContain("*");
+    expect(PRODUCT_SLUGS.length).toBeGreaterThan(0);
   });
 
   it("serves the app for every route declared in App.tsx", () => {
@@ -85,9 +113,31 @@ describe("SPA route allowlist (nginx)", () => {
       "/admin/nope",
       "/scan",
       "/blog",
+      "/products/not-a-product",
     ];
     const wronglyAllowed = unknown.filter((path) => allowed(path));
     expect(wronglyAllowed).toEqual([]);
+  });
+
+  it("serves every published product slug and 404s the rest", () => {
+    for (const slug of PRODUCT_SLUGS) {
+      expect({ slug, ok: allowed(`/products/${slug}`) }).toEqual({
+        slug,
+        ok: true,
+      });
+      expect({ slug, ok: allowed(`/products/${slug}/`) }).toEqual({
+        slug,
+        ok: true,
+      });
+    }
+    expect(allowed("/products/not-a-product")).toBe(false);
+  });
+
+  it("declares no duplicate or empty product slugs", () => {
+    expect(PRODUCT_SLUGS).toEqual([...new Set(PRODUCT_SLUGS)]);
+    expect(PRODUCT_SLUGS.filter((slug) => !/^[a-z0-9-]+$/.test(slug))).toEqual(
+      [],
+    );
   });
 
   it("keeps / and /assets as exact SPA locations", () => {
