@@ -1,6 +1,6 @@
 # Row actions in tables & card lists (v1)
 
-**Status:** active rule — partly machine-checked. `frontend/src/test/designInvariants.test.ts` now enforces two of the rules on every run: a `MoreHorizontal` row menu must not wrap a single action, and `AlertDialogTrigger` must not be nested inside a `DropdownMenuItem`. Blocking dialogs and native `<select>` are checked in the same file. Alignment, separator order, `onSelect`, `aria-label`, and `desktop` branching remain review + per-page tests (§8).
+**Status:** active rule — machine-checked, with visual review as the remaining gate. `frontend/src/test/designInvariants.test.ts` enforces on every run: a `MoreHorizontal` menu must not wrap a single action; `AlertDialogTrigger` must not be nested inside a `DropdownMenuItem`; menu items use `onSelect`; a destructive item is last with a `DropdownMenuSeparator` before it; every row-action trigger has an `aria-label`; the `actionsMenu` key exists in both `en` and `id` for the component's namespace; and an action `TableHead`/`TableCell` is aligned (`text-right`, or `justify-end` on a block-level flex wrapper, including through a local action component). `desktop` branching (§3) and the 1440×900 / 393×851 visual pass remain review-only.
 **Applies to:** any row-level control in a table's last column, and any mobile card's action area.
 **Summary rule:** [`AGENTS.md`](../../AGENTS.md) § Design system item 5. Tier 1 table: [`design-invariants.md`](design-invariants.md).
 
@@ -105,14 +105,14 @@ A toast is not a safety mechanism. The confirm action uses `className={buttonVar
 
 ## 8. Checklist
 
-- [ ] `text-right` on action head **and** cell — or `justify-end` if the cell wraps a block-level flex
+- [ ] `text-right` on action head **and** cell — or `justify-end` if the cell wraps a block-level flex — machine-checked
 - [ ] a single available action is **not** wrapped in a menu — machine-checked for `MoreHorizontal` triggers
 - [ ] `Select` / inputs / disclosure toggles are **outside** the menu
-- [ ] destructive item last, `variant="destructive"`, separator before it
+- [ ] destructive item last, `variant="destructive"`, separator before it — machine-checked
 - [ ] confirmation **only** for irreversible actions
 - [ ] dialog is a **sibling controlled** `AlertDialog`, never a trigger nested in a menu item — machine-checked
-- [ ] menu items use `onSelect`, not `onClick`
-- [ ] trigger has `aria-label`; `actionsMenu` present in **both** `en` and `id`
+- [ ] menu items use `onSelect`, not `onClick` — machine-checked
+- [ ] trigger has `aria-label`; `actionsMenu` present in **both** `en` and `id` — machine-checked
 - [ ] mobile trigger ≥ 44px; both surfaces branch on a `desktop` prop, not `sm:`
 - [ ] `tsc --noEmit` + `eslint` clean; vitest green; **visually checked at 1440×900 and 393×851**
 
