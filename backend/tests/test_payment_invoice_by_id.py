@@ -162,6 +162,8 @@ async def test_can_pay_true_for_sent_positive_total(
     _bind(db_session)
     monkeypatch.setattr(settings, "payment_gateway_enabled", True)
     monkeypatch.setattr(settings, "payment_providers_enabled", "midtrans")
+    monkeypatch.setattr(settings, "midtrans_server_key", "SB-Mid-server-test")
+    monkeypatch.setattr(settings, "midtrans_is_production", False)
     inv = await _invoice(db_session, ctx["org"])
     transport = ASGITransport(app=app)
     try:
@@ -170,6 +172,30 @@ async def test_can_pay_true_for_sent_positive_total(
             assert response.status_code == 200
             assert response.json()["can_pay"] is True
             assert response.json()["payment_status"] is None
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_can_pay_false_when_gateway_has_no_key(
+    db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A flag with no key cannot start a checkout, so the UI must not offer one.
+
+    Before the configured/enabled split, ``enabled()`` only read the flag and
+    ``can_pay`` was true with no key; the pay button then failed at the provider.
+    """
+    _bind(db_session)
+    monkeypatch.setattr(settings, "payment_gateway_enabled", True)
+    monkeypatch.setattr(settings, "payment_providers_enabled", "midtrans")
+    monkeypatch.setattr(settings, "midtrans_server_key", "")
+    inv = await _invoice(db_session, ctx["org"])
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get(f"/api/invoices/{inv.id}", headers=_auth(ctx["owner"], ctx["org"].id))
+            assert response.status_code == 200
+            assert response.json()["can_pay"] is False
     finally:
         app.dependency_overrides.clear()
 
