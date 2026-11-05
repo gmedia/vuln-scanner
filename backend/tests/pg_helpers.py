@@ -282,13 +282,10 @@ async def scalar_count(engine: AsyncEngine, stmt: Any) -> int:
 async def detached_actor(engine: AsyncEngine, user_id: uuid.UUID) -> User:
     """Load the actor and detach it from the session.
 
-    ``InvoiceService.create_invoice`` only reads ``actor.id``. Keeping the actor
-    detached matters for the invoice-number retry: ``Session.rollback()`` (which
-    the retry loop runs after an ``IntegrityError``) expires every *attached*
-    ORM instance, and the next sync ``actor.id`` access would attempt a lazy
-    load outside the greenlet on asyncpg. This helper keeps the concurrency
-    tests focused on the lock/unique-constraint behaviour they lock down; the
-    attached-actor expiry is a separate finding, not something this PR changes.
+    Only for tests that race a row lock or unique constraint without entering
+    the invoice-number retry. The retry runs ``Session.rollback()``, which
+    expires every *attached* ORM instance; the retry test therefore loads the
+    actor from its own session so the rebind path is exercised for real.
     """
 
     async def _get(session: AsyncSession) -> User:

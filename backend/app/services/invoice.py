@@ -173,6 +173,10 @@ class InvoiceService:
         promo_code: str | None = None,
         subscription_request_id: uuid.UUID | None = None,
     ) -> OrgInvoice:
+        # Read the id while the actor is live. ``rollback()`` below expires every
+        # ORM instance regardless of ``expire_on_commit``, so a sync ``actor.id``
+        # on a later attempt would trigger a lazy load and raise MissingGreenlet.
+        actor_id = actor.id
         for attempt in range(3):
             try:
                 return await self._create_invoice_once(
@@ -194,6 +198,13 @@ class InvoiceService:
                         status_code=status.HTTP_409_CONFLICT,
                         detail="Could not allocate a unique invoice number",
                     ) from exc
+                reloaded = await self.db.get(User, actor_id)
+                if reloaded is None:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Acting user no longer exists",
+                    ) from exc
+                actor = reloaded
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Could not allocate a unique invoice number",

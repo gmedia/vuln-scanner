@@ -34,6 +34,7 @@ from app.config import settings
 from app.models.billing import PaymentAttempt
 from app.models.invoice import OrgInvoice
 from app.models.promo import PromoRedemption
+from app.models.user import User
 from app.services.invoice import InvoiceService
 from app.services.payments.base import CheckoutResult
 from app.services.payments.service import PaymentService
@@ -338,7 +339,8 @@ async def test_invoice_number_allocation_survives_a_real_unique_violation(
 
     async def create(organization_id: uuid.UUID):
         async def _run(session):
-            actor = await pg_helpers.detached_actor(pg_engine, seed.admin_id)
+            actor = await session.get(User, seed.admin_id)
+            assert actor is not None
             return await InvoiceService(session).create_invoice(
                 organization_id=organization_id,
                 sku="basic",
