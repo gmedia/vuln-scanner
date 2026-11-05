@@ -328,6 +328,25 @@ class InvoiceService:
             self.db.add(inv)
             await self.db.flush()
 
+            if subscription_request_id is not None:
+                # Consume the request in the invoice transaction so the admin
+                # queue stops offering it. Status/actor/note only: the discount
+                # still comes from ``promo_code`` and activation still happens
+                # through the payment flow, never here.
+                request = await self.db.get(SubscriptionRequest, subscription_request_id)
+                if request is None:
+                    raise HTTPException(status_code=404, detail="Subscription request not found")
+                now = datetime.now(UTC)
+                request.status = "approved"
+                request.resolved_by_user_id = actor.id
+                request.resolved_at = now
+                request.resolution_note = (
+                    f"Invoiced as {inv.number}"
+                    if not request.resolution_note
+                    else f"{request.resolution_note} | Invoiced as {inv.number}"
+                )[:500]
+                request.updated_at = now
+
             if quote is not None:
                 await PromoService(self.db).record_redemption(
                     quote,
