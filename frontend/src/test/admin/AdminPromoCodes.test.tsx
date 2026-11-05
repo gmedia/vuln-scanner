@@ -24,6 +24,9 @@ const promo: PromoCode = {
   max_redemptions_per_org: 1,
   redemption_count: 0,
   active: true,
+  requires_approval: false,
+  approved_by_user_id: null,
+  approved_at: null,
   created_at: "2026-11-01T00:00:00Z",
   updated_at: "2026-11-01T00:00:00Z",
 };
@@ -41,6 +44,7 @@ vi.mock("@/api/admin", () => ({
     getAdminSkuTiers: vi.fn(),
     createAdminPromoCode: vi.fn(),
     updateAdminPromoCode: vi.fn(),
+    approveAdminPromoCode: vi.fn(),
     deactivateAdminPromoCode: vi.fn(),
     reactivateAdminPromoCode: vi.fn(),
     deleteAdminPromoCode: vi.fn(),
@@ -76,6 +80,7 @@ beforeEach(() => {
   ] as never);
   vi.mocked(adminApi.createAdminPromoCode).mockResolvedValue(promo);
   vi.mocked(adminApi.updateAdminPromoCode).mockResolvedValue(promo);
+  vi.mocked(adminApi.approveAdminPromoCode).mockResolvedValue(promo);
   vi.mocked(adminApi.deactivateAdminPromoCode).mockResolvedValue({
     ...promo,
     active: false,
@@ -266,6 +271,82 @@ describe("AdminPromoCodes", () => {
     expect(screen.getByTestId("promo-min")).not.toBeDisabled();
     expect(screen.getByTestId("promo-max-discount")).not.toBeDisabled();
     expect(screen.queryByTestId("promo-terms-locked")).not.toBeInTheDocument();
+  });
+
+  it("shows the needs-approval badge and approves a high-value code", async () => {
+    vi.mocked(adminApi.listAdminPromoCodes).mockResolvedValue({
+      ...list,
+      items: [
+        {
+          ...promo,
+          active: false,
+          requires_approval: true,
+          approved_by_user_id: null,
+          approved_at: null,
+        },
+      ],
+    });
+    renderPage();
+
+    expect(
+      (await screen.findAllByTestId("promo-needs-approval-promo-1")).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getAllByText("Needs approval").length).toBeGreaterThan(0);
+
+    const user = await openMenu();
+    expect(await screen.findByTestId("promo-approve-promo-1")).toBeInTheDocument();
+    await user.click(screen.getByTestId("promo-approve-promo-1"));
+
+    await waitFor(() =>
+      expect(adminApi.approveAdminPromoCode).toHaveBeenCalledWith("promo-1"),
+    );
+  });
+
+  it("blocks reactivate until a high-value code is approved", async () => {
+    vi.mocked(adminApi.listAdminPromoCodes).mockResolvedValue({
+      ...list,
+      items: [
+        {
+          ...promo,
+          active: false,
+          requires_approval: true,
+          approved_by_user_id: null,
+          approved_at: null,
+        },
+      ],
+    });
+    renderPage();
+    const user = await openMenu();
+
+    const toggle = await screen.findByTestId("promo-toggle-promo-1");
+    expect(toggle).toHaveAttribute("aria-disabled", "true");
+    await user.click(toggle);
+
+    expect(adminApi.reactivateAdminPromoCode).not.toHaveBeenCalled();
+  });
+
+  it("hides the approve action once a high-value code is approved", async () => {
+    vi.mocked(adminApi.listAdminPromoCodes).mockResolvedValue({
+      ...list,
+      items: [
+        {
+          ...promo,
+          active: true,
+          requires_approval: true,
+          approved_by_user_id: "admin-2",
+          approved_at: "2026-11-02T00:00:00Z",
+        },
+      ],
+    });
+    renderPage();
+    await openMenu();
+
+    expect(
+      screen.queryByTestId("promo-approve-promo-1"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryAllByTestId("promo-needs-approval-promo-1"),
+    ).toHaveLength(0);
   });
 
   it("disables delete for a used code but keeps redemptions reachable", async () => {

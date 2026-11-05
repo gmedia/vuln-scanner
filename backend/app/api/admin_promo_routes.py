@@ -193,6 +193,19 @@ async def reactivate_promo_code(
     promo = await PromoService(db).reactivate(promo_id, current_admin)
     return PromoCodeItem.model_validate(promo)
 
+@router.post("/promo-codes/{promo_id}/approve", response_model=PromoCodeItem)
+async def approve_promo_code(
+    promo_id: uuid.UUID,
+    request: Request,
+    current_admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> PromoCodeItem | Response:
+    limit_response = await admin_limiter(request)
+    if limit_response:
+        return limit_response
+    promo = await PromoService(db).approve(promo_id, current_admin)
+    return PromoCodeItem.model_validate(promo)
+
 @router.delete(
     "/promo-codes/{promo_id}",
     status_code=status.HTTP_204_NO_CONTENT,

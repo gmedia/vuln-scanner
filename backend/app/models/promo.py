@@ -21,6 +21,7 @@ from sqlalchemy import (
     Integer,
     String,
     UniqueConstraint,
+    false,
     text,
     true,
 )
@@ -32,7 +33,15 @@ from app.database import Base
 PROMO_CODE_PATTERN = r"^[A-Z0-9][A-Z0-9_-]{7,31}$"
 PROMO_KINDS = ("percent", "fixed")
 PROMO_REDEMPTION_STATUSES = ("applied", "released")
-PROMO_HISTORY_ACTIONS = ("created", "updated", "deactivated", "reactivated", "deleted")
+PROMO_HISTORY_ACTIONS = (
+    "created",
+    "updated",
+    "deactivated",
+    "reactivated",
+    "deleted",
+    "approved",
+    "approval_reset",
+)
 
 _ACTION_CHECK = (
     "action IN (" + ", ".join(f"'{action}'" for action in PROMO_HISTORY_ACTIONS) + ")"
@@ -69,6 +78,19 @@ class PromoCode(Base):
     )
     active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True, server_default=true()
+    )
+    # Finance cap (promo-codes-v1 §1 PC9/P9): a code above 50% or IDR 5.000.000
+    # is created inactive and needs a *second* platform admin to enable it.
+    requires_approval: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
+    approved_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    approved_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
     created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),

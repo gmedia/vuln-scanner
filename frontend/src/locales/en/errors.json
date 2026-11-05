@@ -4,5 +4,9 @@
   "auth_password_mismatch": "The passwords do not match.",
   "guard_not_enabled": "Enable Guard before creating enroll tokens.",
   "host_site_duplicate": "A site with this path already exists.",
-  "uptime_seat_limit": "The {{tier}} plan allows {{limit}} uptime monitors. Disable one or upgrade to add another."
+  "uptime_seat_limit": "The {{tier}} plan allows {{limit}} uptime monitors. Disable one or upgrade to add another.",
+  "promo_approval_required": "This promo code needs a second admin's approval before it can be enabled.",
+  "promo_self_approval": "A promo code must be approved by a different platform admin.",
+  "promo_approval_not_required": "This promo code does not require approval.",
+  "promo_already_approved": "This promo code has already been approved."
 }

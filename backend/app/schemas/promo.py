@@ -86,6 +86,9 @@ class PromoCodeItem(BaseModel):
     max_redemptions_per_org: int = 1
     redemption_count: int = 0
     active: bool = True
+    requires_approval: bool = False
+    approved_by_user_id: uuid.UUID | None = None
+    approved_at: datetime | None = None
     created_by_user_id: uuid.UUID | None = None
     updated_by_user_id: uuid.UUID | None = None
     created_at: datetime

@@ -839,6 +839,9 @@ export interface PromoCode {
   max_redemptions_per_org: number;
   redemption_count: number;
   active: boolean;
+  requires_approval: boolean;
+  approved_by_user_id: string | null;
+  approved_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -967,6 +970,13 @@ export async function deactivateAdminPromoCode(id: string): Promise<PromoCode> {
 export async function reactivateAdminPromoCode(id: string): Promise<PromoCode> {
   const { data } = await api.post<PromoCode>(
     `/api/admin/promo-codes/${id}/reactivate`,
+  );
+  return data;
+}
+
+export async function approveAdminPromoCode(id: string): Promise<PromoCode> {
+  const { data } = await api.post<PromoCode>(
+    `/api/admin/promo-codes/${id}/approve`,
   );
   return data;
 }
@@ -1183,6 +1193,7 @@ export const adminApi = {
   getAdminPromoCode,
   createAdminPromoCode,
   updateAdminPromoCode,
+  approveAdminPromoCode,
   deactivateAdminPromoCode,
   reactivateAdminPromoCode,
   deleteAdminPromoCode,

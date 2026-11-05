@@ -4,5 +4,9 @@
   "auth_password_mismatch": "Kata sandi tidak cocok.",
   "guard_not_enabled": "Aktifkan Guard sebelum membuat token pendaftaran.",
   "host_site_duplicate": "Situs dengan path ini sudah ada.",
-  "uptime_seat_limit": "Paket {{tier}} mengizinkan {{limit}} monitor uptime. Nonaktifkan satu atau tingkatkan paket untuk menambah."
+  "uptime_seat_limit": "Paket {{tier}} mengizinkan {{limit}} monitor uptime. Nonaktifkan satu atau tingkatkan paket untuk menambah.",
+  "promo_approval_required": "Kode promo ini memerlukan persetujuan admin kedua sebelum dapat diaktifkan.",
+  "promo_self_approval": "Kode promo harus disetujui oleh platform admin lain.",
+  "promo_approval_not_required": "Kode promo ini tidak memerlukan persetujuan.",
+  "promo_already_approved": "Kode promo ini sudah disetujui."
 }
