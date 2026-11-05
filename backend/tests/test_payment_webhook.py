@@ -19,6 +19,8 @@ from app.models.organization import Organization, OrganizationMembership
 from app.models.user import User
 from app.services.auth import hash_password
 from app.services.organization import ensure_personal_org
+from app.services.payments.base import NormalizedEvent, StatusResult
+from app.services.payments.midtrans import MidtransProvider
 
 SERVER_KEY = "SB-Mid-server-test-123"
 ORDER_ID = "SX-202611-0001-A1"
@@ -160,6 +162,35 @@ def _gateway_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(settings, "payment_providers_enabled", "midtrans")
     monkeypatch.setattr(settings, "midtrans_server_key", SERVER_KEY)
     monkeypatch.setattr(settings, "midtrans_is_production", False)
+    # Existing cases predate provider verification; each verification test opts in.
+    monkeypatch.setattr(settings, "midtrans_verify_status", False)
+
+
+def _status_event(kind: str, *, amount_idr: int = TOTAL) -> NormalizedEvent:
+    return NormalizedEvent(
+        event_id=f"status:{kind}",
+        kind=kind,
+        provider_order_id=ORDER_ID,
+        provider_payment_id="trx-status",
+        amount_idr=amount_idr,
+        currency="IDR",
+    )
+
+
+def _patch_fetch_status(
+    monkeypatch: pytest.MonkeyPatch,
+    result: StatusResult | Exception,
+) -> list[PaymentAttempt]:
+    calls: list[PaymentAttempt] = []
+
+    async def fake_fetch_status(self: MidtransProvider, attempt: PaymentAttempt) -> StatusResult:
+        calls.append(attempt)
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+    monkeypatch.setattr(MidtransProvider, "fetch_status", fake_fetch_status)
+    return calls
 
 
 @pytest.mark.asyncio
@@ -476,5 +507,280 @@ async def test_unknown_attempt_records_failed_event(db_session: AsyncSession) ->
             ).scalar_one()
             assert event.status == "failed"
             assert event.error == "unknown attempt"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_verification_confirms_success_before_activation(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _bind(db_session)
+    seeded = await _seed(db_session)
+    monkeypatch.setattr(settings, "midtrans_verify_status", True)
+    calls = _patch_fetch_status(
+        monkeypatch,
+        StatusResult(found=True, event=_status_event("succeeded")),
+    )
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await _post(client, _payload())
+            assert response.status_code == 200, response.text
+            assert response.json()["status"] == "processed"
+
+            invoice = await db_session.get(OrgInvoice, seeded["invoice"].id)
+            attempt = await db_session.get(PaymentAttempt, seeded["attempt"].id)
+            assert invoice is not None and invoice.status == "paid"
+            assert attempt is not None and attempt.status == "succeeded"
+            sub = (
+                await db_session.execute(select(Subscription).where(Subscription.organization_id == seeded["org"].id))
+            ).scalar_one()
+            assert sub.status == "active"
+            assert len(calls) == 1
+            events = (await db_session.execute(select(PaymentEvent))).scalars().all()
+            assert len(events) == 1
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_verification_pending_status_fails_without_activation(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _bind(db_session)
+    seeded = await _seed(db_session)
+    monkeypatch.setattr(settings, "midtrans_verify_status", True)
+    _patch_fetch_status(monkeypatch, StatusResult(found=True, event=_status_event("pending")))
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await _post(client, _payload())
+            assert response.json()["status"] == "failed"
+
+            invoice = await db_session.get(OrgInvoice, seeded["invoice"].id)
+            attempt = await db_session.get(PaymentAttempt, seeded["attempt"].id)
+            assert invoice is not None and invoice.status == "sent"
+            assert attempt is not None and attempt.status == "failed"
+            assert attempt.failure_code == "provider_status_mismatch"
+            assert attempt.failure_message == "provider reports pending"
+            assert (
+                await db_session.execute(select(Subscription).where(Subscription.organization_id == seeded["org"].id))
+            ).scalar_one_or_none() is None
+            event = (
+                await db_session.execute(
+                    select(PaymentEvent).where(PaymentEvent.event_id == "trx-0001:settlement:200:accept")
+                )
+            ).scalar_one()
+            assert event.status == "failed"
+            assert event.error == "provider status is pending, not settled"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_verification_not_found_fails_closed(db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch) -> None:
+    _bind(db_session)
+    seeded = await _seed(db_session)
+    monkeypatch.setattr(settings, "midtrans_verify_status", True)
+    _patch_fetch_status(monkeypatch, StatusResult(found=False, event=None, error=None))
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await _post(client, _payload())
+            assert response.json()["status"] == "failed"
+
+            invoice = await db_session.get(OrgInvoice, seeded["invoice"].id)
+            attempt = await db_session.get(PaymentAttempt, seeded["attempt"].id)
+            assert invoice is not None and invoice.status == "sent"
+            assert attempt is not None and attempt.status == "failed"
+            assert attempt.failure_code == "provider_status_unavailable"
+            event = (
+                await db_session.execute(
+                    select(PaymentEvent).where(PaymentEvent.event_id == "trx-0001:settlement:200:accept")
+                )
+            ).scalar_one()
+            assert event.status == "failed"
+            assert event.error == "provider status unavailable"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_verification_transient_error_fails_closed(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _bind(db_session)
+    seeded = await _seed(db_session)
+    monkeypatch.setattr(settings, "midtrans_verify_status", True)
+    _patch_fetch_status(monkeypatch, StatusResult(found=False, event=None, error="timeout"))
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await _post(client, _payload())
+            assert response.json()["status"] == "failed"
+
+            invoice = await db_session.get(OrgInvoice, seeded["invoice"].id)
+            attempt = await db_session.get(PaymentAttempt, seeded["attempt"].id)
+            assert invoice is not None and invoice.status == "sent"
+            assert attempt is not None and attempt.failure_code == "provider_status_unavailable"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_verification_exception_fails_closed(db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch) -> None:
+    _bind(db_session)
+    seeded = await _seed(db_session)
+    monkeypatch.setattr(settings, "midtrans_verify_status", True)
+    _patch_fetch_status(monkeypatch, RuntimeError("provider unreachable"))
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await _post(client, _payload())
+            assert response.json()["status"] == "failed"
+
+            invoice = await db_session.get(OrgInvoice, seeded["invoice"].id)
+            attempt = await db_session.get(PaymentAttempt, seeded["attempt"].id)
+            assert invoice is not None and invoice.status == "sent"
+            assert attempt is not None and attempt.failure_code == "provider_status_unavailable"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_verification_disabled_skips_provider_call(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _bind(db_session)
+    seeded = await _seed(db_session)
+    monkeypatch.setattr(settings, "midtrans_verify_status", False)
+    calls = _patch_fetch_status(
+        monkeypatch,
+        StatusResult(found=True, event=_status_event("succeeded")),
+    )
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await _post(client, _payload())
+            assert response.json()["status"] == "processed"
+
+            invoice = await db_session.get(OrgInvoice, seeded["invoice"].id)
+            assert invoice is not None and invoice.status == "paid"
+            assert calls == []
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_verification_on_already_paid_invoice_records_duplicate(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _bind(db_session)
+    seeded = await _seed(db_session, invoice_status="paid")
+    sub = Subscription(
+        organization_id=seeded["org"].id,
+        sku="pro",
+        status="active",
+        cycle="monthly",
+        provider="midtrans",
+    )
+    db_session.add(sub)
+    await db_session.commit()
+    await db_session.refresh(sub)
+    before = sub.updated_at
+    monkeypatch.setattr(settings, "midtrans_verify_status", True)
+    _patch_fetch_status(monkeypatch, StatusResult(found=True, event=_status_event("succeeded")))
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await _post(client, _payload())
+            assert response.json()["status"] == "processed"
+
+            attempt = await db_session.get(PaymentAttempt, seeded["attempt"].id)
+            await db_session.refresh(sub)
+            assert attempt is not None and attempt.provider_status == "duplicate"
+            assert sub.updated_at == before
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_manual_provider_skips_verification(db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch) -> None:
+    _bind(db_session)
+    seeded = await _seed(db_session)
+    await db_session.delete(seeded["attempt"])
+    await db_session.commit()
+    monkeypatch.setattr(settings, "midtrans_verify_status", True)
+    monkeypatch.setattr(settings, "payment_webhook_secret", "right-secret")
+    calls = _patch_fetch_status(
+        monkeypatch,
+        StatusResult(found=True, event=_status_event("succeeded")),
+    )
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                "/api/webhooks/payments/manual",
+                content=json.dumps(
+                    {
+                        "id": "manual-e1",
+                        "type": "payment.succeeded",
+                        "data": {
+                            "invoice_id": str(seeded["invoice"].id),
+                            "payment_ref": "BANK-REF-1",
+                        },
+                    }
+                ).encode(),
+                headers={
+                    "Content-Type": "application/json",
+                    "X-Payment-Webhook-Secret": "right-secret",
+                },
+            )
+            assert response.status_code == 200, response.text
+            assert response.json()["status"] == "processed"
+
+            invoice = await db_session.get(OrgInvoice, seeded["invoice"].id)
+            assert invoice is not None and invoice.status == "paid"
+            assert calls == []
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_pending_and_expired_events_never_verify(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _bind(db_session)
+    await _seed(db_session)
+    monkeypatch.setattr(settings, "midtrans_verify_status", True)
+    calls = _patch_fetch_status(
+        monkeypatch,
+        StatusResult(found=True, event=_status_event("succeeded")),
+    )
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            pending = await _post(
+                client,
+                _payload(
+                    transaction_id="trx-pending",
+                    transaction_status="pending",
+                    status_code="201",
+                    fraud_status="",
+                ),
+            )
+            assert pending.json()["status"] == "processed"
+            expired = await _post(
+                client,
+                _payload(
+                    transaction_id="trx-expired",
+                    transaction_status="expire",
+                    status_code="200",
+                    fraud_status="",
+                ),
+            )
+            assert expired.json()["status"] == "processed"
+            assert calls == []
     finally:
         app.dependency_overrides.clear()

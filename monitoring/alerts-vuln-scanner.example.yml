@@ -239,6 +239,20 @@ groups:
             successful settlement arrived for an invoice that was already paid.
             Access was not re-activated, so the customer has paid twice. Refund the
             duplicate manually; never issue another activation.
+      - alert: VulnScannerPaymentRefunds
+        expr: vuln_payment_refunds_24h > 0
+        for: 5m
+        labels:
+          severity: critical
+          service: vuln-scanner
+        annotations:
+          summary: "A refund or chargeback was recorded"
+          description: >-
+            vuln_payment_refunds_24h is {{ $value }}. A refund or chargeback was
+            recorded on a payment attempt. Access is NOT revoked automatically.
+            Confirm the refund or dispute with the provider, decide manually
+            whether the organization keeps access, then refund the money if it has
+            not already been returned.
       - alert: VulnScannerPaymentPendingBacklog
         expr: vuln_payment_pending_attempts > 20
         for: 30m

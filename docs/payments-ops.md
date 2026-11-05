@@ -96,6 +96,32 @@ attempt stays `pending`.
    running and the provider still reports success, the payment is real and §5 applies
    to the missing event.
 
+### Provider status verification (`MIDTRANS_VERIFY_STATUS`)
+
+When `MIDTRANS_VERIFY_STATUS=true` (the default), every `payment.succeeded`
+notification is confirmed with `GET /v2/{order_id}/status` **before** the invoice is
+marked paid. The webhook remains the trigger; the status call is a second,
+independent confirmation of the money.
+
+- Provider reports `succeeded` → the event proceeds normally and access activates.
+- Provider reports any other kind (`pending`, `failed`, `expired`, …) → the attempt
+  fails with `failure_code='provider_status_mismatch'` and the event is `failed`.
+  Nothing is activated.
+- The status API is unreachable, times out, returns a transient error, or reports the
+  order as not found → the attempt fails with
+  `failure_code='provider_status_unavailable'` and the event is `failed`.
+
+This is **fail-closed** on purpose. During a Midtrans status-API outage a legitimate
+settlement stays unactivated until reconciliation confirms it; activating on an
+unverified webhook would risk granting access for money that never arrived. Reconcile
+with `payment.reconcile_attempts` and the provider dashboard — never hand-mark the
+invoice paid from the webhook body alone.
+
+Verification is skipped for `pending`, `failed`, `expired`, `refunded`, and chargeback
+events, for the manual provider, and when `MIDTRANS_VERIFY_STATUS=false`. The status
+check does not create an extra `payment_events` row; it only changes the decision for
+that event.
+
 ## 4) Amount mismatch
 
 `vuln_payment_amount_mismatches_24h` counts attempts whose provider amount differed
@@ -156,10 +182,23 @@ The invoice was voided while a checkout was still live, then the customer paid.
 
 - There is **no automatic access revocation**. Decide whether the org keeps access
   based on the commercial situation.
+- `vuln_payment_refunds_24h` counts these attempts in the last 24h; the
+  `VulnScannerPaymentRefunds` alert fires while it is above zero.
 - Record the decision and its reason in the billing ticket/audit trail, including who
   made it and what was refunded.
 - A chargeback is not a normal refund: treat it as a dispute, keep the evidence, and
   do not re-charge the same invoice until the dispute is closed.
+
+### Refund recorded but access still active
+
+1. Confirm the refund or chargeback in the provider dashboard and read the attempt's
+   `refunded_amount_idr`.
+2. Decide whether the organization keeps access. The system will not revoke it for you.
+3. To remove access, cancel the subscription at period end (do not delete the
+   subscription or the payment attempt). If an immediate stop is required, cancel
+   without the period-end flag and record why.
+4. Leave the `payment_attempts` row and the `payment_events` row in place — they are
+   the audit trail for the money that left.
 
 ## 8) Void / manual paid guard
 
@@ -185,7 +224,7 @@ attempt exists. This prevents "paid twice" and "voided after payment" races.
 
 ## 10) Metrics reference
 
-All five gauges are exported on `/metrics` and are read-only. Alerts live in
+All six gauges are exported on `/metrics` and are read-only. Alerts live in
 `monitoring/alerts-vuln-scanner.example.yml`.
 
 | Metric | What it measures | Bad looks like |
@@ -195,6 +234,7 @@ All five gauges are exported on `/metrics` and are read-only. Alerts live in
 | `vuln_payment_failed_events_24h` | Webhook events with `status='failed'` in 24h. | Any non-zero value: an event did not activate access; check signature, amount, unknown attempt, provider dashboard. |
 | `vuln_payment_amount_mismatches_24h` | Attempts failed with `failure_code='amount_mismatch'` in 24h. | Any non-zero value: provider amount ≠ `org_invoices.total_idr`; the invoice is not paid. |
 | `vuln_payment_duplicate_settlements_24h` | Attempts with `provider_status='duplicate'` updated in 24h. | Any non-zero value: a second settlement hit a paid invoice; refund one payment manually. |
+| `vuln_payment_refunds_24h` | Attempts with `status='refunded'` updated in 24h (refund, partial refund, chargeback). | Any non-zero value: money is leaving; access is **not** revoked automatically. Confirm with the provider and decide access manually. |
 
 Thresholds match the product rules: 24h checkout expiry, 10-minute reconciliation, and
 a 5-minute `for:` on the money-losing conditions (mismatch, duplicate) so they page

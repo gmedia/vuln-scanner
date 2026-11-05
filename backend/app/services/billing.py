@@ -11,6 +11,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.models.billing import PaymentAttempt, PaymentEvent, Subscription
 from app.models.invoice import OrgInvoice
 from app.models.organization import Organization
@@ -23,7 +24,8 @@ from app.schemas.billing import (
     SubscriptionItem,
 )
 from app.services.invoice import InvoiceService
-from app.services.payments.base import NormalizedEvent
+from app.services.payments.base import NormalizedEvent, PaymentConfigError, ProviderUnavailable, StatusResult
+from app.services.payments.registry import build_provider
 from app.services.sku_tier import SkuTierService
 
 logger = logging.getLogger(__name__)
@@ -552,6 +554,49 @@ class BillingService:
         attempt.failure_message = (message or code)[:255]
         attempt.updated_at = _now()
 
+    async def _verify_provider_status(self, provider: str, attempt: PaymentAttempt) -> str | None:
+        """Confirm a ``succeeded`` webhook against the provider.
+
+        Fails closed: a non-success provider status, a missing transaction, a
+        transient error, or any exception returns ``None`` so the caller records
+        a failed event instead of activating on unverified money. Reconciliation
+        can settle the attempt later once the provider is reachable.
+
+        A provider without a usable ``fetch_status`` (for example the manual
+        path) has nothing to confirm, so it is treated as verified.
+        """
+        try:
+            adapter = build_provider(provider)
+        except (ProviderUnavailable, PaymentConfigError):
+            return "succeeded"
+
+        fetch_status = getattr(adapter, "fetch_status", None)
+        if not callable(fetch_status):
+            return "succeeded"
+
+        try:
+            result: StatusResult = await fetch_status(attempt)
+        except Exception:  # noqa: BLE001 - verification must never raise into the webhook
+            logger.warning(
+                "Provider status verification raised: provider=%s attempt=%s",
+                provider,
+                attempt.id,
+            )
+            return None
+
+        if result.error is not None:
+            logger.warning(
+                "Provider status unavailable: provider=%s attempt=%s error=%s",
+                provider,
+                attempt.id,
+                result.error,
+            )
+            return None
+        if not result.found or result.event is None:
+            # Midtrans 404 means there is no transaction we can confirm.
+            return None
+        return result.event.kind
+
     async def _apply_gateway_event(
         self,
         record: PaymentEvent,
@@ -585,6 +630,24 @@ class BillingService:
             return "ignored"
 
         if event.kind == "succeeded":
+            if settings.midtrans_verify_status and attempt.provider_order_id:
+                verified = await self._verify_provider_status(provider, attempt)
+                if verified is not None and verified != "succeeded":
+                    self._fail_attempt(
+                        attempt,
+                        "provider_status_mismatch",
+                        f"provider reports {verified}",
+                    )
+                    record.error = f"provider status is {verified}, not settled"
+                    return "failed"
+                if verified is None:
+                    self._fail_attempt(
+                        attempt,
+                        "provider_status_unavailable",
+                        "could not confirm with provider",
+                    )
+                    record.error = "provider status unavailable"
+                    return "failed"
             return await self._apply_gateway_succeeded(attempt, inv, provider, event)
         if event.kind == "pending":
             attempt.provider_status = "pending"

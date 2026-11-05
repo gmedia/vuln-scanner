@@ -33,6 +33,7 @@ _PAYMENT_PENDING_AGE_NAME = "vuln_payment_pending_age_seconds"
 _PAYMENT_FAILED_EVENTS_NAME = "vuln_payment_failed_events_24h"
 _PAYMENT_AMOUNT_MISMATCH_NAME = "vuln_payment_amount_mismatches_24h"
 _PAYMENT_DUPLICATE_SETTLEMENT_NAME = "vuln_payment_duplicate_settlements_24h"
+_PAYMENT_REFUNDS_NAME = "vuln_payment_refunds_24h"
 
 # Mirrors workers/tasks/ai_reservations.STALE_RESERVATION_MINUTES; kept local so metrics never imports the worker.
 STALE_RESERVATION_MINUTES = 20
@@ -408,6 +409,27 @@ def _read_payment_duplicate_settlements_24h() -> float | None:
         return None
 
 
+def _read_payment_refunds_24h() -> float | None:
+    """Refund and chargeback attempts in the last 24h.
+
+    Refunds are money leaving the business. They are recorded on the attempt but
+    never auto-revoke access, so operators must see them and decide manually.
+    """
+    try:
+        from sqlalchemy import text
+
+        cutoff = datetime.now(UTC) - timedelta(hours=24)
+        with _ai_engine().connect() as conn:
+            raw = conn.execute(
+                text("SELECT COUNT(*) FROM payment_attempts WHERE status = 'refunded' AND updated_at >= :cutoff"),
+                {"cutoff": cutoff},
+            ).scalar()
+        return float(raw or 0)
+    except Exception as e:
+        logger.debug("payment refunds metric scrape failed: %s", e)
+        return None
+
+
 class AutoFailCollector:
     def collect(self) -> Iterable[Metric]:
         counts = _read_auto_fail_counts()
@@ -642,6 +664,23 @@ class PaymentDuplicateSettlementCollector:
         yield gauge
 
 
+class PaymentRefundsCollector:
+    def collect(self) -> Iterable[Metric]:
+        try:
+            value = _read_payment_refunds_24h()
+        except Exception as e:
+            logger.debug("payment refunds collector failed: %s", e)
+            return
+        if value is None:
+            return
+        gauge = GaugeMetricFamily(
+            _PAYMENT_REFUNDS_NAME,
+            "Refund/chargeback attempts in the last 24h; access is NOT revoked automatically",
+        )
+        gauge.add_metric([], value)
+        yield gauge
+
+
 def register_custom_metrics() -> None:
     global _collector_registered
     if _collector_registered:
@@ -660,4 +699,5 @@ def register_custom_metrics() -> None:
     REGISTRY.register(PaymentFailedEventsCollector())
     REGISTRY.register(PaymentAmountMismatchCollector())
     REGISTRY.register(PaymentDuplicateSettlementCollector())
+    REGISTRY.register(PaymentRefundsCollector())
     _collector_registered = True
