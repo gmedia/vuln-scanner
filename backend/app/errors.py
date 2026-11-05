@@ -49,7 +49,11 @@ def api_error(
     return ApiError(status_code, code, detail, params=params, headers=headers)
 
 
-async def api_error_handler(_request: Request, exc: ApiError) -> JSONResponse:
+async def api_error_handler(_request: Request, exc: Exception) -> JSONResponse:
+    # Starlette types the slot as Exception -> Response; the handler is only
+    # registered for ApiError, so this narrows rather than re-checks reality.
+    if not isinstance(exc, ApiError):
+        return JSONResponse(status_code=500, content={"detail": "Internal server error"})
     return JSONResponse(
         status_code=exc.status_code,
         content={
