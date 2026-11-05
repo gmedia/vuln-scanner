@@ -27,6 +27,5 @@ async def download_sinexis_install() -> FileResponse:
         headers={
             "Cache-Control": "public, max-age=300",
             "X-Content-Type-Options": "nosniff",
-            "X-Robots-Tag": "noindex",
         },
     )
