@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import UTC, datetime, timedelta
 
 from app.config import settings
@@ -355,7 +356,14 @@ def test_article_emits_description_open_graph_and_jsonld(client):
     assert payload["description"] == "teaser"
     assert payload["url"] == "https://sinexis.app/blog/meta-article"
     assert payload["datePublished"]
-    assert "author" not in payload
+    # Google's BlogPosting rich result requires author and image; both were
+    # missing until the schema was completed.
+    assert payload["author"]["@type"] == "Organization"
+    assert payload["author"]["name"]
+    assert payload["image"]
+    assert payload["dateModified"]
+    assert payload["mainEntityOfPage"]["@id"] == "https://sinexis.app/blog/meta-article"
+    assert payload["publisher"]["logo"]["url"].startswith("https://sinexis.app/")
 
 
 def test_jsonld_escapes_script_breakout(client):
@@ -369,3 +377,46 @@ def test_jsonld_escapes_script_breakout(client):
     end = resp.text.index("</script>", start)
     payload = json.loads(resp.text[start:end])
     assert payload["headline"] == title
+
+
+def test_jsonld_carries_every_field_google_requires(client):
+    _create_and_publish(client, "meta-required", pillar="exposure")
+    text = client.get("/blog/meta-required").text
+    opening = '<script type="application/ld+json">'
+    start = text.index(opening) + len(opening)
+    payload = json.loads(text[start : text.index("</script>", start)])
+
+    for field in ("headline", "datePublished", "dateModified", "author", "image"):
+        assert field in payload, f"BlogPosting is missing {field}"
+        assert payload[field], f"BlogPosting has an empty {field}"
+
+    image = payload["image"][0] if isinstance(payload["image"], list) else payload["image"]
+    assert image.startswith("https://sinexis.app/")
+    assert image.endswith(".png")
+
+
+def test_article_declares_og_image(client):
+    _create_and_publish(client, "meta-ogimage", pillar="exposure")
+
+    text = client.get("/blog/meta-ogimage").text
+
+    assert '<meta property="og:image" content="https://sinexis.app/icon-512.png"' in text
+
+
+def test_article_never_leaks_the_author_email(client):
+    _create_and_publish(client, "meta-nopii", pillar="exposure")
+    text = client.get("/blog/meta-nopii").text
+    block = text.split('<script type="application/ld+json">')[1].split("</script>")[0]
+
+    # "@" alone appears in every URL, e.g. https://schema.org. Look for an address.
+    assert not re.search(r"[\w.+-]+@[\w-]+\.[\w.]+", block)
+
+
+def test_jsonld_timestamps_carry_a_timezone(client):
+    _create_and_publish(client, "meta-tz", pillar="exposure")
+    text = client.get("/blog/meta-tz").text
+    start = text.index('<script type="application/ld+json">') + len('<script type="application/ld+json">')
+    payload = json.loads(text[start : text.index("</script>", start)])
+
+    for field in ("datePublished", "dateModified"):
+        assert re.search(r"(Z|[+-]\d{2}:\d{2})$", payload[field]), f"{field} has no offset"
