@@ -39,6 +39,21 @@ alter legal-page chrome.
 
 Publish via admin JWT (`POST /api/admin/blog/posts` then `.../publish`). Idempotent on slug (409 if exists).
 
+Or import these files directly from the repo (from `backend/`, after migrations):
+
+```bash
+python -m scripts.seed_blog_posts --dry-run   # print the plan, write nothing
+python -m scripts.seed_blog_posts             # create rows as DRAFT
+python -m scripts.seed_blog_posts --update    # refresh copy; status/published_at preserved
+python -m scripts.seed_blog_posts --publish   # create AND publish
+```
+
+Safe by default: new rows are drafts, an existing slug is skipped unless
+`--update` is passed, and `--update` never changes `status` or `published_at`.
+The importer refuses a slug without an entry in `PILLAR_BY_SLUG`, so a new file
+cannot slip into `/blog` under "More" by accident. Add the pillar to
+`PILLAR_BY_SLUG` (in the script) and to the table above in the same PR.
+
 **Live `/blog` is the database.** Editing these files does not change production until an admin updates the matching slug (or recreates the post). Keep copy layperson Bahasa; no prices, IPs, or images.
 
 Editorial notes (2026-09): Scan = outside-in posture (DAST-class baseline, not business logic). Attach = scheduled control, not SIEM. Guard = thin Wazuh inventory + critical alerts. SIEM Cases = Postgres incident tickets, not a Wazuh plugin. Host Protect = on-box helper, never invented malware. Do not quote IDR.
