@@ -156,6 +156,16 @@ production reports `unknown` (i.e. the `GIT_SHA` deploy has not landed). This is
 the alarm for "CI green but deploy red" — the mode that went unnoticed for ~50
 hours on 2026-10-20/22.
 
+A mismatch is not always drift. If the Actions API shows a **`CI/CD` run on `main`
+queued or in progress**, production is expected to still report the previous SHA, so
+the check skips with a notice and a step-summary row naming that run. As a second,
+independent guard, a `main` commit younger than **20 minutes** also gets a grace
+window even when the run lookup is unavailable (rate limit, permissions). Both guards
+only apply to a SHA mismatch; `unknown`, an old commit with no in-flight deploy, and
+every other mismatch still fail. A real drift alert therefore means: no `CI/CD` run
+for `main` is pending, the commit is older than 20 minutes, and production is still
+stale — i.e. the deploy job actually failed or never ran.
+
 ### Billing healthcheck (read-only)
 
 After a deploy that touches billing, or when a customer reports a lockout:
