@@ -15,22 +15,63 @@ def _cfg(**overrides: object):
     return settings.model_copy(update=overrides)
 
 
-def test_build_provider_returns_enabled_adapter(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(settings, "payment_gateway_enabled", True)
+SANDBOX_KEY = "SB-Mid-server-test-123"
+
+
+@pytest.fixture(autouse=True)
+def _base_gateway_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "midtrans_is_production", False)
+    monkeypatch.setattr(settings, "midtrans_server_key", SANDBOX_KEY)
+
+
+def test_build_provider_returns_configured_adapter_with_flag_off(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "payment_gateway_enabled", False)
     provider = build_provider("midtrans")
     assert isinstance(provider, MidtransProvider)
     assert provider.name == "midtrans"
 
 
-def test_build_provider_rejects_unknown(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_build_provider_checkout_rejects_configured_provider_with_flag_off(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "payment_gateway_enabled", False)
+    with pytest.raises(ProviderUnavailable, match="disabled"):
+        build_provider("midtrans", require_checkout_enabled=True)
+
+
+def test_build_provider_rejects_missing_key_with_flag_on(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "payment_gateway_enabled", True)
+    monkeypatch.setattr(settings, "midtrans_server_key", "  ")
+    with pytest.raises(ProviderUnavailable, match="not configured"):
+        build_provider("midtrans")
+
+
+def test_build_provider_checkout_accepts_configured_provider_with_flag_on(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "payment_gateway_enabled", True)
+    provider = build_provider("midtrans", require_checkout_enabled=True)
+    assert isinstance(provider, MidtransProvider)
+
+
+def test_build_provider_rejects_unknown_with_flag_on(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(settings, "payment_gateway_enabled", True)
     with pytest.raises(ProviderUnavailable, match="unknown"):
         build_provider("stripe")
 
 
-def test_build_provider_rejects_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_build_provider_rejects_unknown_with_flag_off(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(settings, "payment_gateway_enabled", False)
-    with pytest.raises(ProviderUnavailable, match="disabled"):
+    with pytest.raises(ProviderUnavailable, match="unknown"):
+        build_provider("stripe")
+    with pytest.raises(ProviderUnavailable, match="unknown"):
+        build_provider("stripe", require_checkout_enabled=True)
+
+
+def test_build_provider_rejects_mode_mismatched_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "payment_gateway_enabled", False)
+    monkeypatch.setattr(settings, "midtrans_is_production", True)
+    with pytest.raises(ProviderUnavailable, match="not configured"):
         build_provider("midtrans")
 
 

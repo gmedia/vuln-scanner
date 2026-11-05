@@ -112,7 +112,23 @@ class ProviderUnavailable(Exception):  # noqa: N818
 class PaymentProvider(Protocol):
     name: str
 
-    def enabled(self) -> bool: ...
+    def configured(self) -> bool:
+        """The adapter has a usable key, so it can process inbound events.
+
+        Inbound means webhook signature verification and reconciliation status
+        calls. A configured provider keeps settling in-flight payments even when
+        the gateway flag is off.
+        """
+        ...
+
+    def enabled(self) -> bool:
+        """The adapter may start a new checkout.
+
+        This is deliberately stricter than :meth:`configured`: turning the
+        gateway flag off must stop new checkouts without stranding payments that
+        were already taken.
+        """
+        ...
 
     async def create_checkout(self, req: CheckoutRequest) -> CheckoutResult: ...
 

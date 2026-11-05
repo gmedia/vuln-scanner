@@ -205,7 +205,7 @@ async def test_checkout_owner_and_admin_allowed_viewer_and_outsider_denied(
 ) -> None:
     _bind(db_session)
     monkeypatch.setattr(settings, "payment_gateway_enabled", True)
-    monkeypatch.setattr("app.services.payments.service.build_provider", lambda name: FakeProvider())
+    monkeypatch.setattr("app.services.payments.service.build_provider", lambda name, **kwargs: FakeProvider())
     transport = ASGITransport(app=app)
     try:
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -229,7 +229,7 @@ async def test_checkout_rejects_unpayable_invoice(
 ) -> None:
     _bind(db_session)
     monkeypatch.setattr(settings, "payment_gateway_enabled", True)
-    monkeypatch.setattr("app.services.payments.service.build_provider", lambda name: FakeProvider())
+    monkeypatch.setattr("app.services.payments.service.build_provider", lambda name, **kwargs: FakeProvider())
     transport = ASGITransport(app=app)
     try:
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -244,7 +244,7 @@ async def test_checkout_rejects_unpayable_invoice(
 async def test_checkout_rejects_zero_total(db_session: AsyncSession, ctx, monkeypatch: pytest.MonkeyPatch) -> None:
     _bind(db_session)
     monkeypatch.setattr(settings, "payment_gateway_enabled", True)
-    monkeypatch.setattr("app.services.payments.service.build_provider", lambda name: FakeProvider())
+    monkeypatch.setattr("app.services.payments.service.build_provider", lambda name, **kwargs: FakeProvider())
     transport = ASGITransport(app=app)
     try:
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -274,7 +274,7 @@ async def test_checkout_unknown_provider_is_400(db_session: AsyncSession, ctx, m
     _bind(db_session)
     monkeypatch.setattr(settings, "payment_gateway_enabled", True)
 
-    def _raise(name: str):
+    def _raise(name: str, **kwargs):
         raise ProviderUnavailable(f"unknown payment provider: {name}")
 
     monkeypatch.setattr("app.services.payments.service.build_provider", _raise)
@@ -294,7 +294,7 @@ async def test_checkout_same_provider_is_idempotent(
 ) -> None:
     _bind(db_session)
     monkeypatch.setattr(settings, "payment_gateway_enabled", True)
-    monkeypatch.setattr("app.services.payments.service.build_provider", lambda name: FakeProvider())
+    monkeypatch.setattr("app.services.payments.service.build_provider", lambda name, **kwargs: FakeProvider())
     transport = ASGITransport(app=app)
     try:
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -321,14 +321,14 @@ async def test_checkout_different_provider_while_pending_is_409(
 ) -> None:
     _bind(db_session)
     monkeypatch.setattr(settings, "payment_gateway_enabled", True)
-    monkeypatch.setattr("app.services.payments.service.build_provider", lambda name: FakeProvider())
+    monkeypatch.setattr("app.services.payments.service.build_provider", lambda name, **kwargs: FakeProvider())
     transport = ASGITransport(app=app)
     try:
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             inv = await _invoice(db_session, ctx["org"])
             first = await _post_checkout(client, inv, ctx["owner"])
             assert first.status_code == 200
-            monkeypatch.setattr("app.services.payments.service.build_provider", lambda name: OtherProvider())
+            monkeypatch.setattr("app.services.payments.service.build_provider", lambda name, **kwargs: OtherProvider())
             second = await _post_checkout(client, inv, ctx["owner"], provider="xendit")
             assert second.status_code == 409, second.text
             assert first.json()["attempt_id"] in second.json()["detail"]
@@ -343,7 +343,7 @@ async def test_checkout_charges_discounted_total_not_amount(
     _bind(db_session)
     monkeypatch.setattr(settings, "payment_gateway_enabled", True)
     fake = FakeProvider()
-    monkeypatch.setattr("app.services.payments.service.build_provider", lambda name: fake)
+    monkeypatch.setattr("app.services.payments.service.build_provider", lambda name, **kwargs: fake)
     transport = ASGITransport(app=app)
     try:
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -370,7 +370,7 @@ async def test_checkout_provider_failure_marks_attempt_failed(
     monkeypatch.setattr(settings, "payment_gateway_enabled", True)
     fake = FakeProvider()
     fake.fail = PaymentProviderError("Midtrans create failed (500)", transient=True, code=500)
-    monkeypatch.setattr("app.services.payments.service.build_provider", lambda name: fake)
+    monkeypatch.setattr("app.services.payments.service.build_provider", lambda name, **kwargs: fake)
     transport = ASGITransport(app=app)
     try:
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -393,7 +393,7 @@ async def test_checkout_integrity_error_returns_existing_attempt(
 ) -> None:
     _bind(db_session)
     monkeypatch.setattr(settings, "payment_gateway_enabled", True)
-    monkeypatch.setattr("app.services.payments.service.build_provider", lambda name: FakeProvider())
+    monkeypatch.setattr("app.services.payments.service.build_provider", lambda name, **kwargs: FakeProvider())
     inv = await _invoice(db_session, ctx["org"])
     existing = PaymentAttempt(
         provider="midtrans",

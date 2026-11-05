@@ -38,13 +38,18 @@ def test_expire_stale_checkouts_rolls_back_on_error() -> None:
     session.commit.assert_not_called()
 
 
-def test_reconcile_gateway_attempts_skips_when_gateway_disabled(monkeypatch) -> None:
-    import tasks.billing as billing
+def test_reconcile_gateway_attempts_runs_when_gateway_disabled(monkeypatch) -> None:
+    from app.config import settings
 
-    monkeypatch.setattr(billing.settings, "payment_gateway_enabled", False)
-    with patch("tasks.billing._run") as run:
+    monkeypatch.setattr(settings, "payment_gateway_enabled", False)
+    expected = {"reconciled_count": 0, "error_count": 0, "skipped_count": 0}
+
+    def fake_run(coro):
+        coro.close()
+        return expected
+
+    with patch("tasks.billing._run", side_effect=fake_run) as run:
         outcome = reconcile_gateway_attempts()
 
-    assert outcome["skipped"] is True
-    assert outcome["reconciled_count"] == 0
-    run.assert_not_called()
+    assert outcome == expected
+    run.assert_called_once()

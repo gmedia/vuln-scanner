@@ -150,7 +150,7 @@ class PaymentService:
         if not settings.payment_gateway_enabled:
             raise HTTPException(status_code=503, detail="Payment gateway is disabled")
         try:
-            provider = build_provider(provider_name)
+            provider = build_provider(provider_name, require_checkout_enabled=True)
         except ProviderUnavailable as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 

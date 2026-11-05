@@ -11,12 +11,14 @@ _FACTORIES = {
 }
 
 
-def build_provider(name: str) -> PaymentProvider:
+def build_provider(name: str, *, require_checkout_enabled: bool = False) -> PaymentProvider:
     factory = _FACTORIES.get((name or "").strip().lower())
     if factory is None:
         raise ProviderUnavailable(f"unknown payment provider: {name}")
     provider = factory()
-    if not provider.enabled():
+    if not provider.configured():
+        raise ProviderUnavailable(f"payment provider is not configured: {name}")
+    if require_checkout_enabled and not provider.enabled():
         raise ProviderUnavailable(f"payment provider is disabled: {name}")
     return provider
 

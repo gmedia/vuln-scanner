@@ -13,7 +13,7 @@ Payment behaviour is controlled by env only:
 
 | Flag | Meaning |
 |---|---|
-| `PAYMENT_GATEWAY_ENABLED` | Master switch for gateway checkout. Default `false`. |
+| `PAYMENT_GATEWAY_ENABLED` | Master switch for **new checkouts only**. Default `false`. Inbound webhooks and reconciliation keep running while a provider is configured. |
 | `PAYMENT_PROVIDERS_ENABLED` | Comma list of providers, e.g. `midtrans`. Empty means none. |
 | `MIDTRANS_SERVER_KEY` | Server-side key only. Sandbox keys start `SB-Mid-server-`; production keys start `Mid-server-`. |
 | `MIDTRANS_IS_PRODUCTION` | `false` for sandbox, `true` for production. |
@@ -29,8 +29,13 @@ Turning `PAYMENT_GATEWAY_ENABLED=false`:
 - The pay action disappears; the invoice page falls back to manual bank transfer.
 - Existing `payment_attempts` rows are kept; nothing is deleted or voided.
 - New gateway checkouts are refused.
-- Gateway webhooks return `404` while the provider is disabled, so settle or refund
-  outstanding attempts **before** flipping off if the provider is still sending events.
+- Inbound settlement continues: if `MIDTRANS_SERVER_KEY` is still set (provider
+  **configured**) the webhook verifies the signature and marks the invoice paid, and
+  the reconciliation sweep polls pending attempts. Only an **unconfigured** provider
+  (empty key or mode mismatch) returns `404` and is skipped by reconciliation.
+- An operator rolling back sees no new pay buttons, while late payments for
+  already-created attempts still settle; keep the server key in place until every
+  in-flight attempt is paid, expired, or refunded.
 
 ## 2) Sandbox smoke test
 
@@ -84,7 +89,8 @@ attempt stays `pending`.
 2. **Endpoint reachability** — resend the notification from the provider dashboard. A
    healthy endpoint returns `200` for `processed`, `duplicate`, `ignored`, or a
    permanently failed event. `500` means a transient DB error and the provider should
-   retry; `401` is a signature problem; `404` means the provider is disabled or unknown.
+   retry; `401` is a signature problem; `404` means the provider is unknown or unconfigured
+   (missing/mode-mismatched server key), not merely that the checkout flag is off.
 3. **Body size** — nginx must keep `location /api/webhooks/payments/ { client_max_body_size 64k; }`
    in both configs. A truncated/large body returns `413` and the provider may keep retrying.
 4. **Signature** — `401` in the backend logs means the body's `signature_key` did not
