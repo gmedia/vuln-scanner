@@ -1,6 +1,6 @@
 # Spec: Scan Attach Loop v1 (P1)
 
-**Status:** engineering spec for implementation — **do not implement until user explicitly says implement / kerjakan / buat** (or points at a checked acceptance slice).
+**Status:** **shipped on `main`** — recurring schedules (CRUD, enable/disable, per-org cap), baseline diff, notify, and the executive report; browser print-to-PDF (#785) and schedule last-run print (#799). Do **not** re-implement from this file; only bugfixes if the owner names them.
 **Goal:** productize recurring external scan so GMD can sell **Sinexis Scan** attach (see `docs/commercial/`).
 **Non-goals:** Workspace/org multi-tenant (P2), full asset CMDB (P3), Wazuh/Guard (P5), hard rebrand, mobile-as-hero SKU.
 

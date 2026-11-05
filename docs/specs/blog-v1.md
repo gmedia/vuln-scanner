@@ -1,6 +1,6 @@
 # Spec: Public blog v1 (P10 — GTM content)
 
-**Status:** **S0 draft** (this file). S1+ only after explicit implement.
+**Status:** **S1–S5 shipped on `main`** — admin CMS, pillar taxonomy (#1205), sitemap `lastmod` (#1222), draft-first importer (#1228) and its container path fix (#1235). Do **not** re-implement; only bugfixes if the owner names them.
 **Goal:** public **Sinexis** articles (thought leadership / attach explainers) managed by **platform admin**, without a git PR per post.
 **Epic:** **P10** (new). Does **not** replace P6 hospitality, P5 Guard, P7 SIEM, or P8 Uptime.
 **Depends:** existing `User.is_admin` / `get_current_admin` · public SPA routes (Landing pattern) · i18n chrome catalogs · nginx SPA `try_files`.
