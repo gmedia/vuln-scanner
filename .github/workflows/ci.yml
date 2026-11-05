@@ -409,6 +409,47 @@ jobs:
           path: backend/coverage.xml
           retention-days: 7
 
+  postgres-concurrency-tests:
+    needs: [changes]
+    if: ${{ (github.event_name != 'workflow_dispatch' || !inputs.skip_tests)
+            && (needs.changes.outputs.always_full == 'true'
+                || needs.changes.outputs.backend == 'true') }}
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: vuln_scanner
+          POSTGRES_PASSWORD: e2e-test-password
+          POSTGRES_DB: vuln_scanner_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U vuln_scanner -d vuln_scanner_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_POSTGRES_URL: postgresql+asyncpg://vuln_scanner:e2e-test-password@localhost:5432/vuln_scanner_test
+      SENTRY_DSN: ""
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest-timeout==2.4.0
+      - name: Run Postgres concurrency tests
+        timeout-minutes: 10
+        # The repo addopts enforce a 75% coverage floor; this focused five-test
+        # suite is not a coverage run, so clear addopts instead of lowering it.
+        run: python -m pytest tests/test_pg_concurrency.py -v --timeout=300 -o addopts=""
+
   python-tests-workers:
     needs: [changes]
     if: ${{ (github.event_name != 'workflow_dispatch' || !inputs.skip_tests)
@@ -1060,6 +1101,7 @@ jobs:
     needs:
       - changes
       - python-tests-backend
+      - postgres-concurrency-tests
       - python-tests-workers
       - frontend-typecheck
       - frontend-unit-tests

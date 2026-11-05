@@ -239,3 +239,35 @@ All six gauges are exported on `/metrics` and are read-only. Alerts live in
 Thresholds match the product rules: 24h checkout expiry, 10-minute reconciliation, and
 a 5-minute `for:` on the money-losing conditions (mismatch, duplicate) so they page
 before the customer notices.
+
+## 11) Postgres concurrency tests
+
+`backend/tests/test_pg_concurrency.py` proves the billing invariants that SQLite cannot:
+the promo row `SELECT ... FOR UPDATE`, the per-org invoice lock, the partial unique
+index `uq_payment_attempt_pending_invoice`, and the `next_invoice_number` retry on a
+real unique violation. It also carries one sync metadata test that guards the index
+predicates in every run, with or without Postgres.
+
+- **Switch:** `TEST_POSTGRES_URL` only. Unset it and the four concurrency tests skip;
+  the normal `pytest tests/` run never needs Postgres.
+- **Schema:** built with `Base.metadata.create_all`, not Alembic, because the tests
+  target the model metadata and index predicates. Each test truncates every table
+  before and after.
+- **CI:** the required `postgres-concurrency-tests` job runs the file against a
+  `postgres:16-alpine` service.
+
+Local run (throwaway container on port 55432; use any free port):
+
+```bash
+docker run --rm -d --name pg1268 \
+  -e POSTGRES_USER=vuln_scanner \
+  -e POSTGRES_PASSWORD=e2e-test-password \
+  -e POSTGRES_DB=vuln_scanner_test \
+  -p 55432:5432 postgres:16-alpine
+
+cd backend
+TEST_POSTGRES_URL=postgresql+asyncpg://vuln_scanner:e2e-test-password@localhost:55432/vuln_scanner_test \
+  python -m pytest tests/test_pg_concurrency.py -v --no-cov --timeout=300
+
+docker rm -f pg1268
+```
