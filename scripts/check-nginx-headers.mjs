@@ -115,8 +115,15 @@ if (edge) {
   if (!/^\s*map\s+\$request_uri\s+\$robots_for_path\s*\{/m.test(edge)) {
     failures.push("nginx/sinexis.app.conf lost `map $request_uri $robots_for_path`; /status and /install may become indexable.");
   }
-  if (!/^\s*add_header\s+X-Robots-Tag\s+\$robots_tag\s*;/m.test(edge)) {
+  const robotsHeader = edge.match(/^\s*add_header\s+X-Robots-Tag\s+\$robots_tag\b([^;]*);/m);
+  if (!robotsHeader) {
     failures.push("nginx/sinexis.app.conf does not emit one server-level `X-Robots-Tag $robots_tag`.");
+  } else if (!/\balways\b/.test(robotsHeader[1])) {
+    failures.push(
+      "the server-level `X-Robots-Tag $robots_tag` must use `always`; a bare add_header is " +
+        "only emitted for 2xx/3xx, so 404/405 responses (custom-host apex, unknown /status " +
+        "slugs) would ship without it — exactly the hosts that must stay noindex.",
+    );
   }
 }
 
