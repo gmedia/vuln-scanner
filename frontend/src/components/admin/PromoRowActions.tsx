@@ -27,6 +27,7 @@ export function PromoRowActions({
   onDelete: (item: PromoCode) => void;
 }) {
   const { t } = useTranslation("admin");
+  const isUsed = item.redemption_count > 0;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -50,7 +51,15 @@ export function PromoRowActions({
           {t("promoHistory")}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" data-testid={`promo-delete-${item.id}`} onSelect={() => onDelete(item)}>
+        <DropdownMenuItem
+          variant="destructive"
+          disabled={isUsed}
+          title={isUsed ? t("promoDeleteBlocked") : undefined}
+          data-testid={`promo-delete-${item.id}`}
+          onSelect={() => {
+            if (!isUsed) onDelete(item);
+          }}
+        >
           {t("promoDelete")}
         </DropdownMenuItem>
       </DropdownMenuContent>

@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.blog_html import CANONICAL_HOST
+from app.api.sitemap_common import lastmod_tag
 from app.config import settings
 from app.database import get_db
 from app.models.blog import BlogPost
@@ -19,8 +20,8 @@ PRODUCT_SLUGS = ("scan", "guard", "host", "uptime", "ai-gateway")
 STATIC_PATHS = ("/terms", "/privacy")
 
 
-def _url(path: str) -> str:
-    return f"  <url><loc>{CANONICAL_HOST}{escape_text(path)}</loc></url>"
+def _url(path: str, lastmod: datetime | None = None) -> str:
+    return f"  <url><loc>{CANONICAL_HOST}{escape_text(path)}</loc>{lastmod_tag(lastmod)}</url>"
 
 
 @html_router.get("/sitemap.xml")
@@ -34,7 +35,6 @@ async def sitemap(db: AsyncSession = Depends(get_db)) -> Response:
     urls = [_url("/"), _url("/products")]
     urls.extend(_url(f"/products/{slug}") for slug in PRODUCT_SLUGS)
     if settings.blog_enabled:
-        urls.append(_url("/blog"))
         now = datetime.now(UTC)
         result = await db.execute(
             select(BlogPost).where(
@@ -43,18 +43,23 @@ async def sitemap(db: AsyncSession = Depends(get_db)) -> Response:
                 BlogPost.published_at <= now,
             )
         )
-        for post in result.scalars().all():
-            urls.append(_url(f"/blog/{post.slug}"))
+        posts = list(result.scalars().all())
+        index_lastmod = max((p.updated_at for p in posts), default=None)
+        urls.append(_url("/blog", index_lastmod))
+        for post in posts:
+            urls.append(_url(f"/blog/{post.slug}", post.updated_at or post.published_at))
     urls.extend(_url(path) for path in STATIC_PATHS)
 
     xml = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-        + "\n".join(urls)
-        + "\n</urlset>\n"
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + "\n".join(urls) + "\n</urlset>\n"
     )
     return Response(
         content=xml,
-        media_type="application/xml",
-        headers={"Cache-Control": "public, max-age=300"},
+        # Serve an exact `text/xml` (Starlette would append `; charset=utf-8` if this
+        # went through media_type); the XML prolog already declares UTF-8.
+        headers={
+            "Content-Type": "text/xml",
+            "Cache-Control": "public, max-age=300",
+        },
     )

@@ -186,3 +186,69 @@ groups:
             fleet looks healthy while nothing is being checked. First check that
             celery beat is running and that ai_providers.probe is routed to the
             ip_scan queue (compose task_routes), then read the worker logs.
+      - alert: VulnScannerPaymentPendingStale
+        expr: vuln_payment_pending_age_seconds > 1800
+        for: 15m
+        labels:
+          severity: warning
+          service: vuln-scanner
+        annotations:
+          summary: "A payment checkout has been pending past the reconciliation window"
+          description: >-
+            vuln_payment_pending_age_seconds is {{ $value }}. A checkout has been
+            pending past the 24h expiry and the 10-minute reconciliation window,
+            which means webhooks are being missed and nothing is resolving the
+            attempt. Check the `payment.reconcile_attempts` beat and worker logs and
+            the Midtrans dashboard status for the order.
+      - alert: VulnScannerPaymentWebhookFailures
+        expr: vuln_payment_failed_events_24h > 0
+        for: 15m
+        labels:
+          severity: warning
+          service: vuln-scanner
+        annotations:
+          summary: "Payment webhook events failed in the last 24h"
+          description: >-
+            vuln_payment_failed_events_24h is {{ $value }}. Failed webhook events
+            never activate access. Check the backend logs for signature errors,
+            amount mismatch, and unknown attempt; then confirm the transaction in
+            the provider dashboard and reconcile it manually if the money landed.
+      - alert: VulnScannerPaymentAmountMismatch
+        expr: vuln_payment_amount_mismatches_24h > 0
+        for: 5m
+        labels:
+          severity: critical
+          service: vuln-scanner
+        annotations:
+          summary: "A provider amount did not match the invoice total"
+          description: >-
+            vuln_payment_amount_mismatches_24h is {{ $value }}. The provider amount
+            did not match org_invoices.total_idr, so the invoice was NOT marked paid.
+            Verify the checkout total against the invoice (post-promo, post-tax) and
+            consider a refund if the customer was charged.
+      - alert: VulnScannerPaymentDuplicateSettlement
+        expr: vuln_payment_duplicate_settlements_24h > 0
+        for: 5m
+        labels:
+          severity: critical
+          service: vuln-scanner
+        annotations:
+          summary: "A second successful settlement hit an already-paid invoice"
+          description: >-
+            vuln_payment_duplicate_settlements_24h is {{ $value }}. A second
+            successful settlement arrived for an invoice that was already paid.
+            Access was not re-activated, so the customer has paid twice. Refund the
+            duplicate manually; never issue another activation.
+      - alert: VulnScannerPaymentPendingBacklog
+        expr: vuln_payment_pending_attempts > 20
+        for: 30m
+        labels:
+          severity: warning
+          service: vuln-scanner
+        annotations:
+          summary: "Payment attempts are piling up pending"
+          description: >-
+            vuln_payment_pending_attempts is {{ $value }}. A sustained backlog means
+            checkouts are being created faster than expiry and reconciliation can
+            clear them, or the expiry sweep has stopped. Check the
+            `payment.reconcile_attempts` and expiry beat entries plus worker logs.
