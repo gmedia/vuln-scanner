@@ -60,7 +60,12 @@ async def list_promo_codes(
         page=page, page_size=page_size, status_filter=status_filter, q=q
     )
     return PromoCodeListResponse(
-        items=[PromoCodeItem.model_validate(row) for row in rows],
+        items=[
+            PromoCodeItem.model_validate(row).model_copy(
+                update={"redemption_count": count}
+            )
+            for row, count in rows
+        ],
         total=total,
         page=page,
         page_size=page_size,
@@ -124,7 +129,12 @@ async def get_promo_code(
     limit_response = await admin_limiter(request)
     if limit_response:
         return limit_response
-    return PromoCodeItem.model_validate(await PromoService(db).get(promo_id))
+    service = PromoService(db)
+    promo = await service.get(promo_id)
+    count = await service.redemption_count(promo.id)
+    return PromoCodeItem.model_validate(promo).model_copy(
+        update={"redemption_count": count}
+    )
 
 @router.post(
     "/promo-codes",

@@ -837,6 +837,7 @@ export interface PromoCode {
   ends_at: string | null;
   max_redemptions: number | null;
   max_redemptions_per_org: number;
+  redemption_count: number;
   active: boolean;
   created_at: string;
   updated_at: string;

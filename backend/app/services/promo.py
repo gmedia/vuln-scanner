@@ -15,6 +15,7 @@ from __future__ import annotations
 import builtins
 import re
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
@@ -132,6 +133,34 @@ class PromoService:
             raise _not_found()
         return promo
 
+    async def redemption_count(self, promo_id: uuid.UUID) -> int:
+        """Applied redemptions for one code (released rows return quota)."""
+        return await self._applied_count(promo_id)
+
+    async def redemption_counts(
+        self, promo_ids: Sequence[uuid.UUID]
+    ) -> dict[uuid.UUID, int]:
+        """Applied redemption counts for many codes in one grouped query.
+
+        Only ``status='applied'`` rows consume quota; a released redemption
+        must not count against ``max_redemptions`` (matching ``lock_and_quote``).
+        """
+        ids = list(dict.fromkeys(promo_ids))
+        counts = {promo_id: 0 for promo_id in ids}
+        if not ids:
+            return counts
+        stmt = (
+            select(PromoRedemption.promo_code_id, func.count())
+            .where(
+                PromoRedemption.promo_code_id.in_(ids),
+                PromoRedemption.status == "applied",
+            )
+            .group_by(PromoRedemption.promo_code_id)
+        )
+        for promo_id, count in (await self.db.execute(stmt)).all():
+            counts[promo_id] = int(count)
+        return counts
+
     async def list(
         self,
         *,
@@ -139,7 +168,7 @@ class PromoService:
         page_size: int = 20,
         status_filter: str | None = None,
         q: str | None = None,
-    ) -> tuple[builtins.list[PromoCode], int]:
+    ) -> tuple[builtins.list[tuple[PromoCode, int]], int]:
         now = datetime.now(UTC)
         filters: list[Any] = []
         if status_filter == "active":
@@ -175,7 +204,8 @@ class PromoService:
             .scalars()
             .all()
         )
-        return list(rows), total
+        counts = await self.redemption_counts([row.id for row in rows])
+        return [(row, counts[row.id]) for row in rows], total
 
     async def history(
         self, promo_id: uuid.UUID, *, page: int = 1, page_size: int = 20

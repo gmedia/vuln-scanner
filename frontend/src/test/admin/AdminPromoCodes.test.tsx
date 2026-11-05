@@ -22,6 +22,7 @@ const promo: PromoCode = {
   ends_at: null,
   max_redemptions: 100,
   max_redemptions_per_org: 1,
+  redemption_count: 0,
   active: true,
   created_at: "2026-11-01T00:00:00Z",
   updated_at: "2026-11-01T00:00:00Z",
@@ -219,5 +220,68 @@ describe("AdminPromoCodes", () => {
     await user.click(await screen.findByTestId("promo-edit-promo-1"));
 
     expect(screen.getByTestId("promo-code")).toBeDisabled();
+  });
+
+  it("shows used / limit for a redeemed code", async () => {
+    vi.mocked(adminApi.listAdminPromoCodes).mockResolvedValue({
+      ...list,
+      items: [{ ...promo, redemption_count: 3 }],
+    });
+    renderPage();
+
+    expect(await screen.findByTestId("promo-used-promo-1")).toHaveTextContent(
+      "3 / 100",
+    );
+    expect(screen.getAllByText("3 / 100").length).toBeGreaterThan(0);
+  });
+
+  it("locks discount terms and explains why when editing a used code", async () => {
+    vi.mocked(adminApi.listAdminPromoCodes).mockResolvedValue({
+      ...list,
+      items: [{ ...promo, redemption_count: 2 }],
+    });
+    renderPage();
+    const user = await openMenu();
+    await user.click(await screen.findByTestId("promo-edit-promo-1"));
+
+    expect(screen.getByTestId("promo-kind")).toBeDisabled();
+    expect(screen.getByTestId("promo-percent")).toBeDisabled();
+    expect(screen.getByTestId("promo-min")).toBeDisabled();
+    expect(screen.getByTestId("promo-max-discount")).toBeDisabled();
+    expect(screen.getByTestId("promo-product")).toBeDisabled();
+    expect(screen.getByTestId("promo-sku")).toBeDisabled();
+    expect(screen.getByTestId("promo-terms-locked")).toHaveTextContent(
+      "discount terms are locked",
+    );
+    expect(screen.getByTestId("promo-max-redemptions")).not.toBeDisabled();
+  });
+
+  it("leaves discount terms editable when the code is unused", async () => {
+    renderPage();
+    const user = await openMenu();
+    await user.click(await screen.findByTestId("promo-edit-promo-1"));
+
+    expect(screen.getByTestId("promo-kind")).not.toBeDisabled();
+    expect(screen.getByTestId("promo-percent")).not.toBeDisabled();
+    expect(screen.getByTestId("promo-min")).not.toBeDisabled();
+    expect(screen.getByTestId("promo-max-discount")).not.toBeDisabled();
+    expect(screen.queryByTestId("promo-terms-locked")).not.toBeInTheDocument();
+  });
+
+  it("disables delete for a used code but keeps redemptions reachable", async () => {
+    vi.mocked(adminApi.listAdminPromoCodes).mockResolvedValue({
+      ...list,
+      items: [{ ...promo, redemption_count: 1 }],
+    });
+    renderPage();
+    const user = await openMenu();
+
+    const deleteItem = await screen.findByTestId("promo-delete-promo-1");
+    expect(deleteItem).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByTestId("promo-redemptions-promo-1")).not.toBeDisabled();
+
+    await user.click(deleteItem);
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(adminApi.deleteAdminPromoCode).not.toHaveBeenCalled();
   });
 });
