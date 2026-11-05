@@ -26,6 +26,11 @@ public_limiter = RateLimiter(
 
 CANONICAL_HOST = "https://sinexis.app"
 
+# Google requires `image` on BlogPosting at >=300x200 (prefers 1200x630). The
+# 512x512 app icon is the only raster asset served from the public origin, so it
+# is the honest default; a dedicated 1200x630 cover can replace it later.
+DEFAULT_SOCIAL_IMAGE = f"{CANONICAL_HOST}/icon-512.png"
+
 _PILLAR_LABELS = {
     "exposure": "Exposure",
     "onbox": "Keamanan on-box",
@@ -201,6 +206,18 @@ ol.index .read{
 """
 
 
+def _iso_utc(value: datetime | None) -> str:
+    """ISO 8601 with an explicit offset, which structured data expects.
+
+    Postgres returns aware datetimes, but a naive value (or another driver) must
+    not silently emit a timestamp with no timezone.
+    """
+    if value is None:
+        return ""
+    stamp = value if value.tzinfo is not None else value.replace(tzinfo=UTC)
+    return stamp.isoformat()
+
+
 def _human_date(value: datetime | None) -> str:
     if value is None:
         return ""
@@ -245,6 +262,7 @@ def _shell(
     description: str | None = None,
     og_type: str | None = None,
     og_url: str | None = None,
+    og_image: str | None = None,
     jsonld: dict[str, Any] | None = None,
 ) -> str:
     main_class = "rail" if rail else "measure"
@@ -263,6 +281,7 @@ def _shell(
             f'<meta property="og:description" content="{safe_description}"/>\n'
             f'<meta property="og:url" content="{safe_url}"/>\n'
             f'<meta property="og:type" content="{safe_type}"/>\n'
+            f'<meta property="og:image" content="{escape_text(og_image or DEFAULT_SOCIAL_IMAGE)}"/>\n'
         )
     jsonld_block = ""
     if jsonld is not None:
@@ -466,10 +485,21 @@ async def blog_article_html(
         "@type": "BlogPosting",
         "headline": post.title,
         "description": description,
-        "datePublished": pub,
+        "datePublished": _iso_utc(post.published_at),
+        "dateModified": _iso_utc(post.updated_at or post.published_at),
         "url": article_url,
+        "mainEntityOfPage": {"@type": "WebPage", "@id": article_url},
+        "image": [DEFAULT_SOCIAL_IMAGE],
         "inLanguage": post.locale,
-        "publisher": {"@type": "Organization", "name": "Sinexis"},
+        # Published by the platform. `User` has no display name, and the only
+        # other column is the email, which must not reach public HTML.
+        "author": {"@type": "Organization", "name": "Sinexis", "url": CANONICAL_HOST},
+        "publisher": {
+            "@type": "Organization",
+            "name": "Sinexis",
+            "url": CANONICAL_HOST,
+            "logo": {"@type": "ImageObject", "url": DEFAULT_SOCIAL_IMAGE},
+        },
     }
     inner = (
         f"<article data-testid='blog-article-title'>"
