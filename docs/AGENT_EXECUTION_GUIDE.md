@@ -149,10 +149,13 @@ P0–P14 control planes are **on `main`**. Agent work is **development only** �
    says *who*, not *whether*.
 
 **Current wave (owner-named 2026-11-04):** payments ([`payments-v1.md`](specs/payments-v1.md),
-Midtrans redirect page) + promo codes ([`promo-codes-v1.md`](specs/promo-codes-v1.md)). The gateway
-stays **optional** and the pay loop **manual-first**. One open code slice remains: **#1243**
-dual-admin approval for high-value promo codes (finance cap **>50% or >IDR 5.000.000**, spec §1
-item 5 — currently **not enforced**). Everything else in that wave is shipped (#1212–#1228).
+Midtrans redirect page) + promo codes ([`promo-codes-v1.md`](specs/promo-codes-v1.md)) — **code closed**.
+The gateway stays **optional** and the pay loop **manual-first**. The finance cap (**>50% or
+>IDR 5.000.000**, spec §1 item 5) is now **enforced**: a high-value code is created inactive and needs
+a *different* platform admin to approve it, `reactivate` refuses while unapproved, and editing the
+discount terms resets the approval (**#1243 / PR #1264**). Do **not** re-add an unconditional
+`active=True` path. Residual in this wave is **`state:human` only** (#1244 PPh23 base with finance).
+Everything else shipped (#1212–#1228).
 
 **WAF own pack is complete** (1001–1177, #913/#918/#919) — do **not** reopen widening.
 **Print S2**, **H9 Host invoicable**, **Inbox S2** (#820) and **inotify** (#823) are shipped.

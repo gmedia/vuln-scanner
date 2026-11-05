@@ -1,6 +1,10 @@
 # Spec: Promo codes v1
 
-**Status:** **Named by the owner 2026-11-04** (`lanjut eksekusi`). Design locked; implementation tracked by the PR chain in §11.
+**Status:** **Shipped** (owner-named 2026-11-04; code closed 2026-11-05). The finance cap in §1
+item 5 is enforced in code (#1243 / PR #1264): high-value codes are created inactive and need a
+different platform admin to approve, `reactivate` refuses while unapproved, and editing the
+discount terms resets the approval. Residual is **owner/ops** only (#1244 PPh23 base with
+finance). Do **not** re-implement; the PR chain in §11 is historical.
 **Amends:** [`pricing-architecture-v1.md`](../commercial/pricing-architecture-v1.md) P7 → **P9** (below). Annual P2 remains locked and excluded.
 **Related:** [`payments-v1.md`](payments-v1.md), [`sinexis-invoice-v1.md`](sinexis-invoice-v1.md), [`subscription-page-v1.md`](subscription-page-v1.md).
 
