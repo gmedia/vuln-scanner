@@ -13,14 +13,19 @@
 ## 0) Session boot (do this first)
 
 ```bash
-# MANDATORY (also in AGENTS.md). `--author`, not `--assignee`: gh pr create does
-# not assign the author, so --assignee returns nothing and the merge step never runs.
-gh pr list --state open --author @me
+# MANDATORY. Ownership is the claim ledger, NOT the PR author: every host shares
+# one GitHub account, so `gh pr list --author @me` lists every host's PRs.
+export FLEET_HOST=<stable id for this machine>   # e.g. tc1, tc5, lab-2
+./scripts/fleet-claim.sh preflight               # claims, all open PRs, ready work, orphans
 
 GIT_MASTER=1 git fetch origin
 GIT_MASTER=1 git checkout main && GIT_MASTER=1 git pull origin main
 GIT_MASTER=1 git rev-parse --short HEAD   # re-pull; do not pin a SHA
 ```
+
+Protocol: [`docs/fleet-concurrency.md`](fleet-concurrency.md). Take work only with
+`./scripts/fleet-claim.sh claim <issue> <slug>`; `state:claimed` without your host in its `CLAIM`
+comment means **another host owns it — stop**. Never create a branch without an issue number.
 
 Then read, in order:
 

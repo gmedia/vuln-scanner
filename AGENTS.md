@@ -16,19 +16,31 @@
 - **Public repo hygiene:** never put production SSH hosts/ports, personal emails, real passwords, API keys, or customer/finance dumps in `*.md` or other tracked files. Use env vars and private ops notes instead.
 
 ## Session Start (MANDATORY)
-```
-gh pr list --state open --author @me
-```
-Use `--author @me`, not `--assignee @me`: `gh pr create` does **not** assign the PR to
-its author, so `--assignee` returns nothing and the merge step below never runs.
 
-- Your PR, CI green → `gh pr merge --squash` → `git branch -d <branch>`
+This repo is worked by **several OpenCode hosts in parallel against one GitHub account**. Ownership
+is tracked by the claim ledger, **not** by PR author. Protocol:
+[`docs/fleet-concurrency.md`](docs/fleet-concurrency.md).
+
+```bash
+./scripts/fleet-claim.sh preflight   # claims held, open PRs, ready work, orphan branches
+```
+
+- `gh pr list --author @me` is **not** an ownership filter: every host shares the account, so it
+  lists every host's PRs. Never use it to decide what is yours.
+- Ownership = the git ref `refs/heads/claim/<issue>` plus its `CLAIM` comment (`host=`, `at=`,
+  `lease=`). `state:claimed` without you in the comment means **another host owns it — stop**.
+- Take work with `./scripts/fleet-claim.sh claim <issue> <slug>` (creates the ref, flips labels,
+  writes the comment, branches). Release with `./scripts/fleet-claim.sh release <issue>` when the
+  PR merges **or** when you abandon it. A stale claim is taken over only after the lease expires,
+  via `./scripts/fleet-claim.sh takeover <issue> <slug>`.
+- Then: `git checkout main && git pull`, confirm tip, open `docs/AGENT_EXECUTION_GUIDE.md`.
+
+- Your PR, CI green → `gh pr merge --squash` → `git branch -d <branch>` → release the claim.
 - Your PR, CI **still running** → leave it open and continue with other work. **Do not wait.**
 - Your PR, CI red → `git checkout <branch>` → fix → push, then continue with other work.
   Do not wait for the new run; the next session (or the user) sees the result.
-- **PR you did not author** → report it; do not fix or merge it unless the user names it.
+- **PR or claim you do not hold** → report it; do not fix or merge it unless the user names it.
   Another session may still be working on it.
-- Then: `git checkout main && git pull`, confirm tip, open `docs/AGENT_EXECUTION_GUIDE.md`
 
 ## CI deploy vs Alembic (do not confuse)
 
@@ -42,7 +54,11 @@ When **`main` CI is green including the `deploy` job**, production already ran *
 - Human ops: [`docs/deploy.md`](docs/deploy.md). **New server + new domain bring-up: [`docs/deploy-new-server.md`](docs/deploy-new-server.md).**
 
 ## Branch & Commit Rules
-- **Every task = own branch**: `feat/<desc>` or `fix/<desc>` from latest `main`
+- **Every task = own branch**, named after the issue: `feat/<issue>-<desc>` or `fix/<issue>-<desc>`
+  from latest `main`. The issue number is what makes `git ls-remote` self-answering — branches
+  without one are legacy residue and must not be created again.
+- **Claim before you branch**: `./scripts/fleet-claim.sh claim <issue> <slug>`. Never start on
+  `state:claimed` work you do not hold.
 - **NEVER work on main**
 - **Commits**: conventional format — `feat:`, `fix:`, `refactor:`, `test:`, `style:`, `chore:`
 - Push immediately after each commit. **NEVER wait for CI.**
