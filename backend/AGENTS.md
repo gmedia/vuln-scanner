@@ -35,6 +35,9 @@ tests/           # pytest; cov fail-under 75
 - Ruff 120; mypy strict via `pyproject.toml`. Deps in `requirements.txt`, not `[project]`.
 - `DATABASE_URL` async; Alembic uses `DATABASE_URL_SYNC`.
 - Do not add Discover/cases on Guard routes. SIEM is separate flag.
+- Full `pytest` locally is **slow, not hung**: 1964 tests take ~16 min (CI ~13 min). A 300s
+  timeout kills it around 26-30% and looks like a deadlock. Use a generous timeout before
+  concluding anything is stuck, and prefer per-file runs while iterating.
 
 ### Every new Alembic revision (mandatory)
 
