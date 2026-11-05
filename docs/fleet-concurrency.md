@@ -111,6 +111,10 @@ Rules:
 must not open a competing PR for the same slice, but it **may** review, comment, or push a fix if
 the user names that PR.
 
+Pre-ledger PRs may carry `state:review` with no `claim/<issue>` ref (they predate this protocol).
+For those, **the open PR is the reservation**; `preflight` prints them with `review, no ref`. Do
+not create a claim ref for another host's in-flight PR.
+
 Only the claim holder (or the user) merges. Merge closes the issue → the claim ref is deleted.
 
 ---

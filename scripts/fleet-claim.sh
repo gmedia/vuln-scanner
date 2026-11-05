@@ -55,26 +55,43 @@ last_claim_comment() {
 }
 
 print_claims() {
-  local numbers
-  numbers=$(gh issue list --repo "$REPO" --state open --label state:claimed --limit 100 --json number --jq '.[].number')
+  # The refs are the truth: state:claimed is only a projection, and a slice in
+  # review still reserves the work (the claim ref survives until merge/release).
+  local days
+  days=$(git ls-remote --heads origin 'refs/heads/claim/*' 2>/dev/null \
+    | sed 's#.*refs/heads/claim/##' | sort -n | tr '\n' ' ')
 
-  if [ -z "$numbers" ]; then
-    say "  (no claims held)"
-    return
-  fi
+  printf '  %-7s %-18s %-22s %-8s %s\n' ISSUE HOST AT LEASE TITLE
 
-  printf '  %-7s %-9s %-22s %-8s %s\n' ISSUE HOST AT LEASE TITLE
   local n title host at lease
-  for n in $numbers; do
+  for n in $days; do
+    title=$(gh issue view "$n" --repo "$REPO" --json title --jq '.title' 2>/dev/null | cut -c1-56)
+    [ -n "$title" ] || title="(issue not found)"
+    host=$(last_claim_comment "$n" | sed -n 's/.*host=\([^ ]*\).*/\1/p')
+    at=$(last_claim_comment "$n" | sed -n 's/.*at=\([^ ]*\).*/\1/p')
+    lease=$(last_claim_comment "$n" | sed -n 's/.*lease=\([^ ]*\).*/\1/p')
+    printf '  %-7s %-18s %-22s %-8s %s\n' "#$n" "${host:-?}" "${at:-?}" "${lease:-?}" "$title"
+  done
+
+  # Flips the other way: a claim label with no ref is inconsistent and must be
+  # resolved by hand (release + claim), never assumed.
+  local stale
+  stale=$(gh issue list --repo "$REPO" --state open --label state:claimed --limit 100 \
+    --json number --jq '.[].number')
+  for n in $stale; do
+    claim_exists "$n" && continue
     title=$(gh issue view "$n" --repo "$REPO" --json title --jq '.title' | cut -c1-56)
-    if claim_exists "$n"; then
-      host=$(last_claim_comment "$n" | sed -n 's/.*host=\([^ ]*\).*/\1/p')
-      at=$(last_claim_comment "$n" | sed -n 's/.*at=\([^ ]*\).*/\1/p')
-      lease=$(last_claim_comment "$n" | sed -n 's/.*lease=\([^ ]*\).*/\1/p')
-      printf '  %-7s %-9s %-22s %-8s %s\n' "#$n" "${host:-?}" "${at:-?}" "${lease:-?}" "$title"
-    else
-      printf '  %-7s %-9s %-22s %-8s %s\n' "#$n" "-" "-" "-" "$title  [label without ref - inconsistent]"
-    fi
+    printf '  %-7s %-18s %-22s %-8s %s\n' "#$n" "-" "-" "-" "$title  [label without ref - inconsistent]"
+  done
+
+  # Pre-ledger PRs have state:review but no claim ref. They still reserve work.
+  local review
+  review=$(gh issue list --repo "$REPO" --state open --label state:review --limit 100 \
+    --json number --jq '.[].number')
+  for n in $review; do
+    claim_exists "$n" && continue
+    title=$(gh issue view "$n" --repo "$REPO" --json title --jq '.title' | cut -c1-56)
+    printf '  %-7s %-18s %-22s %-8s %s\n' "#$n" "-" "-" "-" "$title  [review, no ref: PR is the reservation]"
   done
 }
 
