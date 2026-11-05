@@ -11,11 +11,13 @@ from app.metrics import (
     PaymentFailedEventsCollector,
     PaymentPendingAgeCollector,
     PaymentPendingAttemptsCollector,
+    PaymentRefundsCollector,
     _read_payment_amount_mismatches_24h,
     _read_payment_duplicate_settlements_24h,
     _read_payment_failed_events_24h,
     _read_payment_pending_age_seconds,
     _read_payment_pending_attempts,
+    _read_payment_refunds_24h,
     register_custom_metrics,
 )
 
@@ -25,6 +27,7 @@ PAYMENT_METRIC_READERS = (
     _read_payment_failed_events_24h,
     _read_payment_amount_mismatches_24h,
     _read_payment_duplicate_settlements_24h,
+    _read_payment_refunds_24h,
 )
 
 
@@ -127,6 +130,23 @@ class TestPaymentDuplicateSettlementReader:
         assert "updated_at >= :cutoff" in sql
 
 
+class TestPaymentRefundsReader:
+    def test_reader_counts_refunds_in_window(self):
+        engine = _engine_with_scalar(3)
+        with patch("app.metrics._ai_engine", return_value=engine):
+            assert _read_payment_refunds_24h() == 3.0
+
+        executed = engine.connect.return_value.__enter__.return_value.execute.call_args
+        sql = str(executed.args[0])
+        assert "status = 'refunded'" in sql
+        assert "updated_at >= :cutoff" in sql
+        assert "cutoff" in executed.args[1]
+
+    def test_reader_returns_zero_when_scalar_is_null(self):
+        with patch("app.metrics._ai_engine", return_value=_engine_with_scalar(None)):
+            assert _read_payment_refunds_24h() == 0.0
+
+
 @pytest.mark.parametrize("reader", PAYMENT_METRIC_READERS)
 def test_reader_returns_none_when_engine_raises(reader, caplog):
     with (
@@ -215,8 +235,26 @@ class TestPaymentDuplicateSettlementCollector:
             assert list(PaymentDuplicateSettlementCollector().collect()) == []
 
 
+class TestPaymentRefundsCollector:
+    def test_emits_count(self):
+        with patch("app.metrics._read_payment_refunds_24h", return_value=2.0):
+            family, sample = _only_sample(PaymentRefundsCollector())
+
+        assert family.name == "vuln_payment_refunds_24h"
+        assert family.type == "gauge"
+        assert sample.value == 2.0
+
+    def test_emits_nothing_when_reader_returns_none(self):
+        with patch("app.metrics._read_payment_refunds_24h", return_value=None):
+            assert list(PaymentRefundsCollector().collect()) == []
+
+    def test_emits_nothing_when_reader_raises(self):
+        with patch("app.metrics._read_payment_refunds_24h", side_effect=RuntimeError("db down")):
+            assert list(PaymentRefundsCollector().collect()) == []
+
+
 class TestPaymentMetricRegistration:
-    def test_all_five_payment_collectors_are_registered(self, reset_registration_flag):
+    def test_all_payment_collectors_are_registered(self, reset_registration_flag):
         with patch.object(metrics_mod.REGISTRY, "register") as mock_reg:
             register_custom_metrics()
 
@@ -227,19 +265,22 @@ class TestPaymentMetricRegistration:
             "PaymentFailedEventsCollector",
             "PaymentAmountMismatchCollector",
             "PaymentDuplicateSettlementCollector",
+            "PaymentRefundsCollector",
         } <= classes
 
-    def test_all_five_payment_metric_names_are_exported(self):
+    def test_all_payment_metric_names_are_exported(self):
         assert {
             metrics_mod._PAYMENT_PENDING_ATTEMPTS_NAME,
             metrics_mod._PAYMENT_PENDING_AGE_NAME,
             metrics_mod._PAYMENT_FAILED_EVENTS_NAME,
             metrics_mod._PAYMENT_AMOUNT_MISMATCH_NAME,
             metrics_mod._PAYMENT_DUPLICATE_SETTLEMENT_NAME,
+            metrics_mod._PAYMENT_REFUNDS_NAME,
         } == {
             "vuln_payment_pending_attempts",
             "vuln_payment_pending_age_seconds",
             "vuln_payment_failed_events_24h",
             "vuln_payment_amount_mismatches_24h",
             "vuln_payment_duplicate_settlements_24h",
+            "vuln_payment_refunds_24h",
         }
