@@ -391,8 +391,9 @@ def test_jsonld_carries_every_field_google_requires(client):
         assert payload[field], f"BlogPosting has an empty {field}"
 
     image = payload["image"][0] if isinstance(payload["image"], list) else payload["image"]
-    assert image.startswith("https://sinexis.app/")
-    assert image.endswith(".png")
+    assert image == "https://sinexis.app/og-image.png"
+    # The publisher logo stays the square icon, not the wide social card.
+    assert payload["publisher"]["logo"]["url"] == "https://sinexis.app/icon-512.png"
 
 
 def test_article_declares_og_image(client):
@@ -400,7 +401,7 @@ def test_article_declares_og_image(client):
 
     text = client.get("/blog/meta-ogimage").text
 
-    assert '<meta property="og:image" content="https://sinexis.app/icon-512.png"' in text
+    assert '<meta property="og:image" content="https://sinexis.app/og-image.png"' in text
 
 
 def test_article_never_leaks_the_author_email(client):
