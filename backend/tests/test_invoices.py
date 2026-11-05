@@ -9,6 +9,7 @@ from unittest.mock import patch
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import func, inspect, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -1440,3 +1441,79 @@ async def test_existing_invoice_for_current_retired_tier_stays_payable(db_sessio
             assert org.sku == "pro"
     finally:
         app.dependency_overrides.clear()
+
+@pytest.mark.asyncio
+async def test_create_invoice_retries_with_a_session_bound_actor(
+    db_session: AsyncSession,
+    ctx,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The retry must survive ``rollback()`` expiring the acting user.
+
+    ``Session.rollback()`` expires every ORM instance even with
+    ``expire_on_commit=False``. The retry therefore has to rebind the actor to a
+    loaded instance; otherwise the next ``actor.id`` read raises
+    ``MissingGreenlet`` on the real (session-bound) actor routes use.
+    """
+    from app.services.invoice import InvoiceService
+
+    other_org = Organization(
+        id=uuid.uuid4(),
+        name="Other Invoice Org",
+        slug=f"inv-other-{uuid.uuid4().hex[:6]}",
+        kind="company",
+        sku="basic",
+        created_by_user_id=ctx["admin"].id,
+    )
+    db_session.add(other_org)
+    db_session.add(
+        OrgInvoice(
+            id=uuid.uuid4(),
+            organization_id=other_org.id,
+            number="SX-202603-0001",
+            product="scan",
+            sku="basic",
+            amount_idr=300_000,
+            total_idr=300_000,
+            period_start=datetime(2026, 1, 1, tzinfo=UTC),
+            period_end=datetime(2026, 1, 31, 23, 59, 59, 999999, tzinfo=UTC),
+            due_date=datetime(2026, 1, 8, tzinfo=UTC),
+            status="sent",
+        )
+    )
+    await db_session.commit()
+
+    numbers = iter(["SX-202603-0001", "SX-202603-0042"])
+    calls: list[datetime] = []
+
+    async def fake_next_invoice_number(db: AsyncSession, period_start: datetime) -> str:
+        del db
+        calls.append(period_start)
+        return next(numbers)
+
+    monkeypatch.setattr(
+        "app.services.invoice.next_invoice_number", fake_next_invoice_number
+    )
+
+    actor = await db_session.get(User, ctx["admin"].id)
+    assert actor is not None
+    assert actor is ctx["admin"]
+    assert inspect(actor).session is db_session.sync_session
+
+    invoice = await InvoiceService(db_session).create_invoice(
+        organization_id=ctx["org"].id,
+        sku="basic",
+        actor=actor,
+        period_start=datetime(2026, 3, 1, tzinfo=UTC),
+    )
+
+    assert len(calls) == 2
+    assert invoice.number == "SX-202603-0042"
+    assert inspect(actor).session is db_session.sync_session
+
+    committed = await db_session.scalar(
+        select(func.count())
+        .select_from(OrgInvoice)
+        .where(OrgInvoice.organization_id == ctx["org"].id)
+    )
+    assert committed == 1
