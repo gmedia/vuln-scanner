@@ -1,6 +1,6 @@
 # Aset bernama dan workspace: supaya scan tidak salah sasaran
 
-Dua kata yang sering ditukar. Pisahkan dulu.
+Dua kata yang sering ditukar. Pisahkan dulu, karena keduanya menjawab pertanyaan berbeda: apa yang diperiksa, dan siapa yang boleh melihat hasilnya.
 
 **Aset** adalah barang yang diperiksa. Nama manusiawi untuk target: "website booking", "VPS produksi", "IP colo lantai 2". Bukan agen. Bukan izin jaringan.
 
