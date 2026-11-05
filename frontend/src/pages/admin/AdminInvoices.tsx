@@ -196,6 +196,8 @@ function AdminInvoices() {
 
   function applyRequest(req: SubscriptionRequestItem) {
     setRequestId(req.id);
+    // Plan requests are scan-only; never consume one against a host/uptime line.
+    setProduct("scan");
     setSku(req.target_sku);
     setCycle(req.cycle);
     setPromoLinkError(false);
