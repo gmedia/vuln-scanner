@@ -505,7 +505,11 @@ function AdminInvoices() {
                 <Select
                   value={requestId || "none"}
                   onValueChange={onRequestChange}
-                  disabled={!orgId || pendingForOrg.length === 0}
+                  disabled={
+                    !orgId ||
+                    pendingRequestsQuery.isLoading ||
+                    pendingForOrg.length === 0
+                  }
                 >
                   <SelectTrigger
                     id="inv-request"
@@ -529,7 +533,7 @@ function AdminInvoices() {
                 </Select>
               </div>
               <div className="flex min-w-0 flex-col justify-end text-xs sm:col-span-2">
-                {!orgId ? null : pendingForOrg.length === 0 ? (
+                {!orgId ? null : pendingRequestsQuery.isLoading ? null : pendingForOrg.length === 0 ? (
                   <p
                     className="text-[11px] text-muted-foreground"
                     data-testid="invoice-request-empty"
