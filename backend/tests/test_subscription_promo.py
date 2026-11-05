@@ -6,6 +6,7 @@ import uuid
 from typing import Any
 
 import pytest
+from fastapi import HTTPException
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -199,3 +200,216 @@ async def test_approval_does_not_consume_but_invoice_does(
     assert redemption is not None
     assert redemption.subscription_request_id == request.id
     assert redemption.organization_id == org.id
+
+    stored = await db_session.get(SubscriptionRequest, request.id)
+    assert stored is not None
+    assert stored.status == "approved"
+    assert stored.resolved_by_user_id == admin.id
+    assert stored.resolved_at is not None
+    assert invoice.number in stored.resolution_note
+
+@pytest.mark.asyncio
+async def test_invoice_without_promo_also_consumes_request(
+    db_session: AsyncSession,
+) -> None:
+    owner = await _make_user(db_session, "sub-promo-nopromo@example.com")
+    admin = await _make_user(db_session, "sub-promo-nopromo-admin@example.com", admin=True)
+    org = await _make_org(db_session, owner)
+
+    request = await SubscriptionService(db_session).create_request(
+        org,
+        owner,
+        target_sku="pro",
+        cycle="monthly",
+        note="",
+        promo_code=None,
+    )
+    invoice = await InvoiceService(db_session).create_invoice(
+        organization_id=org.id,
+        sku="pro",
+        actor=admin,
+        subscription_request_id=request.id,
+    )
+    assert invoice.promo_code is None
+    assert invoice.discount_idr == 0
+
+    stored = await db_session.get(SubscriptionRequest, request.id)
+    assert stored is not None
+    assert stored.status == "approved"
+    assert stored.resolved_by_user_id == admin.id
+    assert stored.resolved_at is not None
+    assert stored.resolution_note == f"Invoiced as {invoice.number}"
+
+    with pytest.raises(HTTPException) as conflict:
+        await InvoiceService(db_session).create_invoice(
+            organization_id=org.id,
+            sku="pro",
+            actor=admin,
+            subscription_request_id=request.id,
+        )
+    assert conflict.value.status_code == 409
+    await db_session.refresh(stored)
+    assert stored.status == "approved"
+    assert stored.resolution_note == f"Invoiced as {invoice.number}"
+
+@pytest.mark.asyncio
+async def test_reusing_an_invoiced_request_returns_409_and_keeps_state(
+    db_session: AsyncSession,
+) -> None:
+    owner = await _make_user(db_session, "sub-promo-reuse@example.com")
+    admin = await _make_user(db_session, "sub-promo-reuse-admin@example.com", admin=True)
+    org = await _make_org(db_session, owner)
+    await PromoService(db_session).create(_body("REUSE2026"), owner)
+
+    request = await SubscriptionService(db_session).create_request(
+        org,
+        owner,
+        target_sku="pro",
+        cycle="monthly",
+        note="",
+        promo_code="REUSE2026",
+    )
+    first = await InvoiceService(db_session).create_invoice(
+        organization_id=org.id,
+        sku="pro",
+        actor=admin,
+        promo_code="REUSE2026",
+        subscription_request_id=request.id,
+    )
+    stored = await db_session.get(SubscriptionRequest, request.id)
+    assert stored is not None
+    before = (stored.status, stored.resolved_at, stored.resolution_note)
+    assert stored.resolution_note == f"Invoiced as {first.number}"
+
+    with pytest.raises(HTTPException) as conflict:
+        await InvoiceService(db_session).create_invoice(
+            organization_id=org.id,
+            sku="pro",
+            actor=admin,
+            promo_code="REUSE2026",
+            subscription_request_id=request.id,
+        )
+    assert conflict.value.status_code == 409
+
+    await db_session.refresh(stored)
+    assert (stored.status, stored.resolved_at, stored.resolution_note) == before
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("terminal_status", ["rejected", "canceled"])
+async def test_terminal_request_cannot_be_invoiced(
+    db_session: AsyncSession, terminal_status: str
+) -> None:
+    owner = await _make_user(db_session, f"sub-promo-{terminal_status}@example.com")
+    admin = await _make_user(
+        db_session, f"sub-promo-{terminal_status}-admin@example.com", admin=True
+    )
+    org = await _make_org(db_session, owner)
+
+    request = await SubscriptionService(db_session).create_request(
+        org,
+        owner,
+        target_sku="pro",
+        cycle="monthly",
+        note="",
+        promo_code=None,
+    )
+    stored = await db_session.get(SubscriptionRequest, request.id)
+    assert stored is not None
+    stored.status = terminal_status
+    await db_session.commit()
+
+    with pytest.raises(HTTPException) as conflict:
+        await InvoiceService(db_session).create_invoice(
+            organization_id=org.id,
+            sku="pro",
+            actor=admin,
+            subscription_request_id=request.id,
+        )
+    assert conflict.value.status_code == 409
+    await db_session.refresh(stored)
+    assert stored.status == terminal_status
+
+@pytest.mark.asyncio
+async def test_failed_invoice_does_not_consume_request(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    owner = await _make_user(db_session, "sub-promo-fail@example.com")
+    admin = await _make_user(db_session, "sub-promo-fail-admin@example.com", admin=True)
+    org = await _make_org(db_session, owner)
+    await PromoService(db_session).create(_body("FAIL2026"), owner)
+
+    request = await SubscriptionService(db_session).create_request(
+        org,
+        owner,
+        target_sku="pro",
+        cycle="monthly",
+        note="",
+        promo_code="FAIL2026",
+    )
+
+    async def boom(self: PromoService, *args: Any, **kwargs: Any) -> None:
+        raise RuntimeError("redemption failed")
+
+    monkeypatch.setattr(PromoService, "record_redemption", boom)
+    with pytest.raises(RuntimeError):
+        await InvoiceService(db_session).create_invoice(
+            organization_id=org.id,
+            sku="pro",
+            actor=admin,
+            promo_code="FAIL2026",
+            subscription_request_id=request.id,
+        )
+
+    stored = await db_session.get(SubscriptionRequest, request.id)
+    assert stored is not None
+    assert stored.status == "pending"
+    assert stored.resolved_by_user_id is None
+    assert stored.resolved_at is None
+    assert stored.resolution_note == ""
+
+@pytest.mark.asyncio
+async def test_admin_pending_list_drops_the_invoiced_request(
+    db_session: AsyncSession,
+) -> None:
+    owner = await _make_user(db_session, "sub-promo-list@example.com")
+    admin = await _make_user(db_session, "sub-promo-list-admin@example.com", admin=True)
+    org = await _make_org(db_session, owner)
+    await PromoService(db_session).create(_body("LIST2026"), owner)
+
+    request = await SubscriptionService(db_session).create_request(
+        org,
+        owner,
+        target_sku="pro",
+        cycle="monthly",
+        note="",
+        promo_code="LIST2026",
+    )
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    headers = _auth(admin)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            before = await client.get(
+                "/api/admin/subscription-requests?status=pending", headers=headers
+            )
+            assert before.status_code == 200, before.text
+            assert str(request.id) in [item["id"] for item in before.json()["items"]]
+
+            await InvoiceService(db_session).create_invoice(
+                organization_id=org.id,
+                sku="pro",
+                actor=admin,
+                promo_code="LIST2026",
+                subscription_request_id=request.id,
+            )
+
+            after = await client.get(
+                "/api/admin/subscription-requests?status=pending", headers=headers
+            )
+            assert after.status_code == 200, after.text
+            assert after.json()["total"] == 0
+            assert str(request.id) not in [
+                item["id"] for item in after.json()["items"]
+            ]
+    finally:
+        app.dependency_overrides.clear()
