@@ -156,7 +156,9 @@ def test_publish_then_public(client):
     assert "konsol ahli" not in index.text
     sm = client.get("/blog/sitemap.xml")
     assert sm.status_code == 200
+    assert sm.headers["content-type"] == "text/xml"
     assert "hello-sinexis" in sm.text
+    assert "<lastmod>" in sm.text
 
 
 def test_unpublish_hides(client):
@@ -208,6 +210,7 @@ def test_admin_list(client):
     resp = client.get("/api/admin/blog/posts", headers=API_HEADERS)
     assert resp.status_code == 200
     assert "items" in resp.json()
+
 
 def _create_and_publish(client, slug: str, *, pillar: str | None = None, title: str = "Post") -> None:
     payload = {

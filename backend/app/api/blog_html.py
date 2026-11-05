@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.sitemap_common import lastmod_tag
 from app.config import settings
 from app.database import get_db
 from app.middleware.rate_limit import RateLimiter
@@ -266,9 +267,7 @@ def _shell(
     jsonld_block = ""
     if jsonld is not None:
         serialized = json.dumps(jsonld, ensure_ascii=False)
-        serialized = (
-            serialized.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
-        )
+        serialized = serialized.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
         jsonld_block = f'<script type="application/ld+json">{serialized}</script>\n'
     return f"""<!DOCTYPE html>
 <html lang="{escape_text(locale)}">
@@ -398,8 +397,7 @@ async def blog_index_html(
             "<h1>Situs sudah jalan: cek dari luar, terjadwal</h1>"
             "<p class='lede'>Scan Attach memotret permukaan (port, DNS/TLS, CVE dikenal) ke workspace. "
             "Guard satu wazuh-agent, alarm kritis. Host Protect helper di VPS Anda. "
-            "Bukan SIEM 24/7, bukan agen kedua.</p></div>"
-            + "".join(sections)
+            "Bukan SIEM 24/7, bukan agen kedua.</p></div>" + "".join(sections)
         )
     html = _shell(
         "Blog — Sinexis",
@@ -407,8 +405,7 @@ async def blog_index_html(
         inner,
         rail=True,
         description=(
-            "Artikel Sinexis soal exposure, keamanan on-box, ketersediaan, dan AI "
-            "untuk colo, VPS, dan hospitality."
+            "Artikel Sinexis soal exposure, keamanan on-box, ketersediaan, dan AI untuk colo, VPS, dan hospitality."
         ),
         og_type="website",
         og_url=f"{CANONICAL_HOST}/blog",
@@ -435,13 +432,15 @@ async def blog_sitemap(db: AsyncSession = Depends(get_db)) -> Response:
         )
     )
     posts = list(result.scalars().all())
-    urls = [f"  <url><loc>{CANONICAL_HOST}/blog</loc></url>"]
+    index_lastmod = max((p.updated_at for p in posts), default=None)
+    urls = [f"  <url><loc>{CANONICAL_HOST}/blog</loc>{lastmod_tag(index_lastmod)}</url>"]
     for p in posts:
-        urls.append(f"  <url><loc>{CANONICAL_HOST}/blog/{escape_text(p.slug)}</loc></url>")
+        stamp = lastmod_tag(p.updated_at or p.published_at)
+        urls.append(f"  <url><loc>{CANONICAL_HOST}/blog/{escape_text(p.slug)}</loc>{stamp}</url>")
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     xml += "\n".join(urls) + "\n</urlset>\n"
     cache = {"Cache-Control": "public, max-age=60, s-maxage=300"}
-    return Response(content=xml, media_type="application/xml", headers=cache)
+    return Response(content=xml, headers={"Content-Type": "text/xml", **cache})
 
 
 @html_router.get("/blog/{slug}", response_class=HTMLResponse)
