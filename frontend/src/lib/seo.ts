@@ -5,6 +5,7 @@ export const SITE_ORIGIN = "https://sinexis.app";
 export type PageMetaOg = {
   title?: string;
   description?: string;
+  image?: string;
 };
 
 export type PageMeta = {
@@ -52,7 +53,10 @@ function writeMeta(snapshot: MetaSnapshot, content: string): void {
   element.setAttribute("content", content);
 }
 
-function restoreMeta(snapshot: MetaSnapshot, originalContent: string | null): void {
+function restoreMeta(
+  snapshot: MetaSnapshot,
+  originalContent: string | null,
+): void {
   if (snapshot.element) {
     if (originalContent === null) {
       snapshot.element.removeAttribute("content");
@@ -83,24 +87,36 @@ export function usePageMeta({
 }: PageMeta): void {
   const ogTitle = og?.title;
   const ogDescription = og?.description;
+  const ogImage = og?.image;
 
   useEffect(() => {
     const originalTitle = document.title;
     const descriptionSnapshot = snapshotMeta("name", "description");
-    const originalDescription = descriptionSnapshot.element?.getAttribute("content") ?? null;
+    const originalDescription =
+      descriptionSnapshot.element?.getAttribute("content") ?? null;
     const robotsSnapshot = snapshotMeta("name", "robots");
-    const originalRobots = robotsSnapshot.element?.getAttribute("content") ?? null;
+    const originalRobots =
+      robotsSnapshot.element?.getAttribute("content") ?? null;
     const ogTitleSnapshot = snapshotMeta("property", "og:title");
-    const originalOgTitle = ogTitleSnapshot.element?.getAttribute("content") ?? null;
+    const originalOgTitle =
+      ogTitleSnapshot.element?.getAttribute("content") ?? null;
     const ogDescriptionSnapshot = snapshotMeta("property", "og:description");
-    const originalOgDescription = ogDescriptionSnapshot.element?.getAttribute("content") ?? null;
+    const originalOgDescription =
+      ogDescriptionSnapshot.element?.getAttribute("content") ?? null;
+    const ogImageSnapshot = snapshotMeta("property", "og:image");
+    const originalOgImage =
+      ogImageSnapshot.element?.getAttribute("content") ?? null;
     const originalCanonicalElement = findCanonical();
-    const originalCanonical = originalCanonicalElement?.getAttribute("href") ?? null;
+    const originalCanonical =
+      originalCanonicalElement?.getAttribute("href") ?? null;
 
     document.title = title;
     writeMeta(descriptionSnapshot, description);
     writeMeta(ogTitleSnapshot, ogTitle ?? title);
     writeMeta(ogDescriptionSnapshot, ogDescription ?? description);
+    if (ogImage) {
+      writeMeta(ogImageSnapshot, absoluteUrl(ogImage));
+    }
     if (robots) {
       writeMeta(robotsSnapshot, robots);
     }
@@ -119,6 +135,9 @@ export function usePageMeta({
       restoreMeta(descriptionSnapshot, originalDescription);
       restoreMeta(ogTitleSnapshot, originalOgTitle);
       restoreMeta(ogDescriptionSnapshot, originalOgDescription);
+      if (ogImage) {
+        restoreMeta(ogImageSnapshot, originalOgImage);
+      }
       if (robots) {
         restoreMeta(robotsSnapshot, originalRobots);
       }
@@ -132,5 +151,5 @@ export function usePageMeta({
         findCanonical()?.remove();
       }
     };
-  }, [title, description, canonical, ogTitle, ogDescription, robots]);
+  }, [title, description, canonical, ogTitle, ogDescription, ogImage, robots]);
 }
