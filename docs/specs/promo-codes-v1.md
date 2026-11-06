@@ -215,6 +215,8 @@ Tier delete: `SkuUsage.promos` in both counts; delete returns 409.
 
 Postgres concurrency (`backend/tests/test_pg_concurrency.py`, CI job `postgres-concurrency-tests` against `postgres:16-alpine`): concurrent global quota (promo row `FOR UPDATE`), same-org/same-period invoice race, and invoice-number allocation across a real unique violation. The file also guards the partial unique index predicates in every CI run. Locally the concurrency tests skip unless `TEST_POSTGRES_URL` is set.
 
+Usage and discount are observable through the `vuln_promo_*` Prometheus gauges (see `docs/payments-ops.md` §10).
+
 ## 11) Rollout
 
 1. `promo_v1` migration (parented to `payments_v1` after it merges).

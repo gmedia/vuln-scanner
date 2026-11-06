@@ -266,3 +266,43 @@ groups:
             checkouts are being created faster than expiry and reconciliation can
             clear them, or the expiry sweep has stopped. Check the
             `payment.reconcile_attempts` and expiry beat entries plus worker logs.
+      - alert: VulnScannerPromoPendingApprovals
+        expr: vuln_promo_pending_approvals > 0
+        for: 1h
+        labels:
+          severity: warning
+          service: vuln-scanner
+        annotations:
+          summary: "A promo code above the finance cap is waiting for approval"
+          description: >-
+            vuln_promo_pending_approvals is {{ $value }}. A code above the P9 finance
+            cap is waiting for a second platform admin. It was created inactive, so the
+            customer cannot use it until someone approves it in /admin/promo-codes.
+      - alert: VulnScannerPromoDiscountBurn
+        expr: >-
+          vuln_promo_discount_idr_24h > 10000000
+          or
+          vuln_promo_discount_idr_30d > 50000000
+        for: 1h
+        labels:
+          severity: warning
+          service: vuln-scanner
+        annotations:
+          summary: "Promo discount burn crossed the current threshold"
+          description: >-
+            vuln_promo_discount_idr_24h is {{ $value }} over the 24h/30d threshold.
+            The thresholds (10,000,000 IDR/day, 50,000,000 IDR/30d) are provisional;
+            finance should tune them. Discount is gross-to-net leakage, so compare it
+            with invoice volume before assuming the amount is intentional.
+      - alert: VulnScannerPromoRedemptionSpike
+        expr: vuln_promo_redemptions_24h > 50
+        for: 1h
+        labels:
+          severity: warning
+          service: vuln-scanner
+        annotations:
+          summary: "Promo redemptions spiked in the last 24h"
+          description: >-
+            vuln_promo_redemptions_24h is {{ $value }}. This is usually a leaked code
+            or a runaway campaign, not organic demand. Open /admin/promo-codes, sort by
+            redemptions, and deactivate the offending code.
