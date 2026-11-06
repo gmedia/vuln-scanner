@@ -43,6 +43,12 @@ export interface AiUsage {
   model_public_id: string;
   prompt_tokens: number;
   completion_tokens: number;
+  cached_tokens: number;
+  ttft_ms: number | null;
+  tps: number | null;
+  latency_ms: number | null;
+  http_status: number | null;
+  finish_reason: string | null;
   billed_idr: number;
   created_at: string;
 }
@@ -80,5 +86,16 @@ export async function listAiUsage(limit = 50): Promise<{
   total: number;
 }> {
   const { data } = await api.get("/api/ai/usage", { params: { limit } });
+  return data;
+}
+
+export async function aiTrialChat(body: {
+  model: string;
+  messages: { role: string; content: string }[];
+  max_tokens?: number;
+}): Promise<Record<string, unknown>> {
+  const { data } = await api.post("/api/ai/chat", body, {
+    timeout: 60_000,
+  });
   return data;
 }

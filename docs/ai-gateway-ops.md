@@ -59,7 +59,7 @@ Stored on `ai_api_keys`. 429 details: `rate_limit_rpm` / `rate_limit_tpm` / `rat
 
 ## Wallet
 
-Prepaid **org** IDR. Reserve before upstream; settle/release after. Insufficient → **402**. Admin trial chat uses platform cap, not the customer org wallet.
+Prepaid **org** IDR. Reserve before upstream; settle/release after. Insufficient → **402**. Admin trial chat uses platform cap, not the customer org wallet; the customer trial chat at `/api/ai/chat` spends the org wallet like any `/v1` call.
 
 ## Upstream failover (S7)
 
@@ -97,7 +97,7 @@ Retry happens only **before the first streamed byte**:
 | `AI_UPSTREAM_CONNECT_TIMEOUT_SECONDS` | `10` | Fail an unreachable provider fast instead of burning the budget. |
 | `AI_UPSTREAM_STREAM_IDLE_TIMEOUT_SECONDS` | `45` | Streaming idle read timeout, so a provider that accepts then stalls is failed over **before** the first byte. |
 | `AI_UPSTREAM_MIN_ATTEMPT_SECONDS` | `5` | Do not start an attempt with less budget than this left. |
-| `AI_ADMIN_TRIAL_DEADLINE_SECONDS` | `45` | Whole-request budget for `POST /api/admin/ai/chat`. The trial is non-streaming and diagnostic, so it gets a shorter budget than the customer path. |
+| `AI_ADMIN_TRIAL_DEADLINE_SECONDS` | `45` | Whole-request budget for the non-streaming browser trial calls (`POST /api/admin/ai/chat` and `POST /api/ai/chat`). They are diagnostic, so they get a shorter budget than the `/v1` customer path. |
 | `AI_UPSTREAM_MAX_CANDIDATES` | `4` | Primary + 3 fallbacks. The admin API enforces the same ceiling. |
 | `AI_UPSTREAM_FAILOVER_ENABLED` | `true` | Set `false` to force a single attempt to the primary (today's pre-S7 behaviour). |
 

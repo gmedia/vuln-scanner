@@ -13,6 +13,7 @@ vi.mock("@/api/scans", () => ({
 }));
 
 import {
+  aiTrialChat,
   createAiKey,
   getAiWallet,
   isAiDisabledError,
@@ -117,6 +118,19 @@ describe("AI API", () => {
     await expect(listAiUsage(5)).resolves.toEqual({ items: [], total: 0 });
     expect(mockGet).toHaveBeenCalledWith("/api/ai/usage", {
       params: { limit: 5 },
+    });
+  });
+
+  it("aiTrialChat POSTs the prompt to the org wallet endpoint", async () => {
+    const payload = {
+      model: "sinexis-small",
+      messages: [{ role: "user", content: "ping" }],
+      max_tokens: 256,
+    };
+    mockPost.mockResolvedValue({ data: { choices: [] } });
+    await expect(aiTrialChat(payload)).resolves.toEqual({ choices: [] });
+    expect(mockPost).toHaveBeenCalledWith("/api/ai/chat", payload, {
+      timeout: 60_000,
     });
   });
 

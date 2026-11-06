@@ -198,9 +198,11 @@ Platform trial: a **synthetic org** or `ai_platform_wallet` row with a monthly c
 |--------|-------|
 | `id` | UUID |
 | `organization_id`, `user_id` nullable, `key_id` nullable |
-| `source` | `customer` \| `admin_trial` |
+| `source` | `customer` \| `admin_trial` \| `customer_trial` |
 | `model_public_id`, `provider_id` |
 | `prompt_tokens`, `completion_tokens` |
+| `cached_tokens` | prompt tokens the upstream served from its prompt cache (subset of `prompt_tokens`) |
+| `ttft_ms` | time to the first streamed content token; `NULL` for non-streaming calls and for rows created before the column existed |
 | `billed_idr`, `cogs_idr` | IDR amounts actually applied |
 | `billed_usd`, `cogs_usd` | `NUMERIC(24,12)` exact pre-FX amount |
 | `fx_rate`, `fx_source`, `fx_effective_date` | rate actually applied (from the reservation) |
@@ -295,9 +297,10 @@ disagree, and a test asserts they return identical id sets.
 |--------|------|------|
 | GET/POST | `/api/ai/keys` | list / create (plaintext once) |
 | DELETE | `/api/ai/keys/{id}` | revoke |
-| GET | `/api/ai/usage` | org-scoped, metadata |
+| GET | `/api/ai/usage` | org-scoped, metadata + HTTP status, cache hits, TTFT, derived TPS |
 | GET | `/api/ai/wallet` | balance |
 | GET | `/api/ai/models` | public catalog; same servable filter as `/v1/models` |
+| POST | `/api/ai/chat` | keyless customer trial chat; same proxy, charged to the org wallet, `stream` rejected |
 
 ### 8.3 Admin (JWT `is_admin`)
 
@@ -386,7 +389,7 @@ the rules the design itself depends on and does not restate the tables.
 
 | Path | Who | Notes |
 |------|-----|-------|
-| `/ai` | JWT org | Keys, usage, wallet, copy `base_url` — **AppShell**, kit only (`Button`/`Input`/`Select`), filter bar like Credit History |
+| `/ai` | JWT org | Keys, usage, wallet, trial chat, copy `base_url` — **AppShell**, kit only (`Button`/`Input`/`Select`), filter bar like Credit History |
 | `/admin/ai` | Admin | Providers, models (USD per 1M + HPP), usage, trial chat |
 
 Register both in `App.tsx` + [`AGENT_PAGE_REGISTRY.md`](../AGENT_PAGE_REGISTRY.md) **in the same implementation PR**. Sidebar distinct from Scan/Guard. Flag-off: route may exist; API 404 + empty copy (SIEM pattern).
@@ -415,6 +418,7 @@ Register both in `App.tsx` + [`AGENT_PAGE_REGISTRY.md`](../AGENT_PAGE_REGISTRY.m
 | **S7.3.5** | Probe liveness: `ai_providers.last_probed_at`, `vuln_ai_providers_probe_age_seconds`, `VulnScannerAiProviderProbeStale` | **done** |
 | **S7.3.6** | Probe stamps `last_probed_at` only on a verdict; per-provider last-check time in the Providers tab | **done** |
 | **S7.3.7** | `vuln_ai_providers_never_probed` + `VulnScannerAiProviderNeverProbed`, so a single provider the probe cannot reach is visible to Prometheus | **done** |
+| **S8** | Customer keyless trial chat on `/ai` (org wallet) + usage detail columns: HTTP status, token in/out, cache hits, TTFT, derived TPS | **done** |
 
 Default order **S1 → S5**. Do not combine with Host Protect / Guard PRs.
 
@@ -430,6 +434,8 @@ Default order **S1 → S5**. Do not combine with Host Protect / Guard PRs.
 - Usage row snapshots price, HPP and FX; a mid-request model or rate change cannot alter the settled amounts.
 - Wallet ledger sum equals `balance_idr`; a shortfall is recorded and the balance never goes negative.
 - Customer usage JSON exposes only `billed_idr` — no COGS, HPP, margin or FX rate; admin usage exposes them.
+- Customer usage JSON exposes `http_status`, `prompt_tokens`, `completion_tokens`, `cached_tokens`, `ttft_ms`, and a derived `tps`; TPS excludes TTFT when both latency and TTFT are present.
+- `/api/ai/chat` spends the org wallet without an API key, records `source=customer_trial` with `key_id=NULL`, and releases the hold on every upstream failure path.
 - Admin trial counts against platform cap, not customer org.
 - Upstream error body does not contain `base_url` or secret fragments.
 - Stream: client receives SSE; reservation settled after complete.

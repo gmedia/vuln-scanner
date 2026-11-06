@@ -190,11 +190,31 @@ class AiUsageOut(BaseModel):
     model_public_id: str
     prompt_tokens: int
     completion_tokens: int
+    cached_tokens: int = 0
+    ttft_ms: int | None = None
     billed_idr: int
     latency_ms: int | None
     http_status: int | None
     finish_reason: str | None
+    tps: float | None = None
     created_at: datetime
+
+    @model_validator(mode="after")
+    def _derive_tps(self) -> AiUsageOut:
+        """Output tokens per second over the generation window.
+
+        Streaming rows know TTFT, so the generation window is ``latency - ttft``.
+        Non-streaming rows have no first-token timestamp; use the whole request
+        latency rather than inventing a TTFT. Never divide by zero or report a
+        rate for a row with no completion tokens.
+        """
+        if self.tps is not None or self.completion_tokens <= 0 or self.latency_ms is None:
+            return self
+        elapsed_ms = self.latency_ms - (self.ttft_ms or 0)
+        if elapsed_ms <= 0:
+            return self
+        self.tps = round(self.completion_tokens / (elapsed_ms / 1000), 2)
+        return self
 
 
 class AiUsageList(BaseModel):

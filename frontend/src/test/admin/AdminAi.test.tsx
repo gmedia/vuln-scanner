@@ -642,6 +642,10 @@ describe("AdminAi", () => {
           model_public_id: "sinexis/demo",
           prompt_tokens: 1,
           completion_tokens: 1,
+          cached_tokens: 1,
+          ttft_ms: 120,
+          tps: 12.5,
+          latency_ms: 320,
           billed_idr: 0,
           cogs_idr: 0,
           http_status: 200,
@@ -665,6 +669,14 @@ describe("AdminAi", () => {
     expect(
       screen.getByRole("columnheader", { name: "Billed (IDR)", hidden: true }),
     ).toBeInTheDocument();
+    for (const label of ["HTTP", "Token in", "Token out", "Cache", "TTFT", "TPS"]) {
+      expect(
+        screen.getByRole("columnheader", { name: label, hidden: true }),
+      ).toBeInTheDocument();
+    }
+    expect(screen.getByTestId("admin-ai-usage-card-u1").textContent).toMatch(
+      /Cache: 1/,
+    );
     expect(
       screen.queryByRole("columnheader", { name: "source" }),
     ).not.toBeInTheDocument();

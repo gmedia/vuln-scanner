@@ -304,6 +304,10 @@ export interface AiUsageAdmin {
   model_public_id: string;
   prompt_tokens: number;
   completion_tokens: number;
+  cached_tokens?: number;
+  ttft_ms?: number | null;
+  tps?: number | null;
+  latency_ms?: number | null;
   billed_idr: number;
   cogs_idr: number;
   margin_idr?: number;

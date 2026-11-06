@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
 PROVIDER_STATUSES = ("ok", "degraded", "disabled")
 RESERVATION_STATUSES = ("open", "settled", "released")
-USAGE_SOURCES = ("customer", "admin_trial")
+USAGE_SOURCES = ("customer", "admin_trial", "customer_trial")
 
 
 class AiProvider(Base):
@@ -332,6 +332,8 @@ class AiUsageEvent(Base):
     )
     prompt_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     completion_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    cached_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    ttft_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     billed_idr: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     cogs_idr: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     billed_usd: Mapped[Decimal | None] = mapped_column(Numeric(24, 12))
