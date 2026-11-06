@@ -1729,3 +1729,174 @@ async def test_catalogs_never_disagree(db_session: AsyncSession, ctx, ai_on) -> 
 
     v1_ids, spa_ids = await _both_catalog_ids(db_session, ctx)
     assert v1_ids == spa_ids == {"sinexis/test"}
+
+
+# --- Customer trial chat (keyless, org wallet) ------------------------------
+
+
+@pytest.mark.asyncio
+async def test_org_trial_chat_spends_wallet_and_records_usage(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+    wallet = (await db_session.execute(select(AiWallet).where(AiWallet.organization_id == org.id))).scalar_one()
+    before = wallet.balance_idr
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+
+    class _Resp:
+        status_code = 200
+
+        def json(self):
+            return {
+                "id": "chatcmpl-trial",
+                "choices": [{"finish_reason": "stop", "message": {"role": "assistant", "content": "pong"}}],
+                "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 5,
+                    "prompt_tokens_details": {"cached_tokens": 6},
+                },
+            }
+
+    mock_client = AsyncMock()
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+    mock_client.post = AsyncMock(return_value=_Resp())
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                chat = await ac.post(
+                    "/api/ai/chat",
+                    headers=_auth(owner, org.id),
+                    json={"model": "sinexis/test", "messages": [{"role": "user", "content": "ping"}]},
+                )
+            assert chat.status_code == 200, chat.text
+            assert "hidden-upstream" not in chat.text
+
+            usage = await ac.get("/api/ai/usage", headers=_auth(owner, org.id))
+            assert usage.status_code == 200, usage.text
+            item = usage.json()["items"][0]
+            assert item["source"] == "customer_trial"
+            assert item["prompt_tokens"] == 10
+            assert item["completion_tokens"] == 5
+            assert item["cached_tokens"] == 6
+            assert item["http_status"] == 200
+            assert "ttft_ms" in item
+            assert "tps" in item
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    event = (await db_session.execute(select(AiUsageEvent).where(AiUsageEvent.organization_id == org.id))).scalar_one()
+    assert event.source == "customer_trial"
+    assert event.key_id is None
+    assert event.user_id == owner.id
+    assert event.cached_tokens == 6
+    assert event.http_status == 200
+    await db_session.refresh(wallet)
+    assert wallet.balance_idr < before
+
+
+@pytest.mark.asyncio
+async def test_org_trial_chat_releases_hold_on_upstream_failure(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+    wallet = (await db_session.execute(select(AiWallet).where(AiWallet.organization_id == org.id))).scalar_one()
+    before = wallet.balance_idr
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    mock_client = _post_client(_UpstreamResponse(503))
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                chat = await ac.post(
+                    "/api/ai/chat",
+                    headers=_auth(owner, org.id),
+                    json={"model": "sinexis/test", "messages": [{"role": "user", "content": "ping"}]},
+                )
+            assert chat.status_code == 502, chat.text
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    await db_session.refresh(wallet)
+    assert wallet.balance_idr == before
+    event = (await db_session.execute(select(AiUsageEvent).where(AiUsageEvent.organization_id == org.id))).scalar_one()
+    assert event.http_status == 503
+    assert event.billed_idr == 0
+
+
+def test_usage_schema_derives_tps_from_generation_window() -> None:
+    from datetime import UTC, datetime
+
+    from app.schemas.ai_gateway import AiUsageOut
+
+    row = AiUsageOut(
+        id=uuid.uuid4(),
+        organization_id=None,
+        source="customer",
+        model_public_id="sinexis/test",
+        prompt_tokens=10,
+        completion_tokens=80,
+        cached_tokens=4,
+        ttft_ms=200,
+        billed_idr=10,
+        latency_ms=1200,
+        http_status=200,
+        finish_reason="stop",
+        created_at=datetime.now(UTC),
+    )
+    assert row.tps == 80.0
+
+
+def test_cached_tokens_reads_provider_variants() -> None:
+    from app.services.ai_proxy import _cached_tokens_from_payload
+
+    assert _cached_tokens_from_payload({"usage": {"prompt_tokens_details": {"cached_tokens": 7}}}) == 7
+    assert _cached_tokens_from_payload({"usage": {"prompt_cache_hit_tokens": 3}}) == 3
+    assert _cached_tokens_from_payload({"usage": {"cache_read_input_tokens": 2}}) == 2
+    assert _cached_tokens_from_payload({"usage": {"prompt_tokens": 9}}) == 0
+
+
+@pytest.mark.asyncio
+async def test_v1_stream_records_cache_hits_and_ttft(db_session: AsyncSession, ctx) -> None:
+    owner = ctx["owner"]
+    org = ctx["org"]
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    chunks = [
+        b'data: {"choices":[{"delta":{"content":"he"},"finish_reason":null}]}\n\n',
+        b'data: {"choices":[{"delta":{"content":"llo"},"finish_reason":"stop"}],'
+        b'"usage":{"prompt_tokens":10,"completion_tokens":2,'
+        b'"prompt_tokens_details":{"cached_tokens":4}}}\n\n',
+        b"data: [DONE]\n\n",
+    ]
+    mock_client = _stream_client(_FakeStreamResponse(200, chunks=chunks))
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            plain = await _create_key(ac, owner, org.id)
+            with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+                chat = await ac.post(
+                    CHAT_PATH,
+                    headers=_key_headers(plain),
+                    json=_chat_body(stream=True),
+                )
+            assert chat.status_code == 200, chat.text
+            assert "[DONE]" in chat.text
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    event = (await db_session.execute(select(AiUsageEvent).where(AiUsageEvent.organization_id == org.id))).scalar_one()
+    assert event.cached_tokens == 4
+    assert event.ttft_ms is not None
+    assert event.ttft_ms >= 0
+    assert event.latency_ms is not None

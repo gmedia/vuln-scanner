@@ -72,7 +72,7 @@ Nav groups match Sidebar: **Scan** · **Attach** · **Account** · **Admin** (ad
 |------|-----------|-----|-------|-------|
 | `/guard` | `pages/Guard.tsx` | Attach | Thin Wazuh. **Playwright ≠ enroll/unenroll.** Live lab: wipe `tc5` first (guide §4.1). | `GuardHostEnroll.test.tsx`, `e2e/guard.spec.ts` |
 | `/siem` | `pages/Siem.tsx` | Attach | Flag `SIEM_ENABLED` (default false). Do not merge into Guard. | `Siem.test.tsx`, `e2e/siem.spec.ts` |
-| `/ai` | `pages/Ai.tsx` | Attach | Flag `AI_GATEWAY_ENABLED` (default false). SPA route stays on API 404. `data-testid=ai-feature-off`. | `Ai.test.tsx`, `e2e/ai.spec.ts` |
+| `/ai` | `pages/Ai.tsx` | Attach | Flag `AI_GATEWAY_ENABLED` (default false). SPA route stays on API 404. Trial chat + usage metrics (HTTP, tokens, cache, TTFT, TPS). `data-testid=ai-feature-off`. | `Ai.test.tsx`, `e2e/ai.spec.ts` |
 | `/uptime` | `pages/Uptime.tsx` | Attach | List. History **navigates** to `/uptime/:id`. Sparkline stays. Flag `UPTIME_ENABLED`. Nav active on `/uptime` and `/uptime/:id`, **not** on `/uptime/status-page`. | `Uptime.test.tsx`, `e2e/uptime.spec.ts` |
 | `/uptime/status-page` | `pages/StatusPage.tsx` | Attach | **Editor** (auth). Declare **before** `/uptime/:id`. Public view is HTML `/status/{slug}`. Never leak URL/IP/headers/token on **public** status. | `StatusPage.test.tsx` |
 | `/uptime/:id` | `pages/UptimeDetail.tsx` | — | Per-monitor overview (6h/24h/7d bar + outages + probe pager). Spec [`uptime-monitor-overview.md`](specs/uptime-monitor-overview.md). 404 + back like ScanDetail. | `UptimeDetail.test.tsx` |

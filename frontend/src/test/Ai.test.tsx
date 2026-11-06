@@ -106,6 +106,7 @@ describe("AI Gateway page", () => {
     mockEmptyGateway();
     renderAi();
     expect(await screen.findByRole("tab", { name: "Wallet" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Trial chat" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Keys" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Usage" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Catalog" })).toBeInTheDocument();
@@ -116,6 +117,7 @@ describe("AI Gateway page", () => {
     expect(list.className).toMatch(/\bflex-wrap\b/);
     expect(list.className).toMatch(/\bsm:flex-nowrap\b/);
     expect(screen.getByTestId("ai-tab-wallet")).toBeInTheDocument();
+    expect(screen.getByTestId("ai-tab-trial")).toBeInTheDocument();
     expect(screen.getByTestId("ai-tab-keys")).toBeInTheDocument();
     expect(screen.getByTestId("ai-tab-usage")).toBeInTheDocument();
     expect(screen.getByTestId("ai-tab-catalog")).toBeInTheDocument();
@@ -173,6 +175,12 @@ describe("AI Gateway page", () => {
           model_public_id: "gpt-4.1-mini",
           prompt_tokens: 120,
           completion_tokens: 40,
+          cached_tokens: 20,
+          ttft_ms: 250,
+          tps: 40,
+          latency_ms: 1250,
+          http_status: 200,
+          finish_reason: "stop",
           billed_idr: 1500,
           created_at: "2026-09-13T10:00:00Z",
         },
@@ -446,6 +454,12 @@ describe("AI Gateway page", () => {
           model_public_id: "gpt-4.1-mini",
           prompt_tokens: 120,
           completion_tokens: 40,
+          cached_tokens: 20,
+          ttft_ms: 250,
+          tps: 40,
+          latency_ms: 1250,
+          http_status: 200,
+          finish_reason: "stop",
           billed_idr: 1500,
           created_at: "2026-09-13T10:00:00Z",
         },
@@ -462,7 +476,12 @@ describe("AI Gateway page", () => {
     );
     const card = screen.getByTestId("ai-usage-card-u1");
     expect(card.textContent).toMatch(/gpt-4\.1-mini/);
-    expect(card.textContent).toMatch(/120\/40/);
+    expect(card.textContent).toMatch(/HTTP: 200/);
+    expect(card.textContent).toMatch(/Token in: 120/);
+    expect(card.textContent).toMatch(/Token out: 40/);
+    expect(card.textContent).toMatch(/Cache: 20/);
+    expect(card.textContent).toMatch(/TTFT: 250 ms/);
+    expect(card.textContent).toMatch(/TPS: 40\.0/);
     expect(card.textContent).toMatch(/Rp 1\.500/);
     expect(card.className).toMatch(/rounded-lg/);
     expect(card.className).toMatch(/border-border/);

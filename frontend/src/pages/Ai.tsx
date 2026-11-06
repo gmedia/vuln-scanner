@@ -6,6 +6,7 @@ import {
   Building2,
   KeyRound,
   Library,
+  MessageSquare,
   ScrollText,
   TriangleAlert,
   Wallet,
@@ -24,6 +25,7 @@ import {
 } from "@/api/ai";
 import { AiCatalogPanel } from "@/components/ai/AiCatalogPanel";
 import { AiKeysPanel } from "@/components/ai/AiKeysPanel";
+import { AiTrialChatPanel } from "@/components/ai/AiTrialChatPanel";
 import { AiUsagePanel } from "@/components/ai/AiUsagePanel";
 import { AiWalletPanel } from "@/components/ai/AiWalletPanel";
 import { useAuthStore } from "@/store/authStore";
@@ -31,7 +33,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { apiErrorMessage } from "@/api/apiErrors";
 
-const AI_TABS = ["wallet", "keys", "usage", "catalog"] as const;
+const AI_TABS = ["wallet", "trial", "keys", "usage", "catalog"] as const;
 type AiTab = (typeof AI_TABS)[number];
 
 function parseAiTab(raw: string | null): AiTab {
@@ -154,6 +156,10 @@ export default function Ai() {
             <Wallet aria-hidden />
             {t("tabWallet")}
           </TabsTrigger>
+          <TabsTrigger value="trial" data-testid="ai-tab-trial" className="gap-1.5">
+            <MessageSquare aria-hidden />
+            {t("tabTrial")}
+          </TabsTrigger>
           <TabsTrigger value="keys" data-testid="ai-tab-keys" className="gap-1.5">
             <KeyRound aria-hidden />
             {t("tabKeys")}
@@ -179,6 +185,12 @@ export default function Ai() {
             keysLoading={keysQ.isLoading}
             usageLoading={usageQ.isLoading}
             isAdmin={isAdmin}
+          />
+        </TabsContent>
+        <TabsContent value="trial" className="mt-4">
+          <AiTrialChatPanel
+            models={modelsQ.data?.items ?? []}
+            loading={modelsQ.isLoading}
           />
         </TabsContent>
         <TabsContent value="keys" className="mt-4">

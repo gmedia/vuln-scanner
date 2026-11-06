@@ -3,6 +3,14 @@ export function formatIdr(n: number | null | undefined): string {
   return `Rp ${n.toLocaleString("id-ID")}`;
 }
 
+export function formatLatencyMs(ms: number | null | undefined): string {
+  return ms == null ? "—" : `${ms} ms`;
+}
+
+export function formatTps(tps: number | null | undefined): string {
+  return tps == null ? "—" : tps.toFixed(1);
+}
+
 export function formatAiTime(iso: string, locale: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;

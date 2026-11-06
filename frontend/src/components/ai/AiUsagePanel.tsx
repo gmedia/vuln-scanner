@@ -1,7 +1,12 @@
 import { ScrollText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AiUsage } from "@/api/ai";
-import { formatAiTime, formatIdr } from "@/components/admin/aiFormat";
+import {
+  formatAiTime,
+  formatIdr,
+  formatLatencyMs,
+  formatTps,
+} from "@/components/admin/aiFormat";
 import { EmptyState } from "@/components/patterns/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -22,7 +27,9 @@ import {
 } from "@/components/ui/Table";
 
 function sourceLabel(source: string, t: (key: string) => string): string {
-  if (source === "admin_trial") return t("sourceTrial");
+  if (source === "admin_trial" || source === "customer_trial") {
+    return t("sourceTrial");
+  }
   return t("sourceSdk");
 }
 
@@ -43,7 +50,7 @@ export function AiUsagePanel({
       </CardHeader>
       <CardContent className="space-y-4">
         {loading ? (
-          <TableRowSkeleton rows={5} columns={4} />
+          <TableRowSkeleton rows={5} columns={9} />
         ) : items.length === 0 ? (
           <EmptyState
             testId="ai-usage-empty"
@@ -76,10 +83,46 @@ export function AiUsagePanel({
                     </p>
                     <Badge variant="default">{sourceLabel(u.source, t)}</Badge>
                   </div>
-                  <p className="mt-1 font-mono text-xs tabular-nums text-muted-foreground">
-                    {u.prompt_tokens}/{u.completion_tokens} · {formatIdr(u.billed_idr)}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 font-mono text-xs tabular-nums text-muted-foreground">
+                    <div>
+                      <dt className="inline">{t("colStatus")}: </dt>
+                      <dd className="inline text-foreground">
+                        {u.http_status ?? "—"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="inline">{t("colTokenIn")}: </dt>
+                      <dd className="inline text-foreground">
+                        {u.prompt_tokens}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="inline">{t("colTokenOut")}: </dt>
+                      <dd className="inline text-foreground">
+                        {u.completion_tokens}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="inline">{t("colCache")}: </dt>
+                      <dd className="inline text-foreground">
+                        {u.cached_tokens}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="inline">{t("colTtft")}: </dt>
+                      <dd className="inline text-foreground">
+                        {formatLatencyMs(u.ttft_ms)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="inline">{t("colTps")}: </dt>
+                      <dd className="inline text-foreground">
+                        {formatTps(u.tps)}
+                      </dd>
+                    </div>
+                  </dl>
+                  <p className="mt-2 font-mono text-xs tabular-nums text-muted-foreground">
+                    {formatIdr(u.billed_idr)} ·{" "}
                     {formatAiTime(u.created_at, i18n.language)}
                   </p>
                 </div>
@@ -96,7 +139,22 @@ export function AiUsagePanel({
                       {t("colModel")}
                     </TableHead>
                     <TableHead className="text-[10px] uppercase tracking-wider">
-                      {t("colTokens")}
+                      {t("colStatus")}
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase tracking-wider">
+                      {t("colTokenIn")}
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase tracking-wider">
+                      {t("colTokenOut")}
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase tracking-wider">
+                      {t("colCache")}
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase tracking-wider">
+                      {t("colTtft")}
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase tracking-wider">
+                      {t("colTps")}
                     </TableHead>
                     <TableHead className="text-[10px] uppercase tracking-wider">
                       {t("colBilled")}
@@ -116,7 +174,22 @@ export function AiUsagePanel({
                         </span>
                       </TableCell>
                       <TableCell className="font-mono tabular-nums">
-                        {u.prompt_tokens}/{u.completion_tokens}
+                        {u.http_status ?? "—"}
+                      </TableCell>
+                      <TableCell className="font-mono tabular-nums">
+                        {u.prompt_tokens}
+                      </TableCell>
+                      <TableCell className="font-mono tabular-nums">
+                        {u.completion_tokens}
+                      </TableCell>
+                      <TableCell className="font-mono tabular-nums">
+                        {u.cached_tokens}
+                      </TableCell>
+                      <TableCell className="font-mono tabular-nums">
+                        {formatLatencyMs(u.ttft_ms)}
+                      </TableCell>
+                      <TableCell className="font-mono tabular-nums">
+                        {formatTps(u.tps)}
                       </TableCell>
                       <TableCell className="font-mono tabular-nums">
                         {formatIdr(u.billed_idr)}

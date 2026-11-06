@@ -414,6 +414,28 @@ def _usage_from_payload(payload: dict[str, Any]) -> tuple[int, int, str | None]:
     return prompt, completion, finish if isinstance(finish, str) else None
 
 
+def _cached_tokens_from_payload(payload: dict[str, Any]) -> int:
+    """Prompt tokens the upstream served from its prompt cache.
+
+    OpenAI-compatible providers disagree on where this counter lives, so accept
+    the OpenAI nested detail plus the common DeepSeek/Anthropic-compatible flat
+    keys. Cached tokens are a subset of ``prompt_tokens``, never an extra charge.
+    """
+    usage = payload.get("usage") if isinstance(payload, dict) else None
+    if not isinstance(usage, dict):
+        return 0
+    details = usage.get("prompt_tokens_details")
+    if isinstance(details, dict):
+        cached = details.get("cached_tokens")
+        if isinstance(cached, int | float) and not isinstance(cached, bool):
+            return max(int(cached), 0)
+    for key in ("prompt_cache_hit_tokens", "cache_read_input_tokens", "cached_tokens"):
+        cached = usage.get(key)
+        if isinstance(cached, int | float) and not isinstance(cached, bool):
+            return max(int(cached), 0)
+    return 0
+
+
 async def list_openai_models(db: AsyncSession, key: AiApiKey) -> dict[str, Any]:
     rows = list(
         (
@@ -521,8 +543,10 @@ async def chat_completions(
             db,
             reservation.id,
             model,
-            key,
-            snapshot,
+            organization_id=key.organization_id,
+            user_id=key.created_by_user_id,
+            key_id=key.id,
+            snapshot=snapshot,
             request_payload=body,
             provider_id=served.provider_id if served is not None else None,
         )
@@ -535,8 +559,10 @@ async def chat_completions(
             db,
             reservation.id,
             model,
-            key,
-            snapshot,
+            organization_id=key.organization_id,
+            user_id=key.created_by_user_id,
+            key_id=key.id,
+            snapshot=snapshot,
             http_status=resp.status_code,
             request_payload=body,
             provider_id=served.provider_id,
@@ -548,8 +574,10 @@ async def chat_completions(
             db,
             reservation.id,
             model,
-            key,
-            snapshot,
+            organization_id=key.organization_id,
+            user_id=key.created_by_user_id,
+            key_id=key.id,
+            snapshot=snapshot,
             http_status=resp.status_code,
             request_payload=body,
             provider_id=served.provider_id,
@@ -564,8 +592,10 @@ async def chat_completions(
             db,
             reservation.id,
             model,
-            key,
-            snapshot,
+            organization_id=key.organization_id,
+            user_id=key.created_by_user_id,
+            key_id=key.id,
+            snapshot=snapshot,
             http_status=resp.status_code,
             request_payload=body,
             provider_id=served.provider_id,
@@ -574,6 +604,7 @@ async def chat_completions(
 
     payload_dict = payload if isinstance(payload, dict) else {}
     prompt_t, completion_t, finish = _usage_from_payload(payload_dict)
+    cached_t = _cached_tokens_from_payload(payload_dict)
     prompt_t, completion_t, usage_missing, billed_estimated = _billable_tokens(
         request=body,
         prompt_tokens=prompt_t,
@@ -584,9 +615,12 @@ async def chat_completions(
         db,
         reservation_id=reservation.id,
         model=model,
-        key=key,
+        organization_id=key.organization_id,
+        user_id=key.created_by_user_id,
+        key_id=key.id,
         prompt_tokens=prompt_t,
         completion_tokens=completion_t,
+        cached_tokens=cached_t,
         usage_missing=usage_missing,
         billed_estimated=billed_estimated,
         latency_ms=latency_ms,
@@ -606,12 +640,15 @@ async def _fail_release(
     db: AsyncSession,
     reservation_id: UUID,
     model: AiModel,
-    key: AiApiKey,
+    *,
+    organization_id: UUID,
+    user_id: UUID | None,
+    key_id: UUID | None,
+    source: str = "customer",
     snapshot: PriceSnapshot,
     http_status: int | None = None,
     request_payload: dict[str, Any] | None = None,
     response_payload: dict[str, Any] | None = None,
-    *,
     provider_id: UUID | None = None,
 ) -> None:
     from app.models.ai_gateway import AiReservation
@@ -622,10 +659,10 @@ async def _fail_release(
     await release(db, reservation)
     await record_usage(
         db,
-        organization_id=key.organization_id,
-        user_id=key.created_by_user_id,
-        key_id=key.id,
-        source="customer",
+        organization_id=organization_id,
+        user_id=user_id,
+        key_id=key_id,
+        source=source,
         model=model,
         prompt_tokens=0,
         completion_tokens=0,
@@ -648,9 +685,14 @@ async def _settle_usage(
     *,
     reservation_id: UUID,
     model: AiModel,
-    key: AiApiKey,
+    organization_id: UUID,
+    user_id: UUID | None,
+    key_id: UUID | None,
+    source: str = "customer",
     prompt_tokens: int,
     completion_tokens: int,
+    cached_tokens: int = 0,
+    ttft_ms: int | None = None,
     usage_missing: bool,
     billed_estimated: bool,
     latency_ms: int | None,
@@ -675,13 +717,15 @@ async def _settle_usage(
     cogs = cogs_idr(prompt_tokens=prompt_tokens, completion_tokens=completion_tokens, snapshot=effective)
     event = await record_usage(
         db,
-        organization_id=key.organization_id,
-        user_id=key.created_by_user_id,
-        key_id=key.id,
-        source="customer",
+        organization_id=organization_id,
+        user_id=user_id,
+        key_id=key_id,
+        source=source,
         model=model,
         prompt_tokens=prompt_tokens,
         completion_tokens=completion_tokens,
+        cached_tokens=cached_tokens,
+        ttft_ms=ttft_ms,
         billed=billed,
         cogs=cogs,
         billed_usd=billed_usd(prompt_tokens=prompt_tokens, completion_tokens=completion_tokens, snapshot=locked),
@@ -717,11 +761,13 @@ async def _stream_and_settle(
 ) -> AsyncIterator[bytes]:
     prompt_t = 0
     completion_t = 0
+    cached_t = 0
     finish: str | None = None
     req_id: str | None = None
     http_status = 200
     failed = False
     first_byte_sent = False
+    first_token_at: float | None = None
     streamed_parts: list[str] = []
     served: UpstreamCandidate | None = None
     client = httpx.AsyncClient(timeout=settings.ai_upstream_timeout_seconds)
@@ -774,11 +820,16 @@ async def _stream_and_settle(
                                     if payload.get("id"):
                                         req_id = str(payload["id"])
                                     p, c, f = _usage_from_payload(payload)
+                                    cached = _cached_tokens_from_payload(payload)
+                                    if cached:
+                                        cached_t = cached
                                     if p or c:
                                         prompt_t, completion_t = p, c
                                     else:
                                         piece = _delta_content(payload)
                                         if piece:
+                                            if first_token_at is None:
+                                                first_token_at = time.monotonic()
                                             streamed_parts.append(piece)
                                     if f:
                                         finish = f
@@ -814,8 +865,10 @@ async def _stream_and_settle(
                 db,
                 reservation_id,
                 model,
-                key,
-                locked,
+                organization_id=key.organization_id,
+                user_id=key.created_by_user_id,
+                key_id=key.id,
+                snapshot=locked,
                 http_status=http_status,
                 request_payload=stored_req,
                 provider_id=served.provider_id if served is not None else None,
@@ -831,9 +884,13 @@ async def _stream_and_settle(
                 db,
                 reservation_id=reservation_id,
                 model=model,
-                key=key,
+                organization_id=key.organization_id,
+                user_id=key.created_by_user_id,
+                key_id=key.id,
                 prompt_tokens=prompt_t,
                 completion_tokens=completion_t,
+                cached_tokens=cached_t,
+                ttft_ms=(int((first_token_at - started) * 1000) if first_token_at is not None else None),
                 usage_missing=usage_missing,
                 billed_estimated=billed_estimated,
                 latency_ms=latency_ms,
@@ -860,6 +917,8 @@ async def _admin_trial_usage(
     usage_missing: bool,
     billed_estimated: bool,
     http_status: int,
+    cached_tokens: int = 0,
+    ttft_ms: int | None = None,
     latency_ms: int | None = None,
     finish_reason: str | None = None,
     provider_request_id: str | None = None,
@@ -876,6 +935,8 @@ async def _admin_trial_usage(
         model=model,
         prompt_tokens=prompt_tokens,
         completion_tokens=completion_tokens,
+        cached_tokens=cached_tokens,
+        ttft_ms=ttft_ms,
         billed=billed,
         cogs=cogs,
         billed_usd=billed_usd(prompt_tokens=prompt_tokens, completion_tokens=completion_tokens, snapshot=snapshot),
@@ -1010,6 +1071,7 @@ async def admin_trial_chat(
 
     payload_dict = payload if isinstance(payload, dict) else {}
     prompt_t, completion_t, finish = _usage_from_payload(payload_dict)
+    cached_t = _cached_tokens_from_payload(payload_dict)
     prompt_t, completion_t, usage_missing, billed_estimated = _billable_tokens(
         request=body,
         prompt_tokens=prompt_t,
@@ -1033,6 +1095,7 @@ async def admin_trial_chat(
         usage_missing=usage_missing,
         billed_estimated=billed_estimated,
         http_status=resp.status_code,
+        cached_tokens=cached_t,
         latency_ms=latency_ms,
         finish_reason=finish,
         provider_request_id=payload_dict.get("id"),
@@ -1041,4 +1104,141 @@ async def admin_trial_chat(
         provider_id=served_provider_id,
     )
     await db.commit()
+    return JSONResponse(content=payload, status_code=200)
+
+
+async def org_trial_chat(
+    db: AsyncSession,
+    *,
+    organization_id: UUID,
+    user_id: UUID,
+    body: dict[str, Any],
+) -> JSONResponse:
+    """Customer playground call that spends the org wallet without an API key.
+
+    The admin trial is platform-capped and free; this one is an ordinary
+    customer charge. It reuses the same reservation/settlement path as ``/v1``
+    so a no-key call cannot overdraw the wallet and still appears in usage.
+    """
+    if body.get("stream"):
+        raise HTTPException(status_code=400, detail="stream is not supported for trial chat")
+    _validate_body(body)
+    public_id = str(body.get("model") or "")
+    model, candidates = await _load_candidates(db, public_id)
+    candidates = await filter_available(candidates)
+    snapshot = await resolve_snapshot(db, model)
+
+    requested = _requested_max_tokens(body, model)
+    prompt_est = _estimate_prompt_tokens(body)
+    wallet = await get_or_create_wallet(db, organization_id)
+    prompt_hold = affordable_prompt_tokens(
+        balance_idr=wallet.balance_idr,
+        snapshot=snapshot,
+        prompt_tokens=prompt_est,
+    )
+    if prompt_hold < 1:
+        raise HTTPException(status_code=402, detail="Insufficient AI wallet balance")
+    afford = affordable_max_tokens(
+        balance_idr=wallet.balance_idr,
+        snapshot=snapshot,
+        max_tokens_cap=model.max_tokens_cap,
+        prompt_tokens=prompt_hold,
+    )
+    if afford < 1:
+        raise HTTPException(status_code=402, detail="Insufficient AI wallet balance")
+    capped = min(requested, model.max_tokens_cap, afford)
+    hold = hold_idr(max_tokens=capped, snapshot=snapshot, prompt_tokens=prompt_hold)
+    reservation = await reserve(
+        db,
+        organization_id=organization_id,
+        hold=hold,
+        snapshot=snapshot,
+        key_id=None,
+        model_public_id=model.public_id,
+        prompt_tokens_est=prompt_hold,
+        completion_tokens_max=capped,
+        actor_user_id=user_id,
+    )
+    await db.commit()
+
+    upstream_body = dict(body)
+    upstream_body["max_tokens"] = capped
+    started = time.monotonic()
+    result = await _post_with_failover(
+        candidates,
+        upstream_body,
+        started,
+        public_id=model.public_id,
+        deadline=settings.ai_admin_trial_deadline_seconds,
+    )
+    served = result.candidate
+    resp = result.response
+    effective = _cogs_snapshot(served, snapshot) if served is not None else snapshot
+    provider_id = served.provider_id if served is not None else None
+
+    async def _release(http_status: int | None) -> None:
+        await _fail_release(
+            db,
+            reservation.id,
+            model,
+            organization_id=organization_id,
+            user_id=user_id,
+            key_id=None,
+            source="customer_trial",
+            snapshot=snapshot,
+            http_status=http_status,
+            request_payload=body,
+            provider_id=provider_id,
+        )
+        await db.commit()
+
+    if resp is None or served is None:
+        await _release(502)
+        return _generic_upstream_fail()
+
+    latency_ms = int((time.monotonic() - started) * 1000)
+    if resp.status_code in (401, 403) or resp.status_code >= 500:
+        await _release(resp.status_code)
+        return _generic_upstream_fail()
+    if resp.status_code >= 400:
+        await _release(resp.status_code)
+        return openai_error(resp.status_code, "Request rejected", err_type="invalid_request_error")
+
+    try:
+        payload = resp.json()
+    except json.JSONDecodeError:
+        await _release(resp.status_code)
+        return _generic_upstream_fail()
+
+    payload_dict = payload if isinstance(payload, dict) else {}
+    prompt_t, completion_t, finish = _usage_from_payload(payload_dict)
+    cached_t = _cached_tokens_from_payload(payload_dict)
+    prompt_t, completion_t, usage_missing, billed_estimated = _billable_tokens(
+        request=body,
+        prompt_tokens=prompt_t,
+        completion_tokens=completion_t,
+        content=_response_content(payload_dict),
+    )
+    await _settle_usage(
+        db,
+        reservation_id=reservation.id,
+        model=model,
+        organization_id=organization_id,
+        user_id=user_id,
+        key_id=None,
+        source="customer_trial",
+        prompt_tokens=prompt_t,
+        completion_tokens=completion_t,
+        cached_tokens=cached_t,
+        usage_missing=usage_missing,
+        billed_estimated=billed_estimated,
+        latency_ms=latency_ms,
+        http_status=resp.status_code,
+        finish_reason=finish,
+        provider_request_id=payload_dict.get("id"),
+        request_payload=body,
+        response_payload=payload_dict if isinstance(payload, dict) else None,
+        provider_id=provider_id,
+        cogs_snapshot=effective,
+    )
     return JSONResponse(content=payload, status_code=200)

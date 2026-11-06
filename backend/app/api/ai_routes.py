@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import JSONResponse, Response
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -29,6 +31,7 @@ from app.services.ai_pricing import (
     fx_stale,
     usd_per_1m_to_idr_per_1k,
 )
+from app.services.ai_proxy import org_trial_chat
 from app.services.ai_wallet import get_wallet as get_wallet_row
 from app.services.auth import get_active_org_id, get_current_user
 from app.services.billing_access import BILLING_WRITE
@@ -138,6 +141,25 @@ async def list_usage(
         .all()
     )
     return AiUsageList(items=[AiUsageOut.model_validate(r) for r in rows], total=total)
+
+
+@router.post("/chat", response_model=None, dependencies=BILLING_WRITE)
+async def post_chat(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse | Response:
+    """Keyless customer playground call, charged to the org AI wallet."""
+    _disabled()
+    org_id = await _org(request, current_user, db)
+    await require_membership(db, org_id, current_user.id, min_role="member")
+    try:
+        body: dict[str, Any] = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="JSON body required") from None
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="JSON object required")
+    return await org_trial_chat(db, organization_id=org_id, user_id=current_user.id, body=body)
 
 
 def _key_out(row: AiApiKey, plaintext: str | None = None) -> AiKeyOut:
