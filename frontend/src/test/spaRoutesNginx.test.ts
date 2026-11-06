@@ -146,6 +146,20 @@ describe("SPA route allowlist (nginx)", () => {
     expect(ROUTE_BLOCK).toMatch(/location = \/assets\/ \{/);
   });
 
+  it("prefers a prerendered document before the shell", () => {
+    const allowlist =
+      ROUTE_BLOCK.match(/location ~ "[^"]+" \{[^}]*\}/)?.[0] ?? "";
+    const product =
+      PRODUCT_BLOCK.match(/location ~ "[^"]+" \{[^}]*\}/)?.[0] ?? "";
+
+    for (const [label, block] of [
+      ["spa routes", allowlist],
+      ["product slugs", product],
+    ]) {
+      expect(block, label).toContain("try_files $uri.html /index.html =404;");
+    }
+  });
+
   it("answers unknown paths with a 404 status and the app shell", () => {
     expect(NGINX_SOURCE).toMatch(/try_files \$uri =404;/);
     expect(NGINX_SOURCE).toMatch(/error_page 404 \/index\.html;/);
