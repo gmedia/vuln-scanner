@@ -34,5 +34,7 @@
   "showEmailConfirmPassword": "Show email confirmation password",
   "hideEmailConfirmPassword": "Hide email confirmation password",
   "updating": "Updating...",
-  "profileUpdated": "Profile updated"
+  "profileUpdated": "Profile updated",
+  "updateEmailFailed": "Could not update email",
+  "changePasswordFailed": "Could not change password"
 }

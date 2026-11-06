@@ -75,5 +75,19 @@
   "overallPartial": "Partial outage",
   "overallMajor": "Major outage",
   "overallUnknown": "Unknown",
-  "errSaveFailed": "Could not save status page"
+  "errSaveFailed": "Could not save status page",
+  "pageSavedToast": "Status page created.",
+  "pagePublishedToast": "Status page visibility updated.",
+  "componentAddedToast": "Component added.",
+  "componentDeletedToast": "Component removed.",
+  "incidentCreatedToast": "Incident created.",
+  "incidentSavedToast": "Incident saved.",
+  "incidentDeletedToast": "Incident deleted.",
+  "updatePostedToast": "Update posted.",
+  "publishFail": "Could not change page visibility",
+  "componentAddFail": "Could not add component",
+  "componentDeleteFail": "Could not remove component",
+  "incidentCreateFail": "Could not create incident",
+  "incidentSaveFail": "Could not save incident",
+  "updateFail": "Could not post update"
 }

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { apiErrorMessage } from "@/api/apiErrors";
 import {
   createAiModel,
   deleteAiModel,
@@ -134,7 +135,11 @@ export function AdminAiModelsTab({
         hpp_usd_per_1m_in: usdInput(hppIn),
         hpp_usd_per_1m_out: usdInput(hppOut),
       }),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["admin-ai-models"] }),
+    onSuccess: () => {
+      toast.success(t("aiModelCreated"));
+      void qc.invalidateQueries({ queryKey: ["admin-ai-models"] });
+    },
+    onError: (err) => toast.error(apiErrorMessage(err, t("aiModelCreateFail"))),
   });
   const saveModel = useMutation({
     mutationFn: () => {
@@ -150,12 +155,18 @@ export function AdminAiModelsTab({
     },
     onSuccess: () => {
       setEditingModel(null);
+      toast.success(t("aiModelSaved"));
       void qc.invalidateQueries({ queryKey: ["admin-ai-models"] });
     },
+    onError: (err) => toast.error(apiErrorMessage(err, t("aiModelSaveFail"))),
   });
   const delModel = useMutation({
     mutationFn: (id: string) => deleteAiModel(id),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["admin-ai-models"] }),
+    onSuccess: () => {
+      toast.success(t("aiModelDeleted"));
+      void qc.invalidateQueries({ queryKey: ["admin-ai-models"] });
+    },
+    onError: (err) => toast.error(apiErrorMessage(err, t("aiModelDeleteFail"))),
   });
 
   const priceLabelIn = t(unit === "usd_1m" ? "aiPriceInUsd" : "aiPriceIn");

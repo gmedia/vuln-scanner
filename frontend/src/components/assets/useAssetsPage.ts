@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { apiErrorMessage } from "@/api/apiErrors";
 import { toast } from "sonner";
 import {
   createAsset,
@@ -117,8 +118,8 @@ export function useAssetsPage() {
       void qc.invalidateQueries({ queryKey: ["assets"] });
       resetForm();
     },
-    onError: (err: { response?: { data?: { detail?: string } } }) => {
-      const detail = String(err.response?.data?.detail ?? "");
+    onError: (err: unknown) => {
+      const detail = apiErrorMessage(err, t("createFail"));
       toast.error(
         mapAssetError(detail) === "limit" ? t("limitReached") : detail,
       );
@@ -137,14 +138,18 @@ export function useAssetsPage() {
       void qc.invalidateQueries({ queryKey: ["assets"] });
       resetForm();
     },
-    onError: (err: { response?: { data?: { detail?: string } } }) => {
-      toast.error(String(err.response?.data?.detail ?? ""));
+    onError: (err: unknown) => {
+      toast.error(apiErrorMessage(err, t("updateFail")));
     },
   });
 
   const delMut = useMutation({
     mutationFn: deleteAsset,
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["assets"] }),
+    onSuccess: () => {
+      toast.success(t("deletedToast"));
+      void qc.invalidateQueries({ queryKey: ["assets"] });
+    },
+    onError: (err: unknown) => toast.error(apiErrorMessage(err, t("deleteFail"))),
   });
 
   const colorMut = useMutation({
@@ -153,16 +158,16 @@ export function useAssetsPage() {
     onSuccess: (data) => {
       qc.setQueryData(["asset-tag-colors"], data);
     },
-    onError: (err: { response?: { data?: { detail?: string } } }) => {
-      toast.error(String(err.response?.data?.detail ?? ""));
+    onError: (err: unknown) => {
+      toast.error(apiErrorMessage(err, t("updateFail")));
     },
   });
 
   const schedMut = useMutation({
     mutationFn: (id: string) => createAssetSchedule(id, { cadence: "weekly" }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["assets"] }),
-    onError: (err: { response?: { data?: { detail?: string } } }) => {
-      toast.error(String(err.response?.data?.detail ?? ""));
+    onError: (err: unknown) => {
+      toast.error(apiErrorMessage(err, t("updateFail")));
     },
   });
 

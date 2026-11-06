@@ -38,6 +38,7 @@ import PageHeader from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/patterns/EmptyState";
 import PageHeaderBack from "@/components/layout/PageHeaderBack";
 import { adminApi } from "@/api/admin";
+import { apiErrorMessage } from "@/api/apiErrors";
 import { formatCredits } from "@/lib/utils";
 import { Trans, useTranslation } from "react-i18next";
 import { htmlLang, isAppLocale } from "@/i18n/locales";
@@ -71,6 +72,8 @@ function AdminUserDetail() {
   const [description, setDescription] = useState("");
   const [copied, setCopied] = useState(false);
   const [confirmAdjust, setConfirmAdjust] = useState(false);
+  const [creditsError, setCreditsError] = useState<string | null>(null);
+  const [resendError, setResendError] = useState<string | null>(null);
 
   const { data: user, isLoading } = useQuery({
     queryKey: ["admin-user", id],
@@ -90,11 +93,20 @@ function AdminUserDetail() {
       setAmount("");
       setDescription("");
       setConfirmAdjust(false);
+      setCreditsError(null);
+    },
+    onError: (err) => {
+      setCreditsError(apiErrorMessage(err, t("creditsUpdateFail")));
     },
   });
 
   const resendVerification = useMutation({
     mutationFn: () => adminApi.resendVerification(id!),
+    onMutate: () => setResendError(null),
+    onSuccess: () => setResendError(null),
+    onError: (err) => {
+      setResendError(apiErrorMessage(err, t("resendFail")));
+    },
   });
 
   const handleSubmit = () => {
@@ -263,7 +275,7 @@ function AdminUserDetail() {
                   </Button>
                   {resendVerification.isError && (
                     <AdminNotice tone="danger" role="alert">
-                      {t("resendFail")}
+                      {resendError ?? t("resendFail")}
                     </AdminNotice>
                   )}
                   {resendVerification.isSuccess &&
@@ -330,6 +342,8 @@ function AdminUserDetail() {
                     onChange={(e) => {
                       setAmount(e.target.value);
                       setConfirmAdjust(false);
+                      setCreditsError(null);
+                      updateCredits.reset?.();
                     }}
                     className="max-w-[12rem] font-mono"
                   />
@@ -381,7 +395,7 @@ function AdminUserDetail() {
               </div>
               {updateCredits.isError && (
                 <AdminNotice tone="danger" role="alert">
-                  {t("creditsUpdateFail")}
+                  {creditsError ?? t("creditsUpdateFail")}
                 </AdminNotice>
               )}
               {updateCredits.isSuccess && (

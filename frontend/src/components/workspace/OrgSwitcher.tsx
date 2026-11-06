@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,6 +53,8 @@ function OrgSwitcher({ className, collapsed = false }: OrgSwitcherProps) {
     if (ok) {
       await queryClient.invalidateQueries();
       navigate("/dashboard");
+    } else {
+      toast.error(useAuthStore.getState().error ?? t("switchFail"));
     }
   }
 

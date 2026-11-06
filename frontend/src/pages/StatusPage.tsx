@@ -22,7 +22,6 @@ import {
   SelectValue,
 } from "@/components/ui/Select";
 import { listMonitors } from "@/api/uptime";
-import type { ApiError } from "@/lib/utils";
 import { canManageMembers } from "@/api/orgs";
 import { useAuthStore } from "@/store/authStore";
 import { StatusComponentBoard } from "@/components/status/StatusComponentBoard";
@@ -53,11 +52,8 @@ import {
   upsertStatusPage,
   type StatusIncident,
 } from "@/api/statusPage";
+import { apiErrorMessage } from "@/api/apiErrors";
 
-function apiDetail(err: unknown, fallback: string): string {
-  const detail = (err as ApiError).response?.data?.detail;
-  return typeof detail === "string" && detail.trim() ? detail : fallback;
-}
 
 type CopyField = "cname" | "txt-name" | "txt-value";
 
@@ -107,12 +103,19 @@ export default function StatusPage() {
 
   const createMut = useMutation({
     mutationFn: () => upsertStatusPage({ slug, title }),
-    onSuccess: invalidate,
-    onError: () => toast.error(t("errSaveFailed")),
+    onSuccess: () => {
+      toast.success(t("pageSavedToast"));
+      invalidate();
+    },
+    onError: (err) => toast.error(apiErrorMessage(err, t("errSaveFailed"))),
   });
   const publishMut = useMutation({
     mutationFn: (published: boolean) => patchStatusPage({ published }),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      toast.success(t("pagePublishedToast"));
+      invalidate();
+    },
+    onError: (err) => toast.error(apiErrorMessage(err, t("publishFail"))),
   });
   const attachMut = useMutation({
     mutationFn: () => attachHostname(hostDraft.trim()),
@@ -121,7 +124,7 @@ export default function StatusPage() {
       invalidate();
       toast.success(t("attachHost"));
     },
-    onError: (err) => toast.error(apiDetail(err, t("attachHost"))),
+    onError: (err) => toast.error(apiErrorMessage(err, t("attachHost"))),
   });
   const replaceMut = useMutation({
     mutationFn: () => replaceHostname(hostDraft.trim()),
@@ -130,7 +133,7 @@ export default function StatusPage() {
       invalidate();
       toast.success(t("updateHost"));
     },
-    onError: (err) => toast.error(apiDetail(err, t("updateHost"))),
+    onError: (err) => toast.error(apiErrorMessage(err, t("updateHost"))),
   });
   const detachMut = useMutation({
     mutationFn: detachHostname,
@@ -139,7 +142,7 @@ export default function StatusPage() {
       invalidate();
       toast.success(t("detachHost"));
     },
-    onError: (err) => toast.error(apiDetail(err, t("detachHost"))),
+    onError: (err) => toast.error(apiErrorMessage(err, t("detachHost"))),
   });
   const identityMut = useMutation({
     mutationFn: () =>
@@ -150,7 +153,7 @@ export default function StatusPage() {
       invalidate();
       toast.success(t("saveIdentity"));
     },
-    onError: (err) => toast.error(apiDetail(err, t("saveIdentity"))),
+    onError: (err) => toast.error(apiErrorMessage(err, t("saveIdentity"))),
   });
   const checkMut = useMutation({
     mutationFn: checkHostname,
@@ -158,7 +161,7 @@ export default function StatusPage() {
       invalidate();
       toast.success(t("checkHost"));
     },
-    onError: (err) => toast.error(apiDetail(err, t("checkHost"))),
+    onError: (err) => toast.error(apiErrorMessage(err, t("checkHost"))),
   });
   const addCompMut = useMutation({
     mutationFn: () =>
@@ -167,13 +170,20 @@ export default function StatusPage() {
         display_name: displayName || "Component",
       }),
     onSuccess: () => {
+      toast.success(t("componentAddedToast"));
       setDisplayName("");
       invalidate();
     },
+    onError: (err) => toast.error(apiErrorMessage(err, t("componentAddFail"))),
   });
   const delCompMut = useMutation({
     mutationFn: deleteComponent,
-    onSuccess: invalidate,
+    onSuccess: () => {
+      toast.success(t("componentDeletedToast"));
+      invalidate();
+    },
+    onError: (err) =>
+      toast.error(apiErrorMessage(err, t("componentDeleteFail"))),
   });
   const incMut = useMutation({
     mutationFn: (payload: {
@@ -183,10 +193,13 @@ export default function StatusPage() {
       body: string;
     }) => createIncident(payload),
     onSuccess: () => {
+      toast.success(t("incidentCreatedToast"));
       setIncOpen(false);
       setEditingIncident(null);
       invalidate();
     },
+    onError: (err) =>
+      toast.error(apiErrorMessage(err, t("incidentCreateFail"))),
   });
   const saveIncMut = useMutation({
     mutationFn: ({
@@ -197,10 +210,12 @@ export default function StatusPage() {
       payload: { title: string; impact: string };
     }) => patchIncident(id, payload),
     onSuccess: () => {
+      toast.success(t("incidentSavedToast"));
       setIncOpen(false);
       setEditingIncident(null);
       invalidate();
     },
+    onError: (err) => toast.error(apiErrorMessage(err, t("incidentSaveFail"))),
   });
 
   const monitors = monQ.data ?? [];

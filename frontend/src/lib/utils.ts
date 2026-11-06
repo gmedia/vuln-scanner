@@ -1,14 +1,29 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+/** One field-level validation issue from the API (FastAPI 422 or the
+ * normalized `validation_error` envelope). */
+export interface ApiValidationIssue {
+  field?: string;
+  msg: string;
+  type?: string;
+  params?: Record<string, string | number>;
+}
+
+/** Every error body shape the API can emit. `detail` stays a string for
+ * business errors; request-validation errors add `fields` / `errors`. */
+export interface ApiErrorBody {
+  detail?: string | ApiValidationIssue[];
+  code?: string;
+  params?: Record<string, string | number>;
+  fields?: Record<string, string>;
+  errors?: ApiValidationIssue[];
+}
+
 export interface ApiError {
   response?: {
     status?: number;
-    data?: {
-      detail?: string;
-      code?: string;
-      params?: Record<string, string | number>;
-    };
+    data?: ApiErrorBody;
   };
 }
 

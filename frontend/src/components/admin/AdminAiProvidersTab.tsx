@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { apiErrorMessage } from "@/api/apiErrors";
 import {
   createAiProvider,
   deleteAiProvider,
@@ -40,7 +41,11 @@ export function AdminAiProvidersTab({
         base_url: provUrl,
         credential: provCred,
       }),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["admin-ai-providers"] }),
+    onSuccess: () => {
+      toast.success(t("aiProviderCreated"));
+      void qc.invalidateQueries({ queryKey: ["admin-ai-providers"] });
+    },
+    onError: (err) => toast.error(apiErrorMessage(err, t("aiProviderCreateFail"))),
   });
   const saveProv = useMutation({
     mutationFn: () => {
@@ -53,19 +58,27 @@ export function AdminAiProvidersTab({
     },
     onSuccess: () => {
       setEditingProv(null);
+      toast.success(t("aiProviderSaved"));
       void qc.invalidateQueries({ queryKey: ["admin-ai-providers"] });
     },
+    onError: (err) => toast.error(apiErrorMessage(err, t("aiProviderSaveFail"))),
   });
   const delProv = useMutation({
     mutationFn: (id: string) => deleteAiProvider(id),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["admin-ai-providers"] }),
-    onError: () => toast.error(t("aiProviderDeleteFail")),
+    onSuccess: () => {
+      toast.success(t("aiProviderDeleted"));
+      void qc.invalidateQueries({ queryKey: ["admin-ai-providers"] });
+    },
+    onError: (err) => toast.error(apiErrorMessage(err, t("aiProviderDeleteFail"))),
   });
   const toggleProv = useMutation({
     mutationFn: ({ id, body }: { id: string; body: { enabled: boolean; status?: string } }) =>
       updateAiProvider(id, body),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["admin-ai-providers"] }),
-    onError: () => toast.error(t("aiProviderUpdateFail")),
+    onSuccess: () => {
+      toast.success(t("aiProviderToggled"));
+      void qc.invalidateQueries({ queryKey: ["admin-ai-providers"] });
+    },
+    onError: (err) => toast.error(apiErrorMessage(err, t("aiProviderUpdateFail"))),
   });
 
   return (

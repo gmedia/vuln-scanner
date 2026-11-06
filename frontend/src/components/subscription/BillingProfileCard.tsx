@@ -16,6 +16,9 @@ import {
   SelectValue,
 } from "@/components/ui/Select";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { FormAlert, FieldError } from "@/components/patterns/FormFeedback";
+import { useApiFormErrors } from "@/hooks/useApiFormErrors";
+import { apiErrorMessage, apiFieldErrors } from "@/api/apiErrors";
 import {
   WorkspaceShell,
   WorkspaceShellBody,
@@ -60,16 +63,21 @@ function BillingProfileForm({
 }) {
   const { t } = useTranslation("subscription");
   const qc = useQueryClient();
+  const formErrors = useApiFormErrors();
   const [form, setForm] = useState<BillingProfileUpdate>(() => toForm(profile));
   const [recipientEmail, setRecipientEmail] = useState("");
 
   const saveMut = useMutation({
     mutationFn: (body: BillingProfileUpdate) => saveBillingProfile(orgId, body),
     onSuccess: () => {
+      formErrors.clear();
       toast.success(t("billingSaved"));
       void qc.invalidateQueries({ queryKey: ["billing-profile", orgId] });
     },
-    onError: () => toast.error(t("billingSaveFail")),
+    onError: (err: unknown) => {
+      formErrors.setFormError(apiErrorMessage(err, t("billingSaveFail")));
+      formErrors.setFieldErrors(apiFieldErrors(err));
+    },
   });
 
   const addMut = useMutation({
@@ -77,9 +85,13 @@ function BillingProfileForm({
     onSuccess: () => {
       toast.success(t("recipientAdded"));
       setRecipientEmail("");
+      formErrors.clearField("email");
       void qc.invalidateQueries({ queryKey: ["billing-profile", orgId] });
     },
-    onError: () => toast.error(t("recipientAddFail")),
+    onError: (err: unknown) => {
+      toast.error(apiErrorMessage(err, t("recipientAddFail")));
+      formErrors.setFieldErrors(apiFieldErrors(err));
+    },
   });
 
   const removeMut = useMutation({
@@ -88,15 +100,21 @@ function BillingProfileForm({
       toast.success(t("recipientRemoved"));
       void qc.invalidateQueries({ queryKey: ["billing-profile", orgId] });
     },
-    onError: () => toast.error(t("recipientRemoveFail")),
+    onError: (err: unknown) => {
+      toast.error(apiErrorMessage(err, t("recipientRemoveFail")));
+    },
   });
 
   function patch(update: Partial<BillingProfileUpdate>) {
+    for (const key of Object.keys(update)) {
+      formErrors.clearField(key);
+    }
     setForm((current) => (current ? { ...current, ...update } : current));
   }
 
   return (
     <>
+      <FormAlert message={formErrors.formError} />
       <div className="grid gap-3 sm:grid-cols-2">
               <div className="flex min-w-0 flex-col gap-1.5">
                 <Label htmlFor="billing-legal-name">{t("legalName")}</Label>
@@ -105,8 +123,18 @@ function BillingProfileForm({
                   value={form.legal_name}
                   maxLength={255}
                   placeholder={t("legalNamePlaceholder")}
+                  aria-invalid={Boolean(formErrors.fieldErrors.legal_name)}
+                  aria-describedby={
+                    formErrors.fieldErrors.legal_name
+                      ? "billing-legal-name-error"
+                      : undefined
+                  }
                   onChange={(event) => patch({ legal_name: event.target.value })}
                   data-testid="billing-legal-name"
+                />
+                <FieldError
+                  id="billing-legal-name-error"
+                  message={formErrors.fieldErrors.legal_name}
                 />
               </div>
               <div className="flex min-w-0 flex-col gap-1.5">
@@ -117,8 +145,18 @@ function BillingProfileForm({
                   maxLength={16}
                   inputMode="numeric"
                   placeholder={t("taxIdPlaceholder")}
+                  aria-invalid={Boolean(formErrors.fieldErrors.tax_id)}
+                  aria-describedby={
+                    formErrors.fieldErrors.tax_id
+                      ? "billing-tax-id-error"
+                      : undefined
+                  }
                   onChange={(event) => patch({ tax_id: event.target.value })}
                   data-testid="billing-tax-id"
+                />
+                <FieldError
+                  id="billing-tax-id-error"
+                  message={formErrors.fieldErrors.tax_id}
                 />
                 <p className="text-[11px] text-muted-foreground">
                   {t("taxIdHint")}
@@ -132,10 +170,20 @@ function BillingProfileForm({
                   value={form.billing_email}
                   maxLength={320}
                   placeholder={t("billingEmailPlaceholder")}
+                  aria-invalid={Boolean(formErrors.fieldErrors.billing_email)}
+                  aria-describedby={
+                    formErrors.fieldErrors.billing_email
+                      ? "billing-email-error"
+                      : undefined
+                  }
                   onChange={(event) =>
                     patch({ billing_email: event.target.value })
                   }
                   data-testid="billing-email"
+                />
+                <FieldError
+                  id="billing-email-error"
+                  message={formErrors.fieldErrors.billing_email}
                 />
               </div>
               <div className="flex min-w-0 flex-col gap-1.5">
@@ -189,8 +237,18 @@ function BillingProfileForm({
                   maxLength={64}
                   disabled={!form.po_required}
                   placeholder={t("poNumberPlaceholder")}
+                  aria-invalid={Boolean(formErrors.fieldErrors.po_number)}
+                  aria-describedby={
+                    formErrors.fieldErrors.po_number
+                      ? "billing-po-number-error"
+                      : undefined
+                  }
                   onChange={(event) => patch({ po_number: event.target.value })}
                   data-testid="billing-po-number"
+                />
+                <FieldError
+                  id="billing-po-number-error"
+                  message={formErrors.fieldErrors.po_number}
                 />
               </div>
             </div>
@@ -250,7 +308,16 @@ function BillingProfileForm({
                   value={recipientEmail}
                   maxLength={320}
                   placeholder={t("recipientPlaceholder")}
-                  onChange={(event) => setRecipientEmail(event.target.value)}
+                  aria-invalid={Boolean(formErrors.fieldErrors.email)}
+                  aria-describedby={
+                    formErrors.fieldErrors.email
+                      ? "billing-recipient-email-error"
+                      : undefined
+                  }
+                  onChange={(event) => {
+                    setRecipientEmail(event.target.value);
+                    formErrors.clearField("email");
+                  }}
                   data-testid="billing-recipient-input"
                 />
                 <Button
@@ -269,6 +336,10 @@ function BillingProfileForm({
                   {t("addRecipient")}
                 </Button>
               </div>
+              <FieldError
+                id="billing-recipient-email-error"
+                message={formErrors.fieldErrors.email}
+              />
             </div>
 
       <div className="flex justify-end">

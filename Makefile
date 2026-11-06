@@ -1,4 +1,4 @@
-.PHONY: help install lint lint-fix typecheck test clean dev check-alembic
+.PHONY: help install lint lint-fix typecheck test clean dev check-alembic check-form-feedback
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-16s\033[0m %s\n", $$1, $$2}'
@@ -16,10 +16,14 @@ install-dev: install ## Install dependencies + pre-commit hooks + dev tools
 
 # ── Lint ─────────────────────────────────────────────────────────────
 
-lint: ## Run all linters (ruff + mypy + eslint)
+lint: ## Run all linters (ruff + mypy + eslint + form feedback)
 	cd backend && ruff check && mypy --config-file=pyproject.toml .
 	cd workers && ruff check && mypy --config-file=pyproject.toml .
 	cd frontend && npm run lint
+	node scripts/check-form-feedback.mjs
+
+check-form-feedback: ## Verify every mutation has a visible error path
+	node scripts/check-form-feedback.mjs
 
 lint-fix: ## Auto-fix lint issues where possible
 	cd backend && ruff check --fix && ruff format

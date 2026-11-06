@@ -6,6 +6,8 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { apiErrorMessage } from "@/api/apiErrors";
+import { useApiFormErrors } from "@/hooks/useApiFormErrors";
 import { toast } from "sonner";
 import { listGuardAgents } from "@/api/guard";
 import {
@@ -92,6 +94,7 @@ export default function HostProtect() {
   const [showIgnoredBySite, setShowIgnoredBySite] = useState<
     Record<string, boolean>
   >({});
+  const formErrs = useApiFormErrors();
 
   const sitesQ = useQuery({
     queryKey: ["host", activeOrgId, "sites"],
@@ -152,6 +155,8 @@ export default function HostProtect() {
   const createMut = useMutation({
     mutationFn: createHostSite,
     onSuccess: () => {
+      toast.success(t("hostCreatedToast"));
+      formErrs.clear();
       void qc.invalidateQueries({ queryKey: ["host"] });
       setName("");
       setRootPath("");
@@ -161,19 +166,21 @@ export default function HostProtect() {
       setWatchOnWrite(false);
       setOpen(false);
     },
-    onError: (err: { response?: { data?: { detail?: string } } }) => {
-      const detail = String(err.response?.data?.detail ?? "");
+    onError: (err: unknown) => {
+      const detail = formErrs.apply(err, t("createFail")).message;
       toast.error(
-        mapHostError(detail) === "limit"
-          ? t("limitReached")
-          : detail || t("createFail"),
+        mapHostError(detail) === "limit" ? t("limitReached") : detail,
       );
     },
   });
 
   const delMut = useMutation({
     mutationFn: deleteHostSite,
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["host"] }),
+    onSuccess: () => {
+      toast.success(t("hostDeletedToast"));
+      void qc.invalidateQueries({ queryKey: ["host"] });
+    },
+    onError: (err: unknown) => toast.error(apiErrorMessage(err, t("hostDeleteFail"))),
   });
 
   const intervalMut = useMutation({
@@ -185,6 +192,8 @@ export default function HostProtect() {
       scan_interval: "daily" | "hourly";
     }) => updateHostSite(id, { scan_interval }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["host"] }),
+    onError: (err: unknown) =>
+      toast.error(apiErrorMessage(err, t("hostIntervalFail"))),
   });
 
   const autoQuarantineMut = useMutation({
@@ -196,6 +205,8 @@ export default function HostProtect() {
       auto_quarantine: boolean;
     }) => updateHostSite(id, { auto_quarantine }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["host"] }),
+    onError: (err: unknown) =>
+      toast.error(apiErrorMessage(err, t("hostAutoQuarantineFail"))),
   });
 
   const watchMut = useMutation({
@@ -207,12 +218,16 @@ export default function HostProtect() {
       watch_on_write: boolean;
     }) => updateHostSite(id, { watch_on_write }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["host"] }),
+    onError: (err: unknown) =>
+      toast.error(apiErrorMessage(err, t("hostWatchFail"))),
   });
 
   const enabledMut = useMutation({
     mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
       updateHostSite(id, { enabled }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["host"] }),
+    onError: (err: unknown) =>
+      toast.error(apiErrorMessage(err, t("hostEnabledFail"))),
   });
 
   const scanMut = useMutation({
@@ -221,25 +236,41 @@ export default function HostProtect() {
       toast.success(t("scanEnqueued"));
       void qc.invalidateQueries({ queryKey: ["host"] });
     },
-    onError: (err: { response?: { data?: { detail?: string } } }) => {
-      toast.error(String(err.response?.data?.detail ?? t("scanFail")));
-    },
+    onError: (err: unknown) => toast.error(apiErrorMessage(err, t("scanFail"))),
   });
 
   const qMut = useMutation({
     mutationFn: quarantineHostHit,
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["host"] }),
+    onSuccess: () => {
+      toast.success(t("hostQuarantinedToast"));
+      void qc.invalidateQueries({ queryKey: ["host"] });
+    },
+    onError: (err: unknown) =>
+      toast.error(apiErrorMessage(err, t("hostQuarantineFail"))),
   });
   const rMut = useMutation({
     mutationFn: restoreHostHit,
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["host"] }),
+    onSuccess: () => {
+      toast.success(t("hostRestoredToast"));
+      void qc.invalidateQueries({ queryKey: ["host"] });
+    },
+    onError: (err: unknown) =>
+      toast.error(apiErrorMessage(err, t("hostRestoreFail"))),
   });
   const iMut = useMutation({
     mutationFn: ignoreHostHit,
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["host"] }),
+    onSuccess: () => {
+      toast.success(t("hostIgnoredToast"));
+      void qc.invalidateQueries({ queryKey: ["host"] });
+    },
+    onError: (err: unknown) =>
+      toast.error(apiErrorMessage(err, t("hostIgnoreFail"))),
   });
 
-  const openCreate = () => setOpen(true);
+  const openCreate = () => {
+    formErrs.clear();
+    setOpen(true);
+  };
 
   if (!activeOrgId) {
     return (
@@ -290,7 +321,10 @@ export default function HostProtect() {
             data-testid="host-add"
             className="min-h-11 sm:min-h-10"
             disabled={atCap || agents.length === 0}
-            onClick={() => setOpen((v) => !v)}
+            onClick={() => {
+              if (!open) formErrs.clear();
+              setOpen((v) => !v);
+            }}
           >
             {t("add")}
           </Button>
@@ -340,7 +374,10 @@ export default function HostProtect() {
 
       <HostAddSiteSheet
         open={open}
-        onOpenChange={setOpen}
+        onOpenChange={(next) => {
+          if (!next) formErrs.clear();
+          setOpen(next);
+        }}
         name={name}
         onNameChange={setName}
         rootPath={rootPath}
@@ -357,6 +394,9 @@ export default function HostProtect() {
         watchOnWrite={watchOnWrite}
         onWatchOnWriteChange={setWatchOnWrite}
         saving={createMut.isPending}
+        fieldErrors={formErrs.fieldErrors}
+        formError={formErrs.formError}
+        clearField={formErrs.clearField}
         onSave={() =>
           createMut.mutate({
             name: name.trim(),

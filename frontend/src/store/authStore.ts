@@ -5,8 +5,9 @@ import * as orgsApi from "../api/orgs";
 import type { OrgMembershipSummary, OrgRole } from "../api/orgs";
 import { isAxiosError } from "axios";
 import i18n from "@/i18n";
+import { apiErrorMessage } from "@/api/apiErrors";
 
-function extractError(err: unknown, fallback: string): string {
+function authErrorMessage(err: unknown, fallback: string): string {
   if (isAxiosError(err)) {
     if (err.response?.status === 429) {
       const retryAfter = err.response.headers?.["retry-after"];
@@ -16,9 +17,8 @@ function extractError(err: unknown, fallback: string): string {
       }
       return i18n.t("auth:errTooManyAttempts");
     }
-    if (err.response?.data?.detail) {
-      return err.response.data.detail;
-    }
+    const fromApi = apiErrorMessage(err, "");
+    if (fromApi) return fromApi;
   }
   return err instanceof Error ? err.message : fallback;
 }
@@ -196,7 +196,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       }
       return true;
     } catch (err) {
-      const message = extractError(err, i18n.t("auth:errSwitchOrg"));
+      const message = authErrorMessage(err, i18n.t("auth:errSwitchOrg"));
       set({ error: message });
       return false;
     }
@@ -218,7 +218,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ isLoading: false });
       return true;
     } catch (err) {
-      const message = extractError(err, i18n.t("auth:errLogin"));
+      const message = authErrorMessage(err, i18n.t("auth:errLogin"));
       set({ error: message, isLoading: false });
       return false;
     }
@@ -240,7 +240,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ isLoading: false });
       return true;
     } catch (err) {
-      const message = extractError(err, i18n.t("auth:errLogin"));
+      const message = authErrorMessage(err, i18n.t("auth:errLogin"));
       set({ error: message, isLoading: false });
       return false;
     }
@@ -257,7 +257,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         message: res.message ?? null,
       };
     } catch (err) {
-      const message = extractError(err, i18n.t("auth:errRegister"));
+      const message = authErrorMessage(err, i18n.t("auth:errRegister"));
       set({ error: message, isLoading: false });
       return { ok: false, emailSent: null, message: null };
     }
@@ -294,7 +294,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       }
       return true;
     } catch (err) {
-      const message = extractError(err, i18n.t("auth:errVerifyEmail"));
+      const message = authErrorMessage(err, i18n.t("auth:errVerifyEmail"));
       set({ error: message, isLoading: false });
       return false;
     }
@@ -311,7 +311,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         message: res.message ?? null,
       };
     } catch (err) {
-      const message = extractError(err, i18n.t("auth:errResendVerification"));
+      const message = authErrorMessage(err, i18n.t("auth:errResendVerification"));
       set({ error: message, isLoading: false });
       return { ok: false, emailSent: null, message: null };
     }
@@ -329,7 +329,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       }
       return true;
     } catch (err) {
-      const message = extractError(err, i18n.t("auth:errUpdateProfile"));
+      const message = authErrorMessage(err, i18n.t("auth:errUpdateProfile"));
       set({ error: message, isLoading: false });
       return false;
     }
@@ -346,7 +346,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ isLoading: false, error: null });
       return true;
     } catch (err) {
-      const message = extractError(err, i18n.t("auth:changePasswordFailed"));
+      const message = authErrorMessage(err, i18n.t("auth:changePasswordFailed"));
       set({ error: message, isLoading: false });
       return false;
     }
@@ -359,7 +359,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ isLoading: false });
       return true;
     } catch (err) {
-      const message = extractError(err, i18n.t("auth:errForgotPassword"));
+      const message = authErrorMessage(err, i18n.t("auth:errForgotPassword"));
       set({ error: message, isLoading: false });
       return false;
     }
@@ -372,7 +372,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ isLoading: false, error: null });
       return true;
     } catch (err) {
-      const message = extractError(err, i18n.t("auth:errResetPassword"));
+      const message = authErrorMessage(err, i18n.t("auth:errResetPassword"));
       set({ error: message, isLoading: false });
       return false;
     }

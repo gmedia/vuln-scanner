@@ -3,7 +3,9 @@ import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { isAxiosError } from "axios";
+import { toast } from "sonner";
 import { Activity, ArrowLeft, TrendingUp, Siren } from "lucide-react";
+import { apiErrorMessage } from "@/api/apiErrors";
 import {
   getMonitor,
   getMonitorStats,
@@ -384,10 +386,14 @@ export default function UptimeDetail() {
 
   const pauseMut = useMutation({
     mutationFn: (monitorId: string) => pauseMonitor(monitorId),
-    onSuccess: () => {
+    onSuccess: (monitor) => {
+      toast.success(
+        t(monitor.enabled ? "monitorResumedToast" : "monitorPausedToast"),
+      );
       void qc.invalidateQueries({ queryKey: ["uptime-monitor", id] });
       void qc.invalidateQueries({ queryKey: ["uptime"] });
     },
+    onError: (err) => toast.error(apiErrorMessage(err, t("monitorPauseFail"))),
   });
 
   const notFound =

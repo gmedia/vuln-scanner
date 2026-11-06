@@ -37,5 +37,6 @@
   "hourLabel24": "Jam (24 jam)",
   "minuteLabel": "Menit",
   "dateTimePlaceholder": "Pilih tanggal & jam",
-  "clear": "Hapus"
+  "clear": "Hapus",
+  "formErrorTitle": "Periksa kembali formulir"
 }

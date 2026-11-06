@@ -82,6 +82,7 @@ export function useScanDiff(jobId: string | null, enabled = true) {
 
 export function useStartIpScan() {
   const queryClient = useQueryClient();
+  // form-feedback: allow call-site onError (IpScanForm passes mutate options).
   return useMutation({
     mutationFn: ({ target, ports }: { target: string; ports?: string }) =>
       startIpScan(target, ports),
@@ -93,6 +94,7 @@ export function useStartIpScan() {
 
 export function useStartDomainScan() {
   const queryClient = useQueryClient();
+  // form-feedback: allow call-site onError (DomainScanForm passes mutate options).
   return useMutation({
     mutationFn: ({ domain }: { domain: string }) => startDomainScan(domain),
     onSuccess: () => {
@@ -103,6 +105,7 @@ export function useStartDomainScan() {
 
 export function useStartMobileScan() {
   const queryClient = useQueryClient();
+  // form-feedback: allow call-site onError (MobileUpload passes mutate options).
   return useMutation({
     mutationFn: ({
       file,

@@ -348,7 +348,7 @@ describe("Login", () => {
     });
     await waitFor(() => {
       expect(
-        screen.getByText("Email verifikasi telah dikirim."),
+        screen.getByText("Verify email sent. Check that inbox before you scan."),
       ).toBeInTheDocument();
     });
   });

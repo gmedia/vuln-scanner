@@ -18,6 +18,8 @@ import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { useTranslation } from "react-i18next";
 import { captureInviteFromSearch, postAuthPath } from "@/lib/inviteToken";
 import { TONE_TEXT } from "@/lib/toneColors";
+import { apiFieldErrors } from "@/api/apiErrors";
+import { FieldError } from "@/components/patterns/FormFeedback";
 
 function Register() {
   const navigate = useNavigate();
@@ -32,6 +34,7 @@ function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState(false);
   const [emailSent, setEmailSent] = useState<boolean | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -63,9 +66,19 @@ function Register() {
     };
   }, [clearError]);
 
+  const clearField = (field: string) => {
+    setFieldErrors((prev) => {
+      if (!(field in prev)) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setValidationError(null);
+    setFieldErrors({});
 
     if (password.length < 8) {
       setValidationError(t("passwordMin"));
@@ -77,13 +90,23 @@ function Register() {
     }
 
     setIsSubmitting(true);
-    const result = await register(email, password, confirmPassword);
-    if (!mountedRef.current) return;
-    if (result.ok) {
-      setEmailSent(result.emailSent);
-      setStatusMessage(result.message);
-      setSuccess(true);
-    } else {
+    try {
+      const result = await register(email, password, confirmPassword);
+      if (!mountedRef.current) return;
+      if (result.ok) {
+        setEmailSent(result.emailSent);
+        setStatusMessage(
+          result.emailSent === false
+            ? t("registerEmailFailed")
+            : t("registerOkCheckEmail"),
+        );
+        setSuccess(true);
+      } else {
+        setIsSubmitting(false);
+      }
+    } catch (err) {
+      if (!mountedRef.current) return;
+      setFieldErrors(apiFieldErrors(err));
       setIsSubmitting(false);
     }
   };
@@ -91,18 +114,25 @@ function Register() {
   const handleResend = async () => {
     setResendFeedback(null);
     setIsResending(true);
-    const result = await resendVerification(email);
-    if (!mountedRef.current) return;
-    setIsResending(false);
-    if (result.ok) {
-      setEmailSent(result.emailSent);
-      setStatusMessage(result.message);
-      if (result.emailSent === false) {
-        setResendFeedback(result.message || t("verifySendFailed"));
+    try {
+      const result = await resendVerification(email);
+      if (!mountedRef.current) return;
+      setIsResending(false);
+      if (result.ok) {
+        setEmailSent(result.emailSent);
+        if (result.emailSent === false) {
+          setResendFeedback(t("verifySendFailed"));
+        } else {
+          setStatusMessage(t("registerOkCheckEmail"));
+          setResendFeedback(t("verifySent"));
+        }
       } else {
-        setResendFeedback(result.message || t("verifySent"));
+        setResendFeedback(t("resendFailed"));
       }
-    } else {
+    } catch (err) {
+      if (!mountedRef.current) return;
+      setFieldErrors(apiFieldErrors(err));
+      setIsResending(false);
       setResendFeedback(t("resendFailed"));
     }
   };
@@ -178,10 +208,21 @@ function Register() {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  clearField("email");
+                }}
                 placeholder={t("emailPlaceholder")}
                 required
                 disabled={isSubmitting}
+                aria-invalid={Boolean(fieldErrors.email)}
+                aria-describedby={
+                  fieldErrors.email ? "register-email-error" : undefined
+                }
+              />
+              <FieldError
+                id="register-email-error"
+                message={fieldErrors.email}
               />
             </div>
             <div className="flex min-w-0 flex-col gap-1.5">
@@ -191,11 +232,18 @@ function Register() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    clearField("password");
+                  }}
                   placeholder="••••••••"
                   required
                   disabled={isSubmitting}
                   className="pr-10"
+                  aria-invalid={Boolean(fieldErrors.password)}
+                  aria-describedby={
+                    fieldErrors.password ? "register-password-error" : undefined
+                  }
                 />
                 <button
                   type="button"
@@ -213,6 +261,10 @@ function Register() {
                   )}
                 </button>
               </div>
+              <FieldError
+                id="register-password-error"
+                message={fieldErrors.password}
+              />
             </div>
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="confirmPassword">{tc("confirmPassword")}</Label>
@@ -221,11 +273,20 @@ function Register() {
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    clearField("confirm_password");
+                  }}
                   placeholder="••••••••"
                   required
                   disabled={isSubmitting}
                   className="pr-10"
+                  aria-invalid={Boolean(fieldErrors.confirm_password)}
+                  aria-describedby={
+                    fieldErrors.confirm_password
+                      ? "register-confirm-password-error"
+                      : undefined
+                  }
                 />
                 <button
                   type="button"
@@ -245,6 +306,10 @@ function Register() {
                   )}
                 </button>
               </div>
+              <FieldError
+                id="register-confirm-password-error"
+                message={fieldErrors.confirm_password}
+              />
             </div>
             <Button
               type="submit"

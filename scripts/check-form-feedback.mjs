@@ -1,0 +1,187 @@
+#!/usr/bin/env node
+// Form-feedback gate: a mutation without an error path is a silent failure.
+//
+// Rules (see docs/specs/form-feedback.md):
+//   1. Every `useMutation({...})` must declare `onError`, or carry an explicit
+//      `// form-feedback: allow <reason>` comment (call-site onError, etc.).
+//   2. No component may read `*.detail` itself; use `apiErrorMessage` /
+//      `extractApiError` from `src/api/apiErrors.ts`.
+//   3. No `String(...detail...)` conversion (renders `[object Object]` on 422).
+//
+// Dependency-free on purpose: it runs in CI before any npm install.
+// Usage: node scripts/check-form-feedback.mjs
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const ROOT = fileURLToPath(new URL("..", import.meta.url));
+const SRC = join(ROOT, "frontend", "src");
+const SKIP = [/\/test\//, /\.test\./, /\/components\/ui\//, /\/e2e\//];
+const ALLOW_MARK = "form-feedback: allow";
+
+/** @typedef {{ file: string; line: number; rule: string; message: string }} Finding */
+/** @type {Finding[]} */
+const findings = [];
+
+/**
+ * Replace comments and string/template bodies with spaces, keeping offsets and
+ * newlines. Brace/paren matching can then ignore punctuation inside literals.
+ * @param {string} text
+ */
+function mask(text) {
+  let out = "";
+  let i = 0;
+  const n = text.length;
+  while (i < n) {
+    const ch = text[i];
+    const next = text[i + 1];
+    if (ch === "/" && next === "/") {
+      while (i < n && text[i] !== "\n") {
+        out += " ";
+        i += 1;
+      }
+      continue;
+    }
+    if (ch === "/" && next === "*") {
+      out += "  ";
+      i += 2;
+      while (i < n && !(text[i] === "*" && text[i + 1] === "/")) {
+        out += text[i] === "\n" ? "\n" : " ";
+        i += 1;
+      }
+      if (i < n) {
+        out += "  ";
+        i += 2;
+      }
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === "`") {
+      const quote = ch;
+      out += " ";
+      i += 1;
+      while (i < n) {
+        if (text[i] === "\\") {
+          out += "  ";
+          i += 2;
+          continue;
+        }
+        if (text[i] === quote) {
+          out += " ";
+          i += 1;
+          break;
+        }
+        out += text[i] === "\n" ? "\n" : " ";
+        i += 1;
+      }
+      continue;
+    }
+    out += ch;
+    i += 1;
+  }
+  return out;
+}
+
+/** @param {string} text @param {number} index */
+function lineAt(text, index) {
+  let line = 1;
+  for (let i = 0; i < index; i += 1) if (text[i] === "\n") line += 1;
+  return line;
+}
+
+/** @param {string} masked @param {number} openIndex */
+function matchingParen(masked, openIndex) {
+  let depth = 0;
+  for (let i = openIndex; i < masked.length; i += 1) {
+    if (masked[i] === "(") depth += 1;
+    else if (masked[i] === ")") {
+      depth -= 1;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+/** @param {string} text @param {number} index */
+function allowComment(text, index) {
+  const start = Math.max(0, index - 400);
+  return text.slice(start, index).includes(ALLOW_MARK);
+}
+
+/** @param {string} full @param {string} rel */
+function checkFile(full, rel) {
+  const text = readFileSync(full, "utf8");
+  if (rel === "frontend/src/api/apiErrors.ts") return;
+  const masked = mask(text);
+
+  const mutation = /\buseMutation\s*(?:<[^()]*>)?\s*\(/g;
+  let match;
+  while ((match = mutation.exec(masked)) !== null) {
+    const open = masked.indexOf("(", match.index);
+    const close = matchingParen(masked, open);
+    if (close < 0) continue;
+    const body = masked.slice(open + 1, close);
+    if (/\bonError\s*:/.test(body)) continue;
+    if (allowComment(text, match.index)) continue;
+    findings.push({
+      file: rel,
+      line: lineAt(text, match.index),
+      rule: "mutation-without-onError",
+      message:
+        "useMutation has no onError. Add apiErrorMessage()/useApiFormErrors().apply(), or `// form-feedback: allow <reason>`.",
+    });
+  }
+
+  const stringDetail = /\bString\s*\([^)]*\.detail\b/g;
+  while ((match = stringDetail.exec(masked)) !== null) {
+    findings.push({
+      file: rel,
+      line: lineAt(text, match.index),
+      rule: "string-detail",
+      message:
+        "String(...detail...) renders `[object Object]` for a 422. Use apiErrorMessage(err, fallback).",
+    });
+  }
+
+  const localExtractor =
+    /\b(?:function|const|let|var)\s+(apiDetail|detailFromBody|extractError)\b/g;
+  while ((match = localExtractor.exec(masked)) !== null) {
+    if (allowComment(text, match.index)) continue;
+    findings.push({
+      file: rel,
+      line: lineAt(text, match.index),
+      rule: "local-error-extractor",
+      message: `${match[1]}() is a local error reader. Import apiErrorMessage/extractApiError from @/api/apiErrors instead.`,
+    });
+  }
+}
+
+function walk(dir) {
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) {
+      walk(full);
+      continue;
+    }
+    if (!/\.(ts|tsx)$/.test(entry)) continue;
+    const rel = relative(ROOT, full);
+    if (SKIP.some((re) => re.test(rel))) continue;
+    checkFile(full, rel);
+  }
+}
+
+walk(SRC);
+
+if (findings.length > 0) {
+  console.error(`form-feedback: ${findings.length} violation(s)\n`);
+  for (const finding of findings) {
+    console.error(
+      `  ${finding.file}:${finding.line}  [${finding.rule}] ${finding.message}`,
+    );
+  }
+  console.error(
+    "\nContract: docs/specs/form-feedback.md. Never ship a write path without a visible outcome.",
+  );
+  process.exit(1);
+}
+
+console.log("form-feedback: ok");

@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { apiErrorMessage } from "@/api/apiErrors";
 
 export function mapUptimeError(message: string): string {
   if (/seat limit/i.test(message)) return "limit";
@@ -33,21 +34,10 @@ export function explainUptimeError(
 }
 
 export function toastUptimeApiError(
-  err: { readonly response?: { readonly data?: { readonly detail?: unknown } } },
+  err: unknown,
   limitMessage: string,
 ): void {
-  const raw = err.response?.data?.detail;
-  const detail =
-    typeof raw === "string"
-      ? raw
-      : Array.isArray(raw)
-        ? raw
-            .map((item) =>
-              typeof item === "string"
-                ? item
-                : String((item as { msg?: string }).msg ?? item),
-            )
-            .join("; ")
-        : String(raw ?? "");
+  const detail = apiErrorMessage(err, "");
+  if (!detail) return;
   toast.error(mapUptimeError(detail) === "limit" ? limitMessage : detail);
 }

@@ -14,12 +14,15 @@ import {
   AuthStatusIcon,
 } from "@/components/auth/AuthCard";
 import { useTranslation } from "react-i18next";
+import { apiFieldErrors } from "@/api/apiErrors";
+import { FieldError } from "@/components/patterns/FormFeedback";
 
 function ForgotPassword() {
   const { t } = useTranslation("auth");
   const { t: tc } = useTranslation("common");
   const { forgotPassword, error, clearError } = useAuthStore();
   const [email, setEmail] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const { cooldown, startCooldown } = useRateLimitCooldown();
@@ -32,19 +35,25 @@ function ForgotPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFieldErrors({});
     setIsSubmitting(true);
-    const ok = await forgotPassword(email);
-    if (ok) {
-      setSuccess(true);
-    } else {
-      setIsSubmitting(false);
-      const errMsg = useAuthStore.getState().error;
-      if (errMsg) {
-        const match = errMsg.match(/wait (\d+) seconds/);
-        if (match) {
-          startCooldown(parseInt(match[1], 10));
+    try {
+      const ok = await forgotPassword(email);
+      if (ok) {
+        setSuccess(true);
+      } else {
+        setIsSubmitting(false);
+        const errMsg = useAuthStore.getState().error;
+        if (errMsg) {
+          const match = errMsg.match(/wait (\d+) seconds/);
+          if (match) {
+            startCooldown(parseInt(match[1], 10));
+          }
         }
       }
+    } catch (err) {
+      setFieldErrors(apiFieldErrors(err));
+      setIsSubmitting(false);
     }
   };
 
@@ -91,11 +100,27 @@ function ForgotPassword() {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setFieldErrors((prev) => {
+                    if (!("email" in prev)) return prev;
+                    const next = { ...prev };
+                    delete next.email;
+                    return next;
+                  });
+                }}
                 placeholder={t("signupEmailPlaceholder")}
                 className="placeholder:text-muted-foreground/55"
                 required
                 disabled={isSubmitting}
+                aria-invalid={Boolean(fieldErrors.email)}
+                aria-describedby={
+                  fieldErrors.email ? "forgot-email-error" : undefined
+                }
+              />
+              <FieldError
+                id="forgot-email-error"
+                message={fieldErrors.email}
               />
             </div>
             <p className="text-xs text-muted-foreground">{t("checkSpam")}</p>

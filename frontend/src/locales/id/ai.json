@@ -50,5 +50,9 @@
   "sourceSdk": "SDK",
   "sourceTrial": "Uji",
   "ctxMeta": "{{ctx}} ctx · {{cap}} token maks",
-  "fxStaleNote": "IDR memakai kurs harian yang lebih lama."
+  "fxStaleNote": "IDR memakai kurs harian yang lebih lama.",
+  "keyCreateFail": "Gagal membuat kunci.",
+  "keyRevokeFail": "Gagal mencabut kunci.",
+  "keyCreatedToast": "Kunci dibuat.",
+  "keyRevokedToast": "Kunci dicabut."
 }

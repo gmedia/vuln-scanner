@@ -129,5 +129,18 @@
   "overviewFilesSuffix": "file",
   "overviewSitesHint": "SKU {{sku}}",
   "kpiHelper": "Helper",
-  "addSheetHint": "Hanya folder situs yang dicek — bukan seluruh disk."
+  "addSheetHint": "Hanya folder situs yang dicek — bukan seluruh disk.",
+  "hostCreatedToast": "Situs ditambahkan.",
+  "hostDeletedToast": "Situs dihapus.",
+  "hostQuarantinedToast": "Karantina diantrekan ke helper.",
+  "hostRestoredToast": "Pemulihan diantrekan ke helper.",
+  "hostIgnoredToast": "File diabaikan.",
+  "hostDeleteFail": "Gagal menghapus situs",
+  "hostIntervalFail": "Gagal memperbarui jadwal scan",
+  "hostAutoQuarantineFail": "Gagal memperbarui karantina otomatis",
+  "hostWatchFail": "Gagal memperbarui cek saat file ditulis",
+  "hostEnabledFail": "Gagal memperbarui jadwal otomatis",
+  "hostQuarantineFail": "Gagal mengantrekan karantina",
+  "hostRestoreFail": "Gagal mengantrekan pemulihan",
+  "hostIgnoreFail": "Gagal mengabaikan file"
 }

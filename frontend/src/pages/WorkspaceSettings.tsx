@@ -85,7 +85,6 @@ import {
   type OrgInvoiceItem,
   type OrgMember,
 } from "@/api/orgs";
-import { type ApiError } from "@/lib/utils";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { WorkspaceInvoiceCard } from "@/components/invoice/WorkspaceInvoiceCard";
@@ -100,14 +99,10 @@ import {
   readInviteToken,
 } from "@/lib/inviteToken";
 import { RAILED_ROW_CLASS } from "@/components/patterns/RailedShell";
+import { FieldError, FormAlert } from "@/components/patterns/FormFeedback";
+import { useApiFormErrors } from "@/hooks/useApiFormErrors";
+import { apiErrorMessage } from "@/api/apiErrors";
 
-function apiDetail(err: unknown, fallback: string): string {
-  if (err && typeof err === "object" && "response" in err) {
-    const detail = (err as ApiError).response?.data?.detail;
-    if (typeof detail === "string" && detail.trim()) return detail;
-  }
-  return fallback;
-}
 
 function roleBadgeVariant(
   role: string,
@@ -190,11 +185,11 @@ function WorkspaceSettings() {
 
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<InviteRole>("member");
-  const [formError, setFormError] = useState<string | null>(null);
+  const inviteForm = useApiFormErrors();
 
   const [newOrgName, setNewOrgName] = useState("");
   const [newOrgSlug, setNewOrgSlug] = useState("");
-  const [createError, setCreateError] = useState<string | null>(null);
+  const orgForm = useApiFormErrors();
 
   const [acceptError, setAcceptError] = useState<string | null>(null);
   const [copiedInviteUrl, setCopiedInviteUrl] = useState<string | null>(null);
@@ -227,7 +222,7 @@ function WorkspaceSettings() {
         role: inviteRole,
       }),
     onSuccess: (created) => {
-      setFormError(null);
+      inviteForm.clear();
       toast.success(t("inviteSent", { email: inviteEmail.trim() }));
       setInviteEmail("");
       if (created.token) {
@@ -238,7 +233,7 @@ function WorkspaceSettings() {
       void qc.invalidateQueries({ queryKey: ["org-invites", orgId] });
     },
     onError: (err: unknown) => {
-      setFormError(apiDetail(err, t("inviteFail")));
+      inviteForm.apply(err, t("inviteFail"));
     },
   });
 
@@ -249,7 +244,7 @@ function WorkspaceSettings() {
       void qc.invalidateQueries({ queryKey: ["org-invites", orgId] });
     },
     onError: (err: unknown) => {
-      setFormError(apiDetail(err, t("revokeFail")));
+      toast.error(apiErrorMessage(err, t("revokeFail")));
     },
   });
 
@@ -260,7 +255,7 @@ function WorkspaceSettings() {
         slug: newOrgSlug.trim() || undefined,
       }),
     onSuccess: async (org) => {
-      setCreateError(null);
+      orgForm.clear();
       setNewOrgName("");
       setNewOrgSlug("");
       toast.success(t("orgCreated"));
@@ -269,7 +264,7 @@ function WorkspaceSettings() {
       void qc.invalidateQueries();
     },
     onError: (err: unknown) => {
-      setCreateError(apiDetail(err, t("orgCreateFail")));
+      orgForm.apply(err, t("orgCreateFail"));
     },
   });
 
@@ -277,7 +272,7 @@ function WorkspaceSettings() {
     mutationFn: (token: string) => acceptInvite(token),
     onSuccess: async (res) => {
       setAcceptError(null);
-      toast.success(res.message ?? t("acceptSuccess"));
+      toast.success(t("acceptSuccess"));
       clearInviteToken();
       setSearchParams({});
       await loadOrganizations();
@@ -287,19 +282,20 @@ function WorkspaceSettings() {
       void qc.invalidateQueries();
     },
     onError: (err: unknown) => {
-      setAcceptError(apiDetail(err, t("acceptFail")));
+      setAcceptError(apiErrorMessage(err, t("acceptFail")));
     },
   });
 
   function onInviteSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setFormError(null);
+    inviteForm.clear();
     if (!inviteEmail.trim()) {
-      setFormError(t("emailRequired"));
+      inviteForm.setFieldErrors({ email: t("emailRequired") });
+      inviteForm.setFormError(t("emailRequired"));
       return;
     }
     if (!orgId) {
-      setFormError(t("noActiveWorkspace"));
+      inviteForm.setFormError(t("noActiveWorkspace"));
       return;
     }
     inviteMut.mutate();
@@ -307,12 +303,31 @@ function WorkspaceSettings() {
 
   function onCreateOrg(e: React.FormEvent) {
     e.preventDefault();
-    setCreateError(null);
+    orgForm.clear();
     if (!newOrgName.trim()) {
-      setCreateError(t("orgNameRequired"));
+      orgForm.setFieldErrors({ name: t("orgNameRequired") });
+      orgForm.setFormError(t("orgNameRequired"));
       return;
     }
     createOrgMut.mutate();
+  }
+
+  function onInviteEmailChange(value: string) {
+    setInviteEmail(value);
+    inviteForm.clearField("email");
+    inviteForm.setFormError(null);
+  }
+
+  function onOrgNameChange(value: string) {
+    setNewOrgName(value);
+    orgForm.clearField("name");
+    orgForm.setFormError(null);
+  }
+
+  function onOrgSlugChange(value: string) {
+    setNewOrgSlug(value);
+    orgForm.clearField("slug");
+    orgForm.setFormError(null);
   }
 
   const memberCount = membersQuery.data?.length;
@@ -381,7 +396,10 @@ function WorkspaceSettings() {
               type="button"
               data-testid="accept-invite-btn"
               disabled={acceptMut.isPending}
-              onClick={() => acceptMut.mutate(inviteToken)}
+              onClick={() => {
+                setAcceptError(null);
+                acceptMut.mutate(inviteToken);
+              }}
             >
               {acceptMut.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -396,10 +414,11 @@ function WorkspaceSettings() {
         <CreateOrgCard
           name={newOrgName}
           slug={newOrgSlug}
-          error={createError}
+          formError={orgForm.formError}
+          fieldErrors={orgForm.fieldErrors}
           pending={createOrgMut.isPending}
-          onName={setNewOrgName}
-          onSlug={setNewOrgSlug}
+          onName={onOrgNameChange}
+          onSlug={onOrgSlugChange}
           onSubmit={onCreateOrg}
         />
       )}
@@ -525,7 +544,9 @@ function WorkspaceSettings() {
         {canManage && orgId ? (
           <WorkspaceShell
             tone={formTone({
-              error: Boolean(formError),
+              error:
+                Boolean(inviteForm.formError) ||
+                Object.keys(inviteForm.fieldErrors).length > 0,
               pending: inviteMut.isPending,
             })}
             testid="invite-form-card"
@@ -537,6 +558,7 @@ function WorkspaceSettings() {
               hint={t("inviteDescription")}
             />
             <WorkspaceShellBody className="space-y-3">
+              <FormAlert message={inviteForm.formError} />
               {copiedInviteUrl && (
                 <div
                   className="space-y-2 rounded-md border border-border bg-muted/40 p-3"
@@ -576,9 +598,19 @@ function WorkspaceSettings() {
                       type="email"
                       data-testid="invite-email"
                       value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
+                      onChange={(e) => onInviteEmailChange(e.target.value)}
                       placeholder={t("emailPlaceholder")}
                       required
+                      aria-invalid={Boolean(inviteForm.fieldErrors.email)}
+                      aria-describedby={
+                        inviteForm.fieldErrors.email
+                          ? "invite-email-error"
+                          : undefined
+                      }
+                    />
+                    <FieldError
+                      id="invite-email-error"
+                      message={inviteForm.fieldErrors.email}
                     />
                   </div>
                   <div className="flex min-w-0 flex-col gap-1.5">
@@ -606,12 +638,6 @@ function WorkspaceSettings() {
                     </Select>
                   </div>
                 </div>
-                {formError && (
-                  <WorkspaceNotice tone="danger" role="alert">
-                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>{formError}</span>
-                  </WorkspaceNotice>
-                )}
                 {basicSeatBlocked && (
                   <div data-testid="basic-seat-hint">
                     <WorkspaceNotice tone="warn" role="status">
@@ -798,10 +824,11 @@ function WorkspaceSettings() {
         <CreateOrgCard
           name={newOrgName}
           slug={newOrgSlug}
-          error={createError}
+          formError={orgForm.formError}
+          fieldErrors={orgForm.fieldErrors}
           pending={createOrgMut.isPending}
-          onName={setNewOrgName}
-          onSlug={setNewOrgSlug}
+          onName={onOrgNameChange}
+          onSlug={onOrgSlugChange}
           onSubmit={onCreateOrg}
         />
       ) : null}
@@ -821,7 +848,8 @@ function WorkspaceSettings() {
 function CreateOrgCard({
   name,
   slug,
-  error,
+  formError,
+  fieldErrors,
   pending,
   onName,
   onSlug,
@@ -829,7 +857,8 @@ function CreateOrgCard({
 }: {
   name: string;
   slug: string;
-  error: string | null;
+  formError: string | null;
+  fieldErrors: Record<string, string>;
   pending: boolean;
   onName: (v: string) => void;
   onSlug: (v: string) => void;
@@ -838,7 +867,10 @@ function CreateOrgCard({
   const { t } = useTranslation("workspace");
   return (
     <WorkspaceShell
-      tone={formTone({ error: Boolean(error), pending })}
+      tone={formTone({
+        error: Boolean(formError) || Object.keys(fieldErrors).length > 0,
+        pending,
+      })}
       testid="create-org-card"
     >
       <WorkspaceShellHead
@@ -846,7 +878,8 @@ function CreateOrgCard({
         title={t("createOrgTitle")}
         hint={t("createOrgDescription")}
       />
-      <WorkspaceShellBody>
+      <WorkspaceShellBody className="space-y-3">
+        <FormAlert message={formError} />
         <form onSubmit={onSubmit} className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="flex min-w-0 flex-col gap-1.5">
@@ -857,7 +890,12 @@ function CreateOrgCard({
                 value={name}
                 onChange={(e) => onName(e.target.value)}
                 placeholder={t("orgNamePlaceholder")}
+                aria-invalid={Boolean(fieldErrors.name)}
+                aria-describedby={
+                  fieldErrors.name ? "org-name-error" : undefined
+                }
               />
+              <FieldError id="org-name-error" message={fieldErrors.name} />
             </div>
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="org-slug">{t("orgSlug")}</Label>
@@ -867,15 +905,14 @@ function CreateOrgCard({
                 value={slug}
                 onChange={(e) => onSlug(e.target.value)}
                 placeholder={t("orgSlugPlaceholder")}
+                aria-invalid={Boolean(fieldErrors.slug)}
+                aria-describedby={
+                  fieldErrors.slug ? "org-slug-error" : undefined
+                }
               />
+              <FieldError id="org-slug-error" message={fieldErrors.slug} />
             </div>
           </div>
-          {error && (
-            <WorkspaceNotice tone="danger" role="alert">
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <span>{error}</span>
-            </WorkspaceNotice>
-          )}
           <Button
             type="submit"
             size="lg"

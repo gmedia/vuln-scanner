@@ -1095,6 +1095,16 @@ jobs:
       - name: Check the product registry matches the sitemap
         run: node scripts/check-public-registry-sync.mjs
 
+  form-feedback:
+    name: form-feedback
+    needs: [changes]
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.skip_tests }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check every mutation has a visible error path
+        run: node scripts/check-form-feedback.mjs
+
   ci-ok:
     name: ci-ok
     runs-on: ubuntu-latest
@@ -1120,6 +1130,7 @@ jobs:
       - deps-audit-python
       - public-surface-sync
       - nginx-headers
+      - form-feedback
     if: ${{ always() && !cancelled() }}
     steps:
       - name: Fail if any required job failed

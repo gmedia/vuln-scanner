@@ -28,6 +28,8 @@ import { AiUsagePanel } from "@/components/ai/AiUsagePanel";
 import { AiWalletPanel } from "@/components/ai/AiWalletPanel";
 import { useAuthStore } from "@/store/authStore";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { apiErrorMessage } from "@/api/apiErrors";
 
 const AI_TABS = ["wallet", "keys", "usage", "catalog"] as const;
 type AiTab = (typeof AI_TABS)[number];
@@ -90,12 +92,18 @@ export default function Ai() {
     mutationFn: () => createAiKey(keyName.trim() || "sdk"),
     onSuccess: (row) => {
       setOnceKey(row.key ?? null);
+      toast.success(t("keyCreatedToast"));
       void qc.invalidateQueries({ queryKey: ["ai-keys"] });
     },
+    onError: (err) => toast.error(apiErrorMessage(err, t("keyCreateFail"))),
   });
   const revokeMut = useMutation({
     mutationFn: (id: string) => revokeAiKey(id),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["ai-keys"] }),
+    onSuccess: () => {
+      toast.success(t("keyRevokedToast"));
+      void qc.invalidateQueries({ queryKey: ["ai-keys"] });
+    },
+    onError: (err) => toast.error(apiErrorMessage(err, t("keyRevokeFail"))),
   });
 
   const activeKeys = (keysQ.data?.items ?? []).filter((k) => k.is_active).length;

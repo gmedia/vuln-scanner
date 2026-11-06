@@ -14,6 +14,8 @@ import {
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { useTranslation } from "react-i18next";
 import { captureInviteFromSearch, postAuthPath } from "@/lib/inviteToken";
+import { apiFieldErrors } from "@/api/apiErrors";
+import { FieldError } from "@/components/patterns/FormFeedback";
 
 function isUnverifiedError(message: string | null): boolean {
   if (!message) return false;
@@ -40,6 +42,7 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendFeedback, setResendFeedback] = useState<string | null>(null);
@@ -63,11 +66,17 @@ function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setResendFeedback(null);
+    setFieldErrors({});
     setIsSubmitting(true);
-    const success = await login(email, password);
-    if (success) {
-      navigate(safeNext ?? postAuthPath());
-    } else {
+    try {
+      const success = await login(email, password);
+      if (success) {
+        navigate(safeNext ?? postAuthPath());
+      } else {
+        setIsSubmitting(false);
+      }
+    } catch (err) {
+      setFieldErrors(apiFieldErrors(err));
       setIsSubmitting(false);
     }
   };
@@ -76,15 +85,21 @@ function Login() {
     if (!email) return;
     setResendFeedback(null);
     setIsResending(true);
-    const result = await resendVerification(email);
-    setIsResending(false);
-    if (result.ok) {
-      if (result.emailSent === false) {
-        setResendFeedback(result.message || t("verifySendFailed"));
+    try {
+      const result = await resendVerification(email);
+      setIsResending(false);
+      if (result.ok) {
+        setResendFeedback(
+          result.emailSent === false
+            ? t("verifySendFailed")
+            : t("verifySent"),
+        );
       } else {
-        setResendFeedback(result.message || t("verifySent"));
+        setResendFeedback(t("resendFailed"));
       }
-    } else {
+    } catch (err) {
+      setFieldErrors(apiFieldErrors(err));
+      setIsResending(false);
       setResendFeedback(t("resendFailed"));
     }
   };
@@ -113,11 +128,24 @@ function Login() {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setFieldErrors((prev) => {
+                    if (!("email" in prev)) return prev;
+                    const next = { ...prev };
+                    delete next.email;
+                    return next;
+                  });
+                }}
                 placeholder={t("emailPlaceholder")}
                 required
                 disabled={isSubmitting}
+                aria-invalid={Boolean(fieldErrors.email)}
+                aria-describedby={
+                  fieldErrors.email ? "login-email-error" : undefined
+                }
               />
+              <FieldError id="login-email-error" message={fieldErrors.email} />
             </div>
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="password">{tc("password")}</Label>
@@ -126,11 +154,23 @@ function Login() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setFieldErrors((prev) => {
+                      if (!("password" in prev)) return prev;
+                      const next = { ...prev };
+                      delete next.password;
+                      return next;
+                    });
+                  }}
                   placeholder="••••••••"
                   required
                   disabled={isSubmitting}
                   className="pr-10"
+                  aria-invalid={Boolean(fieldErrors.password)}
+                  aria-describedby={
+                    fieldErrors.password ? "login-password-error" : undefined
+                  }
                 />
                 <button
                   type="button"
@@ -147,6 +187,10 @@ function Login() {
                   )}
                 </button>
               </div>
+              <FieldError
+                id="login-password-error"
+                message={fieldErrors.password}
+              />
             </div>
             <Button
               type="submit"

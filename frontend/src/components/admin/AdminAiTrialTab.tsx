@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { isAxiosError } from "axios";
 import { adminAiChat, type AiModelAdmin, type AiProviderAdmin } from "@/api/admin";
+import { apiErrorMessage } from "@/api/apiErrors";
 import { MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import {
@@ -32,6 +33,7 @@ export function AdminAiTrialTab({
   const [trialModel, setTrialModel] = useState("");
   const [trialPrompt, setTrialPrompt] = useState("ping");
   const [trialReply, setTrialReply] = useState("");
+  // form-feedback: allow inline isError alert renders apiErrorMessage below.
   const chatMut = useMutation({
     mutationFn: () =>
       adminAiChat({
@@ -119,7 +121,7 @@ export function AdminAiTrialTab({
             role="alert"
             className="text-sm text-destructive"
           >
-            {t("aiTrialError")}
+            {apiErrorMessage(chatMut.error, t("aiTrialError"))}
             {isAxiosError(chatMut.error) && chatMut.error.response?.status
               ? ` (${chatMut.error.response.status})`
               : null}

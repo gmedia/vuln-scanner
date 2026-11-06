@@ -76,6 +76,7 @@ import {
   TableRow,
 } from "@/components/ui/Table";
 import { cn } from "@/lib/utils";
+import { apiErrorMessage } from "@/api/apiErrors";
 
 const PRODUCTS: readonly InvoiceProduct[] = ["scan", "host", "uptime", "guard"];
 const ORGS_PAGE_SIZE = 20;
@@ -109,25 +110,6 @@ interface TierFormState {
   prices: Record<InvoiceProduct, { list_idr: string; invoicable: boolean }>;
 }
 
-function apiDetail(err: unknown, fallback: string): string {
-  if (err && typeof err === "object" && "response" in err) {
-    const detail = (
-      err as { response?: { data?: { detail?: unknown } } }
-    ).response?.data?.detail;
-    if (typeof detail === "string" && detail.trim()) return detail;
-    if (Array.isArray(detail)) {
-      const messages = detail
-        .map((item) =>
-          item && typeof item === "object" && "msg" in item
-            ? String((item as { msg: unknown }).msg)
-            : String(item),
-        )
-        .filter(Boolean);
-      if (messages.length > 0) return messages.join("; ");
-    }
-  }
-  return fallback;
-}
 
 function usageTotal(tier: SkuTierInfo): number {
   const usage = tier.usage;
@@ -541,7 +523,7 @@ export default function AdminSkuTierPanel() {
 
   useEffect(() => {
     if (orgsQ.isError) {
-      toast.error(apiDetail(orgsQ.error, t("tierOrgsError")));
+      toast.error(apiErrorMessage(orgsQ.error, t("tierOrgsError")));
     }
   }, [orgsQ.isError, orgsQ.error, t]);
 
@@ -568,7 +550,7 @@ export default function AdminSkuTierPanel() {
       setEditing(null);
       invalidate();
     },
-    onError: (err: unknown) => toast.error(apiDetail(err, t("tierMutationFail"))),
+    onError: (err: unknown) => toast.error(apiErrorMessage(err, t("tierMutationFail"))),
   });
 
   const deactivateMut = useMutation({
@@ -578,7 +560,7 @@ export default function AdminSkuTierPanel() {
       invalidate();
     },
     onError: (err: unknown) =>
-      toast.error(apiDetail(err, t("tierMutationFail"))),
+      toast.error(apiErrorMessage(err, t("tierMutationFail"))),
   });
 
   const reactivateMut = useMutation({
@@ -588,7 +570,7 @@ export default function AdminSkuTierPanel() {
       invalidate();
     },
     onError: (err: unknown) =>
-      toast.error(apiDetail(err, t("tierMutationFail"))),
+      toast.error(apiErrorMessage(err, t("tierMutationFail"))),
   });
 
   const deleteMut = useMutation({
@@ -599,7 +581,7 @@ export default function AdminSkuTierPanel() {
       invalidate();
     },
     onError: (err: unknown) => {
-      toast.error(apiDetail(err, t("tierMutationFail")));
+      toast.error(apiErrorMessage(err, t("tierMutationFail")));
       setDeleteTarget(null);
     },
   });

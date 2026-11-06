@@ -52,7 +52,7 @@ import {
   planTone,
 } from "@/components/subscription/subscriptionChrome";
 import { useAuthStore } from "@/store/authStore";
-import { cn, type ApiError } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { quotaRailClass, quotaState } from "@/lib/quota";
 import {
   cancelSubscription,
@@ -73,16 +73,10 @@ import {
   listOrgInvoices,
   type OrgInvoiceItem,
 } from "@/api/orgs";
+import { apiErrorMessage } from "@/api/apiErrors";
 
 const PRODUCTS = ["scan", "host", "uptime", "guard"] as const;
 
-function apiDetail(err: unknown, fallback: string): string {
-  if (err && typeof err === "object" && "response" in err) {
-    const detail = (err as ApiError).response?.data?.detail;
-    if (typeof detail === "string" && detail.trim()) return detail;
-  }
-  return fallback;
-}
 
 function formatIdr(value: number): string {
   return `Rp ${value.toLocaleString("id-ID")}`;
@@ -319,7 +313,7 @@ function Subscription() {
   const [requestNote, setRequestNote] = useState("");
   const [promoCode, setPromoCode] = useState("");
   const [promoResult, setPromoResult] = useState<PromoValidateResult | null>(null);
-  const [promoError, setPromoError] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
   const [invoiceStatus, setInvoiceStatus] = useState("all");
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -356,11 +350,11 @@ function Subscription() {
       setRequestNote("");
       setPromoCode("");
       setPromoResult(null);
-      setPromoError(false);
+      setPromoError(null);
       void qc.invalidateQueries({ queryKey: ["org-subscription", orgId] });
     },
     onError: (err: unknown) => {
-      toast.error(apiDetail(err, t("requestFail")));
+      toast.error(apiErrorMessage(err, t("requestFail")));
     },
   });
 
@@ -371,7 +365,7 @@ function Subscription() {
       void qc.invalidateQueries({ queryKey: ["org-subscription", orgId] });
     },
     onError: (err: unknown) => {
-      toast.error(apiDetail(err, t("pendingCancelFail")));
+      toast.error(apiErrorMessage(err, t("pendingCancelFail")));
     },
   });
 
@@ -384,7 +378,7 @@ function Subscription() {
       void qc.invalidateQueries({ queryKey: ["org-subscription", orgId] });
     },
     onError: (err: unknown) => {
-      toast.error(apiDetail(err, t("cancelSubscriptionFail")));
+      toast.error(apiErrorMessage(err, t("cancelSubscriptionFail")));
     },
   });
 
@@ -395,7 +389,7 @@ function Subscription() {
       void qc.invalidateQueries({ queryKey: ["org-subscription", orgId] });
     },
     onError: (err: unknown) => {
-      toast.error(apiDetail(err, t("resumeFail")));
+      toast.error(apiErrorMessage(err, t("resumeFail")));
     },
   });
 
@@ -409,15 +403,15 @@ function Subscription() {
     if (!orgId) return;
     try {
       await downloadOrgInvoicePdf(orgId, invoice.id, invoice.number);
-    } catch {
-      toast.error(t("invoicesLoadError"));
+    } catch (err: unknown) {
+      toast.error(apiErrorMessage(err, t("invoicesLoadError")));
     }
   }
 
   async function applyPromo() {
     if (!orgId || !requestTarget || !promoCode.trim()) return;
     setPromoLoading(true);
-    setPromoError(false);
+    setPromoError(null);
     setPromoResult(null);
     try {
       const result = await validateOrgPromoCode(orgId, {
@@ -426,8 +420,8 @@ function Subscription() {
         cycle,
       });
       setPromoResult(result);
-    } catch {
-      setPromoError(true);
+    } catch (err: unknown) {
+      setPromoError(apiErrorMessage(err, t("promo.invalid")));
     } finally {
       setPromoLoading(false);
     }
@@ -1093,7 +1087,7 @@ function Subscription() {
           }
           setPromoCode("");
           setPromoResult(null);
-          setPromoError(false);
+          setPromoError(null);
         }}
       >
         <AlertDialogContent>
@@ -1141,7 +1135,7 @@ function Subscription() {
                     onChange={(event) => {
                       setPromoCode(event.target.value.toUpperCase());
                       setPromoResult(null);
-                      setPromoError(false);
+                      setPromoError(null);
                     }}
                     data-testid="subscription-promo-code"
                   />
@@ -1196,7 +1190,7 @@ function Subscription() {
                     className="text-[11px] text-destructive"
                     data-testid="subscription-promo-error"
                   >
-                    {t("promo.invalid")}
+                    {promoError}
                   </p>
                 ) : null}
               </div>

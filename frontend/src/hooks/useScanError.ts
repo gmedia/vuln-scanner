@@ -1,20 +1,12 @@
 import { isAxiosError } from "axios";
 import i18n from "@/i18n";
-import type { ApiError } from "@/lib/utils";
-
-function detailFromBody(data: unknown): string | undefined {
-  if (!data || typeof data !== "object") return undefined;
-  const detail = (data as { detail?: unknown }).detail;
-  if (typeof detail === "string" && detail.trim()) return detail;
-  return undefined;
-}
+import { apiErrorMessage } from "@/api/apiErrors";
 
 export function useScanError() {
   const handleScanError = (error: unknown): string => {
     if (isAxiosError(error)) {
-      const api = error as ApiError;
-      const fromJson = detailFromBody(api.response?.data);
-      if (fromJson) return fromJson;
+      const fromApi = apiErrorMessage(error, "");
+      if (fromApi) return fromApi;
 
       const status = error.response?.status;
       if (status === 413) {

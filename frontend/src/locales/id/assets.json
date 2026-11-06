@@ -58,5 +58,11 @@
   "kpiQuota": "Kuota",
   "kpiScheduled": "Terjadwal",
   "kpiDomains": "Domain",
-  "kpiIps": "IP"
+  "kpiIps": "IP",
+  "createFail": "Gagal menyimpan aset.",
+  "updateFail": "Gagal memperbarui aset.",
+  "deletedToast": "Aset dihapus.",
+  "deleteFail": "Gagal menghapus aset.",
+  "colorFail": "Gagal menyimpan warna label.",
+  "scheduleFail": "Gagal membuat jadwal."
 }

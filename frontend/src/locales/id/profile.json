@@ -34,5 +34,7 @@
   "showEmailConfirmPassword": "Tampilkan kata sandi konfirmasi email",
   "hideEmailConfirmPassword": "Sembunyikan kata sandi konfirmasi email",
   "updating": "Memperbarui...",
-  "profileUpdated": "Profil diperbarui"
+  "profileUpdated": "Profil diperbarui",
+  "updateEmailFailed": "Gagal memperbarui email",
+  "changePasswordFailed": "Gagal mengubah kata sandi"
 }
