@@ -31,7 +31,7 @@ import {
   WorkspaceShellBody,
   WorkspaceShellHead,
 } from "@/components/workspace/WorkspaceShell";
-import { apiDetail } from "@/components/siem/siemErrors";
+import { apiErrorMessage } from "@/api/apiErrors";
 import { formatIdr } from "@/components/invoice/invoicePrintFormat";
 import {
   checkoutInvoice,
@@ -206,7 +206,7 @@ function PayInvoice() {
       window.location.assign(result.redirect_url);
     },
     onError: (err: unknown) => {
-      toast.error(apiDetail(err, t("pay.payFail")));
+      toast.error(apiErrorMessage(err, t("pay.payFail")));
     },
   });
 

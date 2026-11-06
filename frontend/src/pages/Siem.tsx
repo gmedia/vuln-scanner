@@ -26,7 +26,8 @@ import { SiemEventInspector } from "@/components/siem/SiemEventInspector";
 import { SiemEventStream } from "@/components/siem/SiemEventStream";
 import { SiemIndexerStrip } from "@/components/siem/SiemIndexerStrip";
 import { SiemSearchFilters } from "@/components/siem/SiemSearchFilters";
-import { apiDetail, isAuthSessionError } from "@/components/siem/siemErrors";
+import { apiErrorMessage } from "@/api/apiErrors";
+import { isAuthSessionError } from "@/components/siem/siemErrors";
 import { useSiemConsole } from "@/components/siem/useSiemConsole";
 import { TONE_CHIP_TEXT, TONE_TEXT } from "@/lib/toneColors";
 
@@ -103,7 +104,7 @@ export default function Siem() {
         <p className="text-sm text-destructive" data-testid="siem-status-error">
           {isAuthSessionError(c.statusQ.error)
             ? t("sessionExpired")
-            : apiDetail(c.statusQ.error, t("loadStatusFail"))}
+            : apiErrorMessage(c.statusQ.error, t("loadStatusFail"))}
         </p>
       ) : null}
 

@@ -223,6 +223,31 @@ describe("Login", () => {
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
+  it("renders per-field validation errors returned by the store", async () => {
+    defaultAuthState.login = vi.fn().mockResolvedValue(false);
+    (
+      mockUseAuthStore as unknown as { getState: () => unknown }
+    ).getState = () => ({
+      ...defaultAuthState,
+      fieldErrors: { email: "Email is required." },
+    });
+
+    render(<Login />);
+    fireEvent.change(screen.getByLabelText("Email"), {
+      target: { value: "test@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+
+    expect(await screen.findByText("Email is required.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Email")).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+  });
+
   it("shows loading state when submitting", async () => {
     defaultAuthState.login = vi.fn(
       () => new Promise((resolve) => setTimeout(() => resolve(true), 100)),

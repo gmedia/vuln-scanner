@@ -860,5 +860,6 @@
   "aiModelSaved": "Model disimpan.",
   "aiModelDeleted": "Model dihapus.",
   "aiTopupOk": "Wallet diisi.",
-  "aiTopupFail": "Gagal mengisi wallet."
+  "aiTopupFail": "Gagal mengisi wallet.",
+  "copyEmailFail": "Gagal menyalin alamat email."
 }

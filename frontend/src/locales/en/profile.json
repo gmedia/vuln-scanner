@@ -36,5 +36,7 @@
   "updating": "Updating...",
   "profileUpdated": "Profile updated",
   "updateEmailFailed": "Could not update email",
-  "changePasswordFailed": "Could not change password"
+  "changePasswordFailed": "Could not change password",
+  "copyFail": "Could not copy to the clipboard.",
+  "copyEmailFail": "Could not copy the email address."
 }

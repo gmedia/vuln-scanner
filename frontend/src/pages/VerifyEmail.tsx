@@ -14,7 +14,6 @@ import {
   AuthStatusIcon,
 } from "@/components/auth/AuthCard";
 import { useTranslation } from "react-i18next";
-import { apiFieldErrors } from "@/api/apiErrors";
 import { FieldError } from "@/components/patterns/FormFeedback";
 
 function maskSignupEmail(email: string): string {
@@ -62,24 +61,20 @@ function VerifyEmail() {
       setFieldErrors({});
       setIsResending(true);
       setResendSuccess(false);
-      try {
-        const result = await resendVerification(resendEmail);
-        if (result.ok) {
-          setResendSuccess(result.emailSent !== false);
-          setIsResending(false);
-        } else {
-          setIsResending(false);
-          const errMsg = useAuthStore.getState().error;
-          if (errMsg) {
-            const match = errMsg.match(/wait (\d+) seconds/);
-            if (match) {
-              startCooldown(parseInt(match[1], 10));
-            }
+      const result = await resendVerification(resendEmail);
+      if (result.ok) {
+        setResendSuccess(result.emailSent !== false);
+        setIsResending(false);
+      } else {
+        setIsResending(false);
+        setFieldErrors((useAuthStore.getState?.().fieldErrors ?? {}));
+        const errMsg = useAuthStore.getState().error;
+        if (errMsg) {
+          const match = errMsg.match(/wait (\d+) seconds/);
+          if (match) {
+            startCooldown(parseInt(match[1], 10));
           }
         }
-      } catch (err) {
-        setFieldErrors(apiFieldErrors(err));
-        setIsResending(false);
       }
     };
 

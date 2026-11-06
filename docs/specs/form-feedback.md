@@ -127,6 +127,8 @@ node scripts/check-form-feedback.mjs
 Fails when:
 
 - a `useMutation` has no `onError` and no `// form-feedback: allow <reason>` comment;
+- an `onError` body does not surface anything — it must call `toast.error`/`toast.warning`, `apply(`, `setFormError(`, `setFieldErrors(`, or a `set*Error(` setter (a bare handler reference is accepted);
+- a UI file (`pages/`, `components/`) has an empty `catch {}` / `catch { void 0; }` / comment-only catch and no allow comment;
 - a local `apiDetail` / `detailFromBody` / `extractError` reader exists;
 - `String(...detail...)` appears.
 

@@ -1,6 +1,4 @@
 import { apiErrorCode } from "@/api/apiErrors";
-
-export { apiErrorMessage as apiDetail } from "@/api/apiErrors";
 import type { ApiError } from "@/lib/utils";
 
 const AUTH_SESSION_CODES = new Set(["auth_missing_token", "auth_invalid_token"]);

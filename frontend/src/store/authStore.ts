@@ -5,7 +5,7 @@ import * as orgsApi from "../api/orgs";
 import type { OrgMembershipSummary, OrgRole } from "../api/orgs";
 import { isAxiosError } from "axios";
 import i18n from "@/i18n";
-import { apiErrorMessage } from "@/api/apiErrors";
+import { apiErrorMessage, apiFieldErrors } from "@/api/apiErrors";
 
 function authErrorMessage(err: unknown, fallback: string): string {
   if (isAxiosError(err)) {
@@ -21,6 +21,13 @@ function authErrorMessage(err: unknown, fallback: string): string {
     if (fromApi) return fromApi;
   }
   return err instanceof Error ? err.message : fallback;
+}
+
+function authFailure(err: unknown, fallback: string) {
+  return {
+    message: authErrorMessage(err, fallback),
+    fieldErrors: apiFieldErrors(err),
+  };
 }
 
 function mapOrgs(
@@ -64,6 +71,7 @@ interface AuthStore {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  fieldErrors: Record<string, string>;
   organizations: OrgMembershipSummary[];
   activeOrgId: string | null;
   login: (email: string, password: string) => Promise<boolean>;
@@ -113,6 +121,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   isAuthenticated: false,
   isLoading: true,
   error: null,
+  fieldErrors: {},
   organizations: [],
   activeOrgId: null,
 
@@ -175,7 +184,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   switchOrganization: async (organizationId) => {
-    set({ error: null });
+    set({ error: null, fieldErrors: {} });
     try {
       const res = await orgsApi.switchOrg(organizationId);
       localStorage.setItem("accessToken", res.access_token);
@@ -196,14 +205,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       }
       return true;
     } catch (err) {
-      const message = authErrorMessage(err, i18n.t("auth:errSwitchOrg"));
-      set({ error: message });
+      const { message, fieldErrors } = authFailure(err, i18n.t("auth:errSwitchOrg"));
+      set({ error: message, fieldErrors });
       return false;
     }
   },
 
   login: async (email, password) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, fieldErrors: {} });
     try {
       const loginRes = await authApi.login(email, password);
       set({ accessToken: loginRes.access_token });
@@ -218,14 +227,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ isLoading: false });
       return true;
     } catch (err) {
-      const message = authErrorMessage(err, i18n.t("auth:errLogin"));
-      set({ error: message, isLoading: false });
+      const { message, fieldErrors } = authFailure(err, i18n.t("auth:errLogin"));
+      set({ error: message, fieldErrors, isLoading: false });
       return false;
     }
   },
 
   loginWithGoogleToken: async (idToken) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, fieldErrors: {} });
     try {
       const loginRes = await authApi.loginWithGoogle(idToken);
       set({ accessToken: loginRes.access_token });
@@ -240,14 +249,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ isLoading: false });
       return true;
     } catch (err) {
-      const message = authErrorMessage(err, i18n.t("auth:errLogin"));
-      set({ error: message, isLoading: false });
+      const { message, fieldErrors } = authFailure(err, i18n.t("auth:errLogin"));
+      set({ error: message, fieldErrors, isLoading: false });
       return false;
     }
   },
 
   register: async (email, password, confirmPassword) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, fieldErrors: {} });
     try {
       const res = await authApi.register(email, password, confirmPassword);
       set({ isLoading: false });
@@ -257,8 +266,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         message: res.message ?? null,
       };
     } catch (err) {
-      const message = authErrorMessage(err, i18n.t("auth:errRegister"));
-      set({ error: message, isLoading: false });
+      const { message, fieldErrors } = authFailure(err, i18n.t("auth:errRegister"));
+      set({ error: message, fieldErrors, isLoading: false });
       return { ok: false, emailSent: null, message: null };
     }
   },
@@ -277,13 +286,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       accessToken: null,
       isAuthenticated: false,
       error: null,
+      fieldErrors: {},
       organizations: [],
       activeOrgId: null,
     });
   },
 
   verifyEmail: async (token) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, fieldErrors: {} });
     try {
       await authApi.verifyEmail(token);
       const currentUser = get().user;
@@ -294,14 +304,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       }
       return true;
     } catch (err) {
-      const message = authErrorMessage(err, i18n.t("auth:errVerifyEmail"));
-      set({ error: message, isLoading: false });
+      const { message, fieldErrors } = authFailure(err, i18n.t("auth:errVerifyEmail"));
+      set({ error: message, fieldErrors, isLoading: false });
       return false;
     }
   },
 
   resendVerification: async (email) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, fieldErrors: {} });
     try {
       const res = await authApi.resendVerification(email);
       set({ isLoading: false });
@@ -311,14 +321,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         message: res.message ?? null,
       };
     } catch (err) {
-      const message = authErrorMessage(err, i18n.t("auth:errResendVerification"));
-      set({ error: message, isLoading: false });
+      const { message, fieldErrors } = authFailure(err, i18n.t("auth:errResendVerification"));
+      set({ error: message, fieldErrors, isLoading: false });
       return { ok: false, emailSent: null, message: null };
     }
   },
 
   updateProfile: async (email, currentPassword) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, fieldErrors: {} });
     try {
       await authApi.updateProfile(email, currentPassword);
       const currentUser = get().user;
@@ -329,14 +339,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       }
       return true;
     } catch (err) {
-      const message = authErrorMessage(err, i18n.t("auth:errUpdateProfile"));
-      set({ error: message, isLoading: false });
+      const { message, fieldErrors } = authFailure(err, i18n.t("auth:errUpdateProfile"));
+      set({ error: message, fieldErrors, isLoading: false });
       return false;
     }
   },
 
   changePassword: async (currentPassword, newPassword, confirmPassword) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, fieldErrors: {} });
     try {
       await authApi.changePassword(
         currentPassword,
@@ -346,34 +356,34 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ isLoading: false, error: null });
       return true;
     } catch (err) {
-      const message = authErrorMessage(err, i18n.t("auth:changePasswordFailed"));
-      set({ error: message, isLoading: false });
+      const { message, fieldErrors } = authFailure(err, i18n.t("auth:changePasswordFailed"));
+      set({ error: message, fieldErrors, isLoading: false });
       return false;
     }
   },
 
   forgotPassword: async (email) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, fieldErrors: {} });
     try {
       await authApi.forgotPassword(email);
       set({ isLoading: false });
       return true;
     } catch (err) {
-      const message = authErrorMessage(err, i18n.t("auth:errForgotPassword"));
-      set({ error: message, isLoading: false });
+      const { message, fieldErrors } = authFailure(err, i18n.t("auth:errForgotPassword"));
+      set({ error: message, fieldErrors, isLoading: false });
       return false;
     }
   },
 
   resetPassword: async (token, newPassword, confirmPassword) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, fieldErrors: {} });
     try {
       await authApi.resetPassword(token, newPassword, confirmPassword);
       set({ isLoading: false, error: null });
       return true;
     } catch (err) {
-      const message = authErrorMessage(err, i18n.t("auth:errResetPassword"));
-      set({ error: message, isLoading: false });
+      const { message, fieldErrors } = authFailure(err, i18n.t("auth:errResetPassword"));
+      set({ error: message, fieldErrors, isLoading: false });
       return false;
     }
   },
@@ -401,6 +411,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         user: null,
         accessToken: null,
         isAuthenticated: false,
+        fieldErrors: {},
         organizations: [],
         activeOrgId: null,
       });
@@ -408,7 +419,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
   },
 
-  clearError: () => set({ error: null }),
+  clearError: () => set({ error: null, fieldErrors: {} }),
 
   initialize: async () => {
     set({ isLoading: true });
