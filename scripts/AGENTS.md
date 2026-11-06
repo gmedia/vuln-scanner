@@ -23,6 +23,7 @@ Deploy and lab helpers. Human ops: `docs/deploy.md`. New server + new domain bri
 | `check-dependency-audit.mjs` | Fails on unaccepted HIGH/CRITICAL `npm audit` advisories; accepted risks live in `.github/dependency-audit-allowlist.json`. Runs in CI (`deps-audit` job) |
 | `check-form-feedback.mjs` | Fails when a `useMutation` has no `onError`, a component keeps a local `apiDetail`/`detailFromBody`/`extractError`, or code does `String(...detail...)`. Runs in CI (`form-feedback` job, part of `ci-ok`). Contract: `docs/specs/form-feedback.md` |
 | `check-pip-audit.py` | Fails on unaccepted Python advisories in `backend/` + `workers/` requirements (`pip-audit`); same allowlist with `ecosystem: "pip"`. Runs in CI (`deps-audit-python` job) |
+| `check-validation-types.mjs` | Every `PydanticCustomError("<type>"` in `backend/app` must have an `en` and `id` key under `errors.validation`; otherwise a 422 falls back to English. Runs in CI (`validation-types` job, part of `ci-ok`). |
 | `billing-healthcheck.sh` | **Read-only** SQL report: subscription status, read-only workspaces, overdue `sent` invoices, reminder delivery, tax activation, workspaces missing billing details. `PG_MODE=docker` (default) or `PG_MODE=network` |
 | `fleet-claim.sh` | Issue-claim ledger for parallel hosts: `preflight`, `status`, `claim <issue> <slug>`, `release <issue>`, `takeover <issue> <slug>`. Mutex = `refs/heads/claim/<issue>` created via `gh api`. Protocol: `docs/fleet-concurrency.md`. Set `FLEET_HOST` per machine |
 

@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import pytest
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.testclient import TestClient
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from app.errors import validation_exception_handler
+from app.schemas.asset import AssetCreate
 from app.schemas.auth import RegisterRequest
+from app.schemas.billing_profile import BillingProfileUpdate
+from app.schemas.status_page import StatusPageCreate
 
 
 class _Nested(BaseModel):
@@ -91,3 +95,41 @@ def test_validation_body_reports_a_missing_body() -> None:
     assert body["code"] == "validation_error"
     assert body["detail"]
     assert "input" not in body
+
+def _first_error(model: type[BaseModel], **kwargs: object) -> dict[str, object]:
+    with pytest.raises(ValidationError) as exc:
+        model(**kwargs)
+    return dict(exc.value.errors()[0])
+
+
+def test_asset_target_uses_a_stable_validation_type() -> None:
+    error = _first_error(
+        AssetCreate, name="prod", scan_type="ip", target="not valid!"
+    )
+
+    assert error["type"] == "target_invalid"
+
+
+def test_status_slug_uses_a_stable_validation_type() -> None:
+    error = _first_error(StatusPageCreate, slug="BAD SLUG", title="Status")
+
+    assert error["type"] == "status_slug_invalid"
+
+
+def test_billing_tax_id_uses_a_stable_validation_type() -> None:
+    error = _first_error(BillingProfileUpdate, tax_id="123")
+
+    assert error["type"] == "tax_id_invalid"
+
+
+def test_asset_tag_limit_carries_the_max_param() -> None:
+    error = _first_error(
+        AssetCreate,
+        name="prod",
+        scan_type="ip",
+        target="192.0.2.10",
+        tags=[f"tag{i}" for i in range(9)],
+    )
+
+    assert error["type"] == "asset_tags_limit"
+    assert error["ctx"] == {"max": 8}

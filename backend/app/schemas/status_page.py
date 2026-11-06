@@ -5,6 +5,7 @@ import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic_core import PydanticCustomError
 
 _SLUG_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$")
 _HOST_RE = re.compile(r"^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$")
@@ -13,14 +14,14 @@ _HOST_RE = re.compile(r"^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[
 def normalize_slug(raw: str) -> str:
     value = (raw or "").strip().lower()
     if not _SLUG_RE.match(value):
-        raise ValueError("slug must be lowercase alphanumeric with hyphens")
+        raise PydanticCustomError("status_slug_invalid", "slug must be lowercase alphanumeric with hyphens")
     return value
 
 
 def normalize_hostname(raw: str) -> str:
     value = (raw or "").strip().lower().rstrip(".")
     if not _HOST_RE.match(value):
-        raise ValueError("invalid hostname")
+        raise PydanticCustomError("hostname_invalid", "invalid hostname")
     return value
 
 
@@ -80,14 +81,14 @@ class StatusIncidentCreate(BaseModel):
     @classmethod
     def _impact(cls, v: str) -> str:
         if v not in ("none", "minor", "major", "critical"):
-            raise ValueError("invalid impact")
+            raise PydanticCustomError("status_impact_invalid", "invalid impact")
         return v
 
     @field_validator("status")
     @classmethod
     def _status(cls, v: str) -> str:
         if v not in ("investigating", "identified", "monitoring", "resolved"):
-            raise ValueError("invalid status")
+            raise PydanticCustomError("status_value_invalid", "invalid status")
         return v
 
 
@@ -101,7 +102,7 @@ class StatusIncidentPatch(BaseModel):
         if v is None:
             return None
         if v not in ("none", "minor", "major", "critical"):
-            raise ValueError("invalid impact")
+            raise PydanticCustomError("status_impact_invalid", "invalid impact")
         return v
 
 
@@ -113,7 +114,7 @@ class StatusIncidentUpdateCreate(BaseModel):
     @classmethod
     def _status(cls, v: str) -> str:
         if v not in ("investigating", "identified", "monitoring", "resolved"):
-            raise ValueError("invalid status")
+            raise PydanticCustomError("status_value_invalid", "invalid status")
         return v
 
 

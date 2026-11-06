@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic_core import PydanticCustomError
 
 TARGET_PATTERN = re.compile(
     r"^(\d{1,3}\.){3}\d{1,3}$"  # IPv4
@@ -25,7 +26,10 @@ class ScanRequest(BaseModel):
     @classmethod
     def validate_target(cls, v: str) -> str:
         if not TARGET_PATTERN.match(v):
-            raise ValueError("target must be a valid IPv4 address or fully-qualified domain name")
+            raise PydanticCustomError(
+                "target_invalid",
+                "target must be a valid IPv4 address or fully-qualified domain name",
+            )
         return v
 
 
@@ -43,11 +47,11 @@ class DomainScanRequest(BaseModel):
     @classmethod
     def validate_domain(cls, v: str) -> str:
         if len(v) > 253 or "." not in v:
-            raise ValueError("domain must be a valid fully-qualified domain name")
+            raise PydanticCustomError("domain_invalid", "domain must be a valid fully-qualified domain name")
         labels = v.split(".")
         for label in labels:
             if not label or len(label) > 63 or label.startswith("-") or label.endswith("-"):
-                raise ValueError("domain must be a valid fully-qualified domain name")
+                raise PydanticCustomError("domain_invalid", "domain must be a valid fully-qualified domain name")
         return v
 
 

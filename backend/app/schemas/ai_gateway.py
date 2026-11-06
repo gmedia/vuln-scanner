@@ -6,6 +6,7 @@ from decimal import Decimal
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, model_validator
+from pydantic_core import PydanticCustomError
 
 
 class AiProviderCreate(BaseModel):
@@ -66,9 +67,12 @@ class AiModelCreate(BaseModel):
     @model_validator(mode="after")
     def _require_price_pairs(self) -> AiModelCreate:
         if self.price_usd_per_1m_in is None and self.price_idr_per_1k_in is None:
-            raise ValueError("price_usd_per_1m_in or price_idr_per_1k_in is required")
+            raise PydanticCustomError("ai_price_in_required", "price_usd_per_1m_in or price_idr_per_1k_in is required")
         if self.price_usd_per_1m_out is None and self.price_idr_per_1k_out is None:
-            raise ValueError("price_usd_per_1m_out or price_idr_per_1k_out is required")
+            raise PydanticCustomError(
+                "ai_price_out_required",
+                "price_usd_per_1m_out or price_idr_per_1k_out is required",
+            )
         return self
 
 

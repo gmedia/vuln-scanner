@@ -1,4 +1,4 @@
-.PHONY: help install lint lint-fix typecheck test clean dev check-alembic check-form-feedback
+.PHONY: help install lint lint-fix typecheck test clean dev check-alembic check-form-feedback check-validation-types
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-16s\033[0m %s\n", $$1, $$2}'
@@ -21,9 +21,13 @@ lint: ## Run all linters (ruff + mypy + eslint + form feedback)
 	cd workers && ruff check && mypy --config-file=pyproject.toml .
 	cd frontend && npm run lint
 	node scripts/check-form-feedback.mjs
+	node scripts/check-validation-types.mjs
 
 check-form-feedback: ## Verify every mutation has a visible error path
 	node scripts/check-form-feedback.mjs
+
+check-validation-types: ## Verify every validation type has en + id keys
+	node scripts/check-validation-types.mjs
 
 lint-fix: ## Auto-fix lint issues where possible
 	cd backend && ruff check --fix && ruff format

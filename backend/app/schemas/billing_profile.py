@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic_core import PydanticCustomError
 
 PKP_STATUS = Literal["unknown", "pkp", "non_pkp"]
 RECIPIENT_KIND = Literal["billing", "account"]
@@ -32,7 +33,7 @@ class BillingProfileUpdate(BaseModel):
     def _tax_id_shape(cls, value: str) -> str:
         value = value.strip()
         if value and not re.fullmatch(r"\d{16}", value):
-            raise ValueError("tax_id must be 16 digits (NPWP)")
+            raise PydanticCustomError("tax_id_invalid", "tax_id must be 16 digits (NPWP)")
         return value
 
     @field_validator("nitku")
@@ -40,7 +41,7 @@ class BillingProfileUpdate(BaseModel):
     def _nitku_shape(cls, value: str) -> str:
         value = value.strip()
         if value and not re.fullmatch(r"\d{22}", value):
-            raise ValueError("nitku must be 22 digits")
+            raise PydanticCustomError("nitku_invalid", "nitku must be 22 digits")
         return value
 
     @field_validator("billing_email")
@@ -48,7 +49,7 @@ class BillingProfileUpdate(BaseModel):
     def _email_shape(cls, value: str) -> str:
         value = value.strip().lower()
         if value and not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", value):
-            raise ValueError("billing_email is not a valid address")
+            raise PydanticCustomError("billing_email_invalid", "billing_email is not a valid address")
         return value
 
     @field_validator("country")
@@ -67,7 +68,7 @@ class BillingRecipientCreate(BaseModel):
     def _email_norm(cls, value: str) -> str:
         value = value.strip().lower()
         if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", value):
-            raise ValueError("email is not a valid address")
+            raise PydanticCustomError("email_invalid", "email is not a valid address")
         return value
 
 

@@ -128,7 +128,7 @@ UI PRs must also fill the design change protocol in [`.github/pull_request_templ
 
 ## CI gates (required checks — all block `ci-ok`)
 
-`ci-ok` is the **only** required check. It aggregates 22 jobs, including the drift/security
+`ci-ok` is the **only** required check. It aggregates 23 jobs, including the drift/security
 gates below that are easy to trip without knowing they exist. All of them run in CI; run the script
 locally before pushing.
 
@@ -143,6 +143,7 @@ locally before pushing.
 | `nginx-headers` | A `location` block that declares `add_header` makes nginx drop **every** inherited header, CSP included — that is how `/terms`, `/privacy`, `/blog`, `/status` served without a CSP. Also asserts the host+path robots `map`, `location = /sitemap.xml`, and the compose/Vite sitemap proxies survive. | Delete the location-level `add_header` set and let the server-level headers plus the robots map apply, or re-declare `Content-Security-Policy` in that block. `/v1/` is exempt (JSON/SSE, no HTML). |
 | `form-feedback` | Every `useMutation` must declare an `onError` that **surfaces** something (toast, `apply(`, error setter) or an explicit `// form-feedback: allow <reason>`; no empty `catch {}` in `pages/`/`components/`, no local `apiDetail` readers, no `String(...detail...)`. A write with no failure path is a silent data-loss bug. | Add `onError` via `apiErrorMessage()` / `useApiFormErrors().apply()`. Contract: [`docs/specs/form-feedback.md`](docs/specs/form-feedback.md). |
 Local runs:
+| `validation-types` | Every `PydanticCustomError("<type>"` in `backend/app` must have an `errors:validation.<type>` key in **both** `en` and `id`. A missing key silently falls back to English prose, so the Indonesian UI leaks English on a 422. | Add the key to `frontend/src/locales/{en,id}/errors.json`. |
 
 ```bash
 ./scripts/check-env-inventory.sh
@@ -154,6 +155,7 @@ node scripts/check-public-registry-sync.mjs # product registry must match the si
 node scripts/sync-public-registry.mjs       # rewrite the sitemap tuple from the registry
 node scripts/check-nginx-headers.mjs        # no location may drop inherited CSP; robots map + sitemap routes
 node scripts/check-form-feedback.mjs        # every mutation has a visible error path
+node scripts/check-validation-types.mjs     # every PydanticCustomError type has en/id keys
 ```
 
 The two audit gates share one allowlist file. Expired entries fail; entries that no longer match

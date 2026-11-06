@@ -118,6 +118,15 @@ IPs, Wazuh internals); map the `reason` to an i18n key.
 
 ---
 
+## 6b) Backend validation types
+
+Custom validators raise `PydanticCustomError("<type>", "<english fallback>", {params})`; the SPA
+renders `errors:validation.<type>`. A `type` without keys in **both** `en` and `id` silently falls
+back to English, which is a bug in the Indonesian UI. `scripts/check-validation-types.mjs`
+enumerates every type in `backend/app` and fails when a key is missing. Prefer reusing a shared
+type (`target_invalid`, `domain_invalid`, `http_method_invalid`, …) over inventing a new one for
+the same rule.
+
 ## 7) CI gate
 
 ```
