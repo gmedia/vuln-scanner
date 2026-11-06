@@ -96,6 +96,9 @@ describe("AdminSkuTierPanel", () => {
     renderPanel();
 
     expect(await screen.findByTestId("sku-tier-table")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Steps" }),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("sku-tier-row-basic")).toHaveTextContent("Basic");
     expect(screen.getByTestId("sku-tier-row-multi")).toHaveTextContent(
       "10/10/200/10",

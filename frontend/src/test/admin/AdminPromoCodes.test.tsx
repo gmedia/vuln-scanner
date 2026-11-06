@@ -105,6 +105,7 @@ describe("AdminPromoCodes", () => {
   it("renders the table and mobile cards from the API", async () => {
     renderPage();
 
+    expect(screen.getByTestId("promo-guide")).toBeInTheDocument();
     expect(await screen.findByTestId("promo-table-desktop")).toBeInTheDocument();
     expect(screen.getAllByText("LAUNCH2026").length).toBeGreaterThan(0);
     expect(screen.getByTestId("promo-cards-mobile")).toHaveTextContent(

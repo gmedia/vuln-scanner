@@ -104,6 +104,7 @@ describe("AdminUserDetail", () => {
     } as ReturnType<typeof useQuery>);
 
     renderPage();
+    expect(screen.getByTestId("credit-adjust-guide")).toBeInTheDocument();
     expect(screen.getByText("Credit adjustment")).toBeInTheDocument();
     expect(screen.getByText("Amount (+ or −)")).toBeInTheDocument();
     expect(screen.getByText("Description")).toBeInTheDocument();

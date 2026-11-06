@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
-import { Bot, Boxes, MessageSquare, ScrollText, Server, Wallet, TriangleAlert } from "lucide-react";
+import { BookOpen, Bot, Boxes, MessageSquare, ScrollText, Server, Wallet, TriangleAlert } from "lucide-react";
 import {
   Pagination,
   PaginationContent,
@@ -10,6 +10,12 @@ import {
   PaginationPrevious,
 } from "@/components/ui/Pagination";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/Accordion";
 import {
   AdminShell,
   AdminShellBody,
@@ -97,6 +103,49 @@ export default function AdminAi() {
   return (
     <div className="w-full space-y-6">
       <Head />
+      <AdminShell testid="ai-guide" tone="info">
+        <AdminShellHead
+          icon={BookOpen}
+          title={t("aiGuideTitle")}
+          hint={t("aiGuideHint")}
+        />
+        <AdminShellBody>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="steps">
+              <AccordionTrigger>{t("aiGuideStepsTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <ol className="ml-4 list-decimal space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>{t("aiGuideStep1")}</li>
+                  <li>{t("aiGuideStep2")}</li>
+                  <li>{t("aiGuideStep3")}</li>
+                  <li>{t("aiGuideStep4")}</li>
+                  <li>{t("aiGuideStep5")}</li>
+                </ol>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="wallet">
+              <AccordionTrigger>{t("aiGuideWalletTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {t("aiGuideWalletBody")}
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="limits">
+              <AccordionTrigger>{t("aiGuideLimitsTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <ul className="ml-4 list-disc space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>{t("aiGuideLimit1")}</li>
+                  <li>{t("aiGuideLimit2")}</li>
+                  <li>{t("aiGuideLimit3")}</li>
+                  <li>{t("aiGuideLimit4")}</li>
+                  <li>{t("aiGuideLimit5")}</li>
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </AdminShellBody>
+      </AdminShell>
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList variant="line" className="w-full flex-wrap justify-start sm:flex-nowrap">
           <TabsTrigger value="providers" className="gap-1.5">

@@ -31,6 +31,12 @@ import SkuTierHistorySheet, {
 import { RAILED_CARD_CLASS } from "@/components/patterns/RailedShell";
 import { SiemRail } from "@/components/siem/siemChrome";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/Accordion";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -734,9 +740,27 @@ export default function AdminSkuTierPanel() {
           hint={t("tierGuideHint")}
         />
         <AdminShellBody>
-          <p className="max-w-prose text-xs leading-relaxed text-muted-foreground">
-            {t("tierGuideBody")}
-          </p>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="steps">
+              <AccordionTrigger>{t("tierGuideStepsTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <ol className="ml-4 list-decimal space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>{t("tierGuideStep1")}</li>
+                  <li>{t("tierGuideStep2")}</li>
+                  <li>{t("tierGuideStep3")}</li>
+                  <li>{t("tierGuideStep4")}</li>
+                </ol>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="about">
+              <AccordionTrigger>{t("tierGuideAboutTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <p className="max-w-prose text-xs leading-relaxed text-muted-foreground">
+                  {t("tierGuideBody")}
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </AdminShellBody>
       </AdminShell>
 

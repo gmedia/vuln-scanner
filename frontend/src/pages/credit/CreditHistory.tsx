@@ -1,9 +1,16 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Coins, History, Receipt } from "lucide-react";
+import { BookOpen, Coins, History, Receipt } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import PageHeader from "@/components/layout/PageHeader";
+import { AdminShell, AdminShellBody, AdminShellHead } from "@/components/admin/AdminShell";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/Accordion";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -389,6 +396,46 @@ function CreditHistory() {
         title={t("title")}
         description={t("description")}
       />
+
+      <AdminShell testid="credit-history-guide" tone="info">
+        <AdminShellHead
+          icon={BookOpen}
+          title={t("historyGuideTitle")}
+          hint={t("historyGuideHint")}
+        />
+        <AdminShellBody>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="steps">
+              <AccordionTrigger>{t("historyGuideStepsTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <ol className="ml-4 list-decimal space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>{t("historyGuideStep1")}</li>
+                  <li>{t("historyGuideStep2")}</li>
+                  <li>{t("historyGuideStep3")}</li>
+                </ol>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="scope">
+              <AccordionTrigger>{t("historyGuideScopeTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {t("historyGuideScopeBody")}
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="limits">
+              <AccordionTrigger>{t("historyGuideLimitsTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <ul className="ml-4 list-disc space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>{t("historyGuideLimit1")}</li>
+                  <li>{t("historyGuideLimit2")}</li>
+                  <li>{t("historyGuideLimit3")}</li>
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </AdminShellBody>
+      </AdminShell>
 
       <OpsShell railClass="bg-primary" testid="credit-history-identity">
         <div className="flex flex-col gap-4 px-4 py-4 pl-5 sm:flex-row sm:items-start sm:justify-between">

@@ -159,6 +159,7 @@ describe("AdminAi", () => {
     vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
     renderPage();
     expect(await screen.findByText("AI Gateway")).toBeInTheDocument();
+    expect(screen.getByTestId("ai-guide")).toBeInTheDocument();
     expect(await screen.findByText("No providers.")).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Trial chat" })).toBeInTheDocument();
     const list = screen.getByRole("tablist");

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+  BookOpen,
   Shield,
   Mail,
   Calendar,
@@ -19,6 +20,12 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/Accordion";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import {
   AdminNotice,
@@ -124,6 +131,38 @@ function AdminUserDetail() {
         title={t("detailTitle")}
         description={t("detailSubtitle")}
       />
+
+      <AdminShell testid="credit-adjust-guide" tone="info">
+        <AdminShellHead
+          icon={BookOpen}
+          title={t("creditGuideTitle")}
+          hint={t("creditGuideHint")}
+        />
+        <AdminShellBody>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="steps">
+              <AccordionTrigger>{t("creditGuideStepsTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <ol className="ml-4 list-decimal space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>{t("creditGuideStep1")}</li>
+                  <li>{t("creditGuideStep2")}</li>
+                  <li>{t("creditGuideStep3")}</li>
+                </ol>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="limits">
+              <AccordionTrigger>{t("creditGuideLimitsTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <ul className="ml-4 list-disc space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>{t("creditGuideLimit1")}</li>
+                  <li>{t("creditGuideLimit2")}</li>
+                  <li>{t("creditGuideLimit3")}</li>
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </AdminShellBody>
+      </AdminShell>
 
       {isLoading ? (
         <div className="grid gap-6 lg:grid-cols-2 lg:items-start">

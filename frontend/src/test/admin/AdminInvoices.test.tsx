@@ -238,6 +238,7 @@ describe("AdminInvoices", () => {
     const user = userEvent.setup();
     render(<AdminInvoices />);
     expect(screen.getByTestId("admin-invoices-page")).toBeInTheDocument();
+    expect(screen.getByTestId("invoices-guide")).toBeInTheDocument();
     expect(
       screen.getByText("Sinexis bills Scan and Host SKUs"),
     ).toBeInTheDocument();

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CreditCard, History, Loader2, Receipt } from "lucide-react";
+import { BookOpen, CreditCard, History, Loader2, Receipt } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -12,6 +12,12 @@ import {
   AdminShellHead,
 } from "@/components/admin/AdminShell";
 import { Badge } from "@/components/ui/Badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/Accordion";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -182,6 +188,50 @@ function AdminSubscriptions() {
         title={t("subscriptionsTitle")}
         description={t("subscriptionsHint")}
       />
+
+      <AdminShell testid="subscriptions-guide" tone="info">
+        <AdminShellHead
+          icon={BookOpen}
+          title={t("subsGuideTitle")}
+          hint={t("subsGuideHint")}
+        />
+        <AdminShellBody>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="steps">
+              <AccordionTrigger>{t("subsGuideStepsTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <ol className="ml-4 list-decimal space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>{t("subsGuideStep1")}</li>
+                  <li>{t("subsGuideStep2")}</li>
+                  <li>{t("subsGuideStep3")}</li>
+                  <li>{t("subsGuideStep4")}</li>
+                  <li>{t("subsGuideStep5")}</li>
+                </ol>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="status">
+              <AccordionTrigger>{t("subsGuideStatusTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {t("subsGuideStatusBody")}
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="limits">
+              <AccordionTrigger>{t("subsGuideLimitsTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <ul className="ml-4 list-disc space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>{t("subsGuideLimit1")}</li>
+                  <li>{t("subsGuideLimit2")}</li>
+                  <li>{t("subsGuideLimit3")}</li>
+                  <li>{t("subsGuideLimit4")}</li>
+                  <li>{t("subsGuideLimit5")}</li>
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </AdminShellBody>
+      </AdminShell>
 
       <AdminShell tone="info" testid="admin-subscriptions-filter">
         <AdminShellBody>
