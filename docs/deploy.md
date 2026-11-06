@@ -214,6 +214,8 @@ Set on the **app host `.env`** and/or GitHub **repository** secrets (CI overwrit
 
 Payment rollout: keep `PAYMENT_GATEWAY_ENABLED=false` until the server key and the notification URL are configured. Turning the flag off returns the UI to manual transfer and blocks new checkouts only; existing `payment_attempts` rows are kept, and inbound webhooks plus reconciliation keep settling them while `MIDTRANS_SERVER_KEY` stays configured.
 
+Preflight: run `python -m scripts.check_payment_config` inside the backend container before enabling the gateway; exit code **1** means a blocking config error ([payments-ops.md](payments-ops.md) §1).
+
 Operations: see [payments-ops.md](payments-ops.md).
 
 Do not invent extra enroll daemons. Do not wipe live ERP agent `sx-erpstg`. Guard e2e enroll: wipe **tc5** first ([guide §4.1](AGENT_EXECUTION_GUIDE.md)).

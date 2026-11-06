@@ -19,6 +19,20 @@ Payment behaviour is controlled by env only:
 | `MIDTRANS_IS_PRODUCTION` | `false` for sandbox, `true` for production. |
 | `MIDTRANS_VERIFY_STATUS` | Default `true`; confirms the provider status before marking an invoice paid. |
 
+Before flipping `PAYMENT_GATEWAY_ENABLED=true`, run the preflight inside the backend
+container:
+
+```bash
+python -m scripts.check_payment_config
+```
+
+It prints `ERROR` / `WARN` / `OK` lines and exits **1** when at least one blocking
+error exists (missing key, empty or unknown provider list, mode/key mismatch, or a
+non-HTTPS `FRONTEND_URL` in production). Fix every error before enabling; warnings
+(sandbox mode, status verification off, localhost frontend, providers set while the
+gateway is off) are informational and do not block startup. The command never prints
+the server key.
+
 Deploy **backend-first**. The backend owns the checkout, webhook, and reconciliation
 paths; the SPA only shows the pay action when `GET /api/payments/providers` returns a
 provider. Releasing the SPA before the backend is harmless (no providers), the reverse
@@ -42,6 +56,8 @@ Turning `PAYMENT_GATEWAY_ENABLED=false`:
 Run this on a non-production environment with sandbox credentials before enabling the
 gateway for customers.
 
+0. Run `python -m scripts.check_payment_config` inside the backend container and
+   confirm `PAYMENT CONFIG: OK` before starting the smoke test.
 1. Create an invoice for an **internal test org** with a non-zero total (admin billing
    screen, or `POST /api/admin/invoices`), then send it (`POST /api/admin/invoices/{id}/send`)
    so its status is `sent`.
