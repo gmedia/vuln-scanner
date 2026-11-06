@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import uuid
 
 import pytest
@@ -162,6 +163,22 @@ async def test_filter_available_returns_original_when_all_open(_fake_client: Fak
     result = await ai_breaker.filter_available(candidates)
 
     assert result is candidates
+
+
+def test_client_bounds_redis_io(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(ai_breaker, "_redis", None)
+    captured: dict[str, object] = {}
+    fake = FakeAsyncRedis()
+
+    def fake_from_url(_url: str, **kwargs: object) -> FakeAsyncRedis:
+        captured.update(kwargs)
+        return fake
+
+    monkeypatch.setattr(ai_breaker.redis_async.Redis, "from_url", fake_from_url)
+
+    assert asyncio.run(ai_breaker._client()) is fake
+    assert captured["socket_connect_timeout"] == settings.redis_connect_timeout_seconds
+    assert captured["socket_timeout"] == settings.redis_socket_timeout_seconds
 
 
 @pytest.mark.asyncio

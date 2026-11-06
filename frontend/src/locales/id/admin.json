@@ -299,6 +299,7 @@
   "aiTrialPrompt": "Prompt",
   "aiTrialSend": "Kirim",
   "aiTrialReply": "Balasan",
+  "aiTrialError": "Permintaan uji coba gagal. Periksa status provider lalu coba lagi.",
   "aiEdit": "Ubah",
   "aiSave": "Simpan",
   "aiCancel": "Batal",

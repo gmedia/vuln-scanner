@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     redis_url: str = _build_redis_url()
     celery_broker_url: str = _build_redis_url()
     celery_result_backend: str = _build_redis_url()
+    # Bound every request-path Redis read: a black-holed Redis (TCP open, no
+    # replies) must fail as RedisError instead of hanging past the edge timeout.
+    redis_socket_timeout_seconds: float = 2.0
+    redis_connect_timeout_seconds: float = 1.0
 
     api_key: str = _SENTINEL
     secret_key: str = _SENTINEL
@@ -166,6 +170,10 @@ class Settings(BaseSettings):
     ai_upstream_stream_idle_timeout_seconds: float = 45.0
     ai_upstream_failover_deadline_seconds: float = 100.0
     ai_upstream_min_attempt_seconds: float = 5.0
+    # Admin trial is a diagnostic call. Keep the whole request well below the
+    # Cloudflare edge origin timeout (~100s) so the gateway, not the edge,
+    # answers a stalled provider.
+    ai_admin_trial_deadline_seconds: float = 45.0
     ai_breaker_failure_threshold: int = 5
     ai_breaker_window_seconds: float = 120.0
     ai_breaker_cooldown_seconds: float = 60.0

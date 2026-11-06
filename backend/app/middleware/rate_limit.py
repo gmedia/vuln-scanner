@@ -39,7 +39,12 @@ class RateLimiter:
 
     async def _get_redis(self) -> redis.Redis[str]:
         if self._redis is None:
-            self._redis = redis.Redis.from_url(settings.redis_url, decode_responses=True)
+            self._redis = redis.Redis.from_url(
+                settings.redis_url,
+                decode_responses=True,
+                socket_connect_timeout=settings.redis_connect_timeout_seconds,
+                socket_timeout=settings.redis_socket_timeout_seconds,
+            )
         return self._redis
 
     async def __call__(self, request: Request) -> JSONResponse | None:

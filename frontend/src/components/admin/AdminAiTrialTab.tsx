@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { isAxiosError } from "axios";
 import { adminAiChat, type AiModelAdmin, type AiProviderAdmin } from "@/api/admin";
 import { MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -110,6 +111,18 @@ export function AdminAiTrialTab({
         {trialReply ? (
           <p className="whitespace-pre-wrap break-words text-sm">
             {t("aiTrialReply")}: {trialReply}
+          </p>
+        ) : null}
+        {chatMut.isError ? (
+          <p
+            data-testid="ai-trial-error"
+            role="alert"
+            className="text-sm text-destructive"
+          >
+            {t("aiTrialError")}
+            {isAxiosError(chatMut.error) && chatMut.error.response?.status
+              ? ` (${chatMut.error.response.status})`
+              : null}
           </p>
         ) : null}
       </AdminShellBody>

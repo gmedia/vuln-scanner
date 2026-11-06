@@ -299,6 +299,7 @@
   "aiTrialPrompt": "Prompt",
   "aiTrialSend": "Send",
   "aiTrialReply": "Reply",
+  "aiTrialError": "The trial request failed. Check the provider status and try again.",
   "aiEdit": "Edit",
   "aiSave": "Save",
   "aiCancel": "Cancel",
