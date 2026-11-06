@@ -212,7 +212,7 @@ Set on the **app host `.env`** and/or GitHub **repository** secrets (CI overwrit
 | `MIDTRANS_VERIFY_STATUS` | Default `true`; confirms `GET /v2/{order_id}/status` before marking paid. |
 | Webhook URL | Register `https://<public-host>/api/webhooks/payments/midtrans` in the Midtrans dashboard per environment (sandbox vs production). No shared secret header is used for Midtrans; the signature is verified from the body. |
 
-Payment rollout: keep `PAYMENT_GATEWAY_ENABLED=false` until the server key and the notification URL are configured. Turning the flag off returns the UI to manual transfer; existing `payment_attempts` rows are kept.
+Payment rollout: keep `PAYMENT_GATEWAY_ENABLED=false` until the server key and the notification URL are configured. Turning the flag off returns the UI to manual transfer and blocks new checkouts only; existing `payment_attempts` rows are kept, and inbound webhooks plus reconciliation keep settling them while `MIDTRANS_SERVER_KEY` stays configured.
 
 Operations: see [payments-ops.md](payments-ops.md).
 

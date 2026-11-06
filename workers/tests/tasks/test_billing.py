@@ -17,6 +17,7 @@ from tasks.billing import (
     _next_annual_start,
     draft_annual_renewals,
     finalize_periods,
+    reconcile_gateway_attempts,
     send_due_reminders,
 )
 
@@ -479,3 +480,24 @@ class TestDraftAnnualRenewals:
         assert isinstance(draft, OrgInvoice)
         assert draft.sku == "multi"
         assert draft.amount_idr == 20_000_000
+
+
+class TestReconcileGatewayAttempts:
+    def test_task_runs_while_gateway_flag_is_off(self, monkeypatch):
+        from app.config import settings
+
+
+        monkeypatch.setattr(settings, "payment_gateway_enabled", False)
+        expected = {"reconciled_count": 1, "error_count": 0, "skipped_count": 0}
+
+        def fake_run(coro):
+            coro.close()
+            return expected
+
+        with patch("tasks.billing._reconcile_gateway_attempts", new=AsyncMock(return_value=expected)), patch(
+            "tasks.billing._run", side_effect=fake_run
+        ) as run:
+            outcome = reconcile_gateway_attempts()
+
+        assert outcome == expected
+        run.assert_called_once()

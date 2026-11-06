@@ -141,8 +141,18 @@ class MidtransProvider:
         async with httpx.AsyncClient(transport=self._transport, timeout=timeout) as client:
             return await client.request(method, url, headers=headers, json=json_body)
 
+    def configured(self) -> bool:
+        key = (settings.midtrans_server_key or "").strip()
+        if not key:
+            return False
+        if settings.midtrans_is_production and key.startswith("SB-Mid-"):
+            return False
+        return not (
+            not settings.midtrans_is_production and key.startswith("Mid-") and not key.startswith("SB-Mid-")
+        )
+
     def enabled(self) -> bool:
-        return bool(settings.payment_gateway_enabled)
+        return self.configured() and bool(settings.payment_gateway_enabled)
 
     async def create_checkout(self, req: CheckoutRequest) -> CheckoutResult:
         if not _ORDER_ID_RE.fullmatch(req.order_id):

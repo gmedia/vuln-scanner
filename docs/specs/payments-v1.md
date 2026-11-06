@@ -16,7 +16,7 @@ It is deliberately **not** a checkout, not a store, not a subscription-billing e
 
 | ID | Topic | Decision |
 |----|--------|----------|
-| **PY1** | Default | Gateways are **off** by default (`PAYMENT_GATEWAY_ENABLED=false`). Manual bank transfer stays fully functional and is always shown. |
+| **PY1** | Default | Gateways are **off** by default (`PAYMENT_GATEWAY_ENABLED=false`). Manual bank transfer stays fully functional and is always shown. The flag gates **new checkouts only**: inbound webhooks and reconciliation keep running while it is off so in-flight payments still settle. |
 | **PY2** | Provider v1 | **Midtrans Snap, redirect flow only.** Xendit and Stripe are future adapters behind the same interface. |
 | **PY3** | Access | **Authenticated org owner/admin only.** No public payment link, no unauthenticated invoice view, no customer portal. |
 | **PY4** | Payable invoice | Only `status='sent'` and `total_idr > 0`. `draft`, `paid`, `void` → 409. |
@@ -48,7 +48,8 @@ midtrans.py  # Snap adapter
 ```python
 class PaymentProvider(Protocol):
     name: str
-    def enabled(self) -> bool: ...
+    def configured(self) -> bool: ...  # key present + mode consistent: can process inbound events
+    def enabled(self) -> bool: ...  # configured + gateway flag: may start a new checkout
     async def create_checkout(self, req: CheckoutRequest) -> CheckoutResult: ...
     async def parse_webhook(self, raw_body: bytes,
                             headers: Mapping[str, str]) -> NormalizedEvent: ...
@@ -125,7 +126,8 @@ Rules:
 | `manual` | `X-Payment-Webhook-Secret` vs `PAYMENT_WEBHOOK_SECRET` (`compare_digest`) | 503 when the secret is unset |
 | `midtrans` | `signature_key` from the body | No shared secret |
 
-- Unknown provider → 404.
+- Unknown provider or unconfigured provider → 404.
+- A **configured** provider still accepts notifications while `PAYMENT_GATEWAY_ENABLED=false`; the flag only stops new checkouts.
 - Bad signature → 401.
 - Malformed JSON → 400.
 - Body > 64 KB → 413.
@@ -237,7 +239,7 @@ MIDTRANS_VERIFY_STATUS=true
 
 1. `payments_v1` migration + adapter + checkout API + webhook + reconciliation (backend only).
 2. Payment page UI + `GET /api/invoices/{id}`.
-3. Production stays on `PAYMENT_GATEWAY_ENABLED=false` until Midtrans keys and the notification URL are configured.
+3. Production stays on `PAYMENT_GATEWAY_ENABLED=false` until Midtrans keys and the notification URL are configured. Turning it off later blocks new checkouts only; existing attempts continue to settle through the webhook and reconciliation while the key stays configured.
 
 ## 13) Tests
 

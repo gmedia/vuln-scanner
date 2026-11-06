@@ -226,6 +226,51 @@ async def test_settlement_marks_invoice_paid_and_activates_subscription(db_sessi
 
 
 @pytest.mark.asyncio
+async def test_settlement_still_processed_while_gateway_flag_is_off(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _bind(db_session)
+    seeded = await _seed(db_session)
+    monkeypatch.setattr(settings, "payment_gateway_enabled", False)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await _post(client, _payload())
+            assert response.status_code == 200, response.text
+            assert response.json()["status"] == "processed"
+
+            invoice = await db_session.get(OrgInvoice, seeded["invoice"].id)
+            attempt = await db_session.get(PaymentAttempt, seeded["attempt"].id)
+            assert invoice is not None and invoice.status == "paid"
+            assert attempt is not None and attempt.status == "succeeded"
+            sub = (
+                await db_session.execute(
+                    select(Subscription).where(Subscription.organization_id == seeded["org"].id)
+                )
+            ).scalar_one()
+            assert sub.status == "active"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_webhook_without_server_key_is_404(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _bind(db_session)
+    await _seed(db_session)
+    monkeypatch.setattr(settings, "payment_gateway_enabled", False)
+    monkeypatch.setattr(settings, "midtrans_server_key", "")
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await _post(client, _payload())
+            assert response.status_code == 404
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
 async def test_duplicate_event_is_deduplicated(db_session: AsyncSession) -> None:
     _bind(db_session)
     await _seed(db_session)

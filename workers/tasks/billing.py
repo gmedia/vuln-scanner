@@ -26,7 +26,6 @@ _BACKEND = os.path.join(os.path.dirname(__file__), "..", "..", "backend")
 if _BACKEND not in sys.path:
     sys.path.insert(0, os.path.abspath(_BACKEND))
 
-from app.config import settings  # noqa: E402
 from app.models.billing import (  # noqa: E402
     BillingRecipient,
     BillingReminder,
@@ -597,7 +596,8 @@ async def _reconcile_gateway_attempts() -> dict[str, int]:
 
 @shared_task(bind=True, name="payment.reconcile_attempts", acks_late=True, max_retries=1)  # type: ignore
 def reconcile_gateway_attempts(self: Any) -> dict[str, Any]:
-    if not settings.payment_gateway_enabled:
-        return {"skipped": True, "reason": "gateway disabled", "reconciled_count": 0}
+    # The flag only blocks new checkouts; reconciliation must keep settling
+    # attempts that were already paid while the gateway was on. Attempts whose
+    # provider is not configured are skipped inside the sweep.
     return cast(dict[str, Any], _run(_reconcile_gateway_attempts()))
 

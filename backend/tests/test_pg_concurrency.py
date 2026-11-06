@@ -97,7 +97,7 @@ class _OtherFakeProvider(_FakeProvider):
     name = "xendit"
 
 
-def _build_fake_provider(name: str) -> _FakeProvider:
+def _build_fake_provider(name: str, **kwargs: object) -> _FakeProvider:
     return _OtherFakeProvider() if name == "xendit" else _FakeProvider()
 
 
