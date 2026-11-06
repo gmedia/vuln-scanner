@@ -1342,6 +1342,15 @@ def test_attempt_timeout_clamps_to_remaining_budget(monkeypatch: pytest.MonkeyPa
     assert nearly_spent.read < 120.0
 
 
+def test_attempt_timeout_uses_an_explicit_deadline(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "ai_upstream_timeout_seconds", 120.0)
+    monkeypatch.setattr(settings, "ai_upstream_connect_timeout_seconds", 10.0)
+
+    timeout = _attempt_timeout(time.monotonic(), streaming=False, deadline=12.0)
+    assert timeout.read == pytest.approx(12.0, abs=0.5)
+    assert timeout.read < settings.ai_upstream_timeout_seconds
+
+
 def test_attempt_timeout_streaming_uses_idle_read(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(settings, "ai_upstream_failover_deadline_seconds", 100.0)
     monkeypatch.setattr(settings, "ai_upstream_stream_idle_timeout_seconds", 45.0)

@@ -5,7 +5,26 @@ from unittest.mock import MagicMock
 import pytest
 import redis.asyncio as redis
 
+from app.config import settings
 from app.middleware.rate_limit import RateLimiter
+
+
+@pytest.mark.asyncio
+async def test_rate_limiter_bounds_redis_io(monkeypatch):
+    """A black-holed Redis must fail as RedisError instead of hanging the request."""
+    limiter = RateLimiter(max_requests=5, window_seconds=60, prefix="test")
+    captured = {}
+    fake = MagicMock()
+
+    def fake_from_url(_url, **kwargs):
+        captured.update(kwargs)
+        return fake
+
+    monkeypatch.setattr(redis.Redis, "from_url", fake_from_url)
+
+    assert await limiter._get_redis() is fake
+    assert captured["socket_connect_timeout"] == settings.redis_connect_timeout_seconds
+    assert captured["socket_timeout"] == settings.redis_socket_timeout_seconds
 
 
 @pytest.mark.asyncio

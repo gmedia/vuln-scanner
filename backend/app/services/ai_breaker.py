@@ -24,7 +24,12 @@ _redis: redis_async.Redis[str] | None = None
 async def _client() -> redis_async.Redis[str]:
     global _redis
     if _redis is None:
-        _redis = redis_async.Redis.from_url(settings.redis_url, decode_responses=True)
+        _redis = redis_async.Redis.from_url(
+            settings.redis_url,
+            decode_responses=True,
+            socket_connect_timeout=settings.redis_connect_timeout_seconds,
+            socket_timeout=settings.redis_socket_timeout_seconds,
+        )
     return _redis
 
 

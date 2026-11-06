@@ -3,6 +3,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AxiosError } from "axios";
 import AdminAi from "@/pages/admin/AdminAi";
 import * as adminApi from "@/api/admin";
 import { routingPositions } from "@/components/admin/aiUpstreamOrder";
@@ -725,6 +726,38 @@ describe("AdminAi", () => {
     expect(
       screen.getByTestId("admin-ai-feature-off").querySelector(".bg-amber-600"),
     ).toBeTruthy();
+  });
+
+  it("shows the upstream error when the trial chat fails", async () => {
+    const user = userEvent.setup();
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [makeProvider("p1", "OpenRouter")],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({
+      items: [makeModel()],
+      total: 1,
+    });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.adminAiChat).mockRejectedValue(
+      new AxiosError("upstream", "ERR_BAD_RESPONSE", undefined, undefined, {
+        status: 502,
+        statusText: "Bad Gateway",
+        headers: {},
+        config: {} as never,
+        data: {},
+      }),
+    );
+    renderPage();
+    await user.click(await screen.findByRole("tab", { name: "Trial chat" }));
+    await user.click(await screen.findByRole("combobox", { name: "Provider id" }));
+    await user.click(await screen.findByRole("option", { name: "OpenRouter" }));
+    await user.click(await screen.findByRole("combobox", { name: "Model" }));
+    await user.click(await screen.findByRole("option", { name: "sinexis/demo" }));
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    expect(await screen.findByTestId("ai-trial-error")).toHaveTextContent(
+      "The trial request failed. Check the provider status and try again. (502)",
+    );
   });
 
   it("rails the usage shell primary", async () => {

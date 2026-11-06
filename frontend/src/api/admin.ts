@@ -349,7 +349,9 @@ export async function adminAiChat(body: {
   messages: { role: string; content: string }[];
   max_tokens?: number;
 }): Promise<Record<string, unknown>> {
-  const { data } = await api.post("/api/admin/ai/chat", body);
+  const { data } = await api.post("/api/admin/ai/chat", body, {
+    timeout: 60_000,
+  });
   return data;
 }
 

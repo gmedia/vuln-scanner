@@ -287,18 +287,27 @@ def _attempt_reason(status: int | None) -> str:
     return "client_error"
 
 
-def _can_retry(idx: int, candidates: Sequence[UpstreamCandidate], started: float) -> bool:
+def _resolve_deadline(deadline: float | None) -> float:
+    return settings.ai_upstream_failover_deadline_seconds if deadline is None else deadline
+
+
+def _can_retry(
+    idx: int,
+    candidates: Sequence[UpstreamCandidate],
+    started: float,
+    deadline: float | None = None,
+) -> bool:
     if idx + 1 >= len(candidates):
         return False
-    return _budget_left(started) >= settings.ai_upstream_min_attempt_seconds
+    return _budget_left(started, deadline) >= settings.ai_upstream_min_attempt_seconds
 
 
-def _budget_left(started: float) -> float:
-    return settings.ai_upstream_failover_deadline_seconds - (time.monotonic() - started)
+def _budget_left(started: float, deadline: float | None = None) -> float:
+    return _resolve_deadline(deadline) - (time.monotonic() - started)
 
 
-def _attempt_timeout(started: float, *, streaming: bool) -> httpx.Timeout:
-    remaining = max(_budget_left(started), 0.001)
+def _attempt_timeout(started: float, *, streaming: bool, deadline: float | None = None) -> httpx.Timeout:
+    remaining = max(_budget_left(started, deadline), 0.001)
     hard_cap = min(remaining, settings.ai_upstream_timeout_seconds)
     read = min(hard_cap, settings.ai_upstream_stream_idle_timeout_seconds) if streaming else hard_cap
     connect = min(settings.ai_upstream_connect_timeout_seconds, remaining)
@@ -340,6 +349,7 @@ async def _post_with_failover(
     started: float,
     *,
     public_id: str,
+    deadline: float | None = None,
 ) -> UpstreamResult:
     capped = int(body.get("max_tokens") or 0)
     async with httpx.AsyncClient(timeout=settings.ai_upstream_timeout_seconds) as client:
@@ -351,10 +361,10 @@ async def _post_with_failover(
                     url,
                     headers=headers,
                     json=attempt_body,
-                    timeout=_attempt_timeout(started, streaming=False),
+                    timeout=_attempt_timeout(started, streaming=False, deadline=deadline),
                 )
             except httpx.TransportError:
-                retry = _can_retry(idx, candidates, started)
+                retry = _can_retry(idx, candidates, started, deadline)
                 await record_failure(candidate.provider_id, _attempt_reason(None))
                 _note_attempt_failure(
                     public_id=public_id,
@@ -367,7 +377,7 @@ async def _post_with_failover(
                     continue
                 return UpstreamResult(None, candidate, "transport")
             if _retryable_status(resp.status_code):
-                retry = _can_retry(idx, candidates, started)
+                retry = _can_retry(idx, candidates, started, deadline)
                 await record_failure(candidate.provider_id, _attempt_reason(resp.status_code))
                 _note_attempt_failure(
                     public_id=public_id,
@@ -496,6 +506,7 @@ async def chat_completions(
                 reservation_id=reservation.id,
                 locked=snapshot,
                 started=started,
+                deadline=settings.ai_upstream_failover_deadline_seconds,
             ),
             media_type="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
@@ -702,6 +713,7 @@ async def _stream_and_settle(
     reservation_id: UUID,
     locked: PriceSnapshot,
     started: float,
+    deadline: float,
 ) -> AsyncIterator[bytes]:
     prompt_t = 0
     completion_t = 0
@@ -725,12 +737,12 @@ async def _stream_and_settle(
                     url,
                     headers=headers,
                     json=attempt_body,
-                    timeout=_attempt_timeout(started, streaming=True),
+                    timeout=_attempt_timeout(started, streaming=True, deadline=deadline),
                 ) as resp:
                     http_status = resp.status_code
                     if resp.status_code >= 400:
                         upstream_fault = _retryable_status(resp.status_code)
-                        retry = upstream_fault and _can_retry(idx, candidates, started)
+                        retry = upstream_fault and _can_retry(idx, candidates, started, deadline)
                         if upstream_fault:
                             await record_failure(candidate.provider_id, _attempt_reason(resp.status_code))
                         _note_attempt_failure(
@@ -772,7 +784,7 @@ async def _stream_and_settle(
                                         finish = f
                             yield chunk
             except httpx.TransportError:
-                can_retry = not first_byte_sent and _can_retry(idx, candidates, started)
+                can_retry = not first_byte_sent and _can_retry(idx, candidates, started, deadline)
                 await record_failure(candidate.provider_id, _attempt_reason(None))
                 _note_attempt_failure(
                     public_id=model.public_id,
@@ -906,7 +918,13 @@ async def admin_trial_chat(
     upstream_body = dict(body)
     upstream_body["max_tokens"] = capped
     started = time.monotonic()
-    result = await _post_with_failover(candidates, upstream_body, started, public_id=model.public_id)
+    result = await _post_with_failover(
+        candidates,
+        upstream_body,
+        started,
+        public_id=model.public_id,
+        deadline=settings.ai_admin_trial_deadline_seconds,
+    )
     served = result.candidate
     resp = result.response
     effective = _cogs_snapshot(served, snapshot) if served is not None else snapshot

@@ -323,6 +323,61 @@ def test_admin_trial_chat_stream_rejected_and_ok(client, ai_on) -> None:
     assert client.delete(f"/api/admin/ai/providers/{pid}", headers=API_HEADERS).status_code == 204
 
 
+def test_admin_trial_chat_uses_shorter_deadline(client, ai_on, monkeypatch: pytest.MonkeyPatch) -> None:
+    created = client.post(
+        "/api/admin/ai/providers",
+        headers=API_HEADERS,
+        json={
+            "name": "OR",
+            "base_url": "https://openrouter.ai/api/v1",
+            "credential": "sk-or-v1-secret",
+        },
+    )
+    pid = created.json()["id"]
+    mid = client.post(
+        "/api/admin/ai/models",
+        headers=API_HEADERS,
+        json={
+            "provider_id": pid,
+            "public_id": "sinexis/deadline",
+            "upstream_id": "hidden-up",
+            "price_idr_per_1k_in": 100,
+            "price_idr_per_1k_out": 200,
+            "hpp_usd_per_1k_in": 1,
+            "hpp_usd_per_1k_out": 2,
+        },
+    ).json()["id"]
+
+    class _Resp:
+        status_code = 200
+
+        def json(self):
+            return {
+                "choices": [{"finish_reason": "stop", "message": {"content": "pong"}}],
+                "usage": {"prompt_tokens": 1, "completion_tokens": 1},
+            }
+
+    mock_client = AsyncMock()
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+    mock_client.post = AsyncMock(return_value=_Resp())
+    monkeypatch.setattr(settings, "ai_upstream_failover_deadline_seconds", 100.0)
+    monkeypatch.setattr(settings, "ai_admin_trial_deadline_seconds", 12.0)
+
+    with patch("app.services.ai_proxy.httpx.AsyncClient", return_value=mock_client):
+        ok = client.post(
+            "/api/admin/ai/chat",
+            headers=API_HEADERS,
+            json={"model": "sinexis/deadline", "messages": [{"role": "user", "content": "ping"}]},
+        )
+
+    assert ok.status_code == 200, ok.text
+    passed = mock_client.post.call_args.kwargs["timeout"]
+    assert passed.read == pytest.approx(12.0, abs=0.5)
+    assert client.delete(f"/api/admin/ai/models/{mid}", headers=API_HEADERS).status_code == 204
+    assert client.delete(f"/api/admin/ai/providers/{pid}", headers=API_HEADERS).status_code == 204
+
+
 @pytest.mark.asyncio
 async def test_admin_usage_paginated(client, db_session, ai_on) -> None:
     now = datetime.now(UTC)
