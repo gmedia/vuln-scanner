@@ -41,6 +41,46 @@ _PILLAR_LABELS = {
 _MORE_LABEL = "More"
 
 _SHELL_CSS = """
+@font-face {
+  font-family: 'Sora Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url(/fonts/sora-latin-ext-wght-normal.woff2) format('woff2-variations');
+  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,
+    U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,
+    U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Sora Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url(/fonts/sora-latin-wght-normal.woff2) format('woff2-variations');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,
+    U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,
+    U+FEFF,U+FFFD;
+}
+@font-face {
+  font-family: 'Red Hat Mono Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 300 700;
+  src: url(/fonts/red-hat-mono-latin-ext-wght-normal.woff2) format('woff2-variations');
+  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,
+    U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,
+    U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Red Hat Mono Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 300 700;
+  src: url(/fonts/red-hat-mono-latin-wght-normal.woff2) format('woff2-variations');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,
+    U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,
+    U+FEFF,U+FFFD;
+}
 :root{
   --background:hsl(0 0% 98%);
   --foreground:hsl(0 0% 7%);
@@ -68,7 +108,7 @@ _SHELL_CSS = """
 html{color-scheme:light;background:var(--background)}
 body{
   margin:0;min-height:100dvh;display:flex;flex-direction:column;
-  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-family:"Sora Variable","Sora",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
   color:var(--foreground);background:var(--background);line-height:1.6;
   letter-spacing:-0.011em;
 }
@@ -86,7 +126,7 @@ a:hover{color:var(--foreground)}
 }
 .brand svg{width:1.25rem;height:1.25rem;color:var(--primary);flex-shrink:0}
 .brand-text{
-  font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;
+  font-family:"Red Hat Mono Variable","Red Hat Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
   font-size:0.875rem;font-weight:700;letter-spacing:0.08em;
 }
 .brand-accent{color:var(--primary)}
@@ -105,7 +145,7 @@ a:hover{color:var(--foreground)}
 main.rail{flex:1;width:min(var(--rail),calc(100% - 2rem));margin:0 auto;padding:2.5rem 0 4rem}
 main.measure{flex:1;width:min(var(--measure),calc(100% - 2rem));margin:0 auto;padding:3rem 0 4.5rem}
 .page-intro{margin:0 0 2rem;max-width:40rem}
-h1{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+h1{font-family:"Sora Variable","Sora",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
   font-size:clamp(1.75rem,3vw,2.25rem);line-height:1.15;font-weight:700;
   letter-spacing:-0.03em;margin:0 0 0.75rem}
 article h1{font-size:clamp(1.85rem,3.2vw,2.75rem)}
@@ -156,7 +196,8 @@ ol.index .read{
 .body ul,.body ol{margin:0 0 1.1rem;padding-left:1.25rem}
 .body li{margin:0.35rem 0}
 .body pre{
-  font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;background:var(--muted);
+  font-family:"Red Hat Mono Variable","Red Hat Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  background:var(--muted);
   padding:1rem;overflow-x:auto;border-radius:0.375rem;border:1px solid var(--border);
 }
 .body a{color:var(--primary)}
