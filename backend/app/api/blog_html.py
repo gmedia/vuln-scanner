@@ -419,6 +419,22 @@ async def blog_index_html(
             "Guard satu wazuh-agent, alarm kritis. Host Protect helper di VPS Anda. "
             "Bukan SIEM 24/7, bukan agen kedua.</p></div>" + "".join(sections)
         )
+    index_jsonld: dict[str, Any] | None = None
+    if posts:
+        index_jsonld = {
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            "url": f"{CANONICAL_HOST}/blog",
+            "numberOfItems": len(posts),
+            "itemListElement": [
+                {
+                    "@type": "ListItem",
+                    "position": position,
+                    "url": f"{CANONICAL_HOST}/blog/{p.slug}",
+                }
+                for position, p in enumerate(posts, start=1)
+            ],
+        }
     html = _shell(
         "Blog — Sinexis",
         f"{CANONICAL_HOST}/blog",
@@ -429,6 +445,7 @@ async def blog_index_html(
         ),
         og_type="website",
         og_url=f"{CANONICAL_HOST}/blog",
+        jsonld=index_jsonld,
     )
     return HTMLResponse(
         html,

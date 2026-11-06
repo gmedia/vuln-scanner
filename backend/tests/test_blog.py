@@ -421,3 +421,43 @@ def test_jsonld_timestamps_carry_a_timezone(client):
 
     for field in ("datePublished", "dateModified"):
         assert re.search(r"(Z|[+-]\d{2}:\d{2})$", payload[field]), f"{field} has no offset"
+
+
+def _index_jsonld(text: str) -> dict:
+    opening = '<script type="application/ld+json">'
+    start = text.index(opening) + len(opening)
+    return json.loads(text[start : text.index("</script>", start)])
+
+
+def test_index_emits_an_item_list_of_published_posts(client):
+    _create_and_publish(client, "list-first", pillar="exposure")
+    _create_and_publish(client, "list-second", pillar="onbox")
+
+    payload = _index_jsonld(client.get("/blog").text)
+
+    assert payload["@type"] == "ItemList"
+    assert payload["url"] == "https://sinexis.app/blog"
+    urls = [item["url"] for item in payload["itemListElement"]]
+    assert urls == [
+        "https://sinexis.app/blog/list-second",
+        "https://sinexis.app/blog/list-first",
+    ]
+    assert [item["position"] for item in payload["itemListElement"]] == [1, 2]
+    assert payload["numberOfItems"] == 2
+
+
+def test_index_item_list_matches_the_rendered_cards(client):
+    _create_and_publish(client, "list-match", pillar="exposure")
+    text = client.get("/blog").text
+
+    payload = _index_jsonld(text)
+    listed = {item["url"] for item in payload["itemListElement"]}
+    linked = {f"https://sinexis.app{href}" for href in re.findall(r"href=['\"](/blog/[a-z0-9-]+)['\"]", text)}
+
+    assert listed == linked
+
+
+def test_index_omits_item_list_when_there_are_no_posts(client):
+    text = client.get("/blog").text
+
+    assert "application/ld+json" not in text
