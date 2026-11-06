@@ -72,4 +72,4 @@ Guard bukan SIEM. SIEM bukan tim yang berjaga 24 jam. Uptime bukan jaminan keter
 
 Pilih satu domain atau satu IP yang benar-benar dipakai, bukan alamat percobaan.
 
-Buka **sinexis.app**, daftar, jalankan satu pemeriksaan, baca hasilnya. Kalau isinya berguna untuk rapat bulanan, hidupkan jadwalnya. Periode berikutnya Anda membaca perubahannya, bukan mengulang daftar dari nol.
+Buka **sinexis.app**, daftar, jalankan satu [pemeriksaan](/products), baca hasilnya. Kalau isinya berguna untuk rapat bulanan, hidupkan jadwalnya. Periode berikutnya Anda membaca perubahannya, bukan mengulang daftar dari nol.

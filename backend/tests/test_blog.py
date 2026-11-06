@@ -461,3 +461,54 @@ def test_index_omits_item_list_when_there_are_no_posts(client):
     text = client.get("/blog").text
 
     assert "application/ld+json" not in text
+
+
+def _article_body_links(client, slug: str, body_md: str) -> dict[str, str]:
+    payload = {
+        "slug": slug,
+        "title": "Links",
+        "excerpt": "teaser",
+        "body_md": body_md,
+        "locale": "id",
+        "pillar": "exposure",
+    }
+    created = client.post("/api/admin/blog/posts", headers=API_HEADERS, json=payload)
+    assert created.status_code == 201
+    post_id = created.json()["id"]
+    assert client.post(f"/api/admin/blog/posts/{post_id}/publish", headers=API_HEADERS).status_code == 200
+    text = client.get(f"/blog/{slug}").text
+    return {m.group(1): (m.group(2) or "") for m in re.finditer(r'<a href="([^"]+)"(?: rel="([^"]*)")?>', text)}
+
+
+def test_internal_links_are_not_nofollowed(client):
+    rels = _article_body_links(
+        client,
+        "links-internal",
+        "Lihat [produk](/products/scan) dan [absolut](https://sinexis.app/products/guard).",
+    )
+
+    assert "nofollow" not in rels["/products/scan"]
+    assert "nofollow" not in rels["https://sinexis.app/products/guard"]
+    assert "noopener" in rels["/products/scan"]
+
+
+def test_external_links_keep_nofollow(client):
+    rels = _article_body_links(
+        client,
+        "links-external",
+        "Lihat [luar](https://example.com/x) dan [surel](mailto:a@b.co).",
+    )
+
+    assert "nofollow" in rels["https://example.com/x"]
+    assert "nofollow" in rels["mailto:a@b.co"]
+
+
+def test_javascript_href_is_dropped(client):
+    rels = _article_body_links(
+        client,
+        "links-scheme",
+        "Lihat [jahat](javascript:alert(1)) dan [aman](/products/scan).",
+    )
+
+    assert not any(href.startswith("javascript:") for href in rels)
+    assert "/products/scan" in rels
