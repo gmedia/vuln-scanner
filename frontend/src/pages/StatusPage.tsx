@@ -97,7 +97,7 @@ export default function StatusPage() {
       setCopiedField(field);
       window.setTimeout(() => setCopiedField(null), 1500);
     } catch {
-      void 0;
+      toast.error(t("copyFail"));
     }
   };
 

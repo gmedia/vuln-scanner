@@ -14,7 +14,6 @@ import {
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { useTranslation } from "react-i18next";
 import { captureInviteFromSearch, postAuthPath } from "@/lib/inviteToken";
-import { apiFieldErrors } from "@/api/apiErrors";
 import { FieldError } from "@/components/patterns/FormFeedback";
 
 function isUnverifiedError(message: string | null): boolean {
@@ -68,15 +67,11 @@ function Login() {
     setResendFeedback(null);
     setFieldErrors({});
     setIsSubmitting(true);
-    try {
-      const success = await login(email, password);
-      if (success) {
-        navigate(safeNext ?? postAuthPath());
-      } else {
-        setIsSubmitting(false);
-      }
-    } catch (err) {
-      setFieldErrors(apiFieldErrors(err));
+    const success = await login(email, password);
+    if (success) {
+      navigate(safeNext ?? postAuthPath());
+    } else {
+      setFieldErrors((useAuthStore.getState?.().fieldErrors ?? {}));
       setIsSubmitting(false);
     }
   };
@@ -85,21 +80,14 @@ function Login() {
     if (!email) return;
     setResendFeedback(null);
     setIsResending(true);
-    try {
-      const result = await resendVerification(email);
-      setIsResending(false);
-      if (result.ok) {
-        setResendFeedback(
-          result.emailSent === false
-            ? t("verifySendFailed")
-            : t("verifySent"),
-        );
-      } else {
-        setResendFeedback(t("resendFailed"));
-      }
-    } catch (err) {
-      setFieldErrors(apiFieldErrors(err));
-      setIsResending(false);
+    const result = await resendVerification(email);
+    setIsResending(false);
+    if (result.ok) {
+      setResendFeedback(
+        result.emailSent === false ? t("verifySendFailed") : t("verifySent"),
+      );
+    } else {
+      setFieldErrors((useAuthStore.getState?.().fieldErrors ?? {}));
       setResendFeedback(t("resendFailed"));
     }
   };

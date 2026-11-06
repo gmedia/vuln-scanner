@@ -22,7 +22,6 @@ import {
   AuthStatusIcon,
 } from "@/components/auth/AuthCard";
 import { useTranslation } from "react-i18next";
-import { apiFieldErrors } from "@/api/apiErrors";
 import { FieldError } from "@/components/patterns/FormFeedback";
 
 function ResetPassword() {
@@ -89,23 +88,19 @@ function ResetPassword() {
     }
 
     setIsSubmitting(true);
-    try {
-      const ok = await resetPassword(token, password, confirmPassword);
-      if (ok) {
-        setSuccess(true);
-      } else {
-        setIsSubmitting(false);
-        const errMsg = useAuthStore.getState().error;
-        if (errMsg) {
-          const match = errMsg.match(/wait (\d+) seconds/);
-          if (match) {
-            startCooldown(parseInt(match[1], 10));
-          }
+    const ok = await resetPassword(token, password, confirmPassword);
+    if (ok) {
+      setSuccess(true);
+    } else {
+      setIsSubmitting(false);
+      setFieldErrors((useAuthStore.getState?.().fieldErrors ?? {}));
+      const errMsg = useAuthStore.getState().error;
+      if (errMsg) {
+        const match = errMsg.match(/wait (\d+) seconds/);
+        if (match) {
+          startCooldown(parseInt(match[1], 10));
         }
       }
-    } catch (err) {
-      setFieldErrors(apiFieldErrors(err));
-      setIsSubmitting(false);
     }
   };
 

@@ -708,4 +708,40 @@ describe("authStore", () => {
       expect(useAuthStore.getState().activeRole()).toBe("admin");
     });
   });
+
+  describe("validation field errors", () => {
+    it("stores per-field errors from a 422 and clears them on the next action", async () => {
+      mockedAuthApi.login.mockRejectedValueOnce({
+        response: {
+          status: 422,
+          data: {
+            detail: "Email is required",
+            code: "validation_error",
+            fields: { email: "Email is required" },
+            errors: [
+              { field: "email", msg: "Email is required", type: "missing" },
+            ],
+          },
+        },
+      });
+
+      const ok = await useAuthStore.getState().login("", "Password1!");
+      expect(ok).toBe(false);
+      expect(useAuthStore.getState().fieldErrors).toEqual({
+        email: "This field is required.",
+      });
+
+      mockedAuthApi.login.mockRejectedValueOnce({
+        response: { status: 500, data: {} },
+      });
+      await useAuthStore.getState().login("", "Password1!");
+      expect(useAuthStore.getState().fieldErrors).toEqual({});
+    });
+
+    it("clearError also clears field errors", () => {
+      useAuthStore.setState({ fieldErrors: { email: "bad" } });
+      useAuthStore.getState().clearError();
+      expect(useAuthStore.getState().fieldErrors).toEqual({});
+    });
+  });
 });

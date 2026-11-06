@@ -44,6 +44,7 @@ function readStoredPriceUnit(): AiPriceUnit {
   try {
     const raw = window.localStorage.getItem(AI_PRICE_UNIT_KEY);
     if (raw != null && isAiPriceUnit(raw)) return raw;
+    // form-feedback: allow read-only preference; the in-session default applies.
   } catch {
     // localStorage may be unavailable (private mode or a jsdom without storage).
   }
@@ -53,6 +54,7 @@ function readStoredPriceUnit(): AiPriceUnit {
 function writeStoredPriceUnit(unit: AiPriceUnit): void {
   try {
     window.localStorage.setItem(AI_PRICE_UNIT_KEY, unit);
+    // form-feedback: allow best-effort preference; the in-session toggle still applies.
   } catch {
     // Persisting is a nicety; the in-session toggle still works without it.
   }

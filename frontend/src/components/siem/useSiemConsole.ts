@@ -13,7 +13,7 @@ import {
   listSiemEvents,
   patchSiemCase,
 } from "@/api/siem";
-import { apiDetail } from "@/components/siem/siemErrors";
+import { apiErrorMessage } from "@/api/apiErrors";
 import type { SiemFilterDraft } from "@/components/siem/SiemSearchFilters";
 import { useIsMobile, useIsXl } from "@/hooks/use-mobile";
 import { useAuthStore } from "@/store/authStore";
@@ -62,7 +62,7 @@ export function useSiemConsole(t: (key: string) => string) {
   const enterpriseOnly =
     statusQ.isError && isSiemEnterpriseOnlyError(statusQ.error);
   const enterpriseDetail = enterpriseOnly
-    ? apiDetail(statusQ.error, t("enterpriseOnly"))
+    ? apiErrorMessage(statusQ.error, t("enterpriseOnly"))
     : null;
   const featureOn = !!statusQ.data?.enabled && !featureOff && !enterpriseOnly;
 
@@ -113,7 +113,7 @@ export function useSiemConsole(t: (key: string) => string) {
       setActiveCaseId(c.id);
       invalidate();
     },
-    onError: (e) => setActionError(apiDetail(e, t("createCaseFail"))),
+    onError: (e) => setActionError(apiErrorMessage(e, t("createCaseFail"))),
   });
 
   const patchMut = useMutation({
@@ -128,7 +128,7 @@ export function useSiemConsole(t: (key: string) => string) {
       setActionError(null);
       invalidate();
     },
-    onError: (e) => setActionError(apiDetail(e, t("patchCaseFail"))),
+    onError: (e) => setActionError(apiErrorMessage(e, t("patchCaseFail"))),
   });
 
   const noteMut = useMutation({
@@ -139,7 +139,7 @@ export function useSiemConsole(t: (key: string) => string) {
       setActionError(null);
       invalidate();
     },
-    onError: (e) => setActionError(apiDetail(e, t("addNoteFail"))),
+    onError: (e) => setActionError(apiErrorMessage(e, t("addNoteFail"))),
   });
 
   const agents = agentsQ.data ?? [];
