@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic_core import PydanticCustomError
 
 from app.schemas.sku_tier import SkuTierFeatures, SkuTierWorkspaceLimits
 
@@ -11,14 +12,28 @@ _SPECIAL_CHARS = "!@#$%^&*()-_=+[]{}|;:',.<>?/~`\""
 
 
 def _validate_password_strength(v: str) -> str:
+    # PydanticCustomError carries a machine-readable `type`, so the SPA can
+    # render a localized message instead of parsing English prose.
     if not any(c.isupper() for c in v):
-        raise ValueError("Password must contain at least one uppercase letter")
+        raise PydanticCustomError(
+            "password_uppercase",
+            "Password must contain at least one uppercase letter",
+        )
     if not any(c.islower() for c in v):
-        raise ValueError("Password must contain at least one lowercase letter")
+        raise PydanticCustomError(
+            "password_lowercase",
+            "Password must contain at least one lowercase letter",
+        )
     if not any(c.isdigit() for c in v):
-        raise ValueError("Password must contain at least one digit")
+        raise PydanticCustomError(
+            "password_digit",
+            "Password must contain at least one digit",
+        )
     if not any(c in _SPECIAL_CHARS for c in v):
-        raise ValueError("Password must contain at least one special character")
+        raise PydanticCustomError(
+            "password_special",
+            "Password must contain at least one special character",
+        )
     return v
 
 

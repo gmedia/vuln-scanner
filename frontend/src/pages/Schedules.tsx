@@ -83,7 +83,6 @@ import {
   type ScanSchedule,
   type ScheduleRunJob,
 } from "@/api/schedules";
-import type { ApiError } from "@/lib/utils";
 import { canMutateWorkspace } from "@/api/orgs";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/authStore";
@@ -91,6 +90,7 @@ import PageHeader from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/patterns/EmptyState";
 import { useTranslation } from "react-i18next";
 import { RAILED_ROW_CLASS } from "@/components/patterns/RailedShell";
+import { apiErrorMessage } from "@/api/apiErrors";
 
 function formatWhen(iso: string | null, locale: string): string {
   if (!iso) return "—";
@@ -103,13 +103,6 @@ function formatWhen(iso: string | null, locale: string): string {
   }
 }
 
-function apiDetail(err: unknown, fallback: string): string {
-  if (err && typeof err === "object" && "response" in err) {
-    const detail = (err as ApiError).response?.data?.detail;
-    if (typeof detail === "string" && detail.trim()) return detail;
-  }
-  return fallback;
-}
 
 function parseScanType(value: string | null): "domain" | "ip" {
   return value === "ip" ? "ip" : "domain";
@@ -399,7 +392,7 @@ function Schedules() {
       toast.success(t("toastCreated"));
     },
     onError: (err: unknown) => {
-      setFormError(mapScheduleError(apiDetail(err, t("errCreate")), t));
+      setFormError(mapScheduleError(apiErrorMessage(err, t("errCreate")), t));
     },
   });
 
@@ -412,7 +405,7 @@ function Schedules() {
       void qc.invalidateQueries({ queryKey: ["schedules"] });
     },
     onError: (err: unknown) => {
-      setActionError(mapScheduleError(apiDetail(err, t("errToggle")), t));
+      setActionError(mapScheduleError(apiErrorMessage(err, t("errToggle")), t));
     },
   });
 
@@ -424,7 +417,7 @@ function Schedules() {
       void qc.invalidateQueries({ queryKey: ["schedules"] });
     },
     onError: (err: unknown) => {
-      setActionError(mapScheduleError(apiDetail(err, t("errDelete")), t));
+      setActionError(mapScheduleError(apiErrorMessage(err, t("errDelete")), t));
     },
   });
 

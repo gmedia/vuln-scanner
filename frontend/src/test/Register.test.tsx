@@ -190,9 +190,7 @@ describe("Register", () => {
       ).toBeInTheDocument();
     });
     expect(
-      screen.getByText(
-        "Registrasi berhasil. Periksa email Anda untuk verifikasi.",
-      ),
+      screen.getByText(/credits stay on this login after you verify/i),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /resend the verify email/i }),
@@ -215,7 +213,7 @@ describe("Register", () => {
       ).toBeInTheDocument();
     });
     expect(
-      screen.getByText(/email verifikasi gagal dikirim/i),
+      screen.getByText(/verify email did not go out/i),
     ).toBeInTheDocument();
     fireEvent.click(
       screen.getByRole("button", { name: /resend the verify email/i }),
@@ -226,7 +224,9 @@ describe("Register", () => {
       );
     });
     await waitFor(() => {
-      const feedback = screen.getAllByText("Email verifikasi telah dikirim.");
+      const feedback = screen.getAllByText(
+        "Verify email sent. Check that inbox before you scan.",
+      );
       expect(feedback.length).toBeGreaterThanOrEqual(1);
       expect(feedback.some((el) => el.className.includes("text-primary-text"))).toBe(
         true,

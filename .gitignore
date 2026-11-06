@@ -93,3 +93,6 @@ opencode.json
 .windsurf/
 .zcode/
 .zencoder/
+
+# vitest report output
+frontend/.vitest/

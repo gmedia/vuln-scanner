@@ -1,4 +1,6 @@
-import { apiErrorMessage, apiErrorCode } from "@/api/apiErrors";
+import { apiErrorCode } from "@/api/apiErrors";
+
+export { apiErrorMessage as apiDetail } from "@/api/apiErrors";
 import type { ApiError } from "@/lib/utils";
 
 const AUTH_SESSION_CODES = new Set(["auth_missing_token", "auth_invalid_token"]);
@@ -20,6 +22,3 @@ export function isAuthSessionError(err: unknown): boolean {
   return typeof detail === "string" && AUTH_SESSION_DETAILS.has(detail);
 }
 
-export function apiDetail(err: unknown, fallback: string): string {
-  return apiErrorMessage(err, fallback);
-}

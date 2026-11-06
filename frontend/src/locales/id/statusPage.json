@@ -75,5 +75,19 @@
   "overallPartial": "Gangguan sebagian",
   "overallMajor": "Gangguan besar",
   "overallUnknown": "Tidak diketahui",
-  "errSaveFailed": "Gagal menyimpan halaman status"
+  "errSaveFailed": "Gagal menyimpan halaman status",
+  "pageSavedToast": "Halaman status dibuat.",
+  "pagePublishedToast": "Visibilitas halaman status diperbarui.",
+  "componentAddedToast": "Komponen ditambahkan.",
+  "componentDeletedToast": "Komponen dihapus.",
+  "incidentCreatedToast": "Insiden dibuat.",
+  "incidentSavedToast": "Insiden disimpan.",
+  "incidentDeletedToast": "Insiden dihapus.",
+  "updatePostedToast": "Pembaruan dikirim.",
+  "publishFail": "Gagal mengubah visibilitas halaman",
+  "componentAddFail": "Gagal menambah komponen",
+  "componentDeleteFail": "Gagal menghapus komponen",
+  "incidentCreateFail": "Gagal membuat insiden",
+  "incidentSaveFail": "Gagal menyimpan insiden",
+  "updateFail": "Gagal mengirim pembaruan"
 }

@@ -43,7 +43,11 @@ import {
 } from "@/api/admin";
 import PageHeader from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/patterns/EmptyState";
+import { FieldError, FormAlert } from "@/components/patterns/FormFeedback";
+import { useApiFormErrors } from "@/hooks/useApiFormErrors";
+import { apiErrorMessage } from "@/api/apiErrors";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 const emptyForm: BlogPostWrite = {
   slug: "",
@@ -59,6 +63,8 @@ function AdminBlog() {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<BlogPostWrite>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const { formError, fieldErrors, apply, clearField, clear } =
+    useApiFormErrors();
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-blog-posts"],
@@ -70,7 +76,9 @@ function AdminBlog() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-blog-posts"] });
       setForm(emptyForm);
+      toast.success(t("blogSavedToast"));
     },
+    onError: (err) => apply(err, t("blogSaveFail")),
   });
 
   const updateMut = useMutation({
@@ -80,19 +88,29 @@ function AdminBlog() {
       queryClient.invalidateQueries({ queryKey: ["admin-blog-posts"] });
       setEditingId(null);
       setForm(emptyForm);
+      toast.success(t("blogSavedToast"));
     },
+    onError: (err) => apply(err, t("blogSaveFail")),
   });
 
   const publishMut = useMutation({
     mutationFn: (id: string) => adminApi.publishBlogPost(id),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["admin-blog-posts"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-blog-posts"] });
+      toast.success(t("blogPublishedToast"));
+    },
+    onError: (err) =>
+      toast.error(apiErrorMessage(err, t("blogPublishFail"))),
   });
 
   const unpublishMut = useMutation({
     mutationFn: (id: string) => adminApi.unpublishBlogPost(id, "draft"),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["admin-blog-posts"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-blog-posts"] });
+      toast.success(t("blogUnpublishedToast"));
+    },
+    onError: (err) =>
+      toast.error(apiErrorMessage(err, t("blogPublishFail"))),
   });
 
   const busy =
@@ -103,6 +121,7 @@ function AdminBlog() {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    clear();
     if (editingId) {
       updateMut.mutate({ id: editingId, body: form });
       return;
@@ -136,6 +155,7 @@ function AdminBlog() {
         />
         <AdminShellBody>
           <form className="space-y-4" onSubmit={onSubmit}>
+            <FormAlert message={formError} />
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="blog-slug">{t("blogSlug")}</Label>
               <Input
@@ -143,9 +163,15 @@ function AdminBlog() {
                 data-testid="blog-slug"
                 placeholder={t("blogSlug")}
                 value={form.slug}
-                onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                onChange={(e) => {
+                  setForm({ ...form, slug: e.target.value });
+                  clearField("slug");
+                }}
+                aria-invalid={Boolean(fieldErrors.slug)}
+                aria-describedby="blog-slug-error"
                 required
               />
+              <FieldError id="blog-slug-error" message={fieldErrors.slug} />
             </div>
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="blog-title">{t("blogTitleField")}</Label>
@@ -154,9 +180,15 @@ function AdminBlog() {
                 data-testid="blog-title"
                 placeholder={t("blogTitleField")}
                 value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                onChange={(e) => {
+                  setForm({ ...form, title: e.target.value });
+                  clearField("title");
+                }}
+                aria-invalid={Boolean(fieldErrors.title)}
+                aria-describedby="blog-title-error"
                 required
               />
+              <FieldError id="blog-title-error" message={fieldErrors.title} />
             </div>
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="blog-excerpt">{t("blogExcerpt")}</Label>
@@ -165,9 +197,15 @@ function AdminBlog() {
                 data-testid="blog-excerpt"
                 placeholder={t("blogExcerpt")}
                 value={form.excerpt}
-                onChange={(e) => setForm({ ...form, excerpt: e.target.value })}
+                onChange={(e) => {
+                  setForm({ ...form, excerpt: e.target.value });
+                  clearField("excerpt");
+                }}
+                aria-invalid={Boolean(fieldErrors.excerpt)}
+                aria-describedby="blog-excerpt-error"
                 required
               />
+              <FieldError id="blog-excerpt-error" message={fieldErrors.excerpt} />
             </div>
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="blog-locale">{t("blogLocale")}</Label>
@@ -228,10 +266,16 @@ function AdminBlog() {
                 data-testid="blog-body"
                 placeholder={t("blogBody")}
                 value={form.body_md}
-                onChange={(e) => setForm({ ...form, body_md: e.target.value })}
+                onChange={(e) => {
+                  setForm({ ...form, body_md: e.target.value });
+                  clearField("body_md");
+                }}
+                aria-invalid={Boolean(fieldErrors.body_md)}
+                aria-describedby="blog-body-error"
                 rows={10}
                 required
               />
+              <FieldError id="blog-body-error" message={fieldErrors.body_md} />
             </div>
             <div className="flex flex-wrap gap-2">
               <Button type="submit" disabled={busy} data-testid="blog-save" className="min-h-11 w-full sm:w-auto">

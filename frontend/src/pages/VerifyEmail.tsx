@@ -14,6 +14,8 @@ import {
   AuthStatusIcon,
 } from "@/components/auth/AuthCard";
 import { useTranslation } from "react-i18next";
+import { apiFieldErrors } from "@/api/apiErrors";
+import { FieldError } from "@/components/patterns/FormFeedback";
 
 function maskSignupEmail(email: string): string {
   const at = email.lastIndexOf("@");
@@ -36,6 +38,7 @@ function VerifyEmail() {
   );
   const [showResend, setShowResend] = useState(true);
   const [isResending, setIsResending] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [resendSuccess, setResendSuccess] = useState(false);
   const { cooldown, startCooldown } = useRateLimitCooldown();
 
@@ -56,21 +59,27 @@ function VerifyEmail() {
     const handleResend = async (e: React.FormEvent) => {
       e.preventDefault();
       if (!resendEmail) return;
+      setFieldErrors({});
       setIsResending(true);
       setResendSuccess(false);
-      const result = await resendVerification(resendEmail);
-      if (result.ok) {
-        setResendSuccess(result.emailSent !== false);
-        setIsResending(false);
-      } else {
-        setIsResending(false);
-        const errMsg = useAuthStore.getState().error;
-        if (errMsg) {
-          const match = errMsg.match(/wait (\d+) seconds/);
-          if (match) {
-            startCooldown(parseInt(match[1], 10));
+      try {
+        const result = await resendVerification(resendEmail);
+        if (result.ok) {
+          setResendSuccess(result.emailSent !== false);
+          setIsResending(false);
+        } else {
+          setIsResending(false);
+          const errMsg = useAuthStore.getState().error;
+          if (errMsg) {
+            const match = errMsg.match(/wait (\d+) seconds/);
+            if (match) {
+              startCooldown(parseInt(match[1], 10));
+            }
           }
         }
+      } catch (err) {
+        setFieldErrors(apiFieldErrors(err));
+        setIsResending(false);
       }
     };
 
@@ -131,10 +140,26 @@ function VerifyEmail() {
                     id="email"
                     type="email"
                     value={resendEmail}
-                    onChange={(e) => setResendEmail(e.target.value)}
+                    onChange={(e) => {
+                      setResendEmail(e.target.value);
+                      setFieldErrors((prev) => {
+                        if (!("email" in prev)) return prev;
+                        const next = { ...prev };
+                        delete next.email;
+                        return next;
+                      });
+                    }}
                     placeholder={t("signupEmailPlaceholder")}
                     required
                     disabled={isResending}
+                    aria-invalid={Boolean(fieldErrors.email)}
+                    aria-describedby={
+                      fieldErrors.email ? "verify-email-error" : undefined
+                    }
+                  />
+                  <FieldError
+                    id="verify-email-error"
+                    message={fieldErrors.email}
                   />
                 </div>
                 <Button

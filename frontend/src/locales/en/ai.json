@@ -50,5 +50,9 @@
   "sourceSdk": "SDK",
   "sourceTrial": "Trial",
   "ctxMeta": "{{ctx}} ctx · {{cap}} max tokens",
-  "fxStaleNote": "IDR shown at an older daily rate."
+  "fxStaleNote": "IDR shown at an older daily rate.",
+  "keyCreateFail": "Could not create the key.",
+  "keyRevokeFail": "Could not revoke the key.",
+  "keyCreatedToast": "Key created.",
+  "keyRevokedToast": "Key revoked."
 }

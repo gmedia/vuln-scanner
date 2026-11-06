@@ -6,6 +6,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { apiErrorMessage } from "@/api/apiErrors";
 import { Activity, FileText, Info, Shield } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -113,17 +114,13 @@ export default function HostWafPanel({
         paranoia: policyForSite?.paranoia ?? 1,
       }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["host-waf"] }),
-    onError: (err: { response?: { data?: { detail?: string } } }) => {
-      toast.error(String(err.response?.data?.detail ?? t("wafSaveFail")));
-    },
+    onError: (err: unknown) => toast.error(apiErrorMessage(err, t("wafSaveFail"))),
   });
 
   const simMut = useMutation({
     mutationFn: () => simulateHostWaf(selected),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["host-waf"] }),
-    onError: (err: { response?: { data?: { detail?: string } } }) => {
-      toast.error(String(err.response?.data?.detail ?? t("wafSimFail")));
-    },
+    onError: (err: unknown) => toast.error(apiErrorMessage(err, t("wafSimFail"))),
   });
 
   const copyMut = useMutation({
@@ -132,9 +129,7 @@ export default function HostWafPanel({
       await navigator.clipboard.writeText(snip.content);
     },
     onSuccess: () => toast.success(t("wafCopyOk")),
-    onError: (err: { response?: { data?: { detail?: string } } }) => {
-      toast.error(String(err.response?.data?.detail ?? t("wafCopyFail")));
-    },
+    onError: (err: unknown) => toast.error(apiErrorMessage(err, t("wafCopyFail"))),
   });
 
   if (featureOff) {

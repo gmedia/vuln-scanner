@@ -37,5 +37,6 @@
   "hourLabel24": "Hour (24-hour)",
   "minuteLabel": "Minute",
   "dateTimePlaceholder": "Select date & time",
-  "clear": "Clear"
+  "clear": "Clear",
+  "formErrorTitle": "Please check the form"
 }

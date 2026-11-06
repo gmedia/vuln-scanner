@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
-  AlertCircle,
   Check,
   Copy,
   Eye,
@@ -15,10 +14,12 @@ import {
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/authStore";
 import { useRateLimitCooldown } from "@/hooks/useRateLimitCooldown";
+import { useApiFormErrors } from "@/hooks/useApiFormErrors";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { FormAlert, FieldError } from "@/components/patterns/FormFeedback";
 import {
   ProfileIconChip,
   ProfileNotice,
@@ -70,6 +71,7 @@ function PasswordField({
   onToggle,
   showLabel,
   hideLabel,
+  error,
 }: {
   id: string;
   label: string;
@@ -81,6 +83,7 @@ function PasswordField({
   onToggle: () => void;
   showLabel: string;
   hideLabel: string;
+  error?: string | null;
 }) {
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
@@ -95,6 +98,8 @@ function PasswordField({
           required
           disabled={disabled}
           className="pr-10"
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${id}-error` : undefined}
         />
         <button
           type="button"
@@ -109,6 +114,7 @@ function PasswordField({
           )}
         </button>
       </div>
+      <FieldError id={`${id}-error`} message={error} />
     </div>
   );
 }
@@ -134,12 +140,14 @@ function Profile() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showProfilePw, setShowProfilePw] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const emailForm = useApiFormErrors();
+  const passwordForm = useApiFormErrors();
 
   const profileCooldown = useRateLimitCooldown();
   const passwordCooldown = useRateLimitCooldown();
@@ -163,18 +171,32 @@ function Profile() {
     e.preventDefault();
     setIsUpdatingProfile(true);
     setProfileSuccess(false);
-    const ok = await updateProfile(email, profilePassword);
-    if (ok) {
-      setProfileSuccess(true);
-      toast.success(t("profileUpdated"));
-      setProfilePassword("");
-      setEmail("");
-    }
-    setIsUpdatingProfile(false);
-    const errMsg = useAuthStore.getState().error;
-    const wait = waitSeconds(errMsg);
-    if (wait != null) {
-      profileCooldown.startCooldown(wait);
+    emailForm.clear();
+    try {
+      const ok = await updateProfile(email, profilePassword);
+      if (ok) {
+        setProfileSuccess(true);
+        toast.success(t("profileUpdated"));
+        setProfilePassword("");
+        setEmail("");
+      } else {
+        const errMsg = useAuthStore.getState().error;
+        if (errMsg) {
+          emailForm.setFormError(errMsg);
+          const wait = waitSeconds(errMsg);
+          if (wait != null) {
+            profileCooldown.startCooldown(wait);
+          }
+        }
+      }
+    } catch (err) {
+      const extracted = emailForm.apply(err, t("updateEmailFailed"));
+      const wait = waitSeconds(extracted.message);
+      if (wait != null) {
+        profileCooldown.startCooldown(wait);
+      }
+    } finally {
+      setIsUpdatingProfile(false);
     }
   };
 
@@ -182,29 +204,68 @@ function Profile() {
     e.preventDefault();
     setIsChangingPassword(true);
     setPasswordSuccess(false);
-    setPasswordError(null);
-    const ok = await changePassword(
-      currentPassword,
-      newPassword,
-      confirmPassword,
-    );
-    if (ok) {
-      setPasswordSuccess(true);
-      toast.success(t("passwordChanged"));
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    } else {
-      const errMsg = useAuthStore.getState().error;
-      if (errMsg) {
-        setPasswordError(errMsg);
-        const wait = waitSeconds(errMsg);
-        if (wait != null) {
-          passwordCooldown.startCooldown(wait);
+    passwordForm.clear();
+    try {
+      const ok = await changePassword(
+        currentPassword,
+        newPassword,
+        confirmPassword,
+      );
+      if (ok) {
+        setPasswordSuccess(true);
+        toast.success(t("passwordChanged"));
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        const errMsg = useAuthStore.getState().error;
+        if (errMsg) {
+          passwordForm.setFormError(errMsg);
+          const wait = waitSeconds(errMsg);
+          if (wait != null) {
+            passwordCooldown.startCooldown(wait);
+          }
         }
       }
+    } catch (err) {
+      const extracted = passwordForm.apply(err, t("changePasswordFailed"));
+      const wait = waitSeconds(extracted.message);
+      if (wait != null) {
+        passwordCooldown.startCooldown(wait);
+      }
+    } finally {
+      setIsChangingPassword(false);
     }
-    setIsChangingPassword(false);
+  };
+
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    setProfileSuccess(false);
+    emailForm.clearField("email");
+  };
+
+  const handleEmailPasswordChange = (value: string) => {
+    setProfilePassword(value);
+    setProfileSuccess(false);
+    emailForm.clearField("current_password");
+  };
+
+  const handleCurrentPasswordChange = (value: string) => {
+    setCurrentPassword(value);
+    setPasswordSuccess(false);
+    passwordForm.clearField("current_password");
+  };
+
+  const handleNewPasswordChange = (value: string) => {
+    setNewPassword(value);
+    setPasswordSuccess(false);
+    passwordForm.clearField("new_password");
+  };
+
+  const handleConfirmPasswordChange = (value: string) => {
+    setConfirmPassword(value);
+    setPasswordSuccess(false);
+    passwordForm.clearField("confirm_password");
   };
 
   const verifyTone = verificationTone(Boolean(user?.is_verified));
@@ -212,12 +273,12 @@ function Profile() {
   const credits = creditsTone(user?.credits ?? 0);
   const passwordTone = formTone({
     cooldown: passwordCooldown.cooldown,
-    error: Boolean(passwordError),
+    error: Boolean(passwordForm.formError),
     success: passwordSuccess,
   });
   const emailTone = formTone({
     cooldown: profileCooldown.cooldown,
-    error: Boolean(error),
+    error: Boolean(emailForm.formError ?? (!passwordForm.formError ? error : null)),
     success: profileSuccess,
   });
 
@@ -358,49 +419,51 @@ function Profile() {
                   </span>
                 </ProfileNotice>
               )}
-              {passwordError &&
-                passwordCooldown.cooldown === 0 &&
-                !passwordSuccess && (
-                  <ProfileNotice tone="danger" role="alert">
-                    <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>{passwordError}</span>
-                  </ProfileNotice>
-                )}
+              <FormAlert
+                message={
+                  passwordCooldown.cooldown === 0
+                    ? passwordForm.formError
+                    : null
+                }
+              />
               <PasswordField
                 id="current-password"
                 label={t("currentPassword")}
                 value={currentPassword}
-                onChange={setCurrentPassword}
+                onChange={handleCurrentPasswordChange}
                 placeholder="••••••••"
                 disabled={isChangingPassword}
                 visible={showCurrent}
                 onToggle={() => setShowCurrent((v) => !v)}
                 showLabel={t("showCurrentPassword")}
                 hideLabel={t("hideCurrentPassword")}
+                error={passwordForm.fieldErrors.current_password}
               />
               <PasswordField
                 id="new-password"
                 label={t("newPassword")}
                 value={newPassword}
-                onChange={setNewPassword}
+                onChange={handleNewPasswordChange}
                 placeholder={t("newPasswordPlaceholder")}
                 disabled={isChangingPassword}
                 visible={showNew}
                 onToggle={() => setShowNew((v) => !v)}
                 showLabel={t("showNewPassword")}
                 hideLabel={t("hideNewPassword")}
+                error={passwordForm.fieldErrors.new_password}
               />
               <PasswordField
                 id="confirm-password"
                 label={t("confirmNewPassword")}
                 value={confirmPassword}
-                onChange={setConfirmPassword}
+                onChange={handleConfirmPasswordChange}
                 placeholder="••••••••"
                 disabled={isChangingPassword}
                 visible={showConfirm}
                 onToggle={() => setShowConfirm((v) => !v)}
                 showLabel={t("showConfirmPassword")}
                 hideLabel={t("hideConfirmPassword")}
+                error={passwordForm.fieldErrors.confirm_password}
               />
               <Button
                 data-testid="profile-password-submit"
@@ -454,35 +517,48 @@ function Profile() {
                   </span>
                 </ProfileNotice>
               )}
-              {error && profileCooldown.cooldown === 0 && !profileSuccess && (
-                <ProfileNotice tone="danger" role="alert">
-                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                  <span>{error}</span>
-                </ProfileNotice>
-              )}
+              <FormAlert
+                message={
+                  profileCooldown.cooldown === 0
+                    ? (emailForm.formError ??
+                      (!passwordForm.formError ? error : null))
+                    : null
+                }
+              />
               <div className="flex min-w-0 flex-col gap-1.5">
                 <Label htmlFor="profile-email">{t("newEmail")}</Label>
                 <Input
                   id="profile-email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => handleEmailChange(e.target.value)}
                   placeholder="new@example.com"
                   required
                   disabled={isUpdatingProfile}
+                  aria-invalid={Boolean(emailForm.fieldErrors.email)}
+                  aria-describedby={
+                    emailForm.fieldErrors.email
+                      ? "profile-email-error"
+                      : undefined
+                  }
+                />
+                <FieldError
+                  id="profile-email-error"
+                  message={emailForm.fieldErrors.email}
                 />
               </div>
               <PasswordField
                 id="profile-password"
                 label={t("currentPassword")}
                 value={profilePassword}
-                onChange={setProfilePassword}
+                onChange={handleEmailPasswordChange}
                 placeholder="••••••••"
                 disabled={isUpdatingProfile}
                 visible={showProfilePw}
                 onToggle={() => setShowProfilePw((v) => !v)}
                 showLabel={t("showEmailConfirmPassword")}
                 hideLabel={t("hideEmailConfirmPassword")}
+                error={emailForm.fieldErrors.current_password}
               />
               <p className="text-[10px] text-muted-foreground">
                 {t("passwordRequiredToConfirm")}

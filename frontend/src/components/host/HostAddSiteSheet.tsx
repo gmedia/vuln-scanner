@@ -7,6 +7,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { FieldError, FormAlert } from "@/components/patterns/FormFeedback";
 import {
   Select,
   SelectContent,
@@ -44,6 +45,9 @@ export type HostAddSiteSheetProps = {
   readonly onWatchOnWriteChange: (v: boolean) => void;
   readonly saving: boolean;
   readonly onSave: () => void;
+  readonly fieldErrors?: Record<string, string>;
+  readonly formError?: string | null;
+  readonly clearField?: (field: string) => void;
 };
 
 export default function HostAddSiteSheet({
@@ -66,10 +70,16 @@ export default function HostAddSiteSheet({
   onWatchOnWriteChange,
   saving,
   onSave,
+  fieldErrors,
+  formError,
+  clearField,
 }: HostAddSiteSheetProps) {
   const { t } = useTranslation("host");
   const saveDisabled =
     !name.trim() || !rootPath.trim() || !selectedAgentId || saving;
+  const nameError = fieldErrors?.name;
+  const rootPathError = fieldErrors?.root_path;
+  const agentError = fieldErrors?.guard_agent_id ?? fieldErrors?.agent_id;
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -87,15 +97,22 @@ export default function HostAddSiteSheet({
               </p>
             </SheetHeader>
             <div className="space-y-4 px-4">
+              <FormAlert message={formError} />
               <div className="flex min-w-0 flex-col gap-1.5">
                 <Label htmlFor="host-name">{t("name")}</Label>
                 <Input
                   id="host-name"
                   data-testid="host-name"
                   value={name}
-                  onChange={(e) => onNameChange(e.target.value)}
+                  onChange={(e) => {
+                    onNameChange(e.target.value);
+                    clearField?.("name");
+                  }}
                   className="h-10 min-h-10"
+                  aria-invalid={Boolean(nameError)}
+                  aria-describedby={nameError ? "host-name-error" : undefined}
                 />
+                <FieldError id="host-name-error" message={nameError} />
               </div>
               <div className="flex min-w-0 flex-col gap-1.5">
                 <Label htmlFor="host-root">{t("rootPath")}</Label>
@@ -103,10 +120,18 @@ export default function HostAddSiteSheet({
                   id="host-root"
                   data-testid="host-root"
                   value={rootPath}
-                  onChange={(e) => onRootPathChange(e.target.value)}
+                  onChange={(e) => {
+                    onRootPathChange(e.target.value);
+                    clearField?.("root_path");
+                  }}
                   placeholder="/var/www/html"
                   className="h-10 min-h-10 font-mono text-xs"
+                  aria-invalid={Boolean(rootPathError)}
+                  aria-describedby={
+                    rootPathError ? "host-root-error" : undefined
+                  }
                 />
+                <FieldError id="host-root-error" message={rootPathError} />
               </div>
               <p
                 className="rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground"
@@ -116,11 +141,22 @@ export default function HostAddSiteSheet({
               </p>
               <div className="flex min-w-0 flex-col gap-1.5">
                 <Label htmlFor="host-agent">{t("guardAgent")}</Label>
-                <Select value={selectedAgentId} onValueChange={onAgentChange}>
+                <Select
+                  value={selectedAgentId}
+                  onValueChange={(v) => {
+                    onAgentChange(v);
+                    clearField?.("guard_agent_id");
+                    clearField?.("agent_id");
+                  }}
+                >
                   <SelectTrigger
                     id="host-agent"
                     data-testid="host-agent"
                     aria-label={t("guardAgent")}
+                    aria-invalid={Boolean(agentError)}
+                    aria-describedby={
+                      agentError ? "host-agent-error" : undefined
+                    }
                     className="h-10 min-h-10"
                   >
                     <SelectValue />
@@ -133,6 +169,7 @@ export default function HostAddSiteSheet({
                     ))}
                   </SelectContent>
                 </Select>
+                <FieldError id="host-agent-error" message={agentError} />
                 {selectedAgentId ? (
                   <p
                     className="text-xs text-muted-foreground"

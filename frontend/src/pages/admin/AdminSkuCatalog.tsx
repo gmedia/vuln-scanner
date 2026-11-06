@@ -8,6 +8,7 @@ import {
   type InvoiceProduct,
   type SkuCatalogItem,
 } from "@/api/admin";
+import { apiErrorMessage } from "@/api/apiErrors";
 import {
   AdminNotice,
   AdminShell,
@@ -120,12 +121,12 @@ export function AdminSkuPricePanel() {
         invoicable: body.invoicable,
       }),
     onSuccess: () => {
-      toast.success(t("skuSaved"));
+      toast.success(t("skuSavedToast"));
       void queryClient.invalidateQueries({ queryKey: ["admin-sku-catalog"] });
       setPending(null);
     },
-    onError: () => {
-      toast.error(t("skuSaveFail"));
+    onError: (err) => {
+      toast.error(apiErrorMessage(err, t("skuSaveFail")));
     },
   });
 

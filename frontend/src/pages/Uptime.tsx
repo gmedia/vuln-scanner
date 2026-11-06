@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Activity } from "lucide-react";
+import { toast } from "sonner";
+import { apiErrorMessage } from "@/api/apiErrors";
 import {
   createMonitor,
   deleteMonitor,
@@ -111,12 +113,22 @@ export default function Uptime() {
 
   const delMut = useMutation({
     mutationFn: deleteMonitor,
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["uptime"] }),
+    onSuccess: () => {
+      toast.success(t("monitorDeletedToast"));
+      void qc.invalidateQueries({ queryKey: ["uptime"] });
+    },
+    onError: (err) => toast.error(apiErrorMessage(err, t("monitorDeleteFail"))),
   });
 
   const pauseMut = useMutation({
     mutationFn: (id: string) => pauseMonitor(id),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["uptime"] }),
+    onSuccess: (monitor) => {
+      toast.success(
+        t(monitor.enabled ? "monitorResumedToast" : "monitorPausedToast"),
+      );
+      void qc.invalidateQueries({ queryKey: ["uptime"] });
+    },
+    onError: (err) => toast.error(apiErrorMessage(err, t("monitorPauseFail"))),
   });
 
   const updateMut = useMutation({

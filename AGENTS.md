@@ -128,8 +128,8 @@ UI PRs must also fill the design change protocol in [`.github/pull_request_templ
 
 ## CI gates (required checks — all block `ci-ok`)
 
-`ci-ok` is the **only** required check. It aggregates 20 jobs, including seven drift/security
-gates that are easy to trip without knowing they exist. All of them run in CI; run the script
+`ci-ok` is the **only** required check. It aggregates 22 jobs, including the drift/security
+gates below that are easy to trip without knowing they exist. All of them run in CI; run the script
 locally before pushing.
 
 | Gate (job) | Enforces | If it fails |
@@ -141,7 +141,7 @@ locally before pushing.
 | `deps-audit-python` | `pip-audit` over both requirements files must find **no** advisory at all (pip-audit reports no severity, so there is no threshold). | Bump the pin, or allowlist with `ecosystem: "pip"`. |
 | `public-surface-sync` | Every `published: true` entry in `frontend/src/lib/services.ts` must appear in the `PRODUCT_SLUGS` tuple in `backend/app/api/sitemap_html.py`, and vice versa. Drift means `/products` links a page the sitemap omits (or the sitemap advertises a 404). | Update the Python tuple in the same PR (`node scripts/sync-public-registry.mjs` rewrites it), then re-run `node scripts/check-public-registry-sync.mjs`. |
 | `nginx-headers` | A `location` block that declares `add_header` makes nginx drop **every** inherited header, CSP included — that is how `/terms`, `/privacy`, `/blog`, `/status` served without a CSP. Also asserts the host+path robots `map`, `location = /sitemap.xml`, and the compose/Vite sitemap proxies survive. | Delete the location-level `add_header` set and let the server-level headers plus the robots map apply, or re-declare `Content-Security-Policy` in that block. `/v1/` is exempt (JSON/SSE, no HTML). |
-
+| `form-feedback` | Every `useMutation` must declare `onError` (or an explicit `// form-feedback: allow <reason>` for call-site handling), no local `apiDetail` readers, no `String(...detail...)`. A write with no failure path is a silent data-loss bug. | Add `onError` via `apiErrorMessage()` / `useApiFormErrors().apply()`. Contract: [`docs/specs/form-feedback.md`](docs/specs/form-feedback.md). |
 Local runs:
 
 ```bash
@@ -153,6 +153,7 @@ node scripts/check-alert-metrics.mjs        # alert names must match metrics.py
 node scripts/check-public-registry-sync.mjs # product registry must match the sitemap tuple
 node scripts/sync-public-registry.mjs       # rewrite the sitemap tuple from the registry
 node scripts/check-nginx-headers.mjs        # no location may drop inherited CSP; robots map + sitemap routes
+node scripts/check-form-feedback.mjs        # every mutation has a visible error path
 ```
 
 The two audit gates share one allowlist file. Expired entries fail; entries that no longer match
@@ -162,6 +163,28 @@ to get green is an anti-pattern** — add tests, align pins, or record an explic
 Container scanning is separate: `docker-scan-*` runs Trivy twice per image — SARIF for the
 Security tab, then a **blocking CRITICAL** check. See
 [`docs/dependency-pins.md`](docs/dependency-pins.md#container-image-scanning-trivy).
+
+## Form feedback (MANDATORY)
+
+Every write path in `frontend/src` (form, dialog, sheet, inline editor, row action, toggle) must
+produce a visible outcome. A rejected write may never be silent, and a successful user-initiated
+write may never be silent either. Full contract: [`docs/specs/form-feedback.md`](docs/specs/form-feedback.md).
+
+1. **One error reader** — `apiErrorMessage(err, fallback)` / `extractApiError(err, fallback)` from
+   `frontend/src/api/apiErrors.ts`. Never read `err.response.data.detail` by hand, never write a local
+   `apiDetail`/`detailFromBody`/`extractError`, never `String(detail)` (422 renders `[object Object]`).
+2. **Every `useMutation` has `onError`.** Forms use `useApiFormErrors().apply(err, fallback)` plus
+   `<FormAlert>` + `<FieldError>` per field (`frontend/src/components/patterns/FormFeedback.tsx`);
+   row actions use `toast.error(apiErrorMessage(...))`. A dialog must not close on failure.
+3. **422 mapping** — `extractApiError().fields` is keyed by the backend `loc` path (snake_case for
+   request bodies, e.g. `email`, `findings[0].class`). Bind it to the input with `aria-invalid` and
+   `aria-describedby`, and clear it in the field's `onChange`.
+4. **HTTP 200 is not success** — check `{ ok: false }` payloads (Guard sync/enable, host-agent
+   responses) and warn, never toast success.
+5. **Success comes from i18n** — `toast.success` / inline notice keyed in `en`+`id`. Do not surface a
+   backend prose `message` field (legacy, hardcoded Indonesian) except for dynamic data.
+6. **CI** — `node scripts/check-form-feedback.mjs` runs in the `form-feedback` job and blocks
+   `ci-ok`. Run it before pushing.
 
 ## Design system (MANDATORY)
 

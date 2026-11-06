@@ -22,6 +22,8 @@ import {
   AuthStatusIcon,
 } from "@/components/auth/AuthCard";
 import { useTranslation } from "react-i18next";
+import { apiFieldErrors } from "@/api/apiErrors";
+import { FieldError } from "@/components/patterns/FormFeedback";
 
 function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -34,6 +36,7 @@ function ResetPassword() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const { cooldown, startCooldown } = useRateLimitCooldown();
@@ -74,6 +77,7 @@ function ResetPassword() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setValidationError(null);
+    setFieldErrors({});
 
     if (password.length < 8) {
       setValidationError(t("passwordMin"));
@@ -85,18 +89,23 @@ function ResetPassword() {
     }
 
     setIsSubmitting(true);
-    const ok = await resetPassword(token, password, confirmPassword);
-    if (ok) {
-      setSuccess(true);
-    } else {
-      setIsSubmitting(false);
-      const errMsg = useAuthStore.getState().error;
-      if (errMsg) {
-        const match = errMsg.match(/wait (\d+) seconds/);
-        if (match) {
-          startCooldown(parseInt(match[1], 10));
+    try {
+      const ok = await resetPassword(token, password, confirmPassword);
+      if (ok) {
+        setSuccess(true);
+      } else {
+        setIsSubmitting(false);
+        const errMsg = useAuthStore.getState().error;
+        if (errMsg) {
+          const match = errMsg.match(/wait (\d+) seconds/);
+          if (match) {
+            startCooldown(parseInt(match[1], 10));
+          }
         }
       }
+    } catch (err) {
+      setFieldErrors(apiFieldErrors(err));
+      setIsSubmitting(false);
     }
   };
 
@@ -149,11 +158,25 @@ function ResetPassword() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setFieldErrors((prev) => {
+                      if (!("new_password" in prev)) return prev;
+                      const next = { ...prev };
+                      delete next.new_password;
+                      return next;
+                    });
+                  }}
                   placeholder="••••••••"
                   required
                   disabled={isSubmitting}
                   className="pr-10"
+                  aria-invalid={Boolean(fieldErrors.new_password)}
+                  aria-describedby={
+                    fieldErrors.new_password
+                      ? "reset-password-error"
+                      : undefined
+                  }
                 />
                 <button
                   type="button"
@@ -171,6 +194,10 @@ function ResetPassword() {
                   )}
                 </button>
               </div>
+              <FieldError
+                id="reset-password-error"
+                message={fieldErrors.new_password}
+              />
             </div>
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="confirmPassword">{tc("confirmPassword")}</Label>
@@ -179,11 +206,25 @@ function ResetPassword() {
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    setFieldErrors((prev) => {
+                      if (!("confirm_password" in prev)) return prev;
+                      const next = { ...prev };
+                      delete next.confirm_password;
+                      return next;
+                    });
+                  }}
                   placeholder="••••••••"
                   required
                   disabled={isSubmitting}
                   className="pr-10"
+                  aria-invalid={Boolean(fieldErrors.confirm_password)}
+                  aria-describedby={
+                    fieldErrors.confirm_password
+                      ? "reset-confirm-password-error"
+                      : undefined
+                  }
                 />
                 <button
                   type="button"
@@ -203,6 +244,10 @@ function ResetPassword() {
                   )}
                 </button>
               </div>
+              <FieldError
+                id="reset-confirm-password-error"
+                message={fieldErrors.confirm_password}
+              />
             </div>
             <Button
               type="submit"

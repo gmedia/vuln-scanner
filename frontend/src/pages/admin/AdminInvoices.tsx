@@ -76,6 +76,7 @@ import {
   useInvoicePrint,
 } from "@/components/invoice/InvoicePrintSheet";
 import { useTierMap } from "@/hooks/useTierMap";
+import { apiErrorMessage } from "@/api/apiErrors";
 
 function formatIdr(n: number): string {
   return `Rp ${n.toLocaleString("id-ID")}`;
@@ -85,12 +86,6 @@ function isInvoiceProduct(value: string): value is InvoiceProduct {
   return value === "scan" || value === "host" || value === "uptime" || value === "guard";
 }
 
-function apiDetail(err: unknown, fallback: string): string {
-  const detail = (
-    err as { response?: { data?: { detail?: unknown } } }
-  )?.response?.data?.detail;
-  return typeof detail === "string" && detail ? detail : fallback;
-}
 
 function AdminInvoices() {
   const { t } = useTranslation("admin");
@@ -105,8 +100,8 @@ function AdminInvoices() {
   const [bankRef, setBankRef] = useState("");
   const [promoCode, setPromoCode] = useState("");
   const [promoResult, setPromoResult] = useState<PromoValidateResult | null>(null);
-  const [promoError, setPromoError] = useState(false);
-  const [promoLinkError, setPromoLinkError] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoLinkError, setPromoLinkError] = useState<string | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
   const [requestId, setRequestId] = useState("");
   const { printing, startPrint } = useInvoicePrint();
@@ -166,12 +161,12 @@ function AdminInvoices() {
   function clearPromo() {
     setPromoCode("");
     setPromoResult(null);
-    setPromoError(false);
+    setPromoError(null);
   }
 
   function clearRequest() {
     setRequestId("");
-    setPromoLinkError(false);
+    setPromoLinkError(null);
   }
 
   async function validateLinkedPromo(
@@ -181,8 +176,8 @@ function AdminInvoices() {
   ) {
     if (!orgId) return;
     setPromoLoading(true);
-    setPromoLinkError(false);
-    setPromoError(false);
+    setPromoLinkError(null);
+    setPromoError(null);
     setPromoResult(null);
     try {
       const result = await adminApi.validateAdminPromoCode({
@@ -193,8 +188,8 @@ function AdminInvoices() {
         cycle: targetCycle,
       });
       setPromoResult(result);
-    } catch {
-      setPromoLinkError(true);
+    } catch (err) {
+      setPromoLinkError(apiErrorMessage(err, t("invoiceRequestPromoInvalid")));
     } finally {
       setPromoLoading(false);
     }
@@ -206,11 +201,11 @@ function AdminInvoices() {
     setProduct("scan");
     setSku(req.target_sku);
     setCycle(req.cycle);
-    setPromoLinkError(false);
+    setPromoLinkError(null);
     if (req.promo_code) {
       setPromoCode(req.promo_code.toUpperCase());
       setPromoResult(null);
-      setPromoError(false);
+      setPromoError(null);
       void validateLinkedPromo(req.promo_code, req.target_sku, req.cycle);
     } else {
       clearPromo();
@@ -229,7 +224,7 @@ function AdminInvoices() {
   async function applyPromo() {
     if (!orgId || !skuValue || !promoCode.trim()) return;
     setPromoLoading(true);
-    setPromoError(false);
+    setPromoError(null);
     setPromoResult(null);
     try {
       const result = await adminApi.validateAdminPromoCode({
@@ -240,8 +235,8 @@ function AdminInvoices() {
         cycle,
       });
       setPromoResult(result);
-    } catch {
-      setPromoError(true);
+    } catch (err) {
+      setPromoError(apiErrorMessage(err, t("invoicePromoInvalid")));
     } finally {
       setPromoLoading(false);
     }
@@ -282,7 +277,7 @@ function AdminInvoices() {
       });
     },
     onError: (err: unknown) =>
-      toast.error(apiDetail(err, t("invoiceCreateFail"))),
+      toast.error(apiErrorMessage(err, t("invoiceCreateFail"))),
   });
   const sendMut = useMutation({
     mutationFn: (id: string) => adminApi.sendAdminInvoice(id),
@@ -290,6 +285,7 @@ function AdminInvoices() {
       toast.success(t("invoiceSent"));
       void qc.invalidateQueries({ queryKey: ["admin-invoices"] });
     },
+    onError: (err) => toast.error(apiErrorMessage(err, t("invoiceSendFail"))),
   });
   const payMut = useMutation({
     mutationFn: (id: string) =>
@@ -301,6 +297,7 @@ function AdminInvoices() {
       setBankRef("");
       void qc.invalidateQueries({ queryKey: ["admin-invoices"] });
     },
+    onError: (err) => toast.error(apiErrorMessage(err, t("invoicePayFail"))),
   });
   const voidMut = useMutation({
     mutationFn: (id: string) => adminApi.voidAdminInvoice(id),
@@ -308,6 +305,7 @@ function AdminInvoices() {
       toast.success(t("invoiceVoided"));
       void qc.invalidateQueries({ queryKey: ["admin-invoices"] });
     },
+    onError: (err) => toast.error(apiErrorMessage(err, t("invoiceVoidFail"))),
   });
 
   async function downloadPdf(inv: InvoiceItem) {
@@ -629,7 +627,7 @@ function AdminInvoices() {
                   onChange={(event) => {
                     setPromoCode(event.target.value.toUpperCase());
                     setPromoResult(null);
-                    setPromoError(false);
+                    setPromoError(null);
                     clearRequest();
                   }}
                   data-testid="invoice-promo-code"
@@ -680,14 +678,14 @@ function AdminInvoices() {
                     className="text-[11px] text-destructive"
                     data-testid="invoice-request-promo-invalid"
                   >
-                    {t("invoiceRequestPromoInvalid")}
+                    {promoLinkError}
                   </p>
                 ) : promoError ? (
                   <p
                     className="text-[11px] text-destructive"
                     data-testid="invoice-promo-error"
                   >
-                    {t("invoicePromoInvalid")}
+                    {promoError}
                   </p>
                 ) : null}
               </div>

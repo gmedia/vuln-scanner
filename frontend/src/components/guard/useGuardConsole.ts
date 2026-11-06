@@ -25,6 +25,16 @@ import {
 } from "@/lib/guardEnrollHost";
 import { useAuthStore } from "@/store/authStore";
 
+export type GuardSyncOutcome = "ok" | "not_enabled" | "failed";
+
+/** The sync/enable endpoints return HTTP 200 even when the backend did no work. */
+export function guardSyncOutcome(data: unknown): GuardSyncOutcome {
+  if (!data || typeof data !== "object") return "ok";
+  const record = data as { ok?: unknown; reason?: unknown };
+  if (record.ok !== false) return "ok";
+  return record.reason === "not_enabled" ? "not_enabled" : "failed";
+}
+
 export function useGuardConsole() {
   const { t, i18n } = useTranslation("guard");
   const dateLocale = i18n.language.startsWith("en") ? "en" : "id";
@@ -84,20 +94,34 @@ export function useGuardConsole() {
     void queryClient.invalidateQueries({ queryKey: ["guard"] });
   };
 
+  const syncWarning = (data: unknown): string => {
+    const record = (data ?? {}) as { reason?: unknown; error?: unknown };
+    if (record.reason === "not_enabled") return t("syncReasonNotEnabled");
+    if (
+      record.reason === "wazuh" ||
+      (typeof record.error === "string" && record.error.trim().length > 0)
+    ) {
+      return t("syncReasonWazuh");
+    }
+    return t("syncReasonGeneric");
+  };
+
   const enableMut = useMutation({
     mutationFn: enableGuard,
-    onSuccess: () => {
+    onSuccess: (data) => {
       setActionError(null);
-      toast.success(t("enabledToast"));
+      if (guardSyncOutcome(data) === "ok") toast.success(t("enabledToast"));
+      else toast.warning(syncWarning(data));
       invalidate();
     },
     onError: (e) => setActionError(apiDetail(e, t("enableFail"))),
   });
   const syncMut = useMutation({
     mutationFn: syncGuard,
-    onSuccess: () => {
+    onSuccess: (data) => {
       setActionError(null);
-      toast.success(t("syncDone"));
+      if (guardSyncOutcome(data) === "ok") toast.success(t("syncDone"));
+      else toast.warning(syncWarning(data));
       invalidate();
     },
     onError: (e) => setActionError(apiDetail(e, t("syncFail"))),

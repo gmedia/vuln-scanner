@@ -73,19 +73,13 @@ import {
   validatePromoForm,
   type PromoFormState,
 } from "@/lib/promoForm";
-import { cn, type ApiError } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { apiErrorMessage } from "@/api/apiErrors";
 
 const PAGE_SIZE = 20;
 const STATUS_ALL = "all";
 const PRODUCTS: PromoProduct[] = ["scan", "host", "uptime", "guard"];
 
-function apiDetail(err: unknown, fallback: string): string {
-  if (err && typeof err === "object" && "response" in err) {
-    const detail = (err as ApiError).response?.data?.detail;
-    if (typeof detail === "string" && detail.trim()) return detail;
-  }
-  return fallback;
-}
 function formatDiscount(item: PromoCode): string {
   if (item.kind === "percent" && item.percent_off_bp != null) {
     return `${item.percent_off_bp / 100}%`;
@@ -158,7 +152,7 @@ function AdminPromoCodes() {
       setEditing(null);
       refresh();
     },
-    onError: (err: unknown) => toast.error(apiDetail(err, t("promoSaveFail"))),
+    onError: (err: unknown) => toast.error(apiErrorMessage(err, t("promoSaveFail"))),
   });
   const approveMut = useMutation({
     mutationFn: (item: PromoCode) => adminApi.approveAdminPromoCode(item.id),
@@ -166,7 +160,7 @@ function AdminPromoCodes() {
       toast.success(t("promoApproved"));
       refresh();
     },
-    onError: (err: unknown) => toast.error(apiDetail(err, t("promoApproveFail"))),
+    onError: (err: unknown) => toast.error(apiErrorMessage(err, t("promoApproveFail"))),
   });
   const toggleMut = useMutation({
     mutationFn: (item: PromoCode) =>
@@ -175,7 +169,7 @@ function AdminPromoCodes() {
       toast.success(t("promoToggled"));
       refresh();
     },
-    onError: (err: unknown) => toast.error(apiDetail(err, t("promoToggleFail"))),
+    onError: (err: unknown) => toast.error(apiErrorMessage(err, t("promoToggleFail"))),
   });
   const deleteMut = useMutation({
     mutationFn: (item: PromoCode) => adminApi.deleteAdminPromoCode(item.id),
@@ -184,7 +178,7 @@ function AdminPromoCodes() {
       setDeleteTarget(null);
       refresh();
     },
-    onError: (err: unknown) => toast.error(apiDetail(err, t("promoDeleteFail"))),
+    onError: (err: unknown) => toast.error(apiErrorMessage(err, t("promoDeleteFail"))),
   });
 
   function openCreate() {

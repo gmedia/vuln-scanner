@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { apiErrorMessage } from "@/api/apiErrors";
 import { addIncidentUpdate } from "@/api/statusPage";
 import { Button } from "@/components/ui/Button";
 import { Label } from "@/components/ui/Label";
@@ -33,9 +35,11 @@ export function StatusIncidentQuickUpdate({
   const mut = useMutation({
     mutationFn: () => addIncidentUpdate(incidentId, { body, status }),
     onSuccess: () => {
+      toast.success(t("updatePostedToast"));
       setBody("");
       onDone();
     },
+    onError: (err) => toast.error(apiErrorMessage(err, t("updateFail"))),
   });
   return (
     <div className="mt-3 space-y-2">

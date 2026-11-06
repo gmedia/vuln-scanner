@@ -58,5 +58,11 @@
   "kpiQuota": "Quota",
   "kpiScheduled": "Scheduled",
   "kpiDomains": "Domains",
-  "kpiIps": "IPs"
+  "kpiIps": "IPs",
+  "createFail": "Could not save the asset.",
+  "updateFail": "Could not update the asset.",
+  "deletedToast": "Asset deleted.",
+  "deleteFail": "Could not delete the asset.",
+  "colorFail": "Could not save the tag color.",
+  "scheduleFail": "Could not create the schedule."
 }

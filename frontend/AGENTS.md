@@ -28,6 +28,7 @@ Vite + React + TS + shadcn. Node >=24.15.0 (jsdom 30 engine floor). Dev :5173; p
 - Table/card **row actions**: follow [`../docs/specs/row-actions.md`](../docs/specs/row-actions.md) — action column is `text-right` (or `justify-end` when the cell wraps a block-level flex), menus use `onSelect` + a sibling controlled `AlertDialog` (never a nested trigger), and only irreversible actions get a confirmation.
 - Alias `@/*`. `npm test` = vitest run; coverage statements/lines 75, branches/functions 70 — **enforced in CI on full runs** (`npx vitest run --coverage`). Selective runs (`VITEST_GLOBS`) skip the gate by design. Never raise a threshold to make a red build green; add tests.
 - Proxy `/api` `/ws` → `http://backend:8000` (needs Docker DNS or override).
+- **Forms / writes:** every `useMutation` needs `onError`; read API errors only via `apiErrorMessage()` / `extractApiError()` (`src/api/apiErrors.ts`), render 422s with `useApiFormErrors()` + `<FormAlert>`/`<FieldError>` (`src/components/patterns/FormFeedback.tsx`). Never `String(detail)` or a local `apiDetail`. Contract: [`../docs/specs/form-feedback.md`](../docs/specs/form-feedback.md); gate: `node ../scripts/check-form-feedback.mjs`.
 
 ## ANTI-PATTERNS
 
@@ -36,3 +37,5 @@ Vite + React + TS + shadcn. Node >=24.15.0 (jsdom 30 engine floor). Dev :5173; p
 - Second palette (`#0a7`, Palatino editorial on `/blog` — blog is FastAPI HTML, not this SPA).
 - Treating Playwright as Guard host enroll.
 - `POST /api/auth/register` for shared prod e2e mailbox.
+- A mutation with no `onError` / no visible error UI (silent data loss).
+- Reading `err.response.data.detail` by hand or converting it with `String(...)`.

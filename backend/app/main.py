@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from typing import Any, cast
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 
@@ -16,7 +17,7 @@ from app.api.router import api_router
 from app.api.sitemap_html import html_router as sitemap_html_router
 from app.api.status_html import html_router as status_html_router
 from app.config import check_settings, settings
-from app.errors import ApiError, api_error_handler
+from app.errors import ApiError, api_error_handler, validation_exception_handler
 from app.middleware.auth import ApiKeyMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.services.payments.registry import validate_payment_config
@@ -110,6 +111,7 @@ app.add_middleware(ApiKeyMiddleware)
 
 
 app.add_exception_handler(ApiError, api_error_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 
 @app.exception_handler(Exception)

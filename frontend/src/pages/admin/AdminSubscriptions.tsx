@@ -60,7 +60,8 @@ import {
 } from "@/api/adminBilling";
 import { TONE_TEXT } from "@/lib/toneColors";
 import { useTierMap } from "@/hooks/useTierMap";
-import { cn, type ApiError } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { apiErrorMessage } from "@/api/apiErrors";
 
 const STATUSES: AdminBillingStatus[] = [
   "active",
@@ -69,13 +70,6 @@ const STATUSES: AdminBillingStatus[] = [
   "canceled",
 ];
 
-function apiDetail(err: unknown, fallback: string): string {
-  if (err && typeof err === "object" && "response" in err) {
-    const detail = (err as ApiError).response?.data?.detail;
-    if (typeof detail === "string" && detail.trim()) return detail;
-  }
-  return fallback;
-}
 
 function formatIdr(value: number): string {
   return `Rp ${value.toLocaleString("id-ID")}`;
@@ -159,7 +153,7 @@ function AdminSubscriptions() {
       setReference("");
       invalidate();
     },
-    onError: (err: unknown) => toast.error(apiDetail(err, t("subscriptionRecordFail"))),
+    onError: (err: unknown) => toast.error(apiErrorMessage(err, t("subscriptionRecordFail"))),
   });
 
   const cancelMut = useMutation({
@@ -174,7 +168,7 @@ function AdminSubscriptions() {
       setCancelNote("");
       invalidate();
     },
-    onError: (err: unknown) => toast.error(apiDetail(err, t("subscriptionCancelFail"))),
+    onError: (err: unknown) => toast.error(apiErrorMessage(err, t("subscriptionCancelFail"))),
   });
 
   const items = query.data?.items ?? [];

@@ -37,6 +37,7 @@ import {
   rejectAdminSubscriptionRequest,
   type SubscriptionRequestItem,
 } from "@/api/subscription";
+import { apiErrorMessage } from "@/api/apiErrors";
 
 function formatDate(value: string, locale: string): string {
   const date = new Date(value);
@@ -81,7 +82,8 @@ function AdminSubscriptionRequests() {
       toast.success(t("subscriptionRequestApproved"));
       void qc.invalidateQueries({ queryKey: ["admin-subscription-requests"] });
     },
-    onError: () => toast.error(t("subscriptionRequestApproveFail")),
+    onError: (err) =>
+      toast.error(apiErrorMessage(err, t("subscriptionRequestApproveFail"))),
   });
 
   const rejectMut = useMutation({
@@ -93,7 +95,8 @@ function AdminSubscriptionRequests() {
       setRejectNote("");
       void qc.invalidateQueries({ queryKey: ["admin-subscription-requests"] });
     },
-    onError: () => toast.error(t("subscriptionRequestRejectFail")),
+    onError: (err) =>
+      toast.error(apiErrorMessage(err, t("subscriptionRequestRejectFail"))),
   });
 
   const items = query.data?.items ?? [];

@@ -57,7 +57,9 @@ import {
 import PageHeader from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/patterns/EmptyState";
 import { adminApi, type HppRateItem } from "@/api/admin";
+import { apiErrorMessage } from "@/api/apiErrors";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { htmlLang, isAppLocale } from "@/i18n/locales";
 import i18n from "@/i18n";
 
@@ -121,9 +123,11 @@ function AdminHpp() {
       queryClient.invalidateQueries({ queryKey: ["admin-hpp-overhead"] });
       queryClient.invalidateQueries({ queryKey: ["admin-hpp-report"] });
       setSavingOverhead(false);
+      toast.success(t("hppSavedToast"));
     },
-    onError: () => {
+    onError: (err) => {
       setSavingOverhead(false);
+      toast.error(apiErrorMessage(err, t("hppSaveFail")));
     },
   });
 
@@ -140,7 +144,10 @@ function AdminHpp() {
       queryClient.invalidateQueries({ queryKey: ["admin-hpp-report"] });
       setCostAmount("");
       setCostNote("");
+      toast.success(t("hppCostCreatedToast"));
     },
+    onError: (err) =>
+      toast.error(apiErrorMessage(err, t("hppCostCreateFail"))),
   });
 
   const deleteCost = useMutation({
@@ -148,7 +155,10 @@ function AdminHpp() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-hpp-costs"] });
       queryClient.invalidateQueries({ queryKey: ["admin-hpp-report"] });
+      toast.success(t("hppCostDeletedToast"));
     },
+    onError: (err) =>
+      toast.error(apiErrorMessage(err, t("hppCostDeleteFail"))),
   });
 
   const updateRate = useMutation({
@@ -158,9 +168,11 @@ function AdminHpp() {
       queryClient.invalidateQueries({ queryKey: ["admin-hpp"] });
       queryClient.invalidateQueries({ queryKey: ["admin-hpp-report"] });
       setSaving(null);
+      toast.success(t("hppSavedToast"));
     },
-    onError: () => {
+    onError: (err) => {
       setSaving(null);
+      toast.error(apiErrorMessage(err, t("hppSaveFail")));
     },
   });
 

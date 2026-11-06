@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { deleteIncident, type StatusIncident } from "@/api/statusPage";
-import type { ApiError } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import {
   AlertDialog,
@@ -23,11 +22,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { apiErrorMessage } from "@/api/apiErrors";
 
-function apiDetail(err: unknown, fallback: string): string {
-  const detail = (err as ApiError).response?.data?.detail;
-  return typeof detail === "string" && detail.trim() ? detail : fallback;
-}
 
 export function StatusIncidentActions({
   incident,
@@ -49,8 +45,11 @@ export function StatusIncidentActions({
   const id = incident.id;
   const delMut = useMutation({
     mutationFn: () => deleteIncident(id),
-    onSuccess: onDone,
-    onError: (err) => toast.error(apiDetail(err, t("deleteIncident"))),
+    onSuccess: () => {
+      toast.success(t("incidentDeletedToast"));
+      onDone();
+    },
+    onError: (err) => toast.error(apiErrorMessage(err, t("deleteIncident"))),
   });
 
   return (

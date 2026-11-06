@@ -99,5 +99,10 @@
   "outageClear": "Bersihkan",
   "outageCustomHint": "Rentang kustom hanya untuk outage dan bar, maksimal 90 hari ke belakang.",
   "outageRangeError": "Rentang tidak valid. Tanggal mulai harus ≤ selesai, dalam 90 hari terakhir, dan tidak di masa depan.",
-  "errInvalidHeaders": "JSON headers tidak valid"
+  "errInvalidHeaders": "JSON headers tidak valid",
+  "monitorDeletedToast": "Monitor dihapus.",
+  "monitorPausedToast": "Monitor dijeda.",
+  "monitorResumedToast": "Monitor dilanjutkan.",
+  "monitorDeleteFail": "Gagal menghapus monitor",
+  "monitorPauseFail": "Gagal mengubah status monitor"
 }

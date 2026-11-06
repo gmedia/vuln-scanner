@@ -129,5 +129,18 @@
   "overviewFilesSuffix": "file(s)",
   "overviewSitesHint": "SKU {{sku}}",
   "kpiHelper": "Helper",
-  "addSheetHint": "Only the site folder is checked — never the whole disk."
+  "addSheetHint": "Only the site folder is checked — never the whole disk.",
+  "hostCreatedToast": "Site added.",
+  "hostDeletedToast": "Site deleted.",
+  "hostQuarantinedToast": "Quarantine queued for the helper.",
+  "hostRestoredToast": "Restore queued for the helper.",
+  "hostIgnoredToast": "File ignored.",
+  "hostDeleteFail": "Failed to delete site",
+  "hostIntervalFail": "Failed to update the scan schedule",
+  "hostAutoQuarantineFail": "Failed to update auto-quarantine",
+  "hostWatchFail": "Failed to update check on file write",
+  "hostEnabledFail": "Failed to update scheduled scans",
+  "hostQuarantineFail": "Failed to queue quarantine",
+  "hostRestoreFail": "Failed to queue restore",
+  "hostIgnoreFail": "Failed to ignore the file"
 }

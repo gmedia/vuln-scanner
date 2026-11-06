@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { topupAiWallet } from "@/api/admin";
+import { apiErrorMessage } from "@/api/apiErrors";
 import { Wallet } from "lucide-react";
 import { AdminAiField } from "@/components/admin/AdminAiField";
 import { Button } from "@/components/ui/Button";
@@ -17,6 +19,8 @@ export function AdminAiTopupTab() {
   const [amount, setAmount] = useState("10000");
   const topupMut = useMutation({
     mutationFn: () => topupAiWallet(orgId.trim(), Number(amount)),
+    onSuccess: () => toast.success(t("aiTopupOk")),
+    onError: (err) => toast.error(apiErrorMessage(err, t("aiTopupFail"))),
   });
   return (
     <AdminShell tone="primary">

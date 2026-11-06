@@ -99,5 +99,10 @@
   "outageClear": "Clear",
   "outageCustomHint": "Custom window applies to outages and the bar only, up to 90 days back.",
   "outageRangeError": "Invalid range. Keep start on or before end, within the last 90 days, and not in the future.",
-  "errInvalidHeaders": "Invalid headers JSON"
+  "errInvalidHeaders": "Invalid headers JSON",
+  "monitorDeletedToast": "Monitor deleted.",
+  "monitorPausedToast": "Monitor paused.",
+  "monitorResumedToast": "Monitor resumed.",
+  "monitorDeleteFail": "Failed to delete monitor",
+  "monitorPauseFail": "Failed to change monitor state"
 }
