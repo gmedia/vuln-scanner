@@ -237,8 +237,11 @@ attempt exists. This prevents "paid twice" and "voided after payment" races.
 ## 9) Rollback
 
 1. Set `PAYMENT_GATEWAY_ENABLED=false` and redeploy the backend (backend-first).
-2. `payment.reconcile_attempts` becomes a no-op and new checkouts are refused; the SPA
-   reverts to manual bank transfer.
+2. New checkouts are refused and the SPA reverts to manual bank transfer. Inbound
+   webhooks and `payment.reconcile_attempts` **keep running** for a provider whose
+   server key is still configured, so a payment that was already in flight during the
+   rollback still settles. Only an unconfigured provider (no key) is skipped and shows
+   up in the `skipped_count` of the reconcile task.
 3. Existing attempts remain in the table and stay visible in the gauges. Outstanding
    pending attempts do not disappear; settle or refund them with the provider.
 4. Keep the payment tables and the webhook route in place. Do not drop data during a
