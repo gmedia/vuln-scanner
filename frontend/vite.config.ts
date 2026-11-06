@@ -3,11 +3,13 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 
+import { prerenderProductRoutes } from "./scripts/prerender-product-routes.mjs";
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "API_KEY");
 
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), prerenderProductRoutes()],
     resolve: {
       alias: {
         "@": path.resolve(import.meta.dirname, "./src"),
