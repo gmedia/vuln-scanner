@@ -601,3 +601,17 @@ def reconcile_gateway_attempts(self: Any) -> dict[str, Any]:
     # provider is not configured are skipped inside the sweep.
     return cast(dict[str, Any], _run(_reconcile_gateway_attempts()))
 
+
+async def _prune_payment_events() -> dict[str, int]:
+    from app.database import async_session
+    from app.services.billing import BillingService
+
+    async with async_session() as db:
+        deleted = await BillingService(db).prune_payment_events()
+    return {"deleted": deleted}
+
+@shared_task(bind=True, name="payment.prune_events", acks_late=True, max_retries=1)  # type: ignore
+def prune_payment_events(self: Any) -> dict[str, Any]:
+    # Housekeeping, not checkout: old webhook rows are pruned even while the
+    # gateway flag is off, so retention never depends on sales configuration.
+    return cast(dict[str, Any], _run(_prune_payment_events()))
