@@ -265,6 +265,25 @@ Thresholds match the product rules: 24h checkout expiry, 10-minute reconciliatio
 a 5-minute `for:` on the money-losing conditions (mismatch, duplicate) so they page
 before the customer notices.
 
+### Promo metrics
+
+Promo codes are live, and a discount is money leaving the business the same way a
+refund is. These four gauges are exported on `/metrics` (read-only, no behaviour
+change) and are alerted in `monitoring/alerts-vuln-scanner.example.yml`. Only
+`applied` redemptions count: a `released` redemption belongs to a voided invoice, so
+it returned the quota and granted no lasting discount.
+
+| Metric | What it measures | Bad looks like |
+|---|---|---|
+| `vuln_promo_discount_idr_24h` | IDR discount from `applied` redemptions created in 24h. | > 10,000,000 for 1h: a code is burning faster than expected. |
+| `vuln_promo_discount_idr_30d` | IDR discount from `applied` redemptions created in 30d. | > 50,000,000 for 1h: the monthly burn is draining the margin. |
+| `vuln_promo_redemptions_24h` | `applied` redemptions created in 24h. | > 50 for 1h: a leaked code or a runaway campaign; sort `/admin/promo-codes` by redemptions and deactivate it. |
+| `vuln_promo_pending_approvals` | Codes with `requires_approval=true` and no `approved_at` (queue depth, no time window). | > 0 for 1h: a code above the P9 cap is inactive and the customer cannot use it until a second admin approves it. |
+
+The discount thresholds are **provisional**. Discount is gross-to-net leakage, so
+compare the burn with invoice volume before treating it as intentional, and let
+finance tune the numbers.
+
 ## 11) Postgres concurrency tests
 
 `backend/tests/test_pg_concurrency.py` proves the billing invariants that SQLite cannot:

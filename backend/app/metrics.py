@@ -35,6 +35,11 @@ _PAYMENT_AMOUNT_MISMATCH_NAME = "vuln_payment_amount_mismatches_24h"
 _PAYMENT_DUPLICATE_SETTLEMENT_NAME = "vuln_payment_duplicate_settlements_24h"
 _PAYMENT_REFUNDS_NAME = "vuln_payment_refunds_24h"
 
+_PROMO_DISCOUNT_24H_NAME = "vuln_promo_discount_idr_24h"
+_PROMO_DISCOUNT_30D_NAME = "vuln_promo_discount_idr_30d"
+_PROMO_REDEMPTIONS_24H_NAME = "vuln_promo_redemptions_24h"
+_PROMO_PENDING_APPROVALS_NAME = "vuln_promo_pending_approvals"
+
 # Mirrors workers/tasks/ai_reservations.STALE_RESERVATION_MINUTES; kept local so metrics never imports the worker.
 STALE_RESERVATION_MINUTES = 20
 # Also local by the same rule; documents the 15-minute VulnScannerAiProviderProbeStale threshold.
@@ -430,6 +435,102 @@ def _read_payment_refunds_24h() -> float | None:
         return None
 
 
+def _read_promo_discount_idr_24h() -> float | None:
+    """Discount granted by applied promo redemptions in the last 24h (IDR); None on failure.
+
+    Discount is money leaving the business. ``released`` redemptions are excluded on
+    purpose: they belong to a voided invoice, so the quota came back and no lasting
+    discount was granted.
+    """
+    try:
+        from sqlalchemy import text
+
+        cutoff = datetime.now(UTC) - timedelta(hours=24)
+        with _ai_engine().connect() as conn:
+            raw = conn.execute(
+                text(
+                    "SELECT COALESCE(SUM(discount_idr), 0) FROM promo_redemptions "
+                    "WHERE status = 'applied' AND created_at >= :cutoff"
+                ),
+                {"cutoff": cutoff},
+            ).scalar()
+        return float(raw or 0)
+    except Exception as e:
+        logger.debug("promo discount 24h metric scrape failed: %s", e)
+        return None
+
+
+def _read_promo_discount_idr_30d() -> float | None:
+    """Discount granted by applied promo redemptions in the last 30 days (IDR); None on failure.
+
+    The longer window catches a slow, steady burn that never trips the 24h threshold.
+    ``released`` redemptions are excluded for the same reason as the 24h reader.
+    """
+    try:
+        from sqlalchemy import text
+
+        cutoff = datetime.now(UTC) - timedelta(days=30)
+        with _ai_engine().connect() as conn:
+            raw = conn.execute(
+                text(
+                    "SELECT COALESCE(SUM(discount_idr), 0) FROM promo_redemptions "
+                    "WHERE status = 'applied' AND created_at >= :cutoff"
+                ),
+                {"cutoff": cutoff},
+            ).scalar()
+        return float(raw or 0)
+    except Exception as e:
+        logger.debug("promo discount 30d metric scrape failed: %s", e)
+        return None
+
+
+def _read_promo_redemptions_24h() -> float | None:
+    """Applied promo redemptions in the last 24h; None on failure.
+
+    A spike means a leaked code or a runaway campaign, not organic demand. ``released``
+    rows never granted a lasting discount, so they are not usage.
+    """
+    try:
+        from sqlalchemy import text
+
+        cutoff = datetime.now(UTC) - timedelta(hours=24)
+        with _ai_engine().connect() as conn:
+            raw = conn.execute(
+                text(
+                    "SELECT COUNT(*) FROM promo_redemptions "
+                    "WHERE status = 'applied' AND created_at >= :cutoff"
+                ),
+                {"cutoff": cutoff},
+            ).scalar()
+        return float(raw or 0)
+    except Exception as e:
+        logger.debug("promo redemptions 24h metric scrape failed: %s", e)
+        return None
+
+
+def _read_promo_pending_approvals() -> float | None:
+    """Codes above the finance cap still waiting for a second admin; None on failure.
+
+    This is a queue depth, not a rate, so it has no time window. A code created above
+    the P9 cap is inactive until another platform admin approves it, which means the
+    customer cannot redeem it in the meantime.
+    """
+    try:
+        from sqlalchemy import text
+
+        with _ai_engine().connect() as conn:
+            raw = conn.execute(
+                text(
+                    "SELECT COUNT(*) FROM promo_codes "
+                    "WHERE requires_approval = true AND approved_at IS NULL"
+                )
+            ).scalar()
+        return float(raw or 0)
+    except Exception as e:
+        logger.debug("promo pending approvals metric scrape failed: %s", e)
+        return None
+
+
 class AutoFailCollector:
     def collect(self) -> Iterable[Metric]:
         counts = _read_auto_fail_counts()
@@ -681,6 +782,99 @@ class PaymentRefundsCollector:
         yield gauge
 
 
+class PromoDiscount24hCollector:
+    """Surface the 24h promo discount burn.
+
+    A promo code silently gives money away. Without this gauge the only place the
+    discount appears is the invoice total, so finance cannot see a code that is being
+    abused before the month closes.
+    """
+
+    def collect(self) -> Iterable[Metric]:
+        try:
+            value = _read_promo_discount_idr_24h()
+        except Exception as e:
+            logger.debug("promo discount 24h collector failed: %s", e)
+            return
+        if value is None:
+            return
+        gauge = GaugeMetricFamily(
+            _PROMO_DISCOUNT_24H_NAME,
+            "IDR discount granted by applied promo redemptions in the last 24h",
+        )
+        gauge.add_metric([], value)
+        yield gauge
+
+
+class PromoDiscount30dCollector:
+    """Surface the 30d promo discount burn.
+
+    The longer window is the trend view: a code can stay under the daily threshold and
+    still drain the month. It also gives finance a number to compare with invoice volume.
+    """
+
+    def collect(self) -> Iterable[Metric]:
+        try:
+            value = _read_promo_discount_idr_30d()
+        except Exception as e:
+            logger.debug("promo discount 30d collector failed: %s", e)
+            return
+        if value is None:
+            return
+        gauge = GaugeMetricFamily(
+            _PROMO_DISCOUNT_30D_NAME,
+            "IDR discount granted by applied promo redemptions in the last 30 days",
+        )
+        gauge.add_metric([], value)
+        yield gauge
+
+
+class PromoRedemptions24hCollector:
+    """Surface applied promo redemptions per day.
+
+    Redemption volume is the earliest signal of a leaked code or a campaign outrunning
+    its budget; the discount gauges only show the damage after the fact.
+    """
+
+    def collect(self) -> Iterable[Metric]:
+        try:
+            value = _read_promo_redemptions_24h()
+        except Exception as e:
+            logger.debug("promo redemptions 24h collector failed: %s", e)
+            return
+        if value is None:
+            return
+        gauge = GaugeMetricFamily(
+            _PROMO_REDEMPTIONS_24H_NAME,
+            "Applied promo redemptions in the last 24h",
+        )
+        gauge.add_metric([], value)
+        yield gauge
+
+
+class PromoPendingApprovalsCollector:
+    """Surface codes above the finance cap that no second admin has approved yet.
+
+    Such a code is created inactive, so the customer cannot use it until someone acts.
+    A non-zero depth means a sale is waiting on an approval nobody was told about.
+    """
+
+    def collect(self) -> Iterable[Metric]:
+        try:
+            value = _read_promo_pending_approvals()
+        except Exception as e:
+            logger.debug("promo pending approvals collector failed: %s", e)
+            return
+        if value is None:
+            return
+        gauge = GaugeMetricFamily(
+            _PROMO_PENDING_APPROVALS_NAME,
+            "Promo codes above the finance cap waiting for a second platform-admin approval",
+        )
+        gauge.add_metric([], value)
+        yield gauge
+
+
 def register_custom_metrics() -> None:
     global _collector_registered
     if _collector_registered:
@@ -700,4 +894,8 @@ def register_custom_metrics() -> None:
     REGISTRY.register(PaymentAmountMismatchCollector())
     REGISTRY.register(PaymentDuplicateSettlementCollector())
     REGISTRY.register(PaymentRefundsCollector())
+    REGISTRY.register(PromoDiscount24hCollector())
+    REGISTRY.register(PromoDiscount30dCollector())
+    REGISTRY.register(PromoRedemptions24hCollector())
+    REGISTRY.register(PromoPendingApprovalsCollector())
     _collector_registered = True
