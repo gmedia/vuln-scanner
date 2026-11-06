@@ -89,5 +89,6 @@
   "componentDeleteFail": "Gagal menghapus komponen",
   "incidentCreateFail": "Gagal membuat insiden",
   "incidentSaveFail": "Gagal menyimpan insiden",
-  "updateFail": "Gagal mengirim pembaruan"
+  "updateFail": "Gagal mengirim pembaruan",
+  "copyFail": "Gagal menyalin ke clipboard."
 }

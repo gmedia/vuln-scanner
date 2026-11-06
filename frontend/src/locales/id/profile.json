@@ -36,5 +36,7 @@
   "updating": "Memperbarui...",
   "profileUpdated": "Profil diperbarui",
   "updateEmailFailed": "Gagal memperbarui email",
-  "changePasswordFailed": "Gagal mengubah kata sandi"
+  "changePasswordFailed": "Gagal mengubah kata sandi",
+  "copyFail": "Gagal menyalin ke clipboard.",
+  "copyEmailFail": "Gagal menyalin alamat email."
 }

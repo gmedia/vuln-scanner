@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   BookOpen,
   Shield,
@@ -126,7 +127,7 @@ function AdminUserDetail() {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1500);
     } catch {
-      void 0;
+      toast.error(t("copyEmailFail"));
     }
   };
 

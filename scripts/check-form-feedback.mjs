@@ -107,6 +107,40 @@ function allowComment(text, index) {
   return text.slice(start, index).includes(ALLOW_MARK);
 }
 
+/** @param {string} masked @param {number} openIndex */
+function matchingBrace(masked, openIndex) {
+  let depth = 0;
+  for (let i = openIndex; i < masked.length; i += 1) {
+    if (masked[i] === "{") depth += 1;
+    else if (masked[i] === "}") {
+      depth -= 1;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+/** Text of an object property value, stopping at the top-level comma/brace. */
+function propertyValue(masked, start) {
+  let i = start;
+  while (i < masked.length && /\s/.test(masked[i])) i += 1;
+  const begin = i;
+  let depth = 0;
+  while (i < masked.length) {
+    const ch = masked[i];
+    if (ch === "(" || ch === "[" || ch === "{") depth += 1;
+    else if (ch === ")" || ch === "]" || ch === "}") {
+      if (depth === 0) break;
+      depth -= 1;
+    } else if (ch === "," && depth === 0) break;
+    i += 1;
+  }
+  return masked.slice(begin, i);
+}
+
+// A visible error path: toast, the shared form hook, or a named error setter.
+const SURFACE_CALL = /\b(?:toast\.(?:error|warning)|apply|set[A-Z]\w*Errors?|setError)\s*\(/;
+
 /** @param {string} full @param {string} rel */
 function checkFile(full, rel) {
   const text = readFileSync(full, "utf8");
@@ -120,15 +154,33 @@ function checkFile(full, rel) {
     const close = matchingParen(masked, open);
     if (close < 0) continue;
     const body = masked.slice(open + 1, close);
-    if (/\bonError\s*:/.test(body)) continue;
-    if (allowComment(text, match.index)) continue;
-    findings.push({
-      file: rel,
-      line: lineAt(text, match.index),
-      rule: "mutation-without-onError",
-      message:
-        "useMutation has no onError. Add apiErrorMessage()/useApiFormErrors().apply(), or `// form-feedback: allow <reason>`.",
-    });
+    const onError = /\bonError\s*:/.exec(body);
+    if (!onError) {
+      if (allowComment(text, match.index)) continue;
+      findings.push({
+        file: rel,
+        line: lineAt(text, match.index),
+        rule: "mutation-without-onError",
+        message:
+          "useMutation has no onError. Add apiErrorMessage()/useApiFormErrors().apply(), or `// form-feedback: allow <reason>`.",
+      });
+      continue;
+    }
+
+    const value = propertyValue(
+      masked,
+      open + 1 + onError.index + onError[0].length,
+    ).trim();
+    const isHandlerReference = /^[A-Za-z_$][\w$]*$/.test(value);
+    if (!isHandlerReference && !SURFACE_CALL.test(value)) {
+      findings.push({
+        file: rel,
+        line: lineAt(text, match.index),
+        rule: "onError-without-surface",
+        message:
+          "onError does not show anything (e.g. only resets a spinner). Render apiErrorMessage() / useApiFormErrors().apply(), or add `// form-feedback: allow <reason>`.",
+      });
+    }
   }
 
   const stringDetail = /\bString\s*\([^)]*\.detail\b/g;
@@ -151,6 +203,38 @@ function checkFile(full, rel) {
       line: lineAt(text, match.index),
       rule: "local-error-extractor",
       message: `${match[1]}() is a local error reader. Import apiErrorMessage/extractApiError from @/api/apiErrors instead.`,
+    });
+  }
+
+  // Only UI surfaces: data-layer catches may legitimately fall back silently.
+  if (!rel.startsWith("frontend/src/pages/") && !rel.startsWith("frontend/src/components/")) {
+    return;
+  }
+  const catchRe = /\bcatch\b/g;
+  while ((match = catchRe.exec(masked)) !== null) {
+    if (allowComment(text, match.index)) continue;
+    let i = match.index + match[0].length;
+    while (i < masked.length && /\s/.test(masked[i])) i += 1;
+    if (masked[i] === "(") {
+      const paramEnd = matchingParen(masked, i);
+      if (paramEnd < 0) continue;
+      i = paramEnd + 1;
+      while (i < masked.length && /\s/.test(masked[i])) i += 1;
+    }
+    if (masked[i] !== "{") continue;
+    const end = matchingBrace(masked, i);
+    if (end < 0) continue;
+    const body = masked
+      .slice(i + 1, end)
+      .replace(/\bvoid\s+0\s*;?/g, "")
+      .replace(/[;\s]/g, "");
+    if (body !== "") continue;
+    findings.push({
+      file: rel,
+      line: lineAt(text, match.index),
+      rule: "empty-catch",
+      message:
+        "catch block swallows the error. Show apiErrorMessage() or add `// form-feedback: allow <reason>`.",
     });
   }
 }

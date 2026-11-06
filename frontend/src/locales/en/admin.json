@@ -866,5 +866,6 @@
   "aiModelSaved": "Model saved.",
   "aiModelDeleted": "Model deleted.",
   "aiTopupOk": "Wallet topped up.",
-  "aiTopupFail": "Could not top up the wallet."
+  "aiTopupFail": "Could not top up the wallet.",
+  "copyEmailFail": "Could not copy the email address."
 }

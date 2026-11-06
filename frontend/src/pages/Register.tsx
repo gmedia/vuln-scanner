@@ -18,7 +18,6 @@ import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { useTranslation } from "react-i18next";
 import { captureInviteFromSearch, postAuthPath } from "@/lib/inviteToken";
 import { TONE_TEXT } from "@/lib/toneColors";
-import { apiFieldErrors } from "@/api/apiErrors";
 import { FieldError } from "@/components/patterns/FormFeedback";
 
 function Register() {
@@ -90,23 +89,18 @@ function Register() {
     }
 
     setIsSubmitting(true);
-    try {
-      const result = await register(email, password, confirmPassword);
-      if (!mountedRef.current) return;
-      if (result.ok) {
-        setEmailSent(result.emailSent);
-        setStatusMessage(
-          result.emailSent === false
-            ? t("registerEmailFailed")
-            : t("registerOkCheckEmail"),
-        );
-        setSuccess(true);
-      } else {
-        setIsSubmitting(false);
-      }
-    } catch (err) {
-      if (!mountedRef.current) return;
-      setFieldErrors(apiFieldErrors(err));
+    const result = await register(email, password, confirmPassword);
+    if (!mountedRef.current) return;
+    if (result.ok) {
+      setEmailSent(result.emailSent);
+      setStatusMessage(
+        result.emailSent === false
+          ? t("registerEmailFailed")
+          : t("registerOkCheckEmail"),
+      );
+      setSuccess(true);
+    } else {
+      setFieldErrors((useAuthStore.getState?.().fieldErrors ?? {}));
       setIsSubmitting(false);
     }
   };
@@ -114,25 +108,19 @@ function Register() {
   const handleResend = async () => {
     setResendFeedback(null);
     setIsResending(true);
-    try {
-      const result = await resendVerification(email);
-      if (!mountedRef.current) return;
-      setIsResending(false);
-      if (result.ok) {
-        setEmailSent(result.emailSent);
-        if (result.emailSent === false) {
-          setResendFeedback(t("verifySendFailed"));
-        } else {
-          setStatusMessage(t("registerOkCheckEmail"));
-          setResendFeedback(t("verifySent"));
-        }
+    const result = await resendVerification(email);
+    if (!mountedRef.current) return;
+    setIsResending(false);
+    if (result.ok) {
+      setEmailSent(result.emailSent);
+      if (result.emailSent === false) {
+        setResendFeedback(t("verifySendFailed"));
       } else {
-        setResendFeedback(t("resendFailed"));
+        setStatusMessage(t("registerOkCheckEmail"));
+        setResendFeedback(t("verifySent"));
       }
-    } catch (err) {
-      if (!mountedRef.current) return;
-      setFieldErrors(apiFieldErrors(err));
-      setIsResending(false);
+    } else {
+      setFieldErrors((useAuthStore.getState?.().fieldErrors ?? {}));
       setResendFeedback(t("resendFailed"));
     }
   };

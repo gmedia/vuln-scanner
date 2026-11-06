@@ -163,7 +163,7 @@ function Profile() {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1500);
     } catch {
-      void 0;
+      toast.error(t("copyFail"));
     }
   };
 
@@ -180,6 +180,7 @@ function Profile() {
         setProfilePassword("");
         setEmail("");
       } else {
+        emailForm.setFieldErrors((useAuthStore.getState?.().fieldErrors ?? {}));
         const errMsg = useAuthStore.getState().error;
         if (errMsg) {
           emailForm.setFormError(errMsg);
@@ -218,6 +219,7 @@ function Profile() {
         setNewPassword("");
         setConfirmPassword("");
       } else {
+        passwordForm.setFieldErrors((useAuthStore.getState?.().fieldErrors ?? {}));
         const errMsg = useAuthStore.getState().error;
         if (errMsg) {
           passwordForm.setFormError(errMsg);
@@ -242,30 +244,35 @@ function Profile() {
     setEmail(value);
     setProfileSuccess(false);
     emailForm.clearField("email");
+    emailForm.setFormError(null);
   };
 
   const handleEmailPasswordChange = (value: string) => {
     setProfilePassword(value);
     setProfileSuccess(false);
     emailForm.clearField("current_password");
+    emailForm.setFormError(null);
   };
 
   const handleCurrentPasswordChange = (value: string) => {
     setCurrentPassword(value);
     setPasswordSuccess(false);
     passwordForm.clearField("current_password");
+    passwordForm.setFormError(null);
   };
 
   const handleNewPasswordChange = (value: string) => {
     setNewPassword(value);
     setPasswordSuccess(false);
     passwordForm.clearField("new_password");
+    passwordForm.setFormError(null);
   };
 
   const handleConfirmPasswordChange = (value: string) => {
     setConfirmPassword(value);
     setPasswordSuccess(false);
     passwordForm.clearField("confirm_password");
+    passwordForm.setFormError(null);
   };
 
   const verifyTone = verificationTone(Boolean(user?.is_verified));

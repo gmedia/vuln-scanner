@@ -89,5 +89,6 @@
   "componentDeleteFail": "Could not remove component",
   "incidentCreateFail": "Could not create incident",
   "incidentSaveFail": "Could not save incident",
-  "updateFail": "Could not post update"
+  "updateFail": "Could not post update",
+  "copyFail": "Could not copy to the clipboard."
 }

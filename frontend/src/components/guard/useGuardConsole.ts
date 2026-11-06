@@ -18,7 +18,7 @@ import {
   type GuardEnrollTokenMeta,
 } from "@/api/guard";
 import { listAssets } from "@/api/assets";
-import { apiDetail } from "@/components/siem/siemErrors";
+import { apiErrorMessage } from "@/api/apiErrors";
 import {
   buildEnrollCurlExample,
   resolveApiBaseUrl,
@@ -114,7 +114,7 @@ export function useGuardConsole() {
       else toast.warning(syncWarning(data));
       invalidate();
     },
-    onError: (e) => setActionError(apiDetail(e, t("enableFail"))),
+    onError: (e) => setActionError(apiErrorMessage(e, t("enableFail"))),
   });
   const syncMut = useMutation({
     mutationFn: syncGuard,
@@ -124,7 +124,7 @@ export function useGuardConsole() {
       else toast.warning(syncWarning(data));
       invalidate();
     },
-    onError: (e) => setActionError(apiDetail(e, t("syncFail"))),
+    onError: (e) => setActionError(apiErrorMessage(e, t("syncFail"))),
   });
   const tokenMut = useMutation({
     mutationFn: () => createEnrollToken(tokenLabel.trim() || undefined),
@@ -135,7 +135,7 @@ export function useGuardConsole() {
       toast.success(t("tokenCreated"));
       invalidate();
     },
-    onError: (e) => setActionError(apiDetail(e, t("tokenCreateFail"))),
+    onError: (e) => setActionError(apiErrorMessage(e, t("tokenCreateFail"))),
   });
   const hostTokenMut = useMutation({
     mutationFn: (agentId: string) => issueHostAgentToken(agentId),
@@ -147,7 +147,7 @@ export function useGuardConsole() {
       toast.success(t("hostTokenCreated"));
       invalidate();
     },
-    onError: (e) => setActionError(apiDetail(e, t("hostTokenCreateFail"))),
+    onError: (e) => setActionError(apiErrorMessage(e, t("hostTokenCreateFail"))),
   });
   const revokeMut = useMutation({
     mutationFn: (id: string) => revokeEnrollToken(id),
@@ -156,7 +156,7 @@ export function useGuardConsole() {
       toast.success(t("tokenRevoked"));
       invalidate();
     },
-    onError: (e) => setActionError(apiDetail(e, t("tokenRevokeFail"))),
+    onError: (e) => setActionError(apiErrorMessage(e, t("tokenRevokeFail"))),
   });
   const linkMut = useMutation({
     mutationFn: ({
@@ -173,7 +173,7 @@ export function useGuardConsole() {
       invalidate();
       void queryClient.invalidateQueries({ queryKey: ["assets"] });
     },
-    onError: (e) => setActionError(apiDetail(e, t("assetLinkFail"))),
+    onError: (e) => setActionError(apiErrorMessage(e, t("assetLinkFail"))),
   });
   const disableMut = useMutation({
     mutationFn: (agentId: string) => disableGuardAgent(agentId),
@@ -182,7 +182,7 @@ export function useGuardConsole() {
       toast.success(t("disabledToast"));
       invalidate();
     },
-    onError: (e) => setActionError(apiDetail(e, t("disableFail"))),
+    onError: (e) => setActionError(apiErrorMessage(e, t("disableFail"))),
   });
 
   const tokens = tokensQ.data ?? [];

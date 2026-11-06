@@ -141,7 +141,7 @@ locally before pushing.
 | `deps-audit-python` | `pip-audit` over both requirements files must find **no** advisory at all (pip-audit reports no severity, so there is no threshold). | Bump the pin, or allowlist with `ecosystem: "pip"`. |
 | `public-surface-sync` | Every `published: true` entry in `frontend/src/lib/services.ts` must appear in the `PRODUCT_SLUGS` tuple in `backend/app/api/sitemap_html.py`, and vice versa. Drift means `/products` links a page the sitemap omits (or the sitemap advertises a 404). | Update the Python tuple in the same PR (`node scripts/sync-public-registry.mjs` rewrites it), then re-run `node scripts/check-public-registry-sync.mjs`. |
 | `nginx-headers` | A `location` block that declares `add_header` makes nginx drop **every** inherited header, CSP included — that is how `/terms`, `/privacy`, `/blog`, `/status` served without a CSP. Also asserts the host+path robots `map`, `location = /sitemap.xml`, and the compose/Vite sitemap proxies survive. | Delete the location-level `add_header` set and let the server-level headers plus the robots map apply, or re-declare `Content-Security-Policy` in that block. `/v1/` is exempt (JSON/SSE, no HTML). |
-| `form-feedback` | Every `useMutation` must declare `onError` (or an explicit `// form-feedback: allow <reason>` for call-site handling), no local `apiDetail` readers, no `String(...detail...)`. A write with no failure path is a silent data-loss bug. | Add `onError` via `apiErrorMessage()` / `useApiFormErrors().apply()`. Contract: [`docs/specs/form-feedback.md`](docs/specs/form-feedback.md). |
+| `form-feedback` | Every `useMutation` must declare an `onError` that **surfaces** something (toast, `apply(`, error setter) or an explicit `// form-feedback: allow <reason>`; no empty `catch {}` in `pages/`/`components/`, no local `apiDetail` readers, no `String(...detail...)`. A write with no failure path is a silent data-loss bug. | Add `onError` via `apiErrorMessage()` / `useApiFormErrors().apply()`. Contract: [`docs/specs/form-feedback.md`](docs/specs/form-feedback.md). |
 Local runs:
 
 ```bash
@@ -173,7 +173,7 @@ write may never be silent either. Full contract: [`docs/specs/form-feedback.md`]
 1. **One error reader** — `apiErrorMessage(err, fallback)` / `extractApiError(err, fallback)` from
    `frontend/src/api/apiErrors.ts`. Never read `err.response.data.detail` by hand, never write a local
    `apiDetail`/`detailFromBody`/`extractError`, never `String(detail)` (422 renders `[object Object]`).
-2. **Every `useMutation` has `onError`.** Forms use `useApiFormErrors().apply(err, fallback)` plus
+2. **Every `useMutation` has a surfacing `onError`.** Forms use `useApiFormErrors().apply(err, fallback)` plus
    `<FormAlert>` + `<FieldError>` per field (`frontend/src/components/patterns/FormFeedback.tsx`);
    row actions use `toast.error(apiErrorMessage(...))`. A dialog must not close on failure.
 3. **422 mapping** — `extractApiError().fields` is keyed by the backend `loc` path (snake_case for
