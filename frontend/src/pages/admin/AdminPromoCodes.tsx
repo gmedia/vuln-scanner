@@ -5,7 +5,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { BadgePercent, Plus, Tag } from "lucide-react";
+import { BadgePercent, BookOpen, Plus, Tag } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -22,6 +22,12 @@ import { PromoRowActions } from "@/components/admin/PromoRowActions";
 import PageHeader from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/patterns/EmptyState";
 import { SiemRail } from "@/components/siem/siemChrome";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/Accordion";
 import { DateTimePicker } from "@/components/ui/DateTimePicker";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
@@ -222,6 +228,58 @@ function AdminPromoCodes() {
           </Button>
         }
       />
+
+      <AdminShell testid="promo-guide" tone="info">
+        <AdminShellHead
+          icon={BookOpen}
+          title={t("promoGuideTitle")}
+          hint={t("promoGuideHint")}
+        />
+        <AdminShellBody>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="steps">
+              <AccordionTrigger>{t("promoGuideStepsTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <ol className="ml-4 list-decimal space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>{t("promoGuideStep1")}</li>
+                  <li>{t("promoGuideStep2")}</li>
+                  <li>{t("promoGuideStep3")}</li>
+                  <li>{t("promoGuideStep4")}</li>
+                  <li>{t("promoGuideStep5")}</li>
+                </ol>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="types">
+              <AccordionTrigger>{t("promoGuideTypesTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {t("promoGuideTypesBody")}
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="approval">
+              <AccordionTrigger>{t("promoGuideApprovalTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {t("promoGuideApprovalBody")}
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="limits">
+              <AccordionTrigger>{t("promoGuideLimitsTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <ul className="ml-4 list-disc space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>{t("promoGuideLimit1")}</li>
+                  <li>{t("promoGuideLimit2")}</li>
+                  <li>{t("promoGuideLimit3")}</li>
+                  <li>{t("promoGuideLimit4")}</li>
+                  <li>{t("promoGuideLimit5")}</li>
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </AdminShellBody>
+      </AdminShell>
 
       <AdminShell tone="primary">
         <AdminShellHead icon={Tag} title={t("promoListCard")} aside={<span className="text-[10px] text-muted-foreground">{t("totalCount", { count: listQ.data?.total ?? 0 })}</span>} />

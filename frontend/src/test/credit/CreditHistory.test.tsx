@@ -225,6 +225,7 @@ describe("CreditHistory", () => {
       screen.getByRole("heading", { level: 2, name: "Credit history" }),
     ).toBeInTheDocument();
     expect(screen.queryByTestId("account-nav")).not.toBeInTheDocument();
+    expect(screen.getByTestId("credit-history-guide")).toBeInTheDocument();
     expect(screen.getByTestId("credit-history-filters")).toBeInTheDocument();
   });
 

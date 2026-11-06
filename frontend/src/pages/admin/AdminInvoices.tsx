@@ -1,8 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, Loader2, MoreHorizontal, Printer, Receipt, Info, Tag, Plus, FileText } from "lucide-react";
+import { BookOpen, Download, Loader2, MoreHorizontal, Printer, Receipt, Info, Tag, Plus, FileText } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { buttonVariants } from "@/components/ui/buttonVariants";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/Accordion";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
@@ -318,6 +324,59 @@ function AdminInvoices() {
         leading={<Receipt className="h-6 w-6 shrink-0 text-primary-text" />}
         title={t("invoicesTitle")}
       />
+
+      <AdminShell testid="invoices-guide" tone="info">
+        <AdminShellHead
+          icon={BookOpen}
+          title={t("invGuideTitle")}
+          hint={t("invGuideHint")}
+        />
+        <AdminShellBody>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="steps">
+              <AccordionTrigger>{t("invGuideStepsTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <ol className="ml-4 list-decimal space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>{t("invGuideStep1")}</li>
+                  <li>{t("invGuideStep2")}</li>
+                  <li>{t("invGuideStep3")}</li>
+                  <li>{t("invGuideStep4")}</li>
+                  <li>{t("invGuideStep5")}</li>
+                  <li>{t("invGuideStep6")}</li>
+                </ol>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="payment">
+              <AccordionTrigger>{t("invGuidePaymentTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {t("invGuidePaymentBody")}
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="discount">
+              <AccordionTrigger>{t("invGuideDiscountTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {t("invGuideDiscountBody")}
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="limits">
+              <AccordionTrigger>{t("invGuideLimitsTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <ul className="ml-4 list-disc space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>{t("invGuideLimit1")}</li>
+                  <li>{t("invGuideLimit2")}</li>
+                  <li>{t("invGuideLimit3")}</li>
+                  <li>{t("invGuideLimit4")}</li>
+                  <li>{t("invGuideLimit5")}</li>
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </AdminShellBody>
+      </AdminShell>
 
       <AdminShell tone="info" testid="invoices-banner">
         <AdminShellHead icon={Info} title={t("invoicesBannerTitle")} />

@@ -1,12 +1,18 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ClipboardList, Loader2, X } from "lucide-react";
+import { BookOpen, Check, ClipboardList, Loader2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import PageHeader from "@/components/layout/PageHeader";
 import { AdminNotice, AdminShell, AdminShellBody, AdminShellHead } from "@/components/admin/AdminShell";
 import { Badge } from "@/components/ui/Badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/Accordion";
 import { Button } from "@/components/ui/Button";
 import { Label } from "@/components/ui/Label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
@@ -108,6 +114,48 @@ function AdminSubscriptionRequests() {
         title={t("subscriptionRequestsTitle")}
         description={t("subscriptionRequestsHint")}
       />
+
+      <AdminShell testid="subscription-requests-guide" tone="info">
+        <AdminShellHead
+          icon={BookOpen}
+          title={t("reqGuideTitle")}
+          hint={t("reqGuideHint")}
+        />
+        <AdminShellBody>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="steps">
+              <AccordionTrigger>{t("reqGuideStepsTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <ol className="ml-4 list-decimal space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>{t("reqGuideStep1")}</li>
+                  <li>{t("reqGuideStep2")}</li>
+                  <li>{t("reqGuideStep3")}</li>
+                  <li>{t("reqGuideStep4")}</li>
+                </ol>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="decision">
+              <AccordionTrigger>{t("reqGuideDecisionTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {t("reqGuideDecisionBody")}
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="limits">
+              <AccordionTrigger>{t("reqGuideLimitsTitle")}</AccordionTrigger>
+              <AccordionContent>
+                <ul className="ml-4 list-disc space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>{t("reqGuideLimit1")}</li>
+                  <li>{t("reqGuideLimit2")}</li>
+                  <li>{t("reqGuideLimit3")}</li>
+                  <li>{t("reqGuideLimit4")}</li>
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </AdminShellBody>
+      </AdminShell>
 
       <AdminShell tone="info" testid="admin-subscription-requests-filter">
         <AdminShellBody>

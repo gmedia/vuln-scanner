@@ -218,6 +218,7 @@ describe("AdminSubscriptions", () => {
   it("lists subscriptions with status and the scheduled cancel date", async () => {
     renderPage();
 
+    expect(screen.getByTestId("subscriptions-guide")).toBeInTheDocument();
     const table = await screen.findByTestId("admin-subscriptions-table");
     expect(within(table).getByText("Org A")).toBeInTheDocument();
     expect(within(table).getByText("Past due")).toBeInTheDocument();

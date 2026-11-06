@@ -79,6 +79,7 @@ describe("AdminSubscriptionRequests", () => {
     const user = userEvent.setup();
     renderPage();
 
+    expect(screen.getByTestId("subscription-requests-guide")).toBeInTheDocument();
     const table = await screen.findByTestId("admin-subscription-requests-table");
     expect(within(table).getByText("Org A")).toBeInTheDocument();
     expect(within(table).getByText("Pro → Multi")).toBeInTheDocument();
