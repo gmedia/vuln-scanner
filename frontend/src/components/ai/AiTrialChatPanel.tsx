@@ -47,7 +47,7 @@ export function AiTrialChatPanel({
   const [prompt, setPrompt] = useState("ping");
   const [reply, setReply] = useState("");
   const [usage, setUsage] = useState<TrialUsage | null>(null);
-  // form-feedback: allow inline isError alert renders apiErrorMessage below.
+  const [error, setError] = useState("");
   const chatMut = useMutation({
     mutationFn: () =>
       aiTrialChat({
@@ -56,13 +56,20 @@ export function AiTrialChatPanel({
         max_tokens: 256,
       }),
     onSuccess: (data) => {
+      setError("");
       setReply(replyContent(data));
       const raw = data.usage;
       setUsage(raw && typeof raw === "object" ? (raw as TrialUsage) : null);
     },
-    onError: () => {
+    onError: (err) => {
       setReply("");
       setUsage(null);
+      const message = apiErrorMessage(err, t("trialError"));
+      setError(
+        isAxiosError(err) && err.response?.status
+          ? `${message} (${err.response.status})`
+          : message,
+      );
     },
   });
 
@@ -127,16 +134,13 @@ export function AiTrialChatPanel({
             ) : null}
           </div>
         ) : null}
-        {chatMut.isError ? (
+        {error ? (
           <p
             data-testid="ai-trial-error"
             role="alert"
             className="text-sm text-destructive"
           >
-            {apiErrorMessage(chatMut.error, t("trialError"))}
-            {isAxiosError(chatMut.error) && chatMut.error.response?.status
-              ? ` (${chatMut.error.response.status})`
-              : null}
+            {error}
           </p>
         ) : null}
       </CardContent>
