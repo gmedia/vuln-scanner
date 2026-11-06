@@ -66,6 +66,7 @@ function seedHead(): void {
   appendMeta("property", "og:title", BRAND.metaTitle);
   appendMeta("property", "og:description", BRAND.metaDescription);
   appendMeta("property", "og:image", "https://sinexis.app/og-image.png");
+  appendMeta("property", "og:url", "https://sinexis.app/");
   const canonical = document.createElement("link");
   canonical.setAttribute("rel", "canonical");
   canonical.setAttribute("href", "/");
@@ -146,6 +147,48 @@ describe("static and per-page metadata", () => {
     expect(metaContent("property", "og:image")).toBe(
       "https://sinexis.app/og-image.png",
     );
+  });
+
+  it("derives og:url from canonical so the two never disagree", () => {
+    const { unmount } = render(
+      createElement(Probe, {
+        meta: {
+          title: "Guard",
+          description: "Guard page",
+          canonical: "/products/guard",
+        },
+      }),
+    );
+
+    expect(canonicalHref()).toBe("https://sinexis.app/products/guard");
+    expect(metaContent("property", "og:url")).toBe(
+      "https://sinexis.app/products/guard",
+    );
+
+    unmount();
+
+    expect(metaContent("property", "og:url")).toBe("https://sinexis.app/");
+  });
+
+  it("lets a route override og:url explicitly and restores it", () => {
+    const { unmount } = render(
+      createElement(Probe, {
+        meta: {
+          title: "Guard",
+          description: "Guard page",
+          canonical: "/products/guard",
+          og: { url: "/products" },
+        },
+      }),
+    );
+
+    expect(metaContent("property", "og:url")).toBe(
+      "https://sinexis.app/products",
+    );
+
+    unmount();
+
+    expect(metaContent("property", "og:url")).toBe("https://sinexis.app/");
   });
 
   it("sets page tags, makes the canonical absolute, and restores on unmount", () => {
