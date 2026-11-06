@@ -56,6 +56,6 @@ Ambil tingkat sesuai angka itu. Naikkan nanti lebih mudah daripada membayar kapa
 
 ## Lihat harga di dalam akun
 
-Buka **sinexis.app**, daftar, baca layar harga untuk angka hari ini.
+Buka **sinexis.app**, daftar, baca [layar harga](/products) untuk angka hari ini.
 
 Mulai dari satu target penting, jalankan satu pemeriksaan, baru putuskan jadwal dan tingkat paket. Jauh lebih waras daripada memilih tingkat dari brosur kosong.

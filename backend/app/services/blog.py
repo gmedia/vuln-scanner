@@ -8,6 +8,7 @@ from typing import Any
 import bleach
 import markdown
 
+from app.config import settings
 from app.models.blog import SLUG_MAX
 
 SLUG_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
@@ -84,12 +85,23 @@ def render_body_html(body_md: str) -> str:
     return bleach.linkify(cleaned, callbacks=callbacks, skip_tags=["pre", "code"])
 
 
+def _internal_href(href: str) -> bool:
+    if href.startswith(("/", "#")):
+        return True
+    return href.startswith((settings.frontend_url.rstrip("/") + "/", settings.frontend_url.rstrip("/") + "#"))
+
+
 def _rel_nofollow(attrs: dict[Any, Any], new: bool = False) -> dict[Any, Any] | None:
     del new
     href = attrs.get((None, "href"), "")
     if href.startswith(("javascript:", "data:", "vbscript:")):
         return None
-    attrs[(None, "rel")] = "nofollow noopener noreferrer"
+    # Internal links are ours; nofollowing them would waste the only
+    # article -> product links this site has. External links keep nofollow.
+    if _internal_href(href):
+        attrs[(None, "rel")] = "noopener noreferrer"
+    else:
+        attrs[(None, "rel")] = "nofollow noopener noreferrer"
     return attrs
 
 

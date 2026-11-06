@@ -63,6 +63,6 @@ Aset adalah cara Sinexis menyebut target. Titik.
 
 ## Buat satu nama dulu
 
-Buka **sinexis.app**. Buat satu aset untuk target yang paling penting, yang benar-benar dipakai.
+Buka **sinexis.app**. Buat satu [aset](/products) untuk target yang paling penting, yang benar-benar dipakai.
 
 Undang satu rekan hanya jika ada yang perlu membaca. Tambah nama berikutnya setelah manfaatnya terasa, bukan karena kuota paket masih sisa.

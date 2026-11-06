@@ -60,4 +60,4 @@ Kantor atau properti yang tiap periode ditanya status, dan butuh satu halaman da
 
 Jalankan dulu satu pemeriksaan di **sinexis.app** pada target yang benar-benar live. Baca hasilnya.
 
-Kalau isinya pantas jadi bahan rutin, hidupkan jadwal. Periode berikutnya pekerjaan Anda membaca perubahan, bukan mengulang dari nol.
+Kalau isinya pantas jadi bahan rutin, hidupkan [jadwal](/products/scan). Periode berikutnya pekerjaan Anda membaca perubahan, bukan mengulang dari nol.

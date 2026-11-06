@@ -62,4 +62,4 @@ Tiap scan memotong kredit. Bobot per jenis kelihatan di layar harga di dalam aku
 
 Pilih nama yang benar-benar dipakai pelanggan, bukan subdomain percobaan.
 
-Buka **sinexis.app**, daftar, jalankan satu scan domain, baca isinya sekali. Kalau pantas jadi bahan rapat bulanan, hidupkan jadwalnya.
+Buka **sinexis.app**, daftar, jalankan satu [scan domain](/products/scan), baca isinya sekali. Kalau pantas jadi bahan rapat bulanan, hidupkan jadwalnya.

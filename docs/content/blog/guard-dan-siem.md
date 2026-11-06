@@ -64,4 +64,4 @@ Website di hosting bersama, tanpa akses mesin, sering cukup berhenti di langkah 
 
 Mulai di **sinexis.app** dari Scan dan jadwal. Pakai beberapa siklus.
 
-Kalau kemudian Anda butuh alarm dari dalam, bicarakan Guard. SIEM belakangan, dan hanya jika modulnya aktif plus ada nama orang yang benar-benar menutup tiket.
+Kalau kemudian Anda butuh alarm dari dalam, bicarakan [Guard](/products/guard). SIEM belakangan, dan hanya jika modulnya aktif plus ada nama orang yang benar-benar menutup tiket.

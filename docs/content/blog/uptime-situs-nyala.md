@@ -55,6 +55,6 @@ Monitor bisa hidup atau mati per target. Tidak semua aset wajib dipantau.
 
 ## Nyalakan satu monitor
 
-Buka **sinexis.app**. Tambah satu monitor untuk alamat produksi yang paling penting.
+Buka **sinexis.app**. Tambah satu [monitor](/products/uptime) untuk alamat produksi yang paling penting.
 
 Biarkan seminggu. Setelah itu Anda punya gambaran, dari luar, seberapa sering layanan Anda benar-benar menjawab, dan apakah perlu monitor kedua.

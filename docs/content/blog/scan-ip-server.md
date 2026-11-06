@@ -64,4 +64,4 @@ Sering kali langkah termurah bukan menambal, tapi menutup pintu yang sejak awal 
 
 Pilih satu IP yang benar-benar melayani pelanggan, bukan mesin percobaan.
 
-Buka **sinexis.app**, daftar, jalankan satu scan IP. Kredit terpotong sesuai layar harga di akun. Kalau hasilnya pantas jadi acuan, hidupkan jadwal supaya bulan depan yang Anda baca adalah selisihnya.
+Buka **sinexis.app**, daftar, jalankan satu [scan IP](/products/scan). Kredit terpotong sesuai layar harga di akun. Kalau hasilnya pantas jadi acuan, hidupkan jadwal supaya bulan depan yang Anda baca adalah selisihnya.
