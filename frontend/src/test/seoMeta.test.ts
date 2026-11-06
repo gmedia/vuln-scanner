@@ -65,6 +65,7 @@ function seedHead(): void {
   appendMeta("name", "description", BRAND.metaDescription);
   appendMeta("property", "og:title", BRAND.metaTitle);
   appendMeta("property", "og:description", BRAND.metaDescription);
+  appendMeta("property", "og:image", "https://sinexis.app/og-image.png");
   const canonical = document.createElement("link");
   canonical.setAttribute("rel", "canonical");
   canonical.setAttribute("href", "/");
@@ -88,9 +89,7 @@ describe("static and per-page metadata", () => {
 
     expect(parsed.title).toBe(BRAND.metaTitle);
     expect(
-      parsed
-        .querySelector('meta[name="description"]')
-        ?.getAttribute("content"),
+      parsed.querySelector('meta[name="description"]')?.getAttribute("content"),
     ).toBe(BRAND.metaDescription);
     expect(
       parsed
@@ -102,6 +101,51 @@ describe("static and per-page metadata", () => {
         .querySelector('meta[property="og:description"]')
         ?.getAttribute("content"),
     ).toBe(BRAND.metaDescription);
+  });
+
+  it("index.html carries the social card tags non-JS bots read", () => {
+    const parsed = new DOMParser().parseFromString(
+      readIndexHtml(),
+      "text/html",
+    );
+    const content = (sel: string) =>
+      parsed.querySelector(sel)?.getAttribute("content");
+
+    expect(content('meta[property="og:image"]')).toBe(
+      "https://sinexis.app/og-image.png",
+    );
+    expect(content('meta[property="og:type"]')).toBe("website");
+    expect(content('meta[property="og:site_name"]')).toBe("Sinexis");
+    expect(content('meta[name="twitter:card"]')).toBe("summary_large_image");
+    expect(content('meta[name="twitter:image"]')).toBe(
+      "https://sinexis.app/og-image.png",
+    );
+    expect(
+      parsed.querySelector('link[rel="canonical"]')?.getAttribute("href"),
+    ).toBe("https://sinexis.app/");
+  });
+
+  it("a route can override the og image and it is restored on unmount", () => {
+    const { unmount } = render(
+      createElement(Probe, {
+        meta: {
+          title: "Guard",
+          description: "Guard page",
+          canonical: "/products/guard",
+          og: { image: "/og-guard.png" },
+        },
+      }),
+    );
+
+    expect(metaContent("property", "og:image")).toBe(
+      "https://sinexis.app/og-guard.png",
+    );
+
+    unmount();
+
+    expect(metaContent("property", "og:image")).toBe(
+      "https://sinexis.app/og-image.png",
+    );
   });
 
   it("sets page tags, makes the canonical absolute, and restores on unmount", () => {
@@ -119,9 +163,7 @@ describe("static and per-page metadata", () => {
     expect(document.title).toBe("Test page");
     expect(metaContent("name", "description")).toBe("Test description");
     expect(metaContent("property", "og:title")).toBe("OG title");
-    expect(metaContent("property", "og:description")).toBe(
-      "OG description",
-    );
+    expect(metaContent("property", "og:description")).toBe("OG description");
     expect(canonicalHref()).toBe("https://sinexis.app/blog/test");
 
     unmount();
