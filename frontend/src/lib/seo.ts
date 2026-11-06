@@ -6,6 +6,7 @@ export type PageMetaOg = {
   title?: string;
   description?: string;
   image?: string;
+  url?: string;
 };
 
 export type PageMeta = {
@@ -88,6 +89,7 @@ export function usePageMeta({
   const ogTitle = og?.title;
   const ogDescription = og?.description;
   const ogImage = og?.image;
+  const ogUrl = og?.url ?? canonical;
 
   useEffect(() => {
     const originalTitle = document.title;
@@ -106,6 +108,9 @@ export function usePageMeta({
     const ogImageSnapshot = snapshotMeta("property", "og:image");
     const originalOgImage =
       ogImageSnapshot.element?.getAttribute("content") ?? null;
+    const ogUrlSnapshot = snapshotMeta("property", "og:url");
+    const originalOgUrl =
+      ogUrlSnapshot.element?.getAttribute("content") ?? null;
     const originalCanonicalElement = findCanonical();
     const originalCanonical =
       originalCanonicalElement?.getAttribute("href") ?? null;
@@ -117,6 +122,7 @@ export function usePageMeta({
     if (ogImage) {
       writeMeta(ogImageSnapshot, absoluteUrl(ogImage));
     }
+    writeMeta(ogUrlSnapshot, absoluteUrl(ogUrl));
     if (robots) {
       writeMeta(robotsSnapshot, robots);
     }
@@ -138,6 +144,7 @@ export function usePageMeta({
       if (ogImage) {
         restoreMeta(ogImageSnapshot, originalOgImage);
       }
+      restoreMeta(ogUrlSnapshot, originalOgUrl);
       if (robots) {
         restoreMeta(robotsSnapshot, originalRobots);
       }
@@ -151,5 +158,14 @@ export function usePageMeta({
         findCanonical()?.remove();
       }
     };
-  }, [title, description, canonical, ogTitle, ogDescription, ogImage, robots]);
+  }, [
+    title,
+    description,
+    canonical,
+    ogTitle,
+    ogDescription,
+    ogImage,
+    ogUrl,
+    robots,
+  ]);
 }
