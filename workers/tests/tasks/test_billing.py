@@ -1,4 +1,5 @@
 import sys
+import types
 
 sys.path.insert(0, "/home/ubuntu/vuln-scanner/workers")
 
@@ -17,6 +18,7 @@ from tasks.billing import (
     _next_annual_start,
     draft_annual_renewals,
     finalize_periods,
+    prune_payment_events,
     reconcile_gateway_attempts,
     send_due_reminders,
 )
@@ -501,3 +503,54 @@ class TestReconcileGatewayAttempts:
 
         assert outcome == expected
         run.assert_called_once()
+
+class TestPrunePaymentEvents:
+    def test_task_is_registered(self):
+        assert prune_payment_events.name == "payment.prune_events"
+
+    def test_has_acks_late_and_single_retry(self):
+        assert prune_payment_events.acks_late is True
+        assert prune_payment_events.max_retries == 1
+
+    def _run_with_service(self, deleted: int):
+        class _FakeSession:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *exc_info):
+                return False
+
+        service = MagicMock()
+        service.prune_payment_events = AsyncMock(return_value=deleted)
+        fake_billing = types.ModuleType("app.services.billing")
+        fake_billing.BillingService = MagicMock(return_value=service)
+        with (
+            patch("app.database.async_session", return_value=_FakeSession()),
+            patch.dict(sys.modules, {"app.services.billing": fake_billing}),
+        ):
+            outcome = prune_payment_events()
+        return outcome, fake_billing.BillingService, service
+
+    def test_calls_the_service_and_returns_the_deleted_count(self):
+        outcome, service_cls, service = self._run_with_service(7)
+
+        assert outcome == {"deleted": 7}
+        service_cls.assert_called_once()
+        service.prune_payment_events.assert_awaited_once_with()
+
+    def test_runs_while_gateway_flag_is_off(self, monkeypatch):
+        from app.config import settings
+
+        monkeypatch.setattr(settings, "payment_gateway_enabled", False)
+
+        outcome, _, service = self._run_with_service(2)
+
+        assert outcome == {"deleted": 2}
+        service.prune_payment_events.assert_awaited_once_with()
+
+def test_beat_schedule_registers_daily_payment_prune():
+    from celery_app import celery_app
+
+    entry = celery_app.conf.beat_schedule["payment-prune-events-daily"]
+    assert entry["task"] == "payment.prune_events"
+    assert celery_app.conf.task_routes["payment.prune_events"] == {"queue": "ip_scan"}

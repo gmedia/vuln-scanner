@@ -237,8 +237,11 @@ attempt exists. This prevents "paid twice" and "voided after payment" races.
 ## 9) Rollback
 
 1. Set `PAYMENT_GATEWAY_ENABLED=false` and redeploy the backend (backend-first).
-2. `payment.reconcile_attempts` becomes a no-op and new checkouts are refused; the SPA
-   reverts to manual bank transfer.
+2. New checkouts are refused and the SPA reverts to manual bank transfer. Inbound
+   webhooks and `payment.reconcile_attempts` **keep running** for a provider whose
+   server key is still configured, so a payment that was already in flight during the
+   rollback still settles. Only an unconfigured provider (no key) is skipped and shows
+   up in the `skipped_count` of the reconcile task.
 3. Existing attempts remain in the table and stay visible in the gauges. Outstanding
    pending attempts do not disappear; settle or refund them with the provider.
 4. Keep the payment tables and the webhook route in place. Do not drop data during a
@@ -293,3 +296,34 @@ TEST_POSTGRES_URL=postgresql+asyncpg://vuln_scanner:e2e-test-password@localhost:
 
 docker rm -f pg1268
 ```
+
+## 12) Event retention
+
+Every inbound webhook writes one `payment_events` row (redacted payload). The row is
+the dedupe key and the audit trail, not a permanent archive. `payment.prune_events`
+runs once a day and deletes rows whose `received_at` is older than **365 days**
+(`PAYMENT_EVENT_RETENTION_DAYS` in `backend/app/services/billing.py`; a code
+constant, not an env var, because it rarely changes).
+
+Two statuses are **never** pruned, at any age:
+
+- `received` — the event may still be in flight (the worker is applying it, or the
+  provider is retrying); deleting it would drop the dedupe key mid-transaction.
+- `failed` — a failed event is an ops signal for signature, amount, or
+  unknown-attempt problems. It stays available for investigation and metrics.
+
+Everything else (`processed`, `ignored`) is terminal and is deleted once it falls
+outside the window. `payment_attempts`, `org_invoices`, subscriptions, and promo
+ledgers are **not** touched by this sweep.
+
+To run it by hand (same task beat invokes):
+
+```bash
+# Inside the worker container; prints {"deleted": <int>}.
+python -c "from tasks.billing import prune_payment_events; print(prune_payment_events())"
+```
+
+After a year, an event row is gone. If a provider asks about a specific transaction
+older than the retention window, restore the `payment_events` row from the database
+backup — do not recreate it from provider data. The corresponding
+`payment_attempts`/`org_invoices` rows are still present.

@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Mapping
-from datetime import UTC, datetime
-from typing import Any
+from datetime import UTC, datetime, timedelta
+from typing import Any, cast
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import CursorResult, delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -65,6 +65,14 @@ _REDACTED_KEYS = (
     "currency",
 )
 
+# Terminal webhook rows older than this are deleted by ``payment.prune_events``.
+# A code constant, not an env var: it changes rarely and the env-inventory gate
+# should not grow for a value ops will not tune per deploy.
+PAYMENT_EVENT_RETENTION_DAYS = 365
+
+# Kept at any age: ``received`` may still be in flight and ``failed`` is an ops
+# signal (see docs/payments-ops.md). Every other recorded status is terminal.
+_PAYMENT_EVENT_KEPT_STATUSES = ("received", "failed")
 
 def _redacted_payload(raw: Mapping[str, object]) -> dict[str, object]:
     return {key: raw[key] for key in _REDACTED_KEYS if key in raw}
@@ -518,6 +526,41 @@ class BillingService:
         record.processed_at = _now()
         await self.db.commit()
         return PaymentEventResult(status=outcome, event_id=event.event_id)
+
+    async def prune_payment_events(
+        self, *, retention_days: int = PAYMENT_EVENT_RETENTION_DAYS
+    ) -> int:
+        """Delete terminal ``payment_events`` rows older than ``retention_days``.
+
+        Deliberate trade-off: ``received`` rows may still be in flight (a
+        provider retry, or a webhook the worker is applying right now) and
+        ``failed`` rows are an ops signal for signature/amount/unknown-attempt
+        problems, so both are kept regardless of age. Everything else
+        (``processed``, ``ignored``) is terminal and is deleted once it falls
+        outside the window.
+        """
+        cutoff = datetime.now(UTC) - timedelta(days=retention_days)
+        predicate = (
+            PaymentEvent.received_at < cutoff,
+            PaymentEvent.status.notin_(_PAYMENT_EVENT_KEPT_STATUSES),
+        )
+        # Count first: some drivers report -1 for a DELETE rowcount, and after
+        # the delete the matching rows no longer exist to be counted.
+        matching = int(
+            (
+                await self.db.execute(
+                    select(func.count()).select_from(PaymentEvent).where(*predicate)
+                )
+            ).scalar_one()
+        )
+        result = cast(
+            CursorResult[Any],
+            await self.db.execute(delete(PaymentEvent).where(*predicate)),
+        )
+        rowcount = result.rowcount
+        deleted = matching if rowcount is None or rowcount < 0 else int(rowcount)
+        await self.db.commit()
+        return deleted
 
     async def _find_gateway_attempt(self, provider: str, event: NormalizedEvent) -> PaymentAttempt | None:
         order_id = (event.provider_order_id or "").strip()

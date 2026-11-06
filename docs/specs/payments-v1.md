@@ -134,6 +134,7 @@ Rules:
 - Return 200 for `processed`, `duplicate`, `ignored`, and permanently failed events; 500 only for transient DB errors so the provider retries.
 - `nginx`: add `location /api/webhooks/payments/ { client_max_body_size 64k; }` to both configs.
 - Redact `customer_details` and `signature_key` before storing `payment_events.payload`.
+- Retention: `payment_events` rows are kept for **365 days** (`PAYMENT_EVENT_RETENTION_DAYS`); the daily `payment.prune_events` task deletes terminal (`processed`/`ignored`) rows older than that, while `received` (may be in flight) and `failed` (ops signal) are exempt at any age.
 
 ## 5) State machine
 
