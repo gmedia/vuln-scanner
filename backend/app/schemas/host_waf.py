@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic_core import PydanticCustomError
 
 
 class HostWafPolicyUpsert(BaseModel):
@@ -15,7 +16,7 @@ class HostWafPolicyUpsert(BaseModel):
     @classmethod
     def allowed_engines(cls, v: str) -> str:
         if v not in ("mock", "coraza", "nginx_modsec"):
-            raise ValueError("engine must be mock, coraza, or nginx_modsec")
+            raise PydanticCustomError("waf_engine_invalid", "engine must be mock, coraza, or nginx_modsec")
         return v
 
 
@@ -86,7 +87,7 @@ class HostAgentWafEventIn(BaseModel):
     def normalize_method(cls, v: str) -> str:
         method = v.strip().upper()
         if method not in _HTTP_METHODS:
-            raise ValueError("unsupported HTTP method")
+            raise PydanticCustomError("http_method_invalid", "unsupported HTTP method")
         return method
 
 

@@ -9,6 +9,7 @@ from datetime import datetime
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic_core import PydanticCustomError
 
 from app.models.uptime import (
     DEFAULT_INTERVAL_SECONDS,
@@ -46,20 +47,20 @@ def assert_public_host(host: str, *, allow_private: bool | None = None) -> None:
     if allow_private is None:
         allow_private = settings.uptime_allow_private
     if not allow_private and host.lower() in ("localhost", "metadata.google.internal"):
-        raise ValueError("target host is not allowed")
+        raise PydanticCustomError("uptime_host_not_allowed", "target host is not allowed")
     if _is_blocked_ip(host, allow_private=allow_private):
-        raise ValueError("private, loopback, and metadata addresses are not allowed")
+        raise PydanticCustomError("uptime_target_private", "private, loopback, and metadata addresses are not allowed")
 
 
 def normalize_http_target(raw: str) -> str:
     value = raw.strip()
     parsed = urlparse(value)
     if parsed.scheme not in ("http", "https"):
-        raise ValueError("HTTP target must be http:// or https:// URL")
+        raise PydanticCustomError("uptime_http_url_invalid", "HTTP target must be http:// or https:// URL")
     if not parsed.hostname:
-        raise ValueError("HTTP target must include a host")
+        raise PydanticCustomError("uptime_http_host_missing", "HTTP target must include a host")
     if parsed.username or parsed.password:
-        raise ValueError("URL credentials are not allowed")
+        raise PydanticCustomError("uptime_credentials_not_allowed", "URL credentials are not allowed")
     assert_public_host(parsed.hostname)
     return value
 
@@ -67,16 +68,16 @@ def normalize_http_target(raw: str) -> str:
 def normalize_tcp_target(raw: str) -> str:
     value = raw.strip()
     if value.count(":") != 1:
-        raise ValueError("TCP target must be host:port")
+        raise PydanticCustomError("uptime_tcp_target_invalid", "TCP target must be host:port")
     host, port_s = value.rsplit(":", 1)
     if not host or not _HOST_RE.match(host):
-        raise ValueError("TCP host is invalid")
+        raise PydanticCustomError("uptime_tcp_host_invalid", "TCP host is invalid")
     try:
         port = int(port_s)
     except ValueError as exc:
-        raise ValueError("TCP port must be an integer") from exc
+        raise PydanticCustomError("uptime_tcp_port_invalid", "TCP port must be an integer") from exc
     if port < 1 or port > 65535:
-        raise ValueError("TCP port out of range")
+        raise PydanticCustomError("uptime_tcp_port_range", "TCP port out of range")
     assert_public_host(host)
     return f"{host.lower()}:{port}"
 
@@ -84,7 +85,7 @@ def normalize_tcp_target(raw: str) -> str:
 def normalize_dns_target(raw: str) -> str:
     value = raw.strip().rstrip(".").lower()
     if not value or not _HOST_RE.match(value):
-        raise ValueError("DNS target must be a hostname")
+        raise PydanticCustomError("uptime_dns_target_invalid", "DNS target must be a hostname")
     assert_public_host(value)
     return value
 
@@ -92,7 +93,7 @@ def normalize_dns_target(raw: str) -> str:
 def normalize_ping_target(raw: str) -> str:
     value = raw.strip().lower()
     if not value or not _HOST_RE.match(value):
-        raise ValueError("ping target must be a hostname or IP")
+        raise PydanticCustomError("uptime_ping_target_invalid", "ping target must be a hostname or IP")
     assert_public_host(value)
     return value
 
@@ -111,14 +112,14 @@ def sanitize_headers(raw: dict[str, str] | None) -> dict[str, str] | None:
     if not raw:
         return None
     if len(raw) > MAX_HEADER_COUNT:
-        raise ValueError("too many request headers")
+        raise PydanticCustomError("uptime_headers_limit", "too many request headers")
     out: dict[str, str] = {}
     for key, value in raw.items():
         name = key.strip()
         if not name or name.lower() in _BLOCKED_HEADER_NAMES:
-            raise ValueError("header name is not allowed")
+            raise PydanticCustomError("uptime_header_name_invalid", "header name is not allowed")
         if len(value) > MAX_HEADER_VALUE:
-            raise ValueError("header value too long")
+            raise PydanticCustomError("uptime_header_value_too_long", "header value too long")
         out[name] = value
     return out
 
@@ -151,7 +152,7 @@ class UptimeMonitorCreate(BaseModel):
     def upper_method(cls, v: str) -> str:
         method = v.strip().upper()
         if method not in _HTTP_METHODS:
-            raise ValueError("unsupported HTTP method")
+            raise PydanticCustomError("http_method_invalid", "unsupported HTTP method")
         return method
 
     @model_validator(mode="after")
@@ -163,21 +164,21 @@ class UptimeMonitorCreate(BaseModel):
             or self.request_body
             or (self.http_method and self.http_method != "GET")
         ):
-            raise ValueError("HTTP options apply to HTTP only")
+            raise PydanticCustomError("uptime_http_only", "HTTP options apply to HTTP only")
         if self.check_type == "http":
             if not self.target.strip():
-                raise ValueError("HTTP target is required")
+                raise PydanticCustomError("uptime_http_target_required", "HTTP target is required")
             self.target = normalize_http_target(self.target)
             self.request_headers = sanitize_headers(self.request_headers)
             if self.http_method in ("GET", "HEAD") and self.request_body:
-                raise ValueError("request body is not allowed for GET/HEAD")
+                raise PydanticCustomError("uptime_body_not_allowed", "request body is not allowed for GET/HEAD")
         elif self.check_type == "tcp":
             self.target = normalize_tcp_target(self.target)
         elif self.check_type == "dns":
             self.target = normalize_dns_target(self.target)
             rec = (self.dns_record or "A").upper()
             if rec not in _DNS_RECORDS:
-                raise ValueError("unsupported DNS record type")
+                raise PydanticCustomError("uptime_dns_record_invalid", "unsupported DNS record type")
             self.dns_record = rec
         elif self.check_type == "ping":
             self.target = normalize_ping_target(self.target)
@@ -213,7 +214,7 @@ class UptimeMonitorUpdate(BaseModel):
             return v
         method = v.strip().upper()
         if method not in _HTTP_METHODS:
-            raise ValueError("unsupported HTTP method")
+            raise PydanticCustomError("http_method_invalid", "unsupported HTTP method")
         return method
 
     @field_validator("request_headers")

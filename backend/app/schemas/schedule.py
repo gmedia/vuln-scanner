@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic_core import PydanticCustomError
 
 from app.schemas.scan import TARGET_PATTERN
 
@@ -26,15 +27,18 @@ class ScheduleCreate(BaseModel):
         scan_type = info.data.get("scan_type")
         if scan_type == "domain":
             if len(raw) > 253 or "." not in raw:
-                raise ValueError("domain must be a valid fully-qualified domain name")
+                raise PydanticCustomError("domain_invalid", "domain must be a valid fully-qualified domain name")
             if not re.match(r"^[a-zA-Z0-9._\-]+$", raw):
-                raise ValueError("domain contains invalid characters")
+                raise PydanticCustomError("domain_chars", "domain contains invalid characters")
             for label in raw.split("."):
                 if not label or len(label) > 63 or label.startswith("-") or label.endswith("-"):
-                    raise ValueError("domain must be a valid fully-qualified domain name")
+                    raise PydanticCustomError("domain_invalid", "domain must be a valid fully-qualified domain name")
             return raw.lower()
         if not TARGET_PATTERN.match(raw):
-            raise ValueError("target must be a valid IPv4 address or fully-qualified domain name")
+            raise PydanticCustomError(
+                "target_invalid",
+                "target must be a valid IPv4 address or fully-qualified domain name",
+            )
         return raw
 
 
@@ -53,7 +57,10 @@ class ScheduleUpdate(BaseModel):
             return v
         raw = v.strip()
         if not TARGET_PATTERN.match(raw):
-            raise ValueError("target must be a valid IPv4 address or fully-qualified domain name")
+            raise PydanticCustomError(
+                "target_invalid",
+                "target must be a valid IPv4 address or fully-qualified domain name",
+            )
         return raw
 
 

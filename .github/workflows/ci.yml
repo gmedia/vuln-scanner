@@ -1105,6 +1105,16 @@ jobs:
       - name: Check every mutation has a visible error path
         run: node scripts/check-form-feedback.mjs
 
+  validation-types:
+    name: validation-types
+    needs: [changes]
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.skip_tests }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check every PydanticCustomError type has en + id keys
+        run: node scripts/check-validation-types.mjs
+
   ci-ok:
     name: ci-ok
     runs-on: ubuntu-latest
@@ -1131,6 +1141,7 @@ jobs:
       - public-surface-sync
       - nginx-headers
       - form-feedback
+      - validation-types
     if: ${{ always() && !cancelled() }}
     steps:
       - name: Fail if any required job failed

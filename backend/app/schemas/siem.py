@@ -4,6 +4,7 @@ from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic_core import PydanticCustomError
 
 
 class SiemStatusResponse(BaseModel):
@@ -53,7 +54,7 @@ class SiemCasePatch(BaseModel):
         if value is None:
             return value
         if value not in ("open", "ack", "closed"):
-            raise ValueError("status must be open, ack, or closed")
+            raise PydanticCustomError("siem_status_invalid", "status must be open, ack, or closed")
         return value
 
 

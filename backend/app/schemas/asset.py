@@ -5,6 +5,7 @@ import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic_core import PydanticCustomError
 
 from app.schemas.scan import TARGET_PATTERN
 
@@ -26,13 +27,17 @@ def normalize_tags(tags: list[str] | None) -> list[str]:
         if not tag:
             continue
         if len(tag) > MAX_TAG_LEN or not _TAG_RE.match(tag):
-            raise ValueError("tag must be 1–32 chars: lowercase letters, digits, . _ -")
+            raise PydanticCustomError("asset_tag_invalid", "tag must be 1–32 chars: lowercase letters, digits, . _ -")
         if tag in seen:
             continue
         seen.add(tag)
         out.append(tag)
         if len(out) > MAX_TAGS_PER_ASSET:
-            raise ValueError(f"at most {MAX_TAGS_PER_ASSET} tags per asset")
+            raise PydanticCustomError(
+                "asset_tags_limit",
+                "at most {max} tags per asset",
+                {"max": MAX_TAGS_PER_ASSET},
+            )
     return out
 
 
@@ -55,15 +60,18 @@ class AssetCreate(BaseModel):
         scan_type = info.data.get("scan_type")
         if scan_type == "domain":
             if len(raw) > 253 or "." not in raw:
-                raise ValueError("domain must be a valid fully-qualified domain name")
+                raise PydanticCustomError("domain_invalid", "domain must be a valid fully-qualified domain name")
             if not re.match(r"^[a-zA-Z0-9._\-]+$", raw):
-                raise ValueError("domain contains invalid characters")
+                raise PydanticCustomError("domain_chars", "domain contains invalid characters")
             for label in raw.split("."):
                 if not label or len(label) > 63 or label.startswith("-") or label.endswith("-"):
-                    raise ValueError("domain must be a valid fully-qualified domain name")
+                    raise PydanticCustomError("domain_invalid", "domain must be a valid fully-qualified domain name")
             return raw.lower()
         if not TARGET_PATTERN.match(raw):
-            raise ValueError("target must be a valid IPv4 address or fully-qualified domain name")
+            raise PydanticCustomError(
+                "target_invalid",
+                "target must be a valid IPv4 address or fully-qualified domain name",
+            )
         return raw
 
     @field_validator("name")
@@ -101,15 +109,20 @@ def normalize_tag_colors(colors: dict[str, str] | None) -> dict[str, str]:
         if not tag:
             continue
         if len(tag) > MAX_TAG_LEN or not _TAG_RE.match(tag):
-            raise ValueError("tag must be 1–32 chars: lowercase letters, digits, . _ -")
+            raise PydanticCustomError("asset_tag_invalid", "tag must be 1–32 chars: lowercase letters, digits, . _ -")
         color = raw_color.strip().lower()
         if color not in TAG_COLOR_KEYS and not _HEX_COLOR_RE.match(color):
-            raise ValueError(
+            raise PydanticCustomError(
+                "asset_tag_color_invalid",
                 f"color must be one of {', '.join(TAG_COLOR_KEYS)} or #rrggbb",
             )
         out[tag] = color
         if len(out) > MAX_TAG_COLORS:
-            raise ValueError(f"at most {MAX_TAG_COLORS} tag colors per organization")
+            raise PydanticCustomError(
+                "asset_tag_colors_limit",
+                "at most {max} tag colors per organization",
+                {"max": MAX_TAG_COLORS},
+            )
     return out
 
 
