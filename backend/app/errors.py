@@ -106,7 +106,7 @@ def _safe_params(ctx: object) -> dict[str, _Scalar]:
     return {
         str(key): value
         for key, value in ctx.items()
-        if isinstance(value, (str, int, float, bool))
+        if isinstance(value, str | int | float | bool)
     }
 
 
