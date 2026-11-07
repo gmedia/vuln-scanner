@@ -114,7 +114,7 @@ export default function AiTopup() {
         title={t("title")}
         description={t("subtitle")}
         actions={
-          <Button asChild variant="outline" className="h-10 min-h-10">
+          <Button asChild variant="outline" className="min-h-11">
             <Link to="/ai">{t("backToAi")}</Link>
           </Button>
         }
@@ -154,7 +154,7 @@ export default function AiTopup() {
               type="button"
               variant="outline"
               size="sm"
-              className="h-10 min-h-10"
+              className="min-h-11"
               onClick={() => void packsQuery.refetch()}
             >
               {t("retry")}
@@ -272,7 +272,7 @@ export default function AiTopup() {
           >
             <Button
               type="submit"
-              className="h-10 min-h-10 w-full sm:w-auto"
+              className="min-h-11 w-full sm:w-auto"
               disabled={!selectedPack || createMut.isPending}
               data-testid="ai-topup-submit"
             >

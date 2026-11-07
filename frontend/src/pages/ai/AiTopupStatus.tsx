@@ -251,7 +251,7 @@ export default function AiTopupStatus() {
           order ? `${t("statusCodeLabel")}: ${order.reference_code}` : undefined
         }
         actions={
-          <Button asChild variant="outline" className="h-10 min-h-10">
+          <Button asChild variant="outline" className="min-h-11">
             <Link to="/ai/topup">{t("backToTopup")}</Link>
           </Button>
         }
@@ -269,7 +269,7 @@ export default function AiTopupStatus() {
               {t("notFoundTitle")}
             </p>
             <p className="text-xs text-muted-foreground">{t("notFoundBody")}</p>
-            <Button asChild variant="outline" size="sm" className="h-10 min-h-10">
+            <Button asChild variant="outline" size="sm" className="min-h-11">
               <Link to="/ai/topup">{t("backToTopup")}</Link>
             </Button>
           </div>
@@ -284,7 +284,7 @@ export default function AiTopupStatus() {
               type="button"
               variant="outline"
               size="sm"
-              className="h-10 min-h-10"
+              className="min-h-11"
               onClick={() => void refetchOrder()}
             >
               {t("retry")}
@@ -371,7 +371,7 @@ export default function AiTopupStatus() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-10 min-h-10"
+                  className="min-h-11"
                   data-testid="ai-topup-status-refresh"
                   onClick={() => {
                     setPollExpired(false);
@@ -438,7 +438,7 @@ export default function AiTopupStatus() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-10 min-h-10"
+                    className="min-h-11"
                     data-testid="ai-topup-copy-account"
                     onClick={() => void copyText(order.bank?.bank_account)}
                   >
@@ -449,7 +449,7 @@ export default function AiTopupStatus() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-10 min-h-10"
+                    className="min-h-11"
                     data-testid="ai-topup-copy-reference"
                     onClick={() => void copyText(order.reference_code)}
                   >
@@ -473,7 +473,7 @@ export default function AiTopupStatus() {
                 </p>
                 <Button
                   type="button"
-                  className="mt-3 h-10 min-h-10 w-full sm:w-auto"
+                  className="mt-3 min-h-11 w-full sm:w-auto"
                   disabled={checkoutMut.isPending}
                   data-testid="ai-topup-pay-now"
                   onClick={() => checkoutMut.mutate()}
@@ -494,7 +494,7 @@ export default function AiTopupStatus() {
                   asChild
                   variant="outline"
                   size="sm"
-                  className="mt-2 h-10 min-h-10"
+                  className="mt-2 min-h-11"
                 >
                   <Link to="/ai/topup">{t("createAnother")}</Link>
                 </Button>
@@ -574,7 +574,7 @@ export default function AiTopupStatus() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-10 min-h-10"
+                    className="min-h-11"
                     data-testid="ai-topup-proof-browse"
                     onClick={() => fileRef.current?.click()}
                   >
@@ -604,7 +604,7 @@ export default function AiTopupStatus() {
 
                 <Button
                   type="button"
-                  className="h-10 min-h-10 w-full sm:w-auto"
+                  className="min-h-11 w-full sm:w-auto"
                   disabled={!proofFile || proofMut.isPending}
                   data-testid="ai-topup-proof-submit"
                   onClick={() => {
@@ -653,7 +653,7 @@ export default function AiTopupStatus() {
                     asChild
                     variant="outline"
                     size="sm"
-                    className="mt-1 h-10 min-h-10"
+                    className="mt-1 min-h-11"
                   >
                     <Link to="/ai">{t("backToAi")}</Link>
                   </Button>
@@ -732,7 +732,7 @@ export default function AiTopupStatus() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-10 min-h-10"
+                  className="min-h-11"
                   data-testid="ai-topup-cancel"
                   onClick={() => setCancelOpen(true)}
                   disabled={cancelMut.isPending}
@@ -741,7 +741,7 @@ export default function AiTopupStatus() {
                 </Button>
               ) : null}
               {SETTLED_STATUSES.has(order.status) ? (
-                <Button asChild variant="outline" className="h-10 min-h-10">
+                <Button asChild variant="outline" className="min-h-11">
                   <Link to="/ai/topup">{t("createAnother")}</Link>
                 </Button>
               ) : null}
@@ -756,7 +756,7 @@ export default function AiTopupStatus() {
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel className="h-10 min-h-10">
+                  <AlertDialogCancel className="min-h-11">
                     {t("cancelKeep")}
                   </AlertDialogCancel>
                   <AlertDialogAction
