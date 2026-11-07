@@ -29,6 +29,8 @@ const Assets = lazy(() => import("@/pages/Assets"));
 const Guard = lazy(() => import("@/pages/Guard"));
 const Siem = lazy(() => import("@/pages/Siem"));
 const Ai = lazy(() => import("@/pages/Ai"));
+const AiTopup = lazy(() => import("@/pages/ai/AiTopup"));
+const AiTopupStatus = lazy(() => import("@/pages/ai/AiTopupStatus"));
 const HostProtect = lazy(() => import("@/pages/HostProtect"));
 const Uptime = lazy(() => import("@/pages/Uptime"));
 const UptimeDetail = lazy(() => import("@/pages/UptimeDetail"));
@@ -159,6 +161,14 @@ function App() {
             <Route path="/guard" element={<PageBoundary component={Guard} />} />
             <Route path="/siem" element={<PageBoundary component={Siem} />} />
             <Route path="/ai" element={<PageBoundary component={Ai} />} />
+            <Route
+              path="/ai/topup"
+              element={<PageBoundary component={AiTopup} />}
+            />
+            <Route
+              path="/ai/topup/:orderId"
+              element={<PageBoundary component={AiTopupStatus} />}
+            />
             <Route path="/host" element={<PageBoundary component={HostProtect} />} />
             <Route
               path="/uptime"

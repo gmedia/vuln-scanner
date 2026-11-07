@@ -46,7 +46,10 @@ function parseAiTab(raw: string | null): AiTab {
 export default function Ai() {
   const { t } = useTranslation("ai");
   const orgId = useAuthStore((s) => s.activeOrgId);
-  const isAdmin = useAuthStore((s) => s.user?.is_admin === true);
+  const canTopUp = useAuthStore((s) => {
+    const role = s.organizations.find((org) => org.id === s.activeOrgId)?.role;
+    return role === "owner" || role === "admin";
+  });
   const qc = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = parseAiTab(searchParams.get("tab"));
@@ -184,7 +187,7 @@ export default function Ai() {
             walletLoading={walletQ.isLoading}
             keysLoading={keysQ.isLoading}
             usageLoading={usageQ.isLoading}
-            isAdmin={isAdmin}
+            canTopUp={canTopUp}
           />
         </TabsContent>
         <TabsContent value="trial" className="mt-4">
