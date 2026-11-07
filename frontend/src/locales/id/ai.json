@@ -41,6 +41,7 @@
   "colOut": "USD / 1M out",
   "walletEmpty": "Wallet AI kosong (prepaid IDR, bukan kredit scan). Isi wallet org untuk memakai gateway.",
   "walletTopUp": "Isi saldo IDR",
+  "walletAskOwner": "Minta owner atau admin organisasi untuk mengisi saldo wallet ini.",
   "usageEmptyHint": "Lihat katalog",
   "endpoint": "Endpoint",
   "statKeys": "Kunci aktif",

@@ -28,6 +28,7 @@ import enCredit from "@/locales/en/credit.json";
 import enProfile from "@/locales/en/profile.json";
 import enGuardEnroll from "@/locales/en/guardEnroll.json";
 import enSubscription from "@/locales/en/subscription.json";
+import enTopup from "@/locales/en/topup.json";
 import enProducts from "@/locales/en/products.json";
 import enErrors from "@/locales/en/errors.json";
 import idCommon from "@/locales/id/common.json";
@@ -51,6 +52,7 @@ import idCredit from "@/locales/id/credit.json";
 import idProfile from "@/locales/id/profile.json";
 import idGuardEnroll from "@/locales/id/guardEnroll.json";
 import idSubscription from "@/locales/id/subscription.json";
+import idTopup from "@/locales/id/topup.json";
 import idProducts from "@/locales/id/products.json";
 import idErrors from "@/locales/id/errors.json";
 
@@ -77,6 +79,7 @@ export const resources = {
     profile: enProfile,
     guardEnroll: enGuardEnroll,
     subscription: enSubscription,
+    topup: enTopup,
     products: enProducts,
     errors: enErrors,
   },
@@ -102,6 +105,7 @@ export const resources = {
     profile: idProfile,
     guardEnroll: idGuardEnroll,
     subscription: idSubscription,
+    topup: idTopup,
     products: idProducts,
     errors: idErrors,
   },
@@ -158,6 +162,7 @@ void i18n.use(initReactI18next).init({
     "profile",
     "guardEnroll",
     "subscription",
+    "topup",
     "products",
   ],
   interpolation: { escapeValue: false },

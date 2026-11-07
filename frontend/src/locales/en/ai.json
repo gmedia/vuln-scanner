@@ -41,6 +41,7 @@
   "colOut": "USD / 1M out",
   "walletEmpty": "AI wallet is empty (IDR prepaid, not scan credits). Top up the org wallet to use the gateway.",
   "walletTopUp": "Top up IDR wallet",
+  "walletAskOwner": "Ask an org owner or admin to top up this wallet.",
   "usageEmptyHint": "See catalog",
   "endpoint": "Endpoint",
   "statKeys": "Active keys",

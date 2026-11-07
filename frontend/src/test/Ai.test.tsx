@@ -98,8 +98,32 @@ describe("AI Gateway page", () => {
     ).toBeInTheDocument();
     expect(await screen.findByText("Rp 0")).toBeInTheDocument();
     const cta = screen.getByRole("link", { name: "Top up IDR wallet" });
-    expect(cta).toHaveAttribute("href", "/guide");
+    expect(cta).toHaveAttribute("href", "/ai/topup");
     expect(cta.className).toMatch(/bg-primary/);
+  });
+
+  it("shows the ask-an-owner copy instead of a top-up link for a member", async () => {
+    useAuthStore.setState({
+      organizations: [
+        { id: "org1", name: "Org", slug: "org", role: "member" } as never,
+      ],
+      activeOrgId: "org1",
+    });
+    vi.mocked(aiApi.getAiWallet).mockResolvedValue({
+      organization_id: "org1",
+      balance_idr: 0,
+      currency: "IDR",
+    });
+    vi.mocked(aiApi.listAiKeys).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(aiApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(aiApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
+    renderAi();
+    expect(
+      await screen.findByTestId("ai-wallet-ask-owner"),
+    ).toHaveTextContent("Ask an org owner or admin to top up this wallet.");
+    expect(
+      screen.queryByRole("link", { name: "Top up IDR wallet" }),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps key and catalog tabs on the tablist when rendered", async () => {
