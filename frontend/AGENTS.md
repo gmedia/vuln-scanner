@@ -29,6 +29,7 @@ Vite + React + TS + shadcn. Node >=24.15.0 (jsdom 30 engine floor). Dev :5173; p
 - Alias `@/*`. `npm test` = vitest run; coverage statements/lines 75, branches/functions 70 — **enforced in CI on full runs** (`npx vitest run --coverage`). Selective runs (`VITEST_GLOBS`) skip the gate by design. Never raise a threshold to make a red build green; add tests.
 - Proxy `/api` `/ws` → `http://backend:8000` (needs Docker DNS or override).
 - **Forms / writes:** every `useMutation` needs `onError`; read API errors only via `apiErrorMessage()` / `extractApiError()` (`src/api/apiErrors.ts`), render 422s with `useApiFormErrors()` + `<FormAlert>`/`<FieldError>` (`src/components/patterns/FormFeedback.tsx`). Never `String(detail)` or a local `apiDetail`. Contract: [`../docs/specs/form-feedback.md`](../docs/specs/form-feedback.md); gate: `node ../scripts/check-form-feedback.mjs`.
+- **Field focus:** after a failed submit, the first `aria-invalid` control must receive focus (`useApiFormErrors().apply()` handles it; local field maps use `useFocusFirstInvalidField`).
 
 ## ANTI-PATTERNS
 

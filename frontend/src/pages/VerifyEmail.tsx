@@ -15,6 +15,7 @@ import {
 } from "@/components/auth/AuthCard";
 import { useTranslation } from "react-i18next";
 import { FieldError } from "@/components/patterns/FormFeedback";
+import { useFocusFirstInvalidField } from "@/lib/focusFirstInvalid";
 
 function maskSignupEmail(email: string): string {
   const at = email.lastIndexOf("@");
@@ -38,6 +39,7 @@ function VerifyEmail() {
   const [showResend, setShowResend] = useState(true);
   const [isResending, setIsResending] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  useFocusFirstInvalidField(fieldErrors);
   const [resendSuccess, setResendSuccess] = useState(false);
   const { cooldown, startCooldown } = useRateLimitCooldown();
 

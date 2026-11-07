@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "@/store/authStore";
 import { useRateLimitCooldown } from "@/hooks/useRateLimitCooldown";
 import { useApiFormErrors } from "@/hooks/useApiFormErrors";
+import { useFocusFirstInvalidField } from "@/lib/focusFirstInvalid";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
@@ -148,6 +149,10 @@ function Profile() {
 
   const emailForm = useApiFormErrors();
   const passwordForm = useApiFormErrors();
+  useFocusFirstInvalidField({
+    ...emailForm.fieldErrors,
+    ...passwordForm.fieldErrors,
+  });
 
   const profileCooldown = useRateLimitCooldown();
   const passwordCooldown = useRateLimitCooldown();

@@ -198,6 +198,14 @@ function BillingProfileForm({
                     id="billing-terms"
                     className="h-10 min-h-10"
                     data-testid="billing-terms"
+                    aria-invalid={Boolean(
+                      formErrors.fieldErrors.payment_terms_days,
+                    )}
+                    aria-describedby={
+                      formErrors.fieldErrors.payment_terms_days
+                        ? "billing-terms-error"
+                        : undefined
+                    }
                   >
                     <SelectValue />
                   </SelectTrigger>
@@ -209,6 +217,10 @@ function BillingProfileForm({
                     ))}
                   </SelectContent>
                 </Select>
+                <FieldError
+                  id="billing-terms-error"
+                  message={formErrors.fieldErrors.payment_terms_days}
+                />
                 <p className="text-[11px] text-muted-foreground">
                   {t("paymentTermsHint")}
                 </p>

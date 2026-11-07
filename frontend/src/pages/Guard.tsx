@@ -26,6 +26,7 @@ export default function Guard() {
         actions={
           g.canAdmin && !g.enabled ? (
             <Button
+              data-testid="guard-enable"
               onClick={() => g.enableMut.mutate()}
               disabled={g.enableMut.isPending}
             >
@@ -36,6 +37,7 @@ export default function Guard() {
               variant="outline"
               size="sm"
               className="min-h-11 w-full shrink-0 text-xs sm:w-auto"
+              data-testid="guard-sync"
               onClick={() => g.syncMut.mutate()}
               disabled={g.syncMut.isPending}
             >

@@ -23,6 +23,7 @@ import {
 } from "@/components/auth/AuthCard";
 import { useTranslation } from "react-i18next";
 import { FieldError } from "@/components/patterns/FormFeedback";
+import { useFocusFirstInvalidField } from "@/lib/focusFirstInvalid";
 
 function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -36,6 +37,7 @@ function ResetPassword() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  useFocusFirstInvalidField(fieldErrors);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const { cooldown, startCooldown } = useRateLimitCooldown();
