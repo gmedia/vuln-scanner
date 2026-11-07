@@ -125,6 +125,10 @@ async def terms_html(request: Request) -> HTMLResponse:
         f"{CANONICAL_HOST}/terms",
         inner,
         current="terms",
+        description=(
+            "Syarat penggunaan sinexis.app: siapa yang boleh memakai, cara kerja kredit "
+            "dan pembayaran, aturan akun dan workspace, larangan, serta batas tanggung jawab."
+        ),
     )
     return HTMLResponse(html, headers=_CACHE)
 
@@ -140,5 +144,9 @@ async def privacy_html(request: Request) -> HTMLResponse:
         f"{CANONICAL_HOST}/privacy",
         inner,
         current="privacy",
+        description=(
+            "Data yang dikumpulkan sinexis.app, tujuan dan dasar pemrosesannya, lokasi "
+            "penyimpanan, pihak yang menerima data, keamanan, hak Anda, dan cookie."
+        ),
     )
     return HTMLResponse(html, headers=_CACHE)
