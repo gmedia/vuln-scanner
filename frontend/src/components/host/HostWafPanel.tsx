@@ -113,10 +113,14 @@ export default function HostWafPanel({
         engine: policyForSite?.engine ?? "mock",
         paranoia: policyForSite?.paranoia ?? 1,
       }),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["host-waf"] }),
+    onSuccess: () => {
+      toast.success(t("wafSavedToast"));
+      void qc.invalidateQueries({ queryKey: ["host-waf"] });
+    },
     onError: (err: unknown) => toast.error(apiErrorMessage(err, t("wafSaveFail"))),
   });
 
+  // form-feedback: allow the simulation result renders in the panel below.
   const simMut = useMutation({
     mutationFn: () => simulateHostWaf(selected),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["host-waf"] }),

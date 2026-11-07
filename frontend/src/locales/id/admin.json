@@ -867,5 +867,7 @@
   "aiModelDeleted": "Model dihapus.",
   "aiTopupOk": "Wallet diisi.",
   "aiTopupFail": "Gagal mengisi wallet.",
-  "copyEmailFail": "Gagal menyalin alamat email."
+  "copyEmailFail": "Gagal menyalin alamat email.",
+  "creditsUpdatedToast": "Kredit diperbarui.",
+  "resendSentToast": "Email verifikasi dikirim."
 }

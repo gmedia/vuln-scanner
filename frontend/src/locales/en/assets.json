@@ -64,5 +64,8 @@
   "deletedToast": "Asset deleted.",
   "deleteFail": "Could not delete the asset.",
   "colorFail": "Could not save the tag color.",
-  "scheduleFail": "Could not create the schedule."
+  "scheduleFail": "Could not create the schedule.",
+  "createdToast": "Asset saved.",
+  "updatedToast": "Asset updated.",
+  "scheduleCreatedToast": "Weekly schedule created."
 }

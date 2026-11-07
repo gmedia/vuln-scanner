@@ -64,5 +64,8 @@
   "deletedToast": "Aset dihapus.",
   "deleteFail": "Gagal menghapus aset.",
   "colorFail": "Gagal menyimpan warna label.",
-  "scheduleFail": "Gagal membuat jadwal."
+  "scheduleFail": "Gagal membuat jadwal.",
+  "createdToast": "Aset disimpan.",
+  "updatedToast": "Aset diperbarui.",
+  "scheduleCreatedToast": "Jadwal mingguan dibuat."
 }

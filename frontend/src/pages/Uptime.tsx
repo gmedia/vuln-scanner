@@ -103,6 +103,7 @@ export default function Uptime() {
     mutationFn: createMonitor,
     onSuccess: (created) => {
       const hb = created.heartbeat_url ?? null;
+      toast.success(t("monitorCreatedToast"));
       void qc.invalidateQueries({ queryKey: ["uptime"] });
       setEditing(null);
       if (!hb) setOpen(false);
@@ -142,6 +143,7 @@ export default function Uptime() {
       return updateMonitor(id, toUptimeUpdatePayload(payload));
     },
     onSuccess: () => {
+      toast.success(t("monitorUpdatedToast"));
       void qc.invalidateQueries({ queryKey: ["uptime"] });
       closeSheet();
     },

@@ -141,7 +141,7 @@ locally before pushing.
 | `deps-audit-python` | `pip-audit` over both requirements files must find **no** advisory at all (pip-audit reports no severity, so there is no threshold). | Bump the pin, or allowlist with `ecosystem: "pip"`. |
 | `public-surface-sync` | Every `published: true` entry in `frontend/src/lib/services.ts` must appear in the `PRODUCT_SLUGS` tuple in `backend/app/api/sitemap_html.py`, and vice versa. Drift means `/products` links a page the sitemap omits (or the sitemap advertises a 404). | Update the Python tuple in the same PR (`node scripts/sync-public-registry.mjs` rewrites it), then re-run `node scripts/check-public-registry-sync.mjs`. |
 | `nginx-headers` | A `location` block that declares `add_header` makes nginx drop **every** inherited header, CSP included — that is how `/terms`, `/privacy`, `/blog`, `/status` served without a CSP. Also asserts the host+path robots `map`, `location = /sitemap.xml`, and the compose/Vite sitemap proxies survive. | Delete the location-level `add_header` set and let the server-level headers plus the robots map apply, or re-declare `Content-Security-Policy` in that block. `/v1/` is exempt (JSON/SSE, no HTML). |
-| `form-feedback` | Every `useMutation` must declare an `onError` that **surfaces** something (toast, `apply(`, error setter) or an explicit `// form-feedback: allow <reason>`; no empty `catch {}` in `pages/`/`components/`, no local `apiDetail` readers, no `String(...detail...)`. A write with no failure path is a silent data-loss bug. | Add `onError` via `apiErrorMessage()` / `useApiFormErrors().apply()`. Contract: [`docs/specs/form-feedback.md`](docs/specs/form-feedback.md). |
+| `form-feedback` | Every `useMutation` must declare an `onError` **and** an `onSuccess` that each surface something (toast, `apply(`, error/success setter, navigate) or an explicit `// form-feedback: allow <reason>`; no empty `catch {}` in `pages/`/`components/`, no local `apiDetail` readers, no `String(...detail...)`. A write with no failure path is a silent data-loss bug; a write with no success path is indistinguishable from a no-op. | Add `onError` via `apiErrorMessage()` / `useApiFormErrors().apply()`. Contract: [`docs/specs/form-feedback.md`](docs/specs/form-feedback.md). |
 Local runs:
 | `validation-types` | Every `PydanticCustomError("<type>"` in `backend/app` must have an `errors:validation.<type>` key in **both** `en` and `id`. A missing key silently falls back to English prose, so the Indonesian UI leaks English on a 422. | Add the key to `frontend/src/locales/{en,id}/errors.json`. |
 
@@ -183,8 +183,7 @@ write may never be silent either. Full contract: [`docs/specs/form-feedback.md`]
    `aria-describedby`, and clear it in the field's `onChange`.
 4. **HTTP 200 is not success** — check `{ ok: false }` payloads (Guard sync/enable, host-agent
    responses) and warn, never toast success.
-5. **Success comes from i18n** — `toast.success` / inline notice keyed in `en`+`id`. Do not surface a
-   backend prose `message` field (legacy, hardcoded Indonesian) except for dynamic data.
+5. **Success is visible and comes from i18n** — `toast.success` / inline notice keyed in `en`+`id`; closing a dialog or refetching is not confirmation. Do not surface a backend prose `message` field (legacy, hardcoded Indonesian) except for dynamic data.
 6. **CI** — `node scripts/check-form-feedback.mjs` runs in the `form-feedback` job and blocks
    `ci-ok`. Run it before pushing.
 
