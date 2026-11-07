@@ -12,6 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.models.ai_gateway import AiTopupOrder
 from app.models.billing import PaymentAttempt, PaymentEvent, Subscription
 from app.models.invoice import OrgInvoice
 from app.models.organization import Organization
@@ -23,6 +24,7 @@ from app.schemas.billing import (
     SubscriptionDetail,
     SubscriptionItem,
 )
+from app.services import ai_wallet
 from app.services.invoice import InvoiceService
 from app.services.payments.base import NormalizedEvent, PaymentConfigError, ProviderUnavailable, StatusResult
 from app.services.payments.registry import build_provider
@@ -653,6 +655,8 @@ class BillingService:
         if attempt is None:
             record.error = "unknown attempt"
             return "failed"
+        if attempt.payable_kind == "topup":
+            return await self._apply_gateway_topup(record, attempt, provider, event)
         if attempt.invoice_id is None:
             record.error = "attempt has no invoice"
             return "failed"
@@ -761,6 +765,206 @@ class BillingService:
 
         record.error = f"unsupported event kind {event.kind}"
         return "failed"
+
+    async def _lock_topup_order(self, order_id: UUID | None) -> AiTopupOrder | None:
+        if order_id is None:
+            return None
+        stmt = (
+            select(AiTopupOrder)
+            .where(AiTopupOrder.id == order_id)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+        return (await self.db.execute(stmt)).scalar_one_or_none()
+
+    async def _apply_gateway_topup(
+        self,
+        record: PaymentEvent,
+        attempt: PaymentAttempt,
+        provider: str,
+        event: NormalizedEvent,
+    ) -> str:
+        """Settle a ``payable_kind='topup'`` gateway attempt.
+
+        The order row lock plus the ``kind='topup'`` ledger unique index make
+        the credit exactly-once. ``succeeded`` is authoritative even when the
+        local order expired or was canceled (TU6); only an already-paid or
+        refunded order refuses the credit.
+        """
+        order = await self._lock_topup_order(attempt.topup_order_id)
+        if order is None:
+            record.error = "unknown top-up order"
+            return "failed"
+
+        if event.amount_idr != order.amount_idr:
+            self._fail_attempt(
+                attempt,
+                "amount_mismatch",
+                "provider amount does not match the top-up order",
+            )
+            record.error = "provider amount does not match the top-up order"
+            return "failed"
+
+        if _KIND_RANK.get(event.kind, 0) < _ATTEMPT_RANK.get(attempt.status, 0):
+            return "ignored"
+
+        if event.kind == "succeeded":
+            if settings.midtrans_verify_status and attempt.provider_order_id:
+                verified = await self._verify_provider_status(provider, attempt)
+                if verified is not None and verified != "succeeded":
+                    self._fail_attempt(
+                        attempt,
+                        "provider_status_mismatch",
+                        f"provider reports {verified}",
+                    )
+                    record.error = f"provider status is {verified}, not settled"
+                    return "failed"
+                if verified is None:
+                    self._fail_attempt(
+                        attempt,
+                        "provider_status_unavailable",
+                        "could not confirm with provider",
+                    )
+                    record.error = "provider status unavailable"
+                    return "failed"
+            return await self._apply_gateway_topup_succeeded(record, order, attempt, event)
+
+        if event.kind == "pending":
+            attempt.provider_status = "pending"
+            attempt.provider_payment_id = event.provider_payment_id or attempt.provider_payment_id
+            attempt.method = event.method or attempt.method
+            attempt.updated_at = _now()
+            return "processed"
+
+        if event.kind in ("failed", "expired", "canceled"):
+            if event.kind == "failed":
+                self._fail_attempt(
+                    attempt,
+                    event.failure_code or "provider_failed",
+                    event.failure_message,
+                )
+            else:
+                attempt.status = "expired"
+                attempt.failed_at = _now()
+                attempt.failure_code = (event.failure_code or attempt.failure_code or "")[:64] or None
+                attempt.failure_message = (event.failure_message or attempt.failure_message or "")[:255] or None
+                attempt.updated_at = _now()
+            attempt.provider_status = event.kind
+            attempt.provider_payment_id = event.provider_payment_id or attempt.provider_payment_id
+            if event.kind in ("expired", "canceled") and order.status == "pending_payment":
+                order.status = "expired" if event.kind == "expired" else "canceled"
+                order.updated_at = _now()
+            return "processed"
+
+        if event.kind in ("refunded", "partially_refunded", "chargeback"):
+            return await self._apply_gateway_topup_refund(record, order, attempt, event)
+
+        record.error = f"unsupported event kind {event.kind}"
+        return "failed"
+
+    async def _apply_gateway_topup_succeeded(
+        self,
+        record: PaymentEvent,
+        order: AiTopupOrder,
+        attempt: PaymentAttempt,
+        event: NormalizedEvent,
+    ) -> str:
+        if order.status in ("refunded", "refund_review"):
+            record.error = f"top-up order is already {order.status}"
+            return "failed"
+
+        if order.status == "paid":
+            # Already settled (same order, different event id): never credit twice.
+            return self._mark_topup_duplicate(attempt, event)
+
+        now = _now()
+        try:
+            async with self.db.begin_nested():
+                await ai_wallet.credit(
+                    self.db,
+                    organization_id=order.organization_id,
+                    amount_idr=order.credit_idr,
+                    kind="topup",
+                    topup_order_id=order.id,
+                    note=order.reference_code,
+                    commit=False,
+                )
+                order.status = "paid"
+                order.paid_at = now
+                attempt.status = "succeeded"
+                attempt.succeeded_at = now
+                attempt.failed_at = None
+                attempt.failure_code = None
+                attempt.failure_message = None
+                attempt.method = event.method or attempt.method
+                attempt.provider_status = "succeeded"
+                attempt.provider_payment_id = event.provider_payment_id or attempt.provider_payment_id
+                attempt.fee_idr = event.fee_idr or 0
+                attempt.updated_at = now
+        except IntegrityError:
+            # Another transaction won the ledger race. The savepoint is already
+            # rolled back, so the outer event transaction is still usable.
+            await self.db.refresh(attempt)
+            current = await self._lock_topup_order(order.id)
+            if current is not None and current.status == "paid":
+                return self._mark_topup_duplicate(attempt, event)
+            raise
+        return "processed"
+
+    def _mark_topup_duplicate(self, attempt: PaymentAttempt, event: NormalizedEvent) -> str:
+        if attempt.status != "succeeded":
+            attempt.status = "succeeded"
+            attempt.succeeded_at = attempt.succeeded_at or _now()
+        attempt.provider_status = "duplicate"
+        attempt.provider_payment_id = event.provider_payment_id or attempt.provider_payment_id
+        attempt.updated_at = _now()
+        return "processed"
+
+    async def _apply_gateway_topup_refund(
+        self,
+        record: PaymentEvent,
+        order: AiTopupOrder,
+        attempt: PaymentAttempt,
+        event: NormalizedEvent,
+    ) -> str:
+        # Mirror the invoice rule: only a settled payment can be refunded.
+        if attempt.status != "succeeded":
+            record.error = f"refund for a non-settled attempt ({attempt.status})"[:500]
+            logger.warning(
+                "Ignoring %s for non-settled top-up: attempt=%s status=%s",
+                event.kind,
+                attempt.id,
+                attempt.status,
+            )
+            return "ignored"
+
+        paid = int(attempt.amount_idr or 0)
+        refunded: int | None = event.refunded_amount_idr
+        if event.kind in ("refunded", "chargeback") and not refunded:
+            refunded = paid
+        if refunded is None or refunded <= 0 or refunded > paid:
+            record.error = f"invalid refund amount {refunded} for paid {paid}"[:500]
+            return "failed"
+        if event.kind == "partially_refunded" and refunded >= paid:
+            record.error = f"partial refund {refunded} covers the full payment {paid}"[:500]
+            return "failed"
+
+        attempt.status = "refunded"
+        attempt.refunded_amount_idr = refunded
+        attempt.provider_status = event.kind
+        attempt.provider_payment_id = event.provider_payment_id or attempt.provider_payment_id
+        attempt.updated_at = _now()
+        # PY14: no automatic clawback. Ops resolve the wallet manually.
+        if order.status not in ("refunded", "refund_review"):
+            order.status = "refund_review"
+            order.updated_at = _now()
+        logger.warning(
+            "Top-up %s recorded: attempt=%s amount_idr=%s",
+            event.kind,
+            attempt.id,
+            refunded,
+        )
+        return "processed"
 
     async def _apply_gateway_succeeded(
         self,

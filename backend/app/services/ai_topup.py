@@ -25,7 +25,7 @@ from app.services.topup_proofs import MAX_PROOF_BYTES, delete_proof, save_proof,
 MAX_CODE = 32
 MAX_LABEL = 64
 
-S2_METHODS = ("manual_transfer",)
+CREATE_METHODS = ("manual_transfer", "midtrans")
 REFERENCE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
 REFERENCE_RETRIES = 5
 ORDER_TTL = timedelta(days=3)
@@ -161,13 +161,8 @@ async def create_order(
     method: str,
     now: datetime,
 ) -> tuple[AiTopupOrder, dict[str, str | None] | None]:
-    """Create a manual-transfer top-up order. S3 extends this for Midtrans."""
-    if method not in S2_METHODS:
-        if method == "midtrans":
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Midtrans checkout is not available yet",
-            )
+    """Create a top-up order (manual transfer or Midtrans checkout)."""
+    if method not in CREATE_METHODS:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Unsupported payment method")
 
     pack = await db.get(AiTopupPack, pack_id)
@@ -177,12 +172,14 @@ async def create_order(
             detail="Top-up pack is not available",
         )
 
-    bank = bank_copy(include=True)
-    if not _has_bank_copy(bank):
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Bank transfer is not configured. Contact operations.",
-        )
+    bank: dict[str, str | None] | None = None
+    if method == "manual_transfer":
+        bank = bank_copy(include=True)
+        if not _has_bank_copy(bank):
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Bank transfer is not configured. Contact operations.",
+            )
 
     actor_id = actor.id
     pack_code = pack.code

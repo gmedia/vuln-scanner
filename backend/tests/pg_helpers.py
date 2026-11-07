@@ -26,13 +26,15 @@ from __future__ import annotations
 import uuid
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from app.database import Base
+from app.models.ai_gateway import AiTopupOrder
+from app.models.billing import PaymentAttempt
 from app.models.invoice import OrgInvoice, SkuCatalog
 from app.models.organization import Organization, OrganizationMembership
 from app.models.promo import PromoCode
@@ -251,6 +253,66 @@ async def insert_invoice(
     return invoice.id
 
 
+async def insert_topup_order(
+    engine: AsyncEngine,
+    *,
+    organization_id: uuid.UUID,
+    reference_code: str,
+    amount_idr: int = 100_000,
+    status: str = "pending_payment",
+    payment_method: str = "midtrans",
+) -> uuid.UUID:
+    """Insert one top-up order row directly, bypassing reference allocation."""
+    now = datetime.now(UTC)
+    order = AiTopupOrder(
+        id=uuid.uuid4(),
+        organization_id=organization_id,
+        reference_code=reference_code,
+        amount_idr=amount_idr,
+        credit_idr=amount_idr,
+        bonus_idr=0,
+        currency="IDR",
+        payment_method=payment_method,
+        status=status,
+        proof_object_key="proof/seed" if status == "awaiting_verification" else None,
+        expires_at=now + timedelta(hours=24),
+    )
+    async with _maker(engine)() as session:
+        session.add(order)
+        await session.commit()
+    return order.id
+
+
+async def insert_topup_attempt(
+    engine: AsyncEngine,
+    *,
+    organization_id: uuid.UUID,
+    order_id: uuid.UUID,
+    reference_code: str,
+    provider: str = "midtrans",
+    amount_idr: int = 100_000,
+    status: str = "pending",
+) -> uuid.UUID:
+    """Insert one pending gateway attempt for a top-up order."""
+    attempt = PaymentAttempt(
+        id=uuid.uuid4(),
+        provider=provider,
+        provider_order_id=f"{reference_code}-A1",
+        payable_kind="topup",
+        topup_order_id=order_id,
+        organization_id=organization_id,
+        amount_idr=amount_idr,
+        currency="IDR",
+        status=status,
+        attempt_seq=1,
+        expires_at=datetime.now(UTC) + timedelta(hours=24),
+    )
+    async with _maker(engine)() as session:
+        session.add(attempt)
+        await session.commit()
+    return attempt.id
+
+
 async def run_in_session(
     engine: AsyncEngine,
     fn: Callable[[AsyncSession], Awaitable[Any]],
@@ -302,9 +364,7 @@ async def invoice_ids_for_org(engine: AsyncEngine, organization_id: uuid.UUID) -
     from app.models.invoice import OrgInvoice
 
     async def _query(session: AsyncSession) -> list[uuid.UUID]:
-        rows = await session.execute(
-            select(OrgInvoice.id).where(OrgInvoice.organization_id == organization_id)
-        )
+        rows = await session.execute(select(OrgInvoice.id).where(OrgInvoice.organization_id == organization_id))
         return list(rows.scalars().all())
 
     return await read(engine, _query)
