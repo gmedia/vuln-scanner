@@ -145,6 +145,7 @@ def test_payment_attempt_model_has_partial_unique_indexes() -> None:
     indexes = {index.name: index for index in PaymentAttempt.__table__.indexes}
     provider_order = indexes["uq_payment_attempt_provider_order"]
     pending_invoice = indexes["uq_payment_attempt_pending_invoice"]
+    pending_topup = indexes["uq_payment_attempt_pending_topup"]
 
     assert provider_order.unique is True
     assert [column.name for column in provider_order.columns] == ["provider", "provider_order_id"]
@@ -155,6 +156,11 @@ def test_payment_attempt_model_has_partial_unique_indexes() -> None:
     assert [column.name for column in pending_invoice.columns] == ["invoice_id"]
     assert pending_invoice.dialect_options["postgresql"]["where"] is not None
     assert pending_invoice.dialect_options["sqlite"]["where"] is not None
+
+    assert pending_topup.unique is True
+    assert [column.name for column in pending_topup.columns] == ["topup_order_id"]
+    assert pending_topup.dialect_options["postgresql"]["where"] is not None
+    assert pending_topup.dialect_options["sqlite"]["where"] is not None
 
     # provider_ref stays non-unique: manual bank references repeat.
     provider_ref = indexes.get("ix_payment_attempts_provider_ref")
@@ -172,7 +178,12 @@ async def test_payment_attempts_create_all_on_sqlite(engine: AsyncEngine) -> Non
         await conn.run_sync(Base.metadata.create_all)
         rows = await conn.exec_driver_sql(
             "SELECT name FROM sqlite_master WHERE type='index' AND name IN "
-            "('uq_payment_attempt_provider_order', 'uq_payment_attempt_pending_invoice')"
+            "('uq_payment_attempt_provider_order', 'uq_payment_attempt_pending_invoice', "
+            "'uq_payment_attempt_pending_topup')"
         )
         names = {row[0] for row in rows}
-    assert names == {"uq_payment_attempt_provider_order", "uq_payment_attempt_pending_invoice"}
+    assert names == {
+        "uq_payment_attempt_provider_order",
+        "uq_payment_attempt_pending_invoice",
+        "uq_payment_attempt_pending_topup",
+    }

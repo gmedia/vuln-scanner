@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 import sqlalchemy as sa
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     CheckConstraint,
     Date,
@@ -30,6 +31,26 @@ if TYPE_CHECKING:
 PROVIDER_STATUSES = ("ok", "degraded", "disabled")
 RESERVATION_STATUSES = ("open", "settled", "released")
 USAGE_SOURCES = ("customer", "admin_trial", "customer_trial")
+AI_TOPUP_PAYMENT_METHODS = ("manual_transfer", "midtrans", "admin_credit")
+AI_TOPUP_ORDER_STATUSES = (
+    "pending_payment",
+    "awaiting_verification",
+    "paid",
+    "rejected",
+    "expired",
+    "canceled",
+    "refunded",
+    "refund_review",
+)
+AI_WALLET_LEDGER_KINDS = (
+    "topup",
+    "reserve",
+    "settle_adjust",
+    "release",
+    "manual_adjust",
+    "opening",
+    "refund",
+)
 
 
 class AiProvider(Base):
@@ -199,6 +220,125 @@ class AiApiKey(Base):
     created_by: Mapped["User"] = relationship()
 
 
+class AiTopupPack(Base):
+    """Catalog of prepaid top-up amounts. Prices are an owner/finance decision."""
+
+    __tablename__ = "ai_topup_packs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    code: Mapped[str] = mapped_column(String(32), nullable=False)
+    label: Mapped[str] = mapped_column(String(64), nullable=False)
+    amount_idr: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    bonus_idr: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0, server_default="0")
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=sa.true())
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+
+    __table_args__ = (
+        UniqueConstraint("code", name="uq_ai_topup_packs_code"),
+        CheckConstraint("amount_idr > 0", name="ck_ai_topup_packs_amount_positive"),
+        CheckConstraint("bonus_idr >= 0", name="ck_ai_topup_packs_bonus_nonnegative"),
+    )
+
+
+class AiTopupOrder(Base):
+    """One prepaid wallet top-up order.
+
+    An order is the audit/status source; the wallet is credited exactly once per
+    order through the ``ai_wallet_ledger`` partial unique index.
+    """
+
+    __tablename__ = "ai_topup_orders"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    pack_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("ai_topup_packs.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    pack_code: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    reference_code: Mapped[str] = mapped_column(String(32), nullable=False)
+    amount_idr: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    credit_idr: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    bonus_idr: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0, server_default="0")
+    currency: Mapped[str] = mapped_column(String(3), nullable=False, default="IDR", server_default="IDR")
+    payment_method: Mapped[str] = mapped_column(String(20), nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(24), nullable=False, default="pending_payment", server_default="pending_payment"
+    )
+    proof_object_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    proof_mime: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    proof_size_bytes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    proof_uploaded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    bank_ref: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    verified_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    rejection_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+
+    __table_args__ = (
+        UniqueConstraint("reference_code", name="uq_ai_topup_orders_reference_code"),
+        CheckConstraint("amount_idr >= 0", name="ck_ai_topup_orders_amount_nonnegative"),
+        CheckConstraint("credit_idr > 0", name="ck_ai_topup_orders_credit_positive"),
+        CheckConstraint("bonus_idr >= 0", name="ck_ai_topup_orders_bonus_nonnegative"),
+        CheckConstraint("credit_idr = amount_idr + bonus_idr", name="ck_ai_topup_orders_credit_balance"),
+        CheckConstraint("currency = 'IDR'", name="ck_ai_topup_orders_currency_idr"),
+        CheckConstraint(
+            f"payment_method IN {AI_TOPUP_PAYMENT_METHODS}",
+            name="ck_ai_topup_orders_payment_method",
+        ),
+        CheckConstraint(
+            f"status IN {AI_TOPUP_ORDER_STATUSES}",
+            name="ck_ai_topup_orders_status",
+        ),
+        CheckConstraint(
+            "status <> 'awaiting_verification' OR proof_object_key IS NOT NULL",
+            name="ck_ai_topup_orders_proof_required",
+        ),
+        CheckConstraint(
+            "payment_method <> 'admin_credit' OR amount_idr = 0",
+            name="ck_ai_topup_orders_admin_credit_amount_zero",
+        ),
+        CheckConstraint(
+            "payment_method <> 'admin_credit' OR bonus_idr = credit_idr",
+            name="ck_ai_topup_orders_admin_credit_bonus_equals_credit",
+        ),
+        CheckConstraint(
+            "payment_method = 'admin_credit' OR amount_idr > 0",
+            name="ck_ai_topup_orders_paid_amount_positive",
+        ),
+        Index("ix_ai_topup_orders_organization_id", "organization_id"),
+        Index("ix_ai_topup_orders_org_created", "organization_id", sa.text("created_at DESC")),
+        Index("ix_ai_topup_orders_status_created", "status", "created_at"),
+    )
+
+
 class AiWallet(Base):
     __tablename__ = "ai_wallets"
 
@@ -209,7 +349,7 @@ class AiWallet(Base):
         unique=True,
         nullable=False,
     )
-    balance_idr: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    balance_idr: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
     currency: Mapped[str] = mapped_column(String(8), nullable=False, default="IDR")
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -231,8 +371,8 @@ class AiWalletLedger(Base):
         index=True,
     )
     kind: Mapped[str] = mapped_column(String(24), nullable=False)
-    delta_idr: Mapped[int] = mapped_column(Integer, nullable=False)
-    balance_after_idr: Mapped[int] = mapped_column(Integer, nullable=False)
+    delta_idr: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    balance_after_idr: Mapped[int] = mapped_column(BigInteger, nullable=False)
     reservation_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("ai_reservations.id", ondelete="SET NULL"),
@@ -241,6 +381,11 @@ class AiWalletLedger(Base):
     usage_event_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("ai_usage_events.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    topup_order_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("ai_topup_orders.id", ondelete="SET NULL"),
         nullable=True,
     )
     actor_user_id: Mapped[uuid.UUID | None] = mapped_column(
@@ -253,7 +398,7 @@ class AiWalletLedger(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "kind IN ('topup','reserve','settle_adjust','release','manual_adjust','opening')",
+            f"kind IN {AI_WALLET_LEDGER_KINDS}",
             name="ck_ai_wallet_ledger_kind",
         ),
         CheckConstraint("balance_after_idr >= 0", name="ck_ai_wallet_ledger_balance_nonnegative"),
@@ -264,6 +409,13 @@ class AiWalletLedger(Base):
             unique=True,
             postgresql_where=text("reservation_id IS NOT NULL"),
             sqlite_where=text("reservation_id IS NOT NULL"),
+        ),
+        Index(
+            "uq_ai_wallet_ledger_topup_order",
+            "topup_order_id",
+            unique=True,
+            postgresql_where=text("kind = 'topup' AND topup_order_id IS NOT NULL"),
+            sqlite_where=text("kind = 'topup' AND topup_order_id IS NOT NULL"),
         ),
     )
 

@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.api.admin_ai_fx_routes import router as admin_ai_fx_router
 from app.api.admin_ai_routes import router as admin_ai_router
+from app.api.admin_ai_topup_routes import router as admin_ai_topup_router
 from app.api.admin_billing_routes import router as admin_billing_router
 from app.api.admin_blog_routes import router as admin_blog_router
 from app.api.admin_invoice_routes import router as admin_invoice_router
@@ -54,6 +55,7 @@ api_router.include_router(billing_profile_router)
 api_router.include_router(admin_blog_router)
 api_router.include_router(admin_ai_router)
 api_router.include_router(admin_ai_fx_router)
+api_router.include_router(admin_ai_topup_router)
 api_router.include_router(ai_router)
 api_router.include_router(blog_router)
 api_router.include_router(org_router)
