@@ -109,6 +109,7 @@ Nav groups match Sidebar: **Scan** · **Attach** · **Account** · **Admin** (ad
 | `/admin/blog` | `pages/admin/AdminBlog.tsx` | Admin | CMS; `nav-admin-blog`. Locale key `blogStatus`. | `admin/AdminBlog.test.tsx` |
 | `/admin/email-logs` | `pages/admin/AdminEmailLogs.tsx` | Admin | Outbound SMTP log; masked recipient. `nav-admin-email-logs`. | `admin/AdminEmailLogs.test.tsx` |
 | `/admin/ai` | `pages/admin/AdminAi.tsx` | Admin | Catalog, usage, top-up, trial chat. `nav-admin-ai`. Flag `AI_GATEWAY_ENABLED`. | `admin/AdminAi.test.tsx` |
+| `/admin/ai/topups` | `pages/admin/AdminAiTopups.tsx` | — | Manual top-up verification queue (S5): status defaults to `awaiting_verification`, blob proof viewer, approve with optional bank reference/force, reject with reason. Header action on `/admin/ai`; no sixth tab. Stays available when `AI_GATEWAY_ENABLED=false`. Spec [`ai-topup-v1.md`](specs/ai-topup-v1.md) §4.2/§6. | `pages/admin/AdminAiTopups.test.tsx` |
 
 ---
 

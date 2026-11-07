@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
-import { BookOpen, Bot, Boxes, MessageSquare, ScrollText, Server, Wallet, TriangleAlert } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { BookOpen, Bot, Boxes, MessageSquare, ScrollText, Server, ShieldCheck, Wallet, TriangleAlert } from "lucide-react";
 import {
   Pagination,
   PaginationContent,
@@ -24,6 +24,7 @@ import {
 import { listAiModels, listAiProviders, listAiUsage } from "@/api/admin";
 import { isAiDisabledError } from "@/api/ai";
 import PageHeader from "@/components/layout/PageHeader";
+import { Button } from "@/components/ui/Button";
 import { useTranslation } from "react-i18next";
 import { AdminAiModelsTab } from "@/components/admin/AdminAiModelsTab";
 import { AdminAiProvidersTab } from "@/components/admin/AdminAiProvidersTab";
@@ -234,6 +235,14 @@ function Head() {
       leading={<Bot className="h-6 w-6 shrink-0 text-primary-text" />}
       title={t("aiTitle")}
       description={t("aiSubtitle")}
+      actions={
+        <Button asChild variant="outline" className="min-h-11">
+          <Link to="/admin/ai/topups">
+            <ShieldCheck className="mr-1.5 h-4 w-4" aria-hidden />
+            {t("aiTopupsQueueCta")}
+          </Link>
+        </Button>
+      }
     />
   );
 }
