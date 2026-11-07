@@ -2,8 +2,9 @@
 // Form-feedback gate: a mutation without an error path is a silent failure.
 //
 // Rules (see docs/specs/form-feedback.md):
-//   1. Every `useMutation({...})` must declare `onError`, or carry an explicit
-//      `// form-feedback: allow <reason>` comment (call-site onError, etc.).
+//   1. Every `useMutation({...})` must declare an `onError` and an `onSuccess`
+//      that each surface something, or carry an explicit
+//      `// form-feedback: allow <reason>` comment directly above the mutation.
 //   2. No component may read `*.detail` itself; use `apiErrorMessage` /
 //      `extractApiError` from `src/api/apiErrors.ts`.
 //   3. No `String(...detail...)` conversion (renders `[object Object]` on 422).
@@ -101,10 +102,25 @@ function matchingParen(masked, openIndex) {
   return -1;
 }
 
-/** @param {string} text @param {number} index */
+/**
+ * True when the request/statement is immediately preceded by a
+ * `// form-feedback: allow <reason>` comment line. Only the contiguous comment
+ * block directly above the statement counts, so a stale allow comment elsewhere
+ * in the file cannot silence an unrelated mutation.
+ * @param {string} text @param {number} index
+ */
 function allowComment(text, index) {
-  const start = Math.max(0, index - 400);
-  return text.slice(start, index).includes(ALLOW_MARK);
+  const lineStart = text.lastIndexOf("\n", index - 1) + 1;
+  let line = lineStart - 1;
+  while (line >= 0) {
+    const prevStart = text.lastIndexOf("\n", line - 1) + 1;
+    const prev = text.slice(prevStart, line).trim();
+    if (prev === "") break;
+    if (!prev.startsWith("//")) return false;
+    if (prev.includes(ALLOW_MARK)) return true;
+    line = prevStart - 1;
+  }
+  return false;
 }
 
 /** @param {string} masked @param {number} openIndex */
@@ -140,6 +156,11 @@ function propertyValue(masked, start) {
 
 // A visible error path: toast, the shared form hook, or a named error setter.
 const SURFACE_CALL = /\b(?:toast\.(?:error|warning)|apply|set[A-Z]\w*Errors?|setError)\s*\(/;
+
+// A visible success path: toast, a success/result setter, or navigation to the
+// created resource. `invalidateQueries()` and closing a dialog do not count.
+const SUCCESS_CALL =
+  /\b(?:toast(?:\.success)?|navigate|set[A-Z]\w*(?:Success|Saved|Copied|Sent)|setStatusMessage|setResendFeedback)\s*\(|location\.(?:assign|replace)\s*\(|window\.open\s*\(/;
 
 /** @param {string} full @param {string} rel */
 function checkFile(full, rel) {
@@ -180,6 +201,37 @@ function checkFile(full, rel) {
         message:
           "onError does not show anything (e.g. only resets a spinner). Render apiErrorMessage() / useApiFormErrors().apply(), or add `// form-feedback: allow <reason>`.",
       });
+    }
+
+    const onSuccess = /\bonSuccess\s*:/.exec(body);
+    if (!onSuccess) {
+      if (allowComment(text, match.index)) continue;
+      findings.push({
+        file: rel,
+        line: lineAt(text, match.index),
+        rule: "mutation-without-onSuccess",
+        message:
+          "useMutation has no onSuccess. Confirm the write (toast/inline result) or add `// form-feedback: allow <reason>`.",
+      });
+    } else {
+      const successValue = propertyValue(
+        masked,
+        open + 1 + onSuccess.index + onSuccess[0].length,
+      ).trim();
+      const isSuccessReference = /^[A-Za-z_$][\w$]*$/.test(successValue);
+      if (
+        !isSuccessReference
+        && !SUCCESS_CALL.test(successValue)
+        && !allowComment(text, match.index)
+      ) {
+        findings.push({
+          file: rel,
+          line: lineAt(text, match.index),
+          rule: "onSuccess-without-surface",
+          message:
+            "onSuccess only invalidates/closes with no confirmation. Add toast.success()/inline result state, or `// form-feedback: allow <reason>`.",
+        });
+      }
     }
   }
 

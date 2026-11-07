@@ -89,6 +89,7 @@ function AdminUserDetail() {
         description: description.trim(),
       }),
     onSuccess: () => {
+      toast.success(t("creditsUpdatedToast"));
       queryClient.invalidateQueries({ queryKey: ["admin-user", id] });
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       setAmount("");
@@ -104,7 +105,10 @@ function AdminUserDetail() {
   const resendVerification = useMutation({
     mutationFn: () => adminApi.resendVerification(id!),
     onMutate: () => setResendError(null),
-    onSuccess: () => setResendError(null),
+    onSuccess: () => {
+      setResendError(null);
+      toast.success(t("resendSentToast"));
+    },
     onError: (err) => {
       setResendError(apiErrorMessage(err, t("resendFail")));
     },

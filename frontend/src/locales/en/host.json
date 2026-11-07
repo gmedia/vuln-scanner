@@ -142,5 +142,6 @@
   "hostEnabledFail": "Failed to update scheduled scans",
   "hostQuarantineFail": "Failed to queue quarantine",
   "hostRestoreFail": "Failed to queue restore",
-  "hostIgnoreFail": "Failed to ignore the file"
+  "hostIgnoreFail": "Failed to ignore the file",
+  "wafSavedToast": "WAF mode saved."
 }

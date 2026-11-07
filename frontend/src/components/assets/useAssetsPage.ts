@@ -115,6 +115,7 @@ export function useAssetsPage() {
   const createMut = useMutation({
     mutationFn: createAsset,
     onSuccess: () => {
+      toast.success(t("createdToast"));
       void qc.invalidateQueries({ queryKey: ["assets"] });
       resetForm();
     },
@@ -135,6 +136,7 @@ export function useAssetsPage() {
       payload: { name: string; notes?: string; tags: string[] };
     }) => updateAsset(id, payload),
     onSuccess: () => {
+      toast.success(t("updatedToast"));
       void qc.invalidateQueries({ queryKey: ["assets"] });
       resetForm();
     },
@@ -152,6 +154,7 @@ export function useAssetsPage() {
     onError: (err: unknown) => toast.error(apiErrorMessage(err, t("deleteFail"))),
   });
 
+  // form-feedback: allow the tag-color preview updates inline from this payload.
   const colorMut = useMutation({
     mutationFn: (payload: Record<string, TagColorValue>) =>
       patchTagColors(payload),
@@ -165,7 +168,10 @@ export function useAssetsPage() {
 
   const schedMut = useMutation({
     mutationFn: (id: string) => createAssetSchedule(id, { cadence: "weekly" }),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["assets"] }),
+    onSuccess: () => {
+      toast.success(t("scheduleCreatedToast"));
+      void qc.invalidateQueries({ queryKey: ["assets"] });
+    },
     onError: (err: unknown) => {
       toast.error(apiErrorMessage(err, t("updateFail")));
     },

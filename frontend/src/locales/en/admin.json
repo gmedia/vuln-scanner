@@ -867,5 +867,7 @@
   "aiModelDeleted": "Model deleted.",
   "aiTopupOk": "Wallet topped up.",
   "aiTopupFail": "Could not top up the wallet.",
-  "copyEmailFail": "Could not copy the email address."
+  "copyEmailFail": "Could not copy the email address.",
+  "creditsUpdatedToast": "Credits updated.",
+  "resendSentToast": "Verification email sent."
 }

@@ -142,5 +142,6 @@
   "hostEnabledFail": "Gagal memperbarui jadwal otomatis",
   "hostQuarantineFail": "Gagal mengantrekan karantina",
   "hostRestoreFail": "Gagal mengantrekan pemulihan",
-  "hostIgnoreFail": "Gagal mengabaikan file"
+  "hostIgnoreFail": "Gagal mengabaikan file",
+  "wafSavedToast": "Mode WAF disimpan."
 }

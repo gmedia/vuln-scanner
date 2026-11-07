@@ -104,5 +104,7 @@
   "monitorPausedToast": "Monitor paused.",
   "monitorResumedToast": "Monitor resumed.",
   "monitorDeleteFail": "Failed to delete monitor",
-  "monitorPauseFail": "Failed to change monitor state"
+  "monitorPauseFail": "Failed to change monitor state",
+  "monitorCreatedToast": "Monitor created.",
+  "monitorUpdatedToast": "Monitor updated."
 }

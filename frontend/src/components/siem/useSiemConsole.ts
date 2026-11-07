@@ -105,6 +105,7 @@ export function useSiemConsole(t: (key: string) => string) {
     void queryClient.invalidateQueries({ queryKey: ["siem"] });
   };
 
+  // form-feedback: allow the created case becomes the active case and renders.
   const createMut = useMutation({
     mutationFn: createSiemCase,
     onSuccess: (c) => {
@@ -116,6 +117,7 @@ export function useSiemConsole(t: (key: string) => string) {
     onError: (e) => setActionError(apiErrorMessage(e, t("createCaseFail"))),
   });
 
+  // form-feedback: allow the status change renders on the case row.
   const patchMut = useMutation({
     mutationFn: ({
       id,
@@ -131,6 +133,7 @@ export function useSiemConsole(t: (key: string) => string) {
     onError: (e) => setActionError(apiErrorMessage(e, t("patchCaseFail"))),
   });
 
+  // form-feedback: allow the new note renders in the case thread.
   const noteMut = useMutation({
     mutationFn: ({ id, body }: { id: string; body: string }) =>
       addSiemCaseNote(id, body),

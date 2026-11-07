@@ -110,7 +110,9 @@ IPs, Wazuh internals); map the `reason` to an i18n key.
 
 - Every user-initiated write shows a success signal: `toast.success` for actions/dialogs, an inline
   notice for page forms (persistent enough to read), or an explicit result surface (one-time API
-  key, heartbeat URL).
+  key, heartbeat URL, the created row selected, a simulation panel, a redirect).
+- "The dialog closed" and "the list refetched" are **not** success feedback. If the result is
+  genuinely visible inline, record it with `// form-feedback: allow <reason>` above the mutation.
 - Success text comes from i18n (`en`/`id`), not from a backend prose field. Backend `message`
   fields are legacy; if a response carries dynamic data (`email_sent`, `heartbeat_url`, a one-time
   key), render that data through an i18n template.
@@ -147,12 +149,15 @@ Fails when:
 
 - a `useMutation` has no `onError` and no `// form-feedback: allow <reason>` comment;
 - an `onError` body does not surface anything — it must call `toast.error`/`toast.warning`, `apply(`, `setFormError(`, `setFieldErrors(`, or a `set*Error(` setter (a bare handler reference is accepted);
+- a mutation has no `onSuccess`, or its `onSuccess` only invalidates/closes — it must toast, set result state, navigate, or have an allow comment;
 - a UI file (`pages/`, `components/`) has an empty `catch {}` / `catch { void 0; }` / comment-only catch and no allow comment;
 - a local `apiDetail` / `detailFromBody` / `extractError` reader exists;
 - `String(...detail...)` appears.
 
-`// form-feedback: allow` is for call-site `onError` only (for example the scan hooks whose
-`mutate(vars, { onError })` lives in the form). It is not an escape hatch for a missing error UI.
+`// form-feedback: allow <reason>` must sit on the comment line directly above the mutation. It is
+for call-site handling (the scan hooks pass `{ onError, onSuccess }` from the form), for inline
+results that are their own confirmation (simulation panel, SIEM active case, host toggles), and for
+best-effort preferences. It is not an escape hatch for a missing error/success UI.
 
 ---
 

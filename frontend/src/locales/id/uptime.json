@@ -104,5 +104,7 @@
   "monitorPausedToast": "Monitor dijeda.",
   "monitorResumedToast": "Monitor dilanjutkan.",
   "monitorDeleteFail": "Gagal menghapus monitor",
-  "monitorPauseFail": "Gagal mengubah status monitor"
+  "monitorPauseFail": "Gagal mengubah status monitor",
+  "monitorCreatedToast": "Monitor dibuat.",
+  "monitorUpdatedToast": "Monitor diperbarui."
 }

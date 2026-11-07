@@ -183,6 +183,7 @@ export default function HostProtect() {
     onError: (err: unknown) => toast.error(apiErrorMessage(err, t("hostDeleteFail"))),
   });
 
+  // form-feedback: allow the toggle state is the confirmation.
   const intervalMut = useMutation({
     mutationFn: ({
       id,
@@ -196,6 +197,7 @@ export default function HostProtect() {
       toast.error(apiErrorMessage(err, t("hostIntervalFail"))),
   });
 
+  // form-feedback: allow the toggle state is the confirmation.
   const autoQuarantineMut = useMutation({
     mutationFn: ({
       id,
@@ -209,6 +211,7 @@ export default function HostProtect() {
       toast.error(apiErrorMessage(err, t("hostAutoQuarantineFail"))),
   });
 
+  // form-feedback: allow the toggle state is the confirmation.
   const watchMut = useMutation({
     mutationFn: ({
       id,
@@ -222,6 +225,7 @@ export default function HostProtect() {
       toast.error(apiErrorMessage(err, t("hostWatchFail"))),
   });
 
+  // form-feedback: allow the toggle state is the confirmation.
   const enabledMut = useMutation({
     mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
       updateHostSite(id, { enabled }),

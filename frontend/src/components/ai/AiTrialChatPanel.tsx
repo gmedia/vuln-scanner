@@ -48,6 +48,7 @@ export function AiTrialChatPanel({
   const [reply, setReply] = useState("");
   const [usage, setUsage] = useState<TrialUsage | null>(null);
   const [error, setError] = useState("");
+  // form-feedback: allow the model reply renders inline below the prompt.
   const chatMut = useMutation({
     mutationFn: () =>
       aiTrialChat({
