@@ -9,14 +9,26 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.models.organization import Organization
 from app.models.user import User
-from app.schemas.ai_topup import AiTopupPackCreate, AiTopupPackList, AiTopupPackOut, AiTopupPackUpdate
+from app.schemas.ai_topup import (
+    AiTopupAdminOrderList,
+    AiTopupAdminOrderOut,
+    AiTopupApproveIn,
+    AiTopupPackCreate,
+    AiTopupPackList,
+    AiTopupPackOut,
+    AiTopupPackUpdate,
+    AiTopupRejectIn,
+)
 from app.services import ai_topup as service
 from app.services.auth import get_current_admin
+from app.services.topup_proofs import extension_for_mime, read_proof
 
 router = APIRouter(prefix="/admin/ai/topup", tags=["admin-ai-topup"])
 
@@ -67,3 +79,92 @@ async def update_pack(
         sort_order=body.sort_order,
     )
     return AiTopupPackOut.model_validate(row)
+
+
+async def _org_names(db: AsyncSession, org_ids: set[uuid.UUID]) -> dict[uuid.UUID, str]:
+    if not org_ids:
+        return {}
+    rows = (await db.execute(select(Organization.id, Organization.name).where(Organization.id.in_(org_ids)))).all()
+    return {row.id: row.name for row in rows}
+
+
+@router.get("/orders", response_model=AiTopupAdminOrderList)
+async def list_orders(
+    status_filter: str | None = Query(default=None, alias="status"),
+    organization_id: uuid.UUID | None = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=50, ge=1, le=200),
+    _admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> AiTopupAdminOrderList:
+    rows, total = await service.list_orders_admin(
+        db,
+        status_filter=status_filter,
+        organization_id=organization_id,
+        page=page,
+        limit=limit,
+    )
+    names = await _org_names(db, {row.organization_id for row in rows})
+    return AiTopupAdminOrderList(
+        items=[AiTopupAdminOrderOut.from_order(row, organization_name=names.get(row.organization_id)) for row in rows],
+        total=total,
+        page=page,
+        limit=limit,
+    )
+
+
+@router.get("/orders/{order_id}", response_model=AiTopupAdminOrderOut)
+async def get_order(
+    order_id: uuid.UUID,
+    _admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> AiTopupAdminOrderOut:
+    order = await service.get_order_by_id(db, order_id)
+    org = await db.get(Organization, order.organization_id)
+    return AiTopupAdminOrderOut.from_order(order, organization_name=org.name if org is not None else None)
+
+
+@router.get("/orders/{order_id}/proof")
+async def download_proof(
+    order_id: uuid.UUID,
+    _admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    order = await service.get_order_by_id(db, order_id)
+    if order.proof_object_key is None or order.proof_mime is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Proof not found")
+    body = read_proof(order.proof_object_key)
+    ext = extension_for_mime(order.proof_mime)
+    return Response(
+        content=body,
+        media_type=order.proof_mime,
+        headers={
+            "X-Content-Type-Options": "nosniff",
+            "Content-Disposition": f'attachment; filename="topup-proof-{order.reference_code}.{ext}"',
+            "Cache-Control": "no-store",
+        },
+    )
+
+
+@router.post("/orders/{order_id}/approve", response_model=AiTopupAdminOrderOut)
+async def approve_order(
+    order_id: uuid.UUID,
+    body: AiTopupApproveIn,
+    admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> AiTopupAdminOrderOut:
+    order = await service.approve(db, order_id=order_id, admin=admin, bank_ref=body.bank_ref, force=body.force)
+    org = await db.get(Organization, order.organization_id)
+    return AiTopupAdminOrderOut.from_order(order, organization_name=org.name if org is not None else None)
+
+
+@router.post("/orders/{order_id}/reject", response_model=AiTopupAdminOrderOut)
+async def reject_order(
+    order_id: uuid.UUID,
+    body: AiTopupRejectIn,
+    admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> AiTopupAdminOrderOut:
+    order = await service.reject(db, order_id=order_id, admin=admin, reason=body.reason)
+    org = await db.get(Organization, order.organization_id)
+    return AiTopupAdminOrderOut.from_order(order, organization_name=org.name if org is not None else None)
