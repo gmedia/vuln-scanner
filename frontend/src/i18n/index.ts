@@ -121,6 +121,7 @@ export function persistLocale(locale: AppLocale): void {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+  // silent-catch: allow locale persistence is best-effort.
   } catch {
     void 0;
   }

@@ -178,6 +178,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           ? activeOrgId
           : (list[0]?.id ?? null);
       set({ organizations: list, activeOrgId: nextActive });
+    // silent-catch: allow background org refresh; the cached list stays usable.
     } catch {
       void 0;
     }
@@ -275,8 +276,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   logout: async () => {
     try {
       await authApi.refreshToken();
+    // silent-catch: allow refresh-token cleanup is best-effort.
     } catch {
-      /* refresh token cleanup — ignore failures */
+        void 0;
     }
     delete authApi.authApi.defaults.headers.common["Authorization"];
     localStorage.removeItem("accessToken");

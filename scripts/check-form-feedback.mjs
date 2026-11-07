@@ -8,6 +8,8 @@
 //   2. No component may read `*.detail` itself; use `apiErrorMessage` /
 //      `extractApiError` from `src/api/apiErrors.ts`.
 //   3. No `String(...detail...)` conversion (renders `[object Object]` on 422).
+//   4. No empty / `void 0` / comment-only `catch` block unless annotated with
+//      `// silent-catch: allow <reason>`.
 //
 // Dependency-free on purpose: it runs in CI before any npm install.
 // Usage: node scripts/check-form-feedback.mjs
@@ -19,6 +21,7 @@ const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const SRC = join(ROOT, "frontend", "src");
 const SKIP = [/\/test\//, /\.test\./, /\/components\/ui\//, /\/e2e\//];
 const ALLOW_MARK = "form-feedback: allow";
+const CATCH_ALLOW_MARK = "silent-catch: allow";
 
 /** @typedef {{ file: string; line: number; rule: string; message: string }} Finding */
 /** @type {Finding[]} */
@@ -103,13 +106,13 @@ function matchingParen(masked, openIndex) {
 }
 
 /**
- * True when the request/statement is immediately preceded by a
- * `// form-feedback: allow <reason>` comment line. Only the contiguous comment
- * block directly above the statement counts, so a stale allow comment elsewhere
- * in the file cannot silence an unrelated mutation.
- * @param {string} text @param {number} index
+ * True when the request/statement is immediately preceded by one of the allow
+ * markers (as `// <marker> <reason>`). Only the contiguous comment block
+ * directly above the statement counts, so a stale allow comment elsewhere in
+ * the file cannot silence an unrelated mutation.
+ * @param {string} text @param {number} index @param {string[]} marks
  */
-function allowComment(text, index) {
+function allowComment(text, index, marks = [ALLOW_MARK]) {
   const lineStart = text.lastIndexOf("\n", index - 1) + 1;
   let line = lineStart - 1;
   while (line >= 0) {
@@ -117,7 +120,7 @@ function allowComment(text, index) {
     const prev = text.slice(prevStart, line).trim();
     if (prev === "") break;
     if (!prev.startsWith("//")) return false;
-    if (prev.includes(ALLOW_MARK)) return true;
+    if (marks.some((mark) => prev.includes(mark))) return true;
     line = prevStart - 1;
   }
   return false;
@@ -258,13 +261,9 @@ function checkFile(full, rel) {
     });
   }
 
-  // Only UI surfaces: data-layer catches may legitimately fall back silently.
-  if (!rel.startsWith("frontend/src/pages/") && !rel.startsWith("frontend/src/components/")) {
-    return;
-  }
   const catchRe = /\bcatch\b/g;
   while ((match = catchRe.exec(masked)) !== null) {
-    if (allowComment(text, match.index)) continue;
+    if (allowComment(text, match.index, [ALLOW_MARK, CATCH_ALLOW_MARK])) continue;
     let i = match.index + match[0].length;
     while (i < masked.length && /\s/.test(masked[i])) i += 1;
     if (masked[i] === "(") {
@@ -286,7 +285,7 @@ function checkFile(full, rel) {
       line: lineAt(text, match.index),
       rule: "empty-catch",
       message:
-        "catch block swallows the error. Show apiErrorMessage() or add `// form-feedback: allow <reason>`.",
+        "catch block swallows the error. Show it, or add `// silent-catch: allow <reason>`.",
     });
   }
 }

@@ -150,11 +150,11 @@ Fails when:
 - a `useMutation` has no `onError` and no `// form-feedback: allow <reason>` comment;
 - an `onError` body does not surface anything — it must call `toast.error`/`toast.warning`, `apply(`, `setFormError(`, `setFieldErrors(`, or a `set*Error(` setter (a bare handler reference is accepted);
 - a mutation has no `onSuccess`, or its `onSuccess` only invalidates/closes — it must toast, set result state, navigate, or have an allow comment;
-- a UI file (`pages/`, `components/`) has an empty `catch {}` / `catch { void 0; }` / comment-only catch and no allow comment;
+- any file in `frontend/src` has an empty `catch {}` / `catch { void 0; }` / comment-only catch and no `// silent-catch: allow <reason>` (use it for genuinely best-effort work such as pointer capture, localStorage, date/token parsing, logout cleanup, background refresh);
 - a local `apiDetail` / `detailFromBody` / `extractError` reader exists;
 - `String(...detail...)` appears.
 
-`// form-feedback: allow <reason>` must sit on the comment line directly above the mutation. It is
+`// form-feedback: allow <reason>` must sit on the comment line directly above the mutation. Intentional silent fallbacks use `// silent-catch: allow <reason>`. It is
 for call-site handling (the scan hooks pass `{ onError, onSuccess }` from the form), for inline
 results that are their own confirmation (simulation panel, SIEM active case, host toggles), and for
 best-effort preferences. It is not an escape hatch for a missing error/success UI.

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, waitFor, act } from "@testing-library/react";
 import { useScanCredit } from "@/hooks/useScanCredit";
+import { useCreditStore } from "@/store/creditStore";
 
 const { fetchBalance, checkEligibility } = vi.hoisted(() => ({
   fetchBalance: vi.fn(),
@@ -15,8 +16,13 @@ vi.mock("@/store/creditStore", () => ({
   }),
 }));
 
+const mockedStore = useCreditStore as unknown as {
+  getState?: () => { error: string | null };
+};
+
 describe("useScanCredit", () => {
   beforeEach(() => {
+    delete mockedStore.getState;
     fetchBalance.mockReset();
     checkEligibility.mockReset();
     fetchBalance.mockResolvedValue(undefined);
@@ -50,6 +56,16 @@ describe("useScanCredit", () => {
 
     expect(result.current.eligible).toBe(true);
     expect(result.current.costUnavailable).toBe(false);
+  });
+
+  it("marks cost unavailable when the eligibility call errored", async () => {
+    checkEligibility.mockResolvedValue(null);
+    mockedStore.getState = () => ({ error: "Failed to check eligibility" });
+
+    const { result } = renderHook(() => useScanCredit("ip"));
+    await waitFor(() => expect(result.current.eligibilityLoading).toBe(false));
+
+    expect(result.current.costUnavailable).toBe(true);
   });
 
   it("times out eligibility after 8s and keeps submit gated", async () => {
