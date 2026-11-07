@@ -34,6 +34,7 @@ It is deliberately **not** a checkout, not a store, not a subscription-billing e
 | **PY16** | Secrets | Server key is backend-only. Never in the SPA, git, logs, error bodies, or `payment_events.payload`. |
 | **PY17** | Config guard | Production mode with a sandbox key, or sandbox mode with a production key, refuses startup. Gateway enabled with an empty key refuses startup. |
 | **PY18** | Observability | Metrics and alerts for pending age, webhook failures, amount mismatch, duplicate payment. Added in the same PR as the metric names. |
+| **PY19** | AI wallet top-up | The same attempt + webhook engine also settles AI wallet top-up orders. `payment_attempts` gains `payable_kind ∈ {invoice, topup}` and a nullable `topup_order_id`; a top-up attempt has `invoice_id = NULL` and its own partial unique pending index. Amount is verified against `ai_topup_orders.amount_idr`; `succeeded` is authoritative even after local expiry. Full contract: [`ai-topup-v1.md`](ai-topup-v1.md). Existing `vuln_payment_*` readers must be scoped to `payable_kind = 'invoice'`. |
 
 ## 2) Provider abstraction
 
@@ -169,6 +170,7 @@ Indexes:
 
 - `uq_payment_attempt_provider_order (provider, provider_order_id) WHERE provider_order_id IS NOT NULL`
 - `uq_payment_attempt_pending_invoice (invoice_id) WHERE status = 'pending'`
+- `uq_payment_attempt_pending_topup (topup_order_id) WHERE status = 'pending' AND topup_order_id IS NOT NULL` (top-up orders; [`ai-topup-v1.md`](ai-topup-v1.md))
 
 `provider_ref` stays **non-unique** (manual bank references repeat).
 
