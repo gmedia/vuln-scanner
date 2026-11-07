@@ -134,8 +134,9 @@ export function useRowSwipe({
   const releaseCapture = React.useCallback((pointerId: number) => {
     try {
       contentRef.current?.releasePointerCapture?.(pointerId);
+    // silent-catch: allow pointer capture may already be gone.
     } catch {
-      // Capture may already be gone; nothing to release.
+        void 0;
     }
   }, []);
 
@@ -193,8 +194,9 @@ export function useRowSwipe({
         const el = contentRef.current;
         try {
           el?.setPointerCapture?.(event.pointerId);
+        // silent-catch: allow pointer capture is best-effort.
         } catch {
-          // Pointer capture is best-effort.
+            void 0;
         }
         if (el) el.style.userSelect = "none";
       }

@@ -51,7 +51,7 @@ export function useScanCredit(scanType: string) {
         setCostUnavailable(false);
       } else {
         setEligible(true);
-        setCostUnavailable(false);
+        setCostUnavailable(Boolean(useCreditStore.getState?.().error));
       }
       setEligibilityLoading(false);
     };

@@ -122,8 +122,9 @@ export function useSwipeToClose({
     const el = ref.current;
     try {
       el?.releasePointerCapture?.(pointerId);
+    // silent-catch: allow swipe element may already be gone.
     } catch {
-      // Element may already be gone; nothing to release.
+        void 0;
     }
   }, []);
 
@@ -188,8 +189,9 @@ export function useSwipeToClose({
         const el = ref.current;
         try {
           el?.setPointerCapture?.(event.pointerId);
+        // silent-catch: allow pointer capture is best-effort.
         } catch {
-          // Pointer capture is best-effort.
+            void 0;
         }
         if (el) el.style.userSelect = "none";
       }

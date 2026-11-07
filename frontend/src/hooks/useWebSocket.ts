@@ -94,8 +94,9 @@ export function useWebSocket(
           if (msg.type === "progress") {
             onProgress(msg);
           }
+        // silent-catch: allow non-JSON socket frames are ignored by design.
         } catch {
-          // ignore non-JSON messages
+            void 0;
         }
       };
 

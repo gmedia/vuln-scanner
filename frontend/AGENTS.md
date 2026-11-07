@@ -30,6 +30,7 @@ Vite + React + TS + shadcn. Node >=24.15.0 (jsdom 30 engine floor). Dev :5173; p
 - Proxy `/api` `/ws` → `http://backend:8000` (needs Docker DNS or override).
 - **Forms / writes:** every `useMutation` needs a surfacing `onError` **and** a visible `onSuccess` (toast/inline result/navigation); read API errors only via `apiErrorMessage()` / `extractApiError()` (`src/api/apiErrors.ts`), render 422s with `useApiFormErrors()` + `<FormAlert>`/`<FieldError>` (`src/components/patterns/FormFeedback.tsx`). Never `String(detail)` or a local `apiDetail`. Contract: [`../docs/specs/form-feedback.md`](../docs/specs/form-feedback.md); gate: `node ../scripts/check-form-feedback.mjs`.
 - **Field focus:** after a failed submit, the first `aria-invalid` control must receive focus (`useApiFormErrors().apply()` handles it; local field maps use `useFocusFirstInvalidField`).
+- **Silent catches:** an empty/`void 0`/comment-only `catch` anywhere in `src` fails CI; annotate genuinely best-effort work with `// silent-catch: allow <reason>`.
 
 ## ANTI-PATTERNS
 
