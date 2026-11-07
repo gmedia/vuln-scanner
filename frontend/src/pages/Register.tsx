@@ -19,6 +19,7 @@ import { useTranslation } from "react-i18next";
 import { captureInviteFromSearch, postAuthPath } from "@/lib/inviteToken";
 import { TONE_TEXT } from "@/lib/toneColors";
 import { FieldError } from "@/components/patterns/FormFeedback";
+import { useFocusFirstInvalidField } from "@/lib/focusFirstInvalid";
 
 function Register() {
   const navigate = useNavigate();
@@ -34,6 +35,7 @@ function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  useFocusFirstInvalidField(fieldErrors);
   const [success, setSuccess] = useState(false);
   const [emailSent, setEmailSent] = useState<boolean | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);

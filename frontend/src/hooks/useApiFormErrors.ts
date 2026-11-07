@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { extractApiError } from "@/api/apiErrors";
+import { focusFirstInvalidFieldSoon } from "@/lib/focusFirstInvalid";
 
 /**
  * Standard form error state for the SPA.
@@ -30,6 +31,7 @@ export function useApiFormErrors() {
     const extracted = extractApiError(error, fallback);
     setFormError(extracted.message);
     setFieldErrors(extracted.fields);
+    if (Object.keys(extracted.fields).length > 0) focusFirstInvalidFieldSoon();
     return extracted;
   }, []);
 

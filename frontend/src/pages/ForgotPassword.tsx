@@ -15,6 +15,7 @@ import {
 } from "@/components/auth/AuthCard";
 import { useTranslation } from "react-i18next";
 import { FieldError } from "@/components/patterns/FormFeedback";
+import { useFocusFirstInvalidField } from "@/lib/focusFirstInvalid";
 
 function ForgotPassword() {
   const { t } = useTranslation("auth");
@@ -22,6 +23,7 @@ function ForgotPassword() {
   const { forgotPassword, error, clearError } = useAuthStore();
   const [email, setEmail] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  useFocusFirstInvalidField(fieldErrors);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const { cooldown, startCooldown } = useRateLimitCooldown();

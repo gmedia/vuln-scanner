@@ -127,6 +127,16 @@ enumerates every type in `backend/app` and fails when a key is missing. Prefer r
 type (`target_invalid`, `domain_invalid`, `http_method_invalid`, …) over inventing a new one for
 the same rule.
 
+## 6c) Accessibility
+
+- After a failed submit, focus moves to the first control with `aria-invalid="true"`.
+  `useApiFormErrors().apply()` does this automatically; pages holding their own field map call
+  `useFocusFirstInvalidField(fieldErrors)` (`frontend/src/lib/focusFirstInvalid.ts`).
+- Every input that receives a field error sets `aria-invalid` and `aria-describedby` pointing at the
+  visible message. `Input`, `Textarea` and `SelectTrigger` style the invalid state with the
+  destructive token.
+- `FormAlert` is an `Alert` with `role="alert"`, so the banner is announced when it appears.
+
 ## 7) CI gate
 
 ```

@@ -17,6 +17,7 @@ const SelectTrigger = forwardRef<
       "flex h-10 w-full items-center justify-between rounded-md border border-border bg-input px-3 py-2 text-sm placeholder:text-muted-foreground",
       "focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-[var(--color-background)]",
       "disabled:cursor-not-allowed disabled:opacity-50",
+      "aria-invalid:border-destructive aria-invalid:ring-destructive/40",
       "[&>span]:line-clamp-1",
       className,
     )}

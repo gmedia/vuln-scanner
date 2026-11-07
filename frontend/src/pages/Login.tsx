@@ -15,6 +15,7 @@ import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { useTranslation } from "react-i18next";
 import { captureInviteFromSearch, postAuthPath } from "@/lib/inviteToken";
 import { FieldError } from "@/components/patterns/FormFeedback";
+import { useFocusFirstInvalidField } from "@/lib/focusFirstInvalid";
 
 function isUnverifiedError(message: string | null): boolean {
   if (!message) return false;
@@ -42,6 +43,7 @@ function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  useFocusFirstInvalidField(fieldErrors);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendFeedback, setResendFeedback] = useState<string | null>(null);

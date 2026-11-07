@@ -246,6 +246,9 @@ describe("Login", () => {
       "aria-invalid",
       "true",
     );
+    await waitFor(() => {
+      expect(screen.getByLabelText("Email")).toHaveFocus();
+    });
   });
 
   it("shows loading state when submitting", async () => {
