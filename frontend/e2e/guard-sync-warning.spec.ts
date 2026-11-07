@@ -4,7 +4,7 @@ test.describe("Form feedback — Guard ok:false", () => {
   test("sync with ok:false shows a warning, never a success toast", async ({
     page,
   }) => {
-    await page.route("**/api/guard/status", (route) =>
+    await page.route(/\/api\/guard\/status$/, (route) =>
       route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -18,19 +18,19 @@ test.describe("Form feedback — Guard ok:false", () => {
         }),
       }),
     );
-    await page.route("**/api/guard/agents", (route) =>
+    await page.route(/\/api\/guard\/agents$/, (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: "[]" }),
     );
-    await page.route("**/api/guard/alerts**", (route) =>
+    await page.route(/\/api\/guard\/alerts(\?.*)?$/, (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: "[]" }),
     );
-    await page.route("**/api/guard/enroll-tokens", (route) =>
+    await page.route(/\/api\/guard\/enroll-tokens$/, (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: "[]" }),
     );
-    await page.route("**/api/assets**", (route) =>
+    await page.route(/\/api\/assets(\?.*)?$/, (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: "[]" }),
     );
-    await page.route("**/api/guard/sync", (route) =>
+    await page.route(/\/api\/guard\/sync$/, (route) =>
       route.fulfill({
         status: 200,
         contentType: "application/json",
