@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
@@ -26,6 +26,7 @@ from app.services.ai_topup import create_pack
 from app.services.ai_wallet import get_wallet
 from app.services.auth import create_access_token, hash_password
 from app.services.organization import ensure_personal_org
+from app.services.payments.base import CheckoutResult
 
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
 JPEG = b"\xff\xd8\xff\xe0" + b"\x00" * 64
@@ -265,14 +266,34 @@ async def test_create_order_rejects_inactive_pack(api, ctx, ai_on) -> None:
 
 
 @pytest.mark.asyncio
-async def test_create_order_rejects_midtrans_in_s2(api, ctx, ai_on) -> None:
+async def test_create_order_allows_midtrans(api, ctx, ai_on) -> None:
     response = await api.post(
         "/api/ai/topup/orders",
         headers=_auth(ctx["owner"], ctx["org"].id),
         json={"pack_id": str(ctx["pack"].id), "method": "midtrans"},
     )
-    assert response.status_code == 409
-    assert "checkout" in response.json()["detail"].lower()
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert body["payment_method"] == "midtrans"
+    assert body["status"] == "pending_payment"
+    assert body["amount_idr"] == 100_000
+    assert body["bank"] is None
+
+
+@pytest.mark.asyncio
+async def test_create_order_midtrans_does_not_require_bank_copy(
+    api, ctx, ai_on, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(settings, "invoice_bank_name", "")
+    monkeypatch.setattr(settings, "invoice_bank_account", "")
+    monkeypatch.setattr(settings, "invoice_bank_holder", "")
+
+    response = await api.post(
+        "/api/ai/topup/orders",
+        headers=_auth(ctx["owner"], ctx["org"].id),
+        json={"pack_id": str(ctx["pack"].id), "method": "midtrans"},
+    )
+    assert response.status_code == 201, response.text
 
 
 @pytest.mark.asyncio
@@ -320,6 +341,159 @@ async def test_create_order_service_retries_reference_collision(
         now=now,
     )
     assert order.reference_code == "260101-CCCCCC"
+
+
+# --- gateway checkout -----------------------------------------------------
+
+
+class _FakeMidtrans:
+    name = "midtrans"
+
+    def __init__(self) -> None:
+        self.requests: list[Any] = []
+
+    def enabled(self) -> bool:
+        return True
+
+    async def create_checkout(self, req):  # noqa: ANN001 - protocol stub
+        self.requests.append(req)
+        return CheckoutResult(
+            provider=self.name,
+            provider_order_id=req.order_id,
+            provider_payment_id="trx-topup-1",
+            provider_token="snap-token",
+            redirect_url="https://app.sandbox.midtrans.com/snap/v2/vtweb/topup-token",
+            expires_at=datetime.now(UTC) + timedelta(hours=24),
+            amount_idr=req.amount_idr,
+            currency="IDR",
+            raw={},
+        )
+
+    async def fetch_status(self, attempt):  # noqa: ANN001 - protocol stub
+        raise AssertionError("not used")
+
+    async def cancel(self, attempt):  # noqa: ANN001 - protocol stub
+        return True
+
+
+def _gateway(monkeypatch: pytest.MonkeyPatch) -> _FakeMidtrans:
+    fake = _FakeMidtrans()
+    monkeypatch.setattr(settings, "payment_gateway_enabled", True)
+    monkeypatch.setattr(
+        "app.services.payments.service.build_provider",
+        lambda name, **kwargs: fake,
+    )
+    return fake
+
+
+async def _checkout(api: AsyncClient, user: User, org: Organization, order_id: str, provider: str = "midtrans"):
+    return await api.post(
+        f"/api/ai/topup/orders/{order_id}/checkout",
+        headers=_auth(user, org.id),
+        json={"provider": provider},
+    )
+
+
+async def _attempt_rows(db: AsyncSession, order_id: uuid.UUID | str) -> list[PaymentAttempt]:
+    rows = (
+        (await db.execute(select(PaymentAttempt).where(PaymentAttempt.topup_order_id == uuid.UUID(str(order_id)))))
+        .scalars()
+        .all()
+    )
+    return list(rows)
+
+
+@pytest.mark.asyncio
+async def test_checkout_creates_pending_topup_attempt(
+    api, db_session, ctx, ai_on, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fake = _gateway(monkeypatch)
+    order = await _create_order(api, ctx["owner"], ctx["org"], ctx["pack"].id, method="midtrans")
+
+    response = await _checkout(api, ctx["owner"], ctx["org"], order["id"])
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["redirect_url"] == "https://app.sandbox.midtrans.com/snap/v2/vtweb/topup-token"
+
+    attempts = await _attempt_rows(db_session, order["id"])
+    assert len(attempts) == 1
+    attempt = attempts[0]
+    assert str(attempt.id) == body["attempt_id"]
+    assert attempt.payable_kind == "topup"
+    assert attempt.invoice_id is None
+    assert attempt.topup_order_id == uuid.UUID(order["id"])
+    assert attempt.amount_idr == order["amount_idr"]
+    assert attempt.provider_order_id == f"{order['reference_code']}-A1"
+    assert attempt.currency == "IDR"
+    assert attempt.created_by_user_id == ctx["owner"].id
+    assert len(fake.requests) == 1
+    assert fake.requests[0].description == f"Sinexis AI top-up {order['reference_code']}"
+    assert fake.requests[0].customer_email == ctx["owner"].email
+
+    refreshed = await db_session.get(AiTopupOrder, uuid.UUID(order["id"]))
+    assert refreshed is not None
+    assert refreshed.expires_at is not None
+    expires_at = refreshed.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=UTC)
+    assert expires_at <= datetime.now(UTC) + timedelta(hours=24, minutes=1)
+
+
+@pytest.mark.asyncio
+async def test_checkout_double_click_reuses_one_attempt(
+    api, db_session, ctx, ai_on, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _gateway(monkeypatch)
+    order = await _create_order(api, ctx["owner"], ctx["org"], ctx["pack"].id, method="midtrans")
+
+    first = await _checkout(api, ctx["owner"], ctx["org"], order["id"])
+    second = await _checkout(api, ctx["owner"], ctx["org"], order["id"])
+    assert first.status_code == 200, first.text
+    assert second.status_code == 200, second.text
+    assert first.json()["attempt_id"] == second.json()["attempt_id"]
+    assert first.json()["redirect_url"] == second.json()["redirect_url"]
+    assert len(await _attempt_rows(db_session, order["id"])) == 1
+
+
+@pytest.mark.asyncio
+async def test_checkout_rejects_manual_order(api, db_session, ctx, ai_on, monkeypatch: pytest.MonkeyPatch) -> None:
+    _gateway(monkeypatch)
+    order = await _create_order(api, ctx["owner"], ctx["org"], ctx["pack"].id)
+
+    response = await _checkout(api, ctx["owner"], ctx["org"], order["id"])
+    assert response.status_code == 409
+    assert await _attempt_rows(db_session, order["id"]) == []
+
+
+@pytest.mark.asyncio
+async def test_checkout_gateway_disabled_is_503(api, db_session, ctx, ai_on, monkeypatch: pytest.MonkeyPatch) -> None:
+    order = await _create_order(api, ctx["owner"], ctx["org"], ctx["pack"].id, method="midtrans")
+    monkeypatch.setattr(settings, "payment_gateway_enabled", False)
+
+    response = await _checkout(api, ctx["owner"], ctx["org"], order["id"])
+    assert response.status_code == 503
+    assert await _attempt_rows(db_session, order["id"]) == []
+
+
+@pytest.mark.asyncio
+async def test_checkout_requires_org_admin_not_member(api, ctx, ai_on, monkeypatch: pytest.MonkeyPatch) -> None:
+    _gateway(monkeypatch)
+    order = await _create_order(api, ctx["owner"], ctx["org"], ctx["pack"].id, method="midtrans")
+
+    response = await _checkout(api, ctx["member"], ctx["org"], order["id"])
+    assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_checkout_customer_route_404_when_ai_flag_off(api, ctx, monkeypatch: pytest.MonkeyPatch) -> None:
+    _gateway(monkeypatch)
+    monkeypatch.setattr(settings, "ai_gateway_enabled", False)
+    response = await api.post(
+        f"/api/ai/topup/orders/{uuid.uuid4()}/checkout",
+        headers=_auth(ctx["owner"], ctx["org"].id),
+        json={"provider": "midtrans"},
+    )
+    assert response.status_code == 404
 
 
 # --- auth -----------------------------------------------------------------
