@@ -6,12 +6,24 @@ import pytest
 
 import app.metrics as metrics_mod
 from app.metrics import (
+    AiTopupAwaitingVerificationCollector,
+    AiTopupOrdersTotalCollector,
+    AiTopupPendingAgeCollector,
+    AiTopupPendingOverdueCollector,
+    AiTopupRefundReviewCollector,
+    AiTopupWebhookFailedCollector,
     PaymentAmountMismatchCollector,
     PaymentDuplicateSettlementCollector,
     PaymentFailedEventsCollector,
     PaymentPendingAgeCollector,
     PaymentPendingAttemptsCollector,
     PaymentRefundsCollector,
+    _read_ai_topup_awaiting_verification_total,
+    _read_ai_topup_orders_total,
+    _read_ai_topup_pending_age_seconds,
+    _read_ai_topup_pending_overdue_total,
+    _read_ai_topup_refund_review_total,
+    _read_ai_topup_webhook_failed_total,
     _read_payment_amount_mismatches_24h,
     _read_payment_duplicate_settlements_24h,
     _read_payment_failed_events_24h,
@@ -433,4 +445,324 @@ class TestPaymentMetricRegistration:
             "vuln_payment_amount_mismatches_24h",
             "vuln_payment_duplicate_settlements_24h",
             "vuln_payment_refunds_24h",
+        }
+
+
+# --- AI top-up metrics (S6) -------------------------------------------------
+
+AI_TOPUP_METRIC_READERS = (
+    _read_ai_topup_orders_total,
+    _read_ai_topup_pending_age_seconds,
+    _read_ai_topup_pending_overdue_total,
+    _read_ai_topup_awaiting_verification_total,
+    _read_ai_topup_refund_review_total,
+    _read_ai_topup_webhook_failed_total,
+)
+
+
+def _orders_engine(tmp_path):
+    from sqlalchemy import create_engine, text
+
+    engine = create_engine(f"sqlite:///{tmp_path / 'ai-topup-orders.db'}")
+    now = datetime.now(UTC)
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "CREATE TABLE ai_topup_orders ("
+                "id VARCHAR PRIMARY KEY, status VARCHAR NOT NULL, "
+                "payment_method VARCHAR NOT NULL, created_at DATETIME NOT NULL, "
+                "expires_at DATETIME NOT NULL)"
+            )
+        )
+        conn.execute(
+            text(
+                "INSERT INTO ai_topup_orders "
+                "(id, status, payment_method, created_at, expires_at) VALUES "
+                "(:id, :status, :payment_method, :created_at, :expires_at)"
+            ),
+            [
+                {
+                    "id": "pending-manual",
+                    "status": "pending_payment",
+                    "payment_method": "manual_transfer",
+                    "created_at": now - timedelta(minutes=10),
+                    "expires_at": now + timedelta(hours=1),
+                },
+                {
+                    "id": "overdue-manual",
+                    "status": "pending_payment",
+                    "payment_method": "manual_transfer",
+                    "created_at": now - timedelta(hours=2),
+                    "expires_at": now - timedelta(minutes=5),
+                },
+                {
+                    "id": "pending-midtrans",
+                    "status": "pending_payment",
+                    "payment_method": "midtrans",
+                    "created_at": now - timedelta(minutes=1),
+                    "expires_at": now + timedelta(hours=1),
+                },
+                {
+                    "id": "awaiting",
+                    "status": "awaiting_verification",
+                    "payment_method": "manual_transfer",
+                    "created_at": now,
+                    "expires_at": now + timedelta(days=3),
+                },
+                {
+                    "id": "review",
+                    "status": "refund_review",
+                    "payment_method": "midtrans",
+                    "created_at": now,
+                    "expires_at": now + timedelta(days=3),
+                },
+                {
+                    "id": "paid",
+                    "status": "paid",
+                    "payment_method": "manual_transfer",
+                    "created_at": now,
+                    "expires_at": now + timedelta(days=3),
+                },
+            ],
+        )
+    return engine
+
+
+@pytest.mark.filterwarnings("ignore:The default datetime adapter is deprecated")
+def test_topup_orders_reader_groups_by_status_and_method(tmp_path):
+    engine = _orders_engine(tmp_path)
+    with patch("app.metrics._ai_engine", return_value=engine):
+        rows = _read_ai_topup_orders_total()
+    engine.dispose()
+
+    assert rows is not None
+    assert sorted(rows) == [
+        ("awaiting_verification", "manual_transfer", 1.0),
+        ("paid", "manual_transfer", 1.0),
+        ("pending_payment", "manual_transfer", 2.0),
+        ("pending_payment", "midtrans", 1.0),
+        ("refund_review", "midtrans", 1.0),
+    ]
+
+
+@pytest.mark.filterwarnings("ignore:The default datetime adapter is deprecated")
+def test_topup_pending_age_reader_reports_oldest_per_method(tmp_path):
+    engine = _orders_engine(tmp_path)
+    with patch("app.metrics._ai_engine", return_value=engine):
+        ages = _read_ai_topup_pending_age_seconds()
+    engine.dispose()
+
+    assert ages is not None
+    assert set(ages) == {"manual_transfer", "midtrans"}
+    assert 7100 <= ages["manual_transfer"] <= 7300
+    assert 50 <= ages["midtrans"] <= 70
+
+
+@pytest.mark.filterwarnings("ignore:The default datetime adapter is deprecated")
+def test_topup_queue_readers_count_expected_statuses(tmp_path):
+    engine = _orders_engine(tmp_path)
+    with patch("app.metrics._ai_engine", return_value=engine):
+        assert _read_ai_topup_pending_overdue_total() == 1.0
+        assert _read_ai_topup_awaiting_verification_total() == 1.0
+        assert _read_ai_topup_refund_review_total() == 1.0
+    engine.dispose()
+
+
+@pytest.mark.filterwarnings("ignore:The default datetime adapter is deprecated")
+def test_topup_webhook_failed_reader_scopes_to_topup_attempts(tmp_path):
+    from sqlalchemy import create_engine, text
+
+    engine = create_engine(f"sqlite:///{tmp_path / 'topup-events.db'}")
+    now = datetime.now(UTC)
+    old = now - timedelta(hours=25)
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "CREATE TABLE payment_events ("
+                "id VARCHAR PRIMARY KEY, status VARCHAR NOT NULL, "
+                "received_at DATETIME NOT NULL, payload TEXT NOT NULL)"
+            )
+        )
+        conn.execute(
+            text(
+                "CREATE TABLE payment_attempts ("
+                "id VARCHAR PRIMARY KEY, provider_order_id VARCHAR, payable_kind VARCHAR NOT NULL)"
+            )
+        )
+        conn.execute(
+            text(
+                "INSERT INTO payment_attempts (id, provider_order_id, payable_kind) VALUES "
+                "('topup-attempt', 'REF-A1', 'topup'), "
+                "('invoice-attempt', 'INV-1', 'invoice')"
+            )
+        )
+        conn.execute(
+            text(
+                "INSERT INTO payment_events (id, status, received_at, payload) VALUES "
+                "(:id, :status, :received_at, :payload)"
+            ),
+            [
+                {
+                    "id": "failed-topup",
+                    "status": "failed",
+                    "received_at": now,
+                    "payload": '{"order_id": "REF-A1"}',
+                },
+                {
+                    "id": "failed-invoice",
+                    "status": "failed",
+                    "received_at": now,
+                    "payload": '{"order_id": "INV-1"}',
+                },
+                {
+                    "id": "processed-topup",
+                    "status": "processed",
+                    "received_at": now,
+                    "payload": '{"order_id": "REF-A1"}',
+                },
+                {
+                    "id": "old-failed-topup",
+                    "status": "failed",
+                    "received_at": old,
+                    "payload": '{"order_id": "REF-A1"}',
+                },
+            ],
+        )
+    with patch("app.metrics._ai_engine", return_value=engine):
+        assert _read_ai_topup_webhook_failed_total() == 1.0
+    engine.dispose()
+
+
+@pytest.mark.parametrize("reader", AI_TOPUP_METRIC_READERS)
+def test_topup_reader_returns_none_when_engine_raises(reader, caplog):
+    with (
+        caplog.at_level(logging.DEBUG, logger="app.metrics"),
+        patch("app.metrics._ai_engine", side_effect=RuntimeError("no db")),
+    ):
+        assert reader() is None
+    assert any("top-up" in record.message for record in caplog.records)
+
+
+class TestAiTopupOrdersTotalCollector:
+    def test_emits_one_sample_per_status_and_method(self):
+        rows = [("paid", "manual_transfer", 2.0), ("pending_payment", "midtrans", 1.0)]
+        with patch("app.metrics._read_ai_topup_orders_total", return_value=rows):
+            families = list(AiTopupOrdersTotalCollector().collect())
+
+        assert len(families) == 1
+        family = families[0]
+        assert family.name == "vuln_ai_topup_orders_total"
+        assert family.type == "gauge"
+        assert {(s.labels["status"], s.labels["method"], s.value) for s in family.samples} == {
+            ("paid", "manual_transfer", 2.0),
+            ("pending_payment", "midtrans", 1.0),
+        }
+
+    def test_emits_nothing_when_reader_returns_none(self):
+        with patch("app.metrics._read_ai_topup_orders_total", return_value=None):
+            assert list(AiTopupOrdersTotalCollector().collect()) == []
+
+
+class TestAiTopupPendingAgeCollector:
+    def test_emits_one_sample_per_method(self):
+        ages = {"manual_transfer": 600.0, "midtrans": 5.0}
+        with patch("app.metrics._read_ai_topup_pending_age_seconds", return_value=ages):
+            families = list(AiTopupPendingAgeCollector().collect())
+
+        assert len(families) == 1
+        family = families[0]
+        assert family.name == "vuln_ai_topup_pending_age_seconds"
+        assert family.type == "gauge"
+        assert {(s.labels["method"], s.value) for s in family.samples} == {
+            ("manual_transfer", 600.0),
+            ("midtrans", 5.0),
+        }
+
+    def test_emits_nothing_when_reader_returns_none(self):
+        with patch("app.metrics._read_ai_topup_pending_age_seconds", return_value=None):
+            assert list(AiTopupPendingAgeCollector().collect()) == []
+
+
+class TestAiTopupSingleValueCollectors:
+    @pytest.mark.parametrize(
+        ("collector_cls", "reader_name", "metric_name", "value"),
+        [
+            (
+                AiTopupPendingOverdueCollector,
+                "_read_ai_topup_pending_overdue_total",
+                "vuln_ai_topup_pending_overdue_total",
+                3.0,
+            ),
+            (
+                AiTopupAwaitingVerificationCollector,
+                "_read_ai_topup_awaiting_verification_total",
+                "vuln_ai_topup_awaiting_verification_total",
+                2.0,
+            ),
+            (
+                AiTopupRefundReviewCollector,
+                "_read_ai_topup_refund_review_total",
+                "vuln_ai_topup_refund_review_total",
+                1.0,
+            ),
+            (
+                AiTopupWebhookFailedCollector,
+                "_read_ai_topup_webhook_failed_total",
+                "vuln_ai_topup_webhook_failed_total",
+                4.0,
+            ),
+        ],
+    )
+    def test_emits_value(self, collector_cls, reader_name, metric_name, value):
+        with patch(f"app.metrics.{reader_name}", return_value=value):
+            family, sample = _only_sample(collector_cls())
+
+        assert family.name == metric_name
+        assert family.type == "gauge"
+        assert sample.value == value
+
+    @pytest.mark.parametrize(
+        ("collector_cls", "reader_name"),
+        [
+            (AiTopupPendingOverdueCollector, "_read_ai_topup_pending_overdue_total"),
+            (AiTopupAwaitingVerificationCollector, "_read_ai_topup_awaiting_verification_total"),
+            (AiTopupRefundReviewCollector, "_read_ai_topup_refund_review_total"),
+            (AiTopupWebhookFailedCollector, "_read_ai_topup_webhook_failed_total"),
+        ],
+    )
+    def test_emits_nothing_when_reader_returns_none(self, collector_cls, reader_name):
+        with patch(f"app.metrics.{reader_name}", return_value=None):
+            assert list(collector_cls().collect()) == []
+
+
+class TestAiTopupMetricRegistration:
+    def test_all_topup_collectors_are_registered(self, reset_registration_flag):
+        with patch.object(metrics_mod.REGISTRY, "register") as mock_reg:
+            register_custom_metrics()
+
+        classes = {type(call.args[0]).__name__ for call in mock_reg.call_args_list}
+        assert {
+            "AiTopupOrdersTotalCollector",
+            "AiTopupPendingAgeCollector",
+            "AiTopupPendingOverdueCollector",
+            "AiTopupAwaitingVerificationCollector",
+            "AiTopupRefundReviewCollector",
+            "AiTopupWebhookFailedCollector",
+        } <= classes
+
+    def test_all_topup_metric_names_are_exported(self):
+        assert {
+            metrics_mod._AI_TOPUP_ORDERS_TOTAL_NAME,
+            metrics_mod._AI_TOPUP_PENDING_AGE_NAME,
+            metrics_mod._AI_TOPUP_PENDING_OVERDUE_NAME,
+            metrics_mod._AI_TOPUP_AWAITING_VERIFICATION_NAME,
+            metrics_mod._AI_TOPUP_REFUND_REVIEW_NAME,
+            metrics_mod._AI_TOPUP_WEBHOOK_FAILED_NAME,
+        } == {
+            "vuln_ai_topup_orders_total",
+            "vuln_ai_topup_pending_age_seconds",
+            "vuln_ai_topup_pending_overdue_total",
+            "vuln_ai_topup_awaiting_verification_total",
+            "vuln_ai_topup_refund_review_total",
+            "vuln_ai_topup_webhook_failed_total",
         }
