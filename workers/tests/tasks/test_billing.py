@@ -11,6 +11,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from tasks.billing import (
+    DRAFT_EXPIRY_DAYS,
     MAX_REMINDER_ATTEMPTS,
     PAST_DUE_CANCEL_DAYS,
     PAST_DUE_GRACE_DAYS,
@@ -18,6 +19,7 @@ from tasks.billing import (
     _next_annual_start,
     _next_invoice_number,
     draft_annual_renewals,
+    expire_draft_invoices,
     finalize_periods,
     prune_payment_events,
     reconcile_gateway_attempts,
@@ -573,3 +575,65 @@ class TestNextInvoiceNumber:
         number = _next_invoice_number(session, datetime(2026, 2, 1, tzinfo=UTC))
 
         assert number == "SX-202602-0001"
+class TestExpireDraftInvoices:
+    def test_is_shared_task(self):
+        assert expire_draft_invoices.name == "billing.expire_draft_invoices"
+
+    def test_default_expiry_is_fourteen_days(self):
+        assert DRAFT_EXPIRY_DAYS == 14
+
+    def test_has_acks_late_and_single_retry(self):
+        assert expire_draft_invoices.acks_late is True
+        assert expire_draft_invoices.max_retries == 1
+
+    def test_voids_only_stale_drafts_and_releases_promos(self):
+        rows_result = MagicMock()
+        rows_result.all.return_value = [SimpleNamespace(id=uuid.uuid4())]
+        session = MagicMock()
+        session.execute.side_effect = [rows_result, MagicMock()]
+
+        with patch("tasks.billing.get_sync_session", return_value=session):
+            result = expire_draft_invoices()
+
+        assert result == {"expired_count": 1}
+        sql = str(session.execute.call_args_list[0][0][0])
+        params = session.execute.call_args_list[0][0][1]
+        assert "status = 'draft'" in sql
+        assert "created_at <= :cutoff" in sql
+        assert params["reason"] == "expired draft"
+        assert params["cutoff"] < params["now"]
+        promo_sql = str(session.execute.call_args_list[1][0][0])
+        assert "promo_redemptions" in promo_sql
+        session.commit.assert_called_once()
+        session.close.assert_called_once()
+
+    def test_skips_promo_update_when_nothing_expired(self):
+        rows_result = MagicMock()
+        rows_result.all.return_value = []
+        session = MagicMock()
+        session.execute.side_effect = [rows_result]
+
+        with patch("tasks.billing.get_sync_session", return_value=session):
+            result = expire_draft_invoices()
+
+        assert result == {"expired_count": 0}
+        assert session.execute.call_count == 1
+        session.commit.assert_called_once()
+
+    def test_rolls_back_on_error(self):
+        session = MagicMock()
+        session.execute.side_effect = RuntimeError("db down")
+
+        with patch("tasks.billing.get_sync_session", return_value=session), pytest.raises(RuntimeError):
+            expire_draft_invoices()
+
+        session.rollback.assert_called_once()
+        session.commit.assert_not_called()
+        session.close.assert_called_once()
+
+
+def test_beat_schedule_registers_daily_draft_expiry():
+    from celery_app import celery_app
+
+    entry = celery_app.conf.beat_schedule["billing-expire-draft-invoices-daily"]
+    assert entry["task"] == "billing.expire_draft_invoices"
