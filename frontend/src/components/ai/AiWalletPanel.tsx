@@ -21,7 +21,7 @@ export function AiWalletPanel({
   walletLoading,
   keysLoading,
   usageLoading,
-  isAdmin,
+  canTopUp,
 }: {
   readonly balanceIdr: number | undefined;
   readonly activeKeys: number;
@@ -30,7 +30,7 @@ export function AiWalletPanel({
   readonly walletLoading: boolean;
   readonly keysLoading: boolean;
   readonly usageLoading: boolean;
-  readonly isAdmin: boolean;
+  readonly canTopUp: boolean;
 }) {
   const { t } = useTranslation("ai");
   const [copied, setCopied] = useState(false);
@@ -102,9 +102,18 @@ export function AiWalletPanel({
               />
               <p className="text-sm text-muted-foreground">{t("walletEmpty")}</p>
             </div>
-            <Button type="button" size="sm" asChild className="shrink-0">
-              <Link to={isAdmin ? "/admin/ai" : "/guide"}>{t("walletTopUp")}</Link>
-            </Button>
+            {canTopUp ? (
+              <Button type="button" size="sm" asChild className="shrink-0">
+                <Link to="/ai/topup">{t("walletTopUp")}</Link>
+              </Button>
+            ) : (
+              <p
+                className="shrink-0 text-xs text-muted-foreground"
+                data-testid="ai-wallet-ask-owner"
+              >
+                {t("walletAskOwner")}
+              </p>
+            )}
           </div>
         ) : null}
 
