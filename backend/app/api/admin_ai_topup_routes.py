@@ -17,6 +17,7 @@ from app.database import get_db
 from app.models.organization import Organization
 from app.models.user import User
 from app.schemas.ai_topup import (
+    AiTopupAdminCreditIn,
     AiTopupAdminOrderList,
     AiTopupAdminOrderOut,
     AiTopupApproveIn,
@@ -87,6 +88,24 @@ async def _org_names(db: AsyncSession, org_ids: set[uuid.UUID]) -> dict[uuid.UUI
         return {}
     rows = (await db.execute(select(Organization.id, Organization.name).where(Organization.id.in_(org_ids)))).all()
     return {row.id: row.name for row in rows}
+
+
+@router.post("/orders/admin-credit", response_model=AiTopupAdminOrderOut)
+async def admin_credit_order(
+    body: AiTopupAdminCreditIn,
+    admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> AiTopupAdminOrderOut:
+    order = await service.admin_credit(
+        db,
+        org_id=body.organization_id,
+        admin=admin,
+        amount_idr=body.amount_idr,
+        note=body.note,
+        idempotency_key=body.idempotency_key,
+    )
+    org = await db.get(Organization, order.organization_id)
+    return AiTopupAdminOrderOut.from_order(order, organization_name=org.name if org is not None else None)
 
 
 @router.get("/orders", response_model=AiTopupAdminOrderList)

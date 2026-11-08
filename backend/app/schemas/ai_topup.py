@@ -207,3 +207,10 @@ class AiTopupRejectIn(BaseModel):
 class AiTopupResolveRefundIn(BaseModel):
     action: Literal["clawback", "write_off"]
     note: str | None = Field(default=None, max_length=255)
+
+
+class AiTopupAdminCreditIn(BaseModel):
+    organization_id: uuid.UUID
+    amount_idr: int = Field(..., ge=1)
+    note: str | None = Field(default=None, max_length=255)
+    idempotency_key: str | None = Field(default=None, max_length=80)
