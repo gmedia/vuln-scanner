@@ -21,7 +21,7 @@ vi.mock("@tanstack/react-query", () => ({
 
 vi.mock("@/api/admin", () => ({
   adminApi: {
-    getSkuPrices: vi.fn(),
+    getSkuPricing: vi.fn(),
     getHppReport: vi.fn(),
   },
 }));
@@ -74,7 +74,11 @@ let currentReport: HppReportResponse;
 beforeEach(() => {
   currentPrices = prices;
   currentReport = report;
-  vi.mocked(adminApi.getSkuPrices).mockResolvedValue(prices);
+  vi.mocked(adminApi.getSkuPricing).mockResolvedValue({
+    items: prices,
+    bundles: [],
+    annual: null,
+  });
   vi.mocked(adminApi.getHppReport).mockResolvedValue(report);
   vi.mocked(useQuery).mockImplementation((options) => {
     if (options.queryKey[0] === "sku-tiers") return { data: tierFixtures } as never;
@@ -82,7 +86,11 @@ beforeEach(() => {
       data:
         options.queryKey[0] === "admin-hpp-report"
           ? currentReport
-          : currentPrices,
+          : {
+              items: currentPrices,
+              bundles: [],
+              annual: null,
+            },
     } as never;
   });
 });
@@ -251,5 +259,23 @@ describe("AdminHppSimulator", () => {
     expect(screen.getByTestId("hpp-sim-price-warning").textContent ?? "").not.toMatch(
       /\d+%/,
     );
+  });
+
+  it("labels the calculation drift from the backend HPP report", () => {
+    render(<AdminHppSimulator />);
+    const note = screen.getByTestId("hpp-sim-drift-note");
+    expect(note).toHaveTextContent("statushost");
+    expect(note).toHaveTextContent("overhead");
+  });
+
+  it("hides the page header when embedded in a tab", () => {
+    render(<AdminHppSimulator embedded />);
+    expect(screen.queryByText("HPP & Margin Simulator")).toBeNull();
+    expect(screen.getByTestId("hpp-sim-table")).toBeInTheDocument();
+  });
+
+  it("shows the page header when rendered standalone", () => {
+    render(<AdminHppSimulator />);
+    expect(screen.getByText("HPP & Margin Simulator")).toBeInTheDocument();
   });
 });

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import userEvent from "@testing-library/user-event";
 import { adminApi, getHppHistory } from "@/api/admin";
 import AdminHpp from "@/pages/admin/AdminHpp";
@@ -259,7 +260,7 @@ describe("AdminHpp", () => {
       return { data: report, isLoading: false } as never;
     });
     const user = userEvent.setup();
-    render(<AdminHpp />);
+    render(<MemoryRouter><AdminHpp /></MemoryRouter>);
     expect(screen.getByTestId("hpp-guide")).toBeInTheDocument();
     expect(
       screen.queryByText(
@@ -317,7 +318,7 @@ describe("AdminHpp", () => {
         }) as never,
     );
 
-    render(<AdminHpp />);
+    render(<MemoryRouter><AdminHpp /></MemoryRouter>);
     await user.click(screen.getByLabelText("Delete line"));
     expect(await screen.findByRole("alertdialog")).toBeInTheDocument();
     expect(adminApi.deleteHppCost).not.toHaveBeenCalled();
@@ -349,7 +350,7 @@ describe("AdminHpp", () => {
       }
       return { data: report, isLoading: false } as never;
     });
-    render(<AdminHpp />);
+    render(<MemoryRouter><AdminHpp /></MemoryRouter>);
     expect(
       screen.getByText("No HPP rates yet. Run migrations to seed keys."),
     ).toBeInTheDocument();
@@ -376,7 +377,7 @@ describe("AdminHpp", () => {
       }
       return { data: report, isLoading: false } as never;
     });
-    render(<AdminHpp />);
+    render(<MemoryRouter><AdminHpp /></MemoryRouter>);
     expect(screen.getByText("HPP")).toBeInTheDocument();
     expect(
       screen.getByText(
@@ -448,7 +449,7 @@ describe("AdminHpp", () => {
       }
       return { data: report, isLoading: false } as never;
     });
-    render(<AdminHpp />);
+    render(<MemoryRouter><AdminHpp /></MemoryRouter>);
     const scanCard = screen.getByTestId("hpp-line-scan");
     const hostCard = screen.getByTestId("hpp-line-host");
     const uptimeCard = screen.getByTestId("hpp-line-uptime");
@@ -495,7 +496,7 @@ describe("AdminHpp", () => {
       }
       return { data: zeroCogsReport, isLoading: false } as never;
     });
-    render(<AdminHpp />);
+    render(<MemoryRouter><AdminHpp /></MemoryRouter>);
     expect(screen.queryByText(/\(100%\)/)).toBeNull();
     expect(screen.getByText(/cost not filled in/)).toBeInTheDocument();
   });
@@ -528,7 +529,7 @@ describe("AdminHpp", () => {
       }
       return { data: unpricedReport, isLoading: false } as never;
     });
-    render(<AdminHpp />);
+    render(<MemoryRouter><AdminHpp /></MemoryRouter>);
     expect(
       screen.getByText(
         "Enterprise orgs are quote-only (no public list price) and excluded from this estimasi: 2 org.",
@@ -560,7 +561,7 @@ describe("AdminHpp", () => {
         isLoading: false,
       } as never;
     });
-    render(<AdminHpp />);
+    render(<MemoryRouter><AdminHpp /></MemoryRouter>);
     expect(
       screen.getByText(
         "Some SKU list prices fall back to built-in seed constants (no catalog row): scan:basic.",
@@ -589,7 +590,7 @@ describe("AdminHpp", () => {
       }
       return { data: report, isLoading: false } as never;
     });
-    render(<AdminHpp />);
+    render(<MemoryRouter><AdminHpp /></MemoryRouter>);
     expect(
       screen.getByTestId("hpp-rates-card").querySelector(".bg-primary"),
     ).toBeTruthy();
@@ -628,7 +629,7 @@ describe("AdminHpp", () => {
       }
       return { data: report, isLoading: false } as never;
     });
-    render(<AdminHpp />);
+    render(<MemoryRouter><AdminHpp /></MemoryRouter>);
     expect(
       screen.getByTestId("hpp-line-scan").querySelector(".bg-primary"),
     ).toBeTruthy();
@@ -672,7 +673,7 @@ describe("AdminHpp", () => {
       }
       return { data: lossReport, isLoading: false } as never;
     });
-    render(<AdminHpp />);
+    render(<MemoryRouter><AdminHpp /></MemoryRouter>);
     expect(
       screen.getByTestId("hpp-line-scan").querySelector(".bg-destructive"),
     ).toBeTruthy();
@@ -702,7 +703,7 @@ describe("AdminHpp", () => {
         isLoading: false,
       } as never;
     });
-    render(<AdminHpp />);
+    render(<MemoryRouter><AdminHpp /></MemoryRouter>);
     expect(
       screen.getByTestId("hpp-report-card").querySelector(".bg-amber-600"),
     ).toBeTruthy();
@@ -767,7 +768,7 @@ describe("AdminHpp HPP history", () => {
   it("opens the rates history with scope=rate and renders an entry", async () => {
     mockQueries({ items: [historyItem], total: 1 });
     const user = userEvent.setup();
-    render(<AdminHpp />);
+    render(<MemoryRouter><AdminHpp /></MemoryRouter>);
 
     await user.click(screen.getByTestId("hpp-rates-history"));
 
@@ -787,7 +788,7 @@ describe("AdminHpp HPP history", () => {
   it("opens the overhead history with scope=overhead", async () => {
     mockQueries({ items: [], total: 0 });
     const user = userEvent.setup();
-    render(<AdminHpp />);
+    render(<MemoryRouter><AdminHpp /></MemoryRouter>);
 
     await user.click(screen.getByTestId("hpp-overhead-history"));
 
@@ -803,7 +804,7 @@ describe("AdminHpp HPP history", () => {
   it("renders the empty state when there is no history", async () => {
     mockQueries({ items: [], total: 0 });
     const user = userEvent.setup();
-    render(<AdminHpp />);
+    render(<MemoryRouter><AdminHpp /></MemoryRouter>);
 
     await user.click(screen.getByTestId("hpp-rates-history"));
 
