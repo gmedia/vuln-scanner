@@ -167,7 +167,11 @@ function TopupRowActions({
               ? "h-9 w-9 p-0"
               : "h-11 w-11 min-h-11 min-w-11 p-0"
           }
-          data-testid={`topup-actions-${item.id}`}
+          data-testid={
+            desktop
+              ? `topup-actions-${item.id}`
+              : `topup-actions-mobile-${item.id}`
+          }
           aria-label={t("actionsMenu")}
         >
           <MoreHorizontal className="h-4 w-4" />
