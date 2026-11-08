@@ -320,4 +320,75 @@ describe("AdminSubscriptions", () => {
       await screen.findByTestId("admin-subscriptions-empty"),
     ).toBeInTheDocument();
   });
+
+  it("requests page 2 and renders the matching slice count", async () => {
+    const user = userEvent.setup();
+    vi.mocked(listAdminSubscriptions).mockImplementation(async (params) => {
+      const page = params?.page ?? 1;
+      const items = Array.from({ length: 50 }, (_, i) => ({
+        ...subscription,
+        id: `sub-${page}-${i}`,
+        organization_id: `org-${page}-${i}`,
+        organization_name: `Org ${page}-${i}`,
+      }));
+      return { items, total: 60 };
+    });
+
+    renderPage();
+    await screen.findByTestId("admin-subscriptions-table");
+    expect(screen.getByTestId("subscriptions-range")).toHaveTextContent(
+      "Showing 1–50 of 60",
+    );
+
+    await user.click(screen.getByTestId("subscriptions-next"));
+
+    await waitFor(() =>
+      expect(listAdminSubscriptions).toHaveBeenLastCalledWith(
+        expect.objectContaining({ page: 2, page_size: 50 }),
+      ),
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("subscriptions-range")).toHaveTextContent(
+        "Showing 51–60 of 60",
+      ),
+    );
+  });
+
+  it("resets to page 1 when the status filter changes", async () => {
+    const user = userEvent.setup();
+    vi.mocked(listAdminSubscriptions).mockResolvedValue({
+      items: [subscription],
+      total: 60,
+    });
+
+    renderPage();
+    await screen.findByTestId("admin-subscriptions-table");
+    await user.click(screen.getByTestId("subscriptions-next"));
+    await waitFor(() =>
+      expect(listAdminSubscriptions).toHaveBeenLastCalledWith(
+        expect.objectContaining({ page: 2 }),
+      ),
+    );
+
+    const statusSelect = document
+      .getElementById("admin-subscription-status")
+      ?.closest("[data-testid='select-root']")
+      ?.querySelector("select");
+    expect(statusSelect).not.toBeNull();
+    await user.selectOptions(statusSelect as HTMLSelectElement, "active");
+
+    await waitFor(() =>
+      expect(listAdminSubscriptions).toHaveBeenLastCalledWith(
+        expect.objectContaining({ page: 1, status: "active" }),
+      ),
+    );
+  });
+
+  it("offers the derived awaiting payment filter", async () => {
+    renderPage();
+    await screen.findByTestId("admin-subscriptions-table");
+    expect(
+      screen.getByRole("option", { name: "Awaiting payment" }),
+    ).toBeInTheDocument();
+  });
 });

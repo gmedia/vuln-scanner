@@ -4,7 +4,8 @@ export type AdminBillingStatus =
   | "incomplete"
   | "active"
   | "past_due"
-  | "canceled";
+  | "canceled"
+  | "awaiting_payment";
 
 export type AdminBillingCycle = "monthly" | "annual";
 
@@ -58,6 +59,7 @@ export interface AdminSubscriptionListResponse {
 export async function listAdminSubscriptions(params?: {
   status?: string;
   page?: number;
+  page_size?: number;
 }): Promise<AdminSubscriptionListResponse> {
   const { data } = await api.get<AdminSubscriptionListResponse>(
     "/api/admin/subscriptions",

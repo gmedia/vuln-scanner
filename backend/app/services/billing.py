@@ -7,7 +7,7 @@ from typing import Any, cast
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import CursorResult, delete, func, select
+from sqlalchemy import CursorResult, delete, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,6 +16,7 @@ from app.models.ai_gateway import AiTopupOrder
 from app.models.billing import PaymentAttempt, PaymentEvent, Subscription
 from app.models.invoice import OrgInvoice
 from app.models.organization import Organization
+from app.models.subscription import SubscriptionRequest
 from app.models.user import User
 from app.schemas.billing import (
     PaymentAttemptItem,
@@ -124,6 +125,31 @@ def _cycle_for(start: datetime | None, end: datetime | None) -> str:
 def _item(sub: Subscription, *, organization_name: str | None = None) -> SubscriptionItem:
     return SubscriptionItem.model_validate(sub).model_copy(
         update={"organization_name": organization_name}
+    )
+
+
+def _awaiting_payment_item(
+    org: Organization, request: SubscriptionRequest | None
+) -> SubscriptionItem:
+    """Synthetic row for an approved org that has no ``subscriptions`` row yet."""
+    created_at = request.created_at if request is not None else org.created_at
+    updated_at = request.updated_at if request is not None else org.created_at
+    return SubscriptionItem(
+        id=request.id if request is not None else org.id,
+        organization_id=org.id,
+        sku=request.target_sku if request is not None else org.sku,
+        status="awaiting_payment",
+        cycle=request.cycle if request is not None else "monthly",
+        current_period_start=None,
+        current_period_end=None,
+        cancel_at_period_end=False,
+        canceled_at=None,
+        ended_at=None,
+        provider="none",
+        provider_subscription_id=None,
+        created_at=created_at,
+        updated_at=updated_at,
+        organization_name=org.name,
     )
 
 
@@ -1024,19 +1050,79 @@ class BillingService:
         page: int,
         page_size: int,
     ) -> tuple[list[SubscriptionItem], int]:
-        query = (
-            select(Subscription, Organization.name)
-            .join(Organization, Organization.id == Subscription.organization_id)
-            .order_by(Subscription.updated_at.desc())
+        """List subscriptions for the admin table.
+
+        ``status_filter`` accepts the persisted values ``incomplete|active|
+        past_due|canceled`` plus the derived ``awaiting_payment``. An
+        organization with an approved subscription request but no
+        ``subscriptions`` row (approved before the row was created, or whose
+        transaction never completed) is synthesized as ``awaiting_payment`` so
+        the admin list never hides it. ``total`` counts exactly those rows.
+        """
+        approved_request_exists = (
+            select(SubscriptionRequest.id)
+            .where(
+                SubscriptionRequest.organization_id == Organization.id,
+                SubscriptionRequest.status == "approved",
+            )
+            .exists()
         )
-        count_query = select(func.count()).select_from(Subscription)
-        if status_filter:
-            query = query.where(Subscription.status == status_filter)
-            count_query = count_query.where(Subscription.status == status_filter)
+        latest_activity = func.coalesce(
+            Subscription.updated_at,
+            select(func.max(SubscriptionRequest.updated_at))
+            .where(
+                SubscriptionRequest.organization_id == Organization.id,
+                SubscriptionRequest.status == "approved",
+            )
+            .scalar_subquery(),
+            Organization.created_at,
+        )
+        conditions = [or_(Subscription.id.is_not(None), approved_request_exists)]
+        if status_filter == "awaiting_payment":
+            conditions = [Subscription.id.is_(None), approved_request_exists]
+        elif status_filter:
+            conditions = [Subscription.status == status_filter]
+
+        count_query = (
+            select(func.count())
+            .select_from(Organization)
+            .outerjoin(Subscription, Subscription.organization_id == Organization.id)
+            .where(*conditions)
+        )
         total = int((await self.db.execute(count_query)).scalar() or 0)
-        query = query.offset((page - 1) * page_size).limit(page_size)
+        query = (
+            select(Organization, Subscription)
+            .outerjoin(Subscription, Subscription.organization_id == Organization.id)
+            .where(*conditions)
+            .order_by(latest_activity.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
         rows = (await self.db.execute(query)).all()
-        return [_item(sub, organization_name=str(name)) for sub, name in rows], total
+
+        awaiting_ids = [org.id for org, sub in rows if sub is None]
+        approved_by_org: dict[UUID, SubscriptionRequest] = {}
+        if awaiting_ids:
+            requests = (
+                await self.db.execute(
+                    select(SubscriptionRequest)
+                    .where(
+                        SubscriptionRequest.organization_id.in_(awaiting_ids),
+                        SubscriptionRequest.status == "approved",
+                    )
+                    .order_by(SubscriptionRequest.updated_at.desc())
+                )
+            ).scalars().all()
+            for request in requests:
+                approved_by_org.setdefault(request.organization_id, request)
+
+        items: list[SubscriptionItem] = []
+        for org, sub in rows:
+            if sub is not None:
+                items.append(_item(sub, organization_name=org.name))
+            else:
+                items.append(_awaiting_payment_item(org, approved_by_org.get(org.id)))
+        return items, total
 
     async def detail(self, org_id: UUID) -> SubscriptionDetail:
         sub = await self.get_subscription(org_id)

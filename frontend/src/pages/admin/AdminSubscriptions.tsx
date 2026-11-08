@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, CreditCard, History, Loader2, Receipt } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -37,6 +37,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/Pagination";
 import { Textarea } from "@/components/ui/Textarea";
 import {
   AlertDialog,
@@ -68,7 +75,10 @@ const STATUSES: AdminBillingStatus[] = [
   "past_due",
   "incomplete",
   "canceled",
+  "awaiting_payment",
 ];
+
+const PAGE_SIZE = 50;
 
 
 function formatIdr(value: number): string {
@@ -93,7 +103,61 @@ function statusVariant(
   if (status === "past_due") return "pending";
   if (status === "canceled") return "failed";
   if (status === "incomplete") return "info";
+  if (status === "awaiting_payment") return "pending";
   return "default";
+}
+
+function Pager({
+  page,
+  total,
+  onPage,
+  testId,
+}: {
+  page: number;
+  total: number;
+  onPage: (page: number) => void;
+  testId: string;
+}) {
+  const { t } = useTranslation("admin");
+  if (total === 0) return null;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const from = Math.min((page - 1) * PAGE_SIZE + 1, total);
+  const to = Math.min(page * PAGE_SIZE, total);
+  return (
+    <div className="flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
+      <p
+        className="font-mono text-xs tabular-nums text-muted-foreground"
+        data-testid={`${testId}-range`}
+      >
+        {t("showingRange", { from, to, total })}
+      </p>
+      {totalPages > 1 ? (
+        <Pagination className="mx-0 w-auto justify-end">
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                data-testid={`${testId}-prev`}
+                onClick={() => onPage(Math.max(1, page - 1))}
+                disabled={page <= 1}
+              />
+            </PaginationItem>
+            <PaginationItem>
+              <span className="px-2 font-mono text-xs tabular-nums text-muted-foreground">
+                {t("pageOf", { page, total: totalPages })}
+              </span>
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationNext
+                data-testid={`${testId}-next`}
+                onClick={() => onPage(Math.min(totalPages, page + 1))}
+                disabled={page >= totalPages}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      ) : null}
+    </div>
+  );
 }
 
 function AdminSubscriptions() {
@@ -103,6 +167,7 @@ function AdminSubscriptions() {
   const qc = useQueryClient();
 
   const [status, setStatus] = useState<string>("all");
+  const [page, setPage] = useState(1);
   const [paymentTarget, setPaymentTarget] = useState<AdminSubscriptionItem | null>(null);
   const [invoiceId, setInvoiceId] = useState("");
   const [method, setMethod] = useState("bank_transfer");
@@ -113,9 +178,14 @@ function AdminSubscriptions() {
   const [historyTarget, setHistoryTarget] = useState<AdminSubscriptionItem | null>(null);
 
   const query = useQuery({
-    queryKey: ["admin-subscriptions", status],
+    queryKey: ["admin-subscriptions", status, page],
     queryFn: () =>
-      listAdminSubscriptions({ status: status === "all" ? undefined : status }),
+      listAdminSubscriptions({
+        status: status === "all" ? undefined : status,
+        page,
+        page_size: PAGE_SIZE,
+      }),
+    placeholderData: keepPreviousData,
   });
 
   const invoicesQuery = useQuery({
@@ -231,7 +301,13 @@ function AdminSubscriptions() {
         <AdminShellBody>
           <div className="flex min-w-0 flex-col gap-1.5 sm:max-w-56">
             <Label htmlFor="admin-subscription-status">{t("subscriptionsFilter")}</Label>
-            <Select value={status} onValueChange={setStatus}>
+            <Select
+              value={status}
+              onValueChange={(value) => {
+                setStatus(value);
+                setPage(1);
+              }}
+            >
               <SelectTrigger id="admin-subscription-status" className="h-10 min-h-10">
                 <SelectValue />
               </SelectTrigger>
@@ -332,47 +408,53 @@ function AdminSubscriptions() {
                           ) : null}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setHistoryTarget(item)}
-                              data-testid={`admin-subscription-history-${item.id}`}
-                            >
-                              <History className="mr-1 h-3.5 w-3.5" aria-hidden />
-                              {t("subscriptionView")}
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              disabled={busy}
-                              onClick={() => {
-                                setPaymentTarget(item);
-                                setInvoiceId("");
-                                setReference("");
-                                setMethod("bank_transfer");
-                              }}
-                              data-testid={`admin-subscription-pay-${item.id}`}
-                            >
-                              <Receipt className="mr-1 h-3.5 w-3.5" aria-hidden />
-                              {t("subscriptionRecordPayment")}
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              disabled={busy || item.status === "canceled"}
-                              onClick={() => {
-                                setCancelTarget(item);
-                                setCancelMode("period_end");
-                                setCancelNote("");
-                              }}
-                              data-testid={`admin-subscription-cancel-${item.id}`}
-                            >
-                              {t("subscriptionCancelAction")}
-                            </Button>
-                          </div>
+                          {item.status === "awaiting_payment" ? (
+                            <span className="text-xs text-muted-foreground">
+                              {t("subscriptionAwaitingPaymentHint")}
+                            </span>
+                          ) : (
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setHistoryTarget(item)}
+                                data-testid={`admin-subscription-history-${item.id}`}
+                              >
+                                <History className="mr-1 h-3.5 w-3.5" aria-hidden />
+                                {t("subscriptionView")}
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                disabled={busy}
+                                onClick={() => {
+                                  setPaymentTarget(item);
+                                  setInvoiceId("");
+                                  setReference("");
+                                  setMethod("bank_transfer");
+                                }}
+                                data-testid={`admin-subscription-pay-${item.id}`}
+                              >
+                                <Receipt className="mr-1 h-3.5 w-3.5" aria-hidden />
+                                {t("subscriptionRecordPayment")}
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                disabled={busy || item.status === "canceled"}
+                                onClick={() => {
+                                  setCancelTarget(item);
+                                  setCancelMode("period_end");
+                                  setCancelNote("");
+                                }}
+                                data-testid={`admin-subscription-cancel-${item.id}`}
+                              >
+                                {t("subscriptionCancelAction")}
+                              </Button>
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -406,50 +488,62 @@ function AdminSubscriptions() {
                       {formatDate(item.current_period_start, dateLocale)} –{" "}
                       {formatDate(item.current_period_end, dateLocale)}
                     </p>
-                    <div className="mt-3 grid grid-cols-2 gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="min-h-11"
-                        disabled={busy}
-                        onClick={() => {
-                          setPaymentTarget(item);
-                          setInvoiceId("");
-                          setReference("");
-                          setMethod("bank_transfer");
-                        }}
-                      >
-                        {t("subscriptionRecordPayment")}
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="min-h-11"
-                        disabled={busy || item.status === "canceled"}
-                        onClick={() => {
-                          setCancelTarget(item);
-                          setCancelMode("period_end");
-                          setCancelNote("");
-                        }}
-                      >
-                        {t("subscriptionCancelAction")}
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="col-span-2 min-h-11"
-                        onClick={() => setHistoryTarget(item)}
-                      >
-                        {t("subscriptionView")}
-                      </Button>
-                    </div>
+                    {item.status === "awaiting_payment" ? (
+                      <p className="mt-3 text-xs text-muted-foreground">
+                        {t("subscriptionAwaitingPaymentHint")}
+                      </p>
+                    ) : (
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="min-h-11"
+                          disabled={busy}
+                          onClick={() => {
+                            setPaymentTarget(item);
+                            setInvoiceId("");
+                            setReference("");
+                            setMethod("bank_transfer");
+                          }}
+                        >
+                          {t("subscriptionRecordPayment")}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="min-h-11"
+                          disabled={busy || item.status === "canceled"}
+                          onClick={() => {
+                            setCancelTarget(item);
+                            setCancelMode("period_end");
+                            setCancelNote("");
+                          }}
+                        >
+                          {t("subscriptionCancelAction")}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="col-span-2 min-h-11"
+                          onClick={() => setHistoryTarget(item)}
+                        >
+                          {t("subscriptionView")}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             </>
           )}
+          <Pager
+            page={page}
+            total={query.data?.total ?? 0}
+            onPage={setPage}
+            testId="subscriptions"
+          />
         </AdminShellBody>
       </AdminShell>
 

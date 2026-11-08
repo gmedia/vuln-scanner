@@ -15,6 +15,7 @@ from app.main import app
 from app.models.billing import PaymentAttempt, PaymentEvent, Subscription
 from app.models.invoice import OrgInvoice
 from app.models.organization import Organization, OrganizationMembership
+from app.models.subscription import SubscriptionRequest
 from app.models.user import User
 from app.services.auth import create_access_token, hash_password
 from app.services.billing import BillingService, BillingTransitionError
@@ -558,6 +559,76 @@ async def test_admin_list_subscriptions_and_role_gate(db_session, ctx):
             assert forbidden.status_code == 403
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_admin_list_includes_approved_request_without_subscription(db_session, ctx):
+    """An approved request with no Subscription row must not be invisible."""
+    service = BillingService(db_session)
+    request = SubscriptionRequest(
+        organization_id=ctx["other_org"].id,
+        direction="upgrade",
+        current_sku="basic",
+        target_sku="pro",
+        cycle="monthly",
+        status="approved",
+    )
+    db_session.add(request)
+    await db_session.commit()
+
+    items, total = await service.list_admin(
+        status_filter=None, page=1, page_size=50
+    )
+    assert total == 1
+    assert len(items) == 1
+    assert items[0].organization_id == ctx["other_org"].id
+    assert items[0].organization_name == "Other Org"
+    assert items[0].status == "awaiting_payment"
+    assert items[0].sku == "pro"
+    assert items[0].cycle == "monthly"
+
+    awaiting, awaiting_total = await service.list_admin(
+        status_filter="awaiting_payment", page=1, page_size=50
+    )
+    assert awaiting_total == 1
+    assert [item.organization_id for item in awaiting] == [ctx["other_org"].id]
+
+    active, active_total = await service.list_admin(
+        status_filter="active", page=1, page_size=50
+    )
+    assert active_total == 0
+    assert active == []
+
+
+@pytest.mark.asyncio
+async def test_admin_list_paginates_awaiting_rows_with_consistent_total(db_session, ctx):
+    service = BillingService(db_session)
+    for organization in (ctx["org"], ctx["other_org"]):
+        db_session.add(
+            SubscriptionRequest(
+                organization_id=organization.id,
+                direction="upgrade",
+                current_sku="basic",
+                target_sku="pro",
+                cycle="monthly",
+                status="approved",
+            )
+        )
+    await db_session.commit()
+
+    first_page, total = await service.list_admin(
+        status_filter="awaiting_payment", page=1, page_size=1
+    )
+    assert total == 2
+    assert len(first_page) == 1
+    assert first_page[0].status == "awaiting_payment"
+
+    second_page, second_total = await service.list_admin(
+        status_filter="awaiting_payment", page=2, page_size=1
+    )
+    assert second_total == 2
+    assert len(second_page) == 1
+    assert second_page[0].organization_id != first_page[0].organization_id
 
 
 @pytest.mark.asyncio

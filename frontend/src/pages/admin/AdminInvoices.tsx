@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, Download, Loader2, MoreHorizontal, Printer, Receipt, Info, Tag, Plus, FileText } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { buttonVariants } from "@/components/ui/buttonVariants";
@@ -28,6 +28,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/Pagination";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,6 +68,7 @@ import { EmptyState } from "@/components/patterns/EmptyState";
 import {
   adminApi,
   downloadAdminInvoicePdf,
+  type AdminOrgItem,
   type InvoiceItem,
   type InvoiceProduct,
   type PromoValidateResult,
@@ -86,12 +94,72 @@ function isInvoiceProduct(value: string): value is InvoiceProduct {
   return value === "scan" || value === "host" || value === "uptime" || value === "guard";
 }
 
+const PAGE_SIZE = 20;
+const ORG_SEARCH_DEBOUNCE_MS = 300;
+
+function Pager({
+  page,
+  total,
+  onPage,
+  testId,
+}: {
+  page: number;
+  total: number;
+  onPage: (page: number) => void;
+  testId: string;
+}) {
+  const { t } = useTranslation("admin");
+  if (total === 0) return null;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const from = Math.min((page - 1) * PAGE_SIZE + 1, total);
+  const to = Math.min(page * PAGE_SIZE, total);
+  return (
+    <div className="flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
+      <p
+        className="font-mono text-xs tabular-nums text-muted-foreground"
+        data-testid={`${testId}-range`}
+      >
+        {t("showingRange", { from, to, total })}
+      </p>
+      {totalPages > 1 ? (
+        <Pagination className="mx-0 w-auto justify-end">
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                data-testid={`${testId}-prev`}
+                onClick={() => onPage(Math.max(1, page - 1))}
+                disabled={page <= 1}
+              />
+            </PaginationItem>
+            <PaginationItem>
+              <span className="px-2 font-mono text-xs tabular-nums text-muted-foreground">
+                {t("pageOf", { page, total: totalPages })}
+              </span>
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationNext
+                data-testid={`${testId}-next`}
+                onClick={() => onPage(Math.min(totalPages, page + 1))}
+                disabled={page >= totalPages}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      ) : null}
+    </div>
+  );
+}
+
 
 function AdminInvoices() {
   const { t } = useTranslation("admin");
   const { label: tierLabel } = useTierMap();
   const qc = useQueryClient();
   const [status, setStatus] = useState("all");
+  const [page, setPage] = useState(1);
+  const [orgSearch, setOrgSearch] = useState("");
+  const [debouncedOrgSearch, setDebouncedOrgSearch] = useState("");
+  const [selectedOrg, setSelectedOrg] = useState<AdminOrgItem | null>(null);
   const [voidTarget, setVoidTarget] = useState<InvoiceItem | null>(null);
   const [orgId, setOrgId] = useState("");
   const [product, setProduct] = useState<InvoiceProduct>("scan");
@@ -111,9 +179,20 @@ function AdminInvoices() {
     queryFn: adminApi.getSkuCatalog,
   });
   const orgsQ = useQuery({
-    queryKey: ["admin-orgs"],
-    queryFn: () => adminApi.listAdminOrgs(),
+    queryKey: ["admin-orgs", debouncedOrgSearch],
+    queryFn: () =>
+      adminApi.listAdminOrgs({
+        q: debouncedOrgSearch || undefined,
+        page_size: 50,
+      }),
   });
+  useEffect(() => {
+    const handle = setTimeout(
+      () => setDebouncedOrgSearch(orgSearch.trim()),
+      ORG_SEARCH_DEBOUNCE_MS,
+    );
+    return () => clearTimeout(handle);
+  }, [orgSearch]);
   const pendingRequestsQuery = useQuery({
     queryKey: ["admin-subscription-requests", "pending", 100],
     queryFn: () =>
@@ -125,15 +204,22 @@ function AdminInvoices() {
     retry: false,
   });
   const invoicesQ = useQuery({
-    queryKey: ["admin-invoices", status],
+    queryKey: ["admin-invoices", status, page],
     queryFn: () =>
       adminApi.listAdminInvoices({
         status: status === "all" ? undefined : status,
+        page,
+        page_size: PAGE_SIZE,
       }),
+    placeholderData: keepPreviousData,
   });
 
   const catalog = catalogQ.data ?? [];
   const orgs = orgsQ.data?.items ?? [];
+  const orgOptions =
+    selectedOrg && !orgs.some((org) => org.id === selectedOrg.id)
+      ? [selectedOrg, ...orgs]
+      : orgs;
   const invoices = invoicesQ.data?.items ?? [];
   const invoicableProducts = catalog
     .filter((row) => row.invoicable && row.active !== false)
@@ -450,6 +536,20 @@ function AdminInvoices() {
       <AdminShell tone="primary">
         <AdminShellHead icon={Plus} title={t("invoiceCreateCard")} />
         <AdminShellBody className="space-y-3">
+          <div className="grid gap-3 sm:max-w-md">
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="inv-org-search">{t("invoiceOrgSearchLabel")}</Label>
+              <Input
+                id="inv-org-search"
+                type="search"
+                className="h-10 min-h-10"
+                placeholder={t("invoiceOrgSearchPlaceholder")}
+                value={orgSearch}
+                onChange={(event) => setOrgSearch(event.target.value)}
+                data-testid="invoice-org-search"
+              />
+            </div>
+          </div>
           <div className="grid gap-3 sm:grid-cols-5">
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="inv-org">{t("colOrg")}</Label>
@@ -457,6 +557,9 @@ function AdminInvoices() {
                 value={orgId}
                 onValueChange={(value) => {
                   setOrgId(value);
+                  setSelectedOrg(
+                    orgOptions.find((org) => org.id === value) ?? null,
+                  );
                   clearPromo();
                   clearRequest();
                 }}
@@ -465,7 +568,7 @@ function AdminInvoices() {
                   <SelectValue placeholder={t("pickOrg")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {orgs.map((o) => (
+                  {orgOptions.map((o) => (
                     <SelectItem key={o.id} value={o.id}>
                       {o.name} ({o.sku_label ?? tierLabel(o.sku)})
                     </SelectItem>
@@ -703,7 +806,13 @@ function AdminInvoices() {
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="inv-status">{t("colStatus")}</Label>
-              <Select value={status} onValueChange={setStatus}>
+              <Select
+                value={status}
+                onValueChange={(value) => {
+                  setStatus(value);
+                  setPage(1);
+                }}
+              >
                 <SelectTrigger id="inv-status" className="h-10 min-h-10">
                   <SelectValue />
                 </SelectTrigger>
@@ -987,6 +1096,12 @@ function AdminInvoices() {
               </AlertDialog>
             </>
           )}
+          <Pager
+            page={page}
+            total={invoicesQ.data?.total ?? 0}
+            onPage={setPage}
+            testId="invoices"
+          />
         </AdminShellBody>
       </AdminShell>
       <InvoicePrintSheet
