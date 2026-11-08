@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
-import { BookOpen, Bot, Boxes, MessageSquare, ScrollText, Server, ShieldCheck, Wallet, TriangleAlert } from "lucide-react";
+import { BookOpen, Bot, Boxes, MessageSquare, Package, ScrollText, Server, ShieldCheck, Wallet, TriangleAlert } from "lucide-react";
 import {
   Pagination,
   PaginationContent,
@@ -236,12 +236,20 @@ function Head() {
       title={t("aiTitle")}
       description={t("aiSubtitle")}
       actions={
-        <Button asChild variant="outline" className="min-h-11">
-          <Link to="/admin/ai/topups">
-            <ShieldCheck className="mr-1.5 h-4 w-4" aria-hidden />
-            {t("aiTopupsQueueCta")}
-          </Link>
-        </Button>
+        <>
+          <Button asChild variant="outline" className="min-h-11">
+            <Link to="/admin/ai/packs" data-testid="admin-ai-packs-cta">
+              <Package className="mr-1.5 h-4 w-4" aria-hidden />
+              {t("aiTopupPacksCta")}
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="min-h-11">
+            <Link to="/admin/ai/topups">
+              <ShieldCheck className="mr-1.5 h-4 w-4" aria-hidden />
+              {t("aiTopupsQueueCta")}
+            </Link>
+          </Button>
+        </>
       }
     />
   );
