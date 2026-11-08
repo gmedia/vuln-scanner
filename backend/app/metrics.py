@@ -35,6 +35,18 @@ _PAYMENT_AMOUNT_MISMATCH_NAME = "vuln_payment_amount_mismatches_24h"
 _PAYMENT_DUPLICATE_SETTLEMENT_NAME = "vuln_payment_duplicate_settlements_24h"
 _PAYMENT_REFUNDS_NAME = "vuln_payment_refunds_24h"
 
+_AI_TOPUP_ORDERS_TOTAL_NAME = "vuln_ai_topup_orders_total"
+_AI_TOPUP_PENDING_AGE_NAME = "vuln_ai_topup_pending_age_seconds"
+_AI_TOPUP_PENDING_OVERDUE_NAME = "vuln_ai_topup_pending_overdue_total"
+_AI_TOPUP_AWAITING_VERIFICATION_NAME = "vuln_ai_topup_awaiting_verification_total"
+_AI_TOPUP_REFUND_REVIEW_NAME = "vuln_ai_topup_refund_review_total"
+_AI_TOPUP_WEBHOOK_FAILED_NAME = "vuln_ai_topup_webhook_failed_total"
+
+# A failed top-up webhook is a payment that did not credit the wallet. A rolling
+# 24h window mirrors `vuln_payment_failed_events_24h`; the rows are retained far
+# longer, so the window only decides how long one failure keeps paging.
+AI_TOPUP_WEBHOOK_FAILED_WINDOW_HOURS = 24
+
 _PROMO_DISCOUNT_24H_NAME = "vuln_promo_discount_idr_24h"
 _PROMO_DISCOUNT_30D_NAME = "vuln_promo_discount_idr_30d"
 _PROMO_REDEMPTIONS_24H_NAME = "vuln_promo_redemptions_24h"
@@ -437,6 +449,119 @@ def _read_payment_refunds_24h() -> float | None:
         return float(raw or 0)
     except Exception as e:
         logger.debug("payment refunds metric scrape failed: %s", e)
+        return None
+
+
+def _read_ai_topup_orders_total() -> list[tuple[str, str, float]] | None:
+    """Order counts grouped by status and payment method; None on failure."""
+    try:
+        from sqlalchemy import text
+
+        with _ai_engine().connect() as conn:
+            rows = conn.execute(
+                text("SELECT status, payment_method, COUNT(*) FROM ai_topup_orders GROUP BY status, payment_method")
+            ).all()
+        return [(str(row[0]), str(row[1]), float(row[2])) for row in rows]
+    except Exception as e:
+        logger.debug("ai top-up orders total metric scrape failed: %s", e)
+        return None
+
+
+def _read_ai_topup_pending_age_seconds() -> dict[str, float] | None:
+    """Age of the oldest pending_payment order per payment method; None on failure."""
+    try:
+        from sqlalchemy import text
+
+        with _ai_engine().connect() as conn:
+            rows = conn.execute(
+                text(
+                    "SELECT payment_method, MIN(created_at) FROM ai_topup_orders "
+                    "WHERE status = 'pending_payment' GROUP BY payment_method"
+                )
+            ).all()
+        now = datetime.now(UTC)
+        ages: dict[str, float] = {}
+        for method, oldest in rows:
+            created_at = _as_datetime(oldest)
+            if created_at is None:
+                continue
+            ages[str(method)] = max((now - created_at).total_seconds(), 0.0)
+        return ages
+    except Exception as e:
+        logger.debug("ai top-up pending age metric scrape failed: %s", e)
+        return None
+
+
+def _read_ai_topup_pending_overdue_total() -> float | None:
+    """pending_payment orders past expires_at; the expiry sweep has not retired them."""
+    try:
+        from sqlalchemy import text
+
+        with _ai_engine().connect() as conn:
+            raw = conn.execute(
+                text("SELECT COUNT(*) FROM ai_topup_orders WHERE status = 'pending_payment' AND expires_at < :now"),
+                {"now": datetime.now(UTC)},
+            ).scalar()
+        return float(raw or 0)
+    except Exception as e:
+        logger.debug("ai top-up pending overdue metric scrape failed: %s", e)
+        return None
+
+
+def _read_ai_topup_awaiting_verification_total() -> float | None:
+    """Manual orders waiting for an admin to approve or reject."""
+    try:
+        from sqlalchemy import text
+
+        with _ai_engine().connect() as conn:
+            raw = conn.execute(
+                text("SELECT COUNT(*) FROM ai_topup_orders WHERE status = 'awaiting_verification'")
+            ).scalar()
+        return float(raw or 0)
+    except Exception as e:
+        logger.debug("ai top-up awaiting verification metric scrape failed: %s", e)
+        return None
+
+
+def _read_ai_topup_refund_review_total() -> float | None:
+    """Refund/chargeback orders waiting for an admin clawback or write-off."""
+    try:
+        from sqlalchemy import text
+
+        with _ai_engine().connect() as conn:
+            raw = conn.execute(text("SELECT COUNT(*) FROM ai_topup_orders WHERE status = 'refund_review'")).scalar()
+        return float(raw or 0)
+    except Exception as e:
+        logger.debug("ai top-up refund review metric scrape failed: %s", e)
+        return None
+
+
+def _read_ai_topup_webhook_failed_total() -> float | None:
+    """Failed webhook events that belong to a top-up attempt in the rolling window."""
+    try:
+        from sqlalchemy import text
+
+        engine = _ai_engine()
+        if engine.dialect.name == "sqlite":
+            order_id_expr = "json_extract(pe.payload, '$.order_id')"
+        else:
+            order_id_expr = "pe.payload ->> 'order_id'"
+        cutoff = datetime.now(UTC) - timedelta(hours=AI_TOPUP_WEBHOOK_FAILED_WINDOW_HOURS)
+        with engine.connect() as conn:
+            raw = conn.execute(
+                text(
+                    "SELECT COUNT(DISTINCT pe.id) FROM payment_events pe "
+                    "JOIN payment_attempts pa "
+                    f"ON pa.provider_order_id = {order_id_expr} "
+                    "WHERE pe.status = 'failed' "
+                    "AND pa.payable_kind = 'topup' "
+                    "AND pe.received_at >= :cutoff"
+                ),
+                {"cutoff": cutoff},
+            ).scalar()
+        return float(raw or 0)
+    except Exception as e:
+        logger.debug("ai top-up webhook failed metric scrape failed: %s", e)
         return None
 
 
@@ -874,6 +999,112 @@ class PromoPendingApprovalsCollector:
         yield gauge
 
 
+class AiTopupOrdersTotalCollector:
+    def collect(self) -> Iterable[Metric]:
+        try:
+            rows = _read_ai_topup_orders_total()
+        except Exception as e:
+            logger.debug("ai top-up orders total collector failed: %s", e)
+            return
+        if rows is None:
+            return
+        gauge = GaugeMetricFamily(
+            _AI_TOPUP_ORDERS_TOTAL_NAME,
+            "AI top-up orders by status and payment method",
+            labels=["status", "method"],
+        )
+        for status, method, count in rows:
+            gauge.add_metric([status, method], count)
+        yield gauge
+
+
+class AiTopupPendingAgeCollector:
+    def collect(self) -> Iterable[Metric]:
+        try:
+            ages = _read_ai_topup_pending_age_seconds()
+        except Exception as e:
+            logger.debug("ai top-up pending age collector failed: %s", e)
+            return
+        if ages is None:
+            return
+        gauge = GaugeMetricFamily(
+            _AI_TOPUP_PENDING_AGE_NAME,
+            "Age in seconds of the oldest pending_payment top-up order per method",
+            labels=["method"],
+        )
+        for method, age in ages.items():
+            gauge.add_metric([method], age)
+        yield gauge
+
+
+class AiTopupPendingOverdueCollector:
+    def collect(self) -> Iterable[Metric]:
+        try:
+            value = _read_ai_topup_pending_overdue_total()
+        except Exception as e:
+            logger.debug("ai top-up pending overdue collector failed: %s", e)
+            return
+        if value is None:
+            return
+        gauge = GaugeMetricFamily(
+            _AI_TOPUP_PENDING_OVERDUE_NAME,
+            "pending_payment top-up orders past expires_at",
+        )
+        gauge.add_metric([], value)
+        yield gauge
+
+
+class AiTopupAwaitingVerificationCollector:
+    def collect(self) -> Iterable[Metric]:
+        try:
+            value = _read_ai_topup_awaiting_verification_total()
+        except Exception as e:
+            logger.debug("ai top-up awaiting verification collector failed: %s", e)
+            return
+        if value is None:
+            return
+        gauge = GaugeMetricFamily(
+            _AI_TOPUP_AWAITING_VERIFICATION_NAME,
+            "Manual top-up orders waiting for admin verification",
+        )
+        gauge.add_metric([], value)
+        yield gauge
+
+
+class AiTopupRefundReviewCollector:
+    def collect(self) -> Iterable[Metric]:
+        try:
+            value = _read_ai_topup_refund_review_total()
+        except Exception as e:
+            logger.debug("ai top-up refund review collector failed: %s", e)
+            return
+        if value is None:
+            return
+        gauge = GaugeMetricFamily(
+            _AI_TOPUP_REFUND_REVIEW_NAME,
+            "Top-up orders waiting for an admin refund resolution",
+        )
+        gauge.add_metric([], value)
+        yield gauge
+
+
+class AiTopupWebhookFailedCollector:
+    def collect(self) -> Iterable[Metric]:
+        try:
+            value = _read_ai_topup_webhook_failed_total()
+        except Exception as e:
+            logger.debug("ai top-up webhook failed collector failed: %s", e)
+            return
+        if value is None:
+            return
+        gauge = GaugeMetricFamily(
+            _AI_TOPUP_WEBHOOK_FAILED_NAME,
+            "Failed top-up webhook events in the last 24h; the wallet was not credited",
+        )
+        gauge.add_metric([], value)
+        yield gauge
+
+
 def register_custom_metrics() -> None:
     global _collector_registered
     if _collector_registered:
@@ -897,4 +1128,10 @@ def register_custom_metrics() -> None:
     REGISTRY.register(PromoDiscount30dCollector())
     REGISTRY.register(PromoRedemptions24hCollector())
     REGISTRY.register(PromoPendingApprovalsCollector())
+    REGISTRY.register(AiTopupOrdersTotalCollector())
+    REGISTRY.register(AiTopupPendingAgeCollector())
+    REGISTRY.register(AiTopupPendingOverdueCollector())
+    REGISTRY.register(AiTopupAwaitingVerificationCollector())
+    REGISTRY.register(AiTopupRefundReviewCollector())
+    REGISTRY.register(AiTopupWebhookFailedCollector())
     _collector_registered = True

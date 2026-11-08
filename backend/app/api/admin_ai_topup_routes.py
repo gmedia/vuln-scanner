@@ -25,6 +25,7 @@ from app.schemas.ai_topup import (
     AiTopupPackOut,
     AiTopupPackUpdate,
     AiTopupRejectIn,
+    AiTopupResolveRefundIn,
 )
 from app.services import ai_topup as service
 from app.services.auth import get_current_admin
@@ -166,5 +167,23 @@ async def reject_order(
     db: AsyncSession = Depends(get_db),
 ) -> AiTopupAdminOrderOut:
     order = await service.reject(db, order_id=order_id, admin=admin, reason=body.reason)
+    org = await db.get(Organization, order.organization_id)
+    return AiTopupAdminOrderOut.from_order(order, organization_name=org.name if org is not None else None)
+
+
+@router.post("/orders/{order_id}/resolve-refund", response_model=AiTopupAdminOrderOut)
+async def resolve_refund(
+    order_id: uuid.UUID,
+    body: AiTopupResolveRefundIn,
+    admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> AiTopupAdminOrderOut:
+    order = await service.resolve_refund(
+        db,
+        order_id=order_id,
+        admin=admin,
+        action=body.action,
+        note=body.note,
+    )
     org = await db.get(Organization, order.organization_id)
     return AiTopupAdminOrderOut.from_order(order, organization_name=org.name if org is not None else None)
