@@ -139,6 +139,7 @@ async function openUpstreamSheet(
 describe("AdminAi", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(adminApi.topupAiWallet).mockReset();
     vi.mocked(adminApi.getAiFx).mockResolvedValue({
       rate: 16300,
       source: "api.frankfurter.app",
@@ -1105,5 +1106,81 @@ describe("fallback routing order", () => {
     await user.click(scope.getByTestId("ai-upstream-add"));
     expect(scope.getByTestId("ai-upstream-move-up-__new__")).toBeDisabled();
     expect(scope.getByTestId("ai-upstream-move-down-__new__")).toBeDisabled();
+  });
+
+  async function openTopupTab() {
+    const user = userEvent.setup();
+    vi.mocked(adminApi.listAiProviders).mockResolvedValue({
+      items: [],
+      total: 0,
+    });
+    vi.mocked(adminApi.listAiModels).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(adminApi.listAiUsage).mockResolvedValue({ items: [], total: 0 });
+    renderPage();
+    await user.click(await screen.findByRole("tab", { name: "Top-up" }));
+    await user.type(
+      await screen.findByLabelText("Organization id"),
+      "org-1",
+    );
+    return { user, button: screen.getByRole("button", { name: "Top up" }) };
+  }
+
+  it("sends a non-empty idempotency key and reuses it on retry", async () => {
+    vi.mocked(adminApi.topupAiWallet)
+      .mockRejectedValueOnce(new Error("network down"))
+      .mockResolvedValueOnce({ organization_id: "org-1", balance_idr: 10000 });
+    const { user, button } = await openTopupTab();
+
+    await user.click(button);
+    await waitFor(() =>
+      expect(adminApi.topupAiWallet).toHaveBeenCalledTimes(1),
+    );
+    const firstKey = vi.mocked(adminApi.topupAiWallet).mock.calls[0]?.[2];
+    expect(firstKey).toEqual(expect.any(String));
+    expect(firstKey).not.toHaveLength(0);
+    expect(adminApi.topupAiWallet).toHaveBeenNthCalledWith(
+      1,
+      "org-1",
+      10000,
+      firstKey,
+    );
+    await waitFor(() => expect(toast.error).toHaveBeenCalled());
+    await waitFor(() => expect(button).toBeEnabled());
+
+    await user.click(button);
+    await waitFor(() =>
+      expect(adminApi.topupAiWallet).toHaveBeenCalledTimes(2),
+    );
+    expect(adminApi.topupAiWallet).toHaveBeenNthCalledWith(
+      2,
+      "org-1",
+      10000,
+      firstKey,
+    );
+  });
+
+  it("rotates the idempotency key after a successful top-up", async () => {
+    vi.mocked(adminApi.topupAiWallet).mockResolvedValue({
+      organization_id: "org-1",
+      balance_idr: 10000,
+    });
+    const { user, button } = await openTopupTab();
+
+    await user.click(button);
+    await waitFor(() =>
+      expect(adminApi.topupAiWallet).toHaveBeenCalledTimes(1),
+    );
+    const firstKey = vi.mocked(adminApi.topupAiWallet).mock.calls[0]?.[2];
+    await waitFor(() => expect(toast.success).toHaveBeenCalled());
+    await waitFor(() => expect(button).toBeEnabled());
+
+    await user.click(button);
+    await waitFor(() =>
+      expect(adminApi.topupAiWallet).toHaveBeenCalledTimes(2),
+    );
+    const secondKey = vi.mocked(adminApi.topupAiWallet).mock.calls[1]?.[2];
+    expect(firstKey).toEqual(expect.any(String));
+    expect(secondKey).toEqual(expect.any(String));
+    expect(secondKey).not.toBe(firstKey);
   });
 });

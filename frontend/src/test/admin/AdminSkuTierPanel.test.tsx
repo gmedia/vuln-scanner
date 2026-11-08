@@ -91,6 +91,7 @@ describe("AdminSkuTierPanel", () => {
         subscriptions: 1,
         invoices: 3,
         requests: 0,
+        promos: 0,
       }),
     );
     renderPanel();
@@ -104,7 +105,7 @@ describe("AdminSkuTierPanel", () => {
       "10/10/200/10",
     );
     expect(screen.getByTestId("sku-tier-row-multi")).toHaveTextContent(
-      "2/1/3/0",
+      "2/1/3/0/0",
     );
   });
 
@@ -168,12 +169,33 @@ describe("AdminSkuTierPanel", () => {
         subscriptions: 2,
         invoices: 1,
         requests: 0,
+        promos: 0,
       }),
     );
     renderPanel();
     await openMenu("multi");
     const item = await screen.findByTestId("sku-tier-delete-multi");
     expect(item).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("disables permanent deletion for a tier referenced only by a promo", async () => {
+    vi.mocked(getAdminSkuTiers).mockResolvedValue(
+      withUsage("multi", {
+        orgs: 0,
+        subscriptions: 0,
+        invoices: 0,
+        requests: 0,
+        promos: 1,
+      }),
+    );
+    renderPanel();
+    expect(await screen.findByTestId("sku-tier-row-multi")).toHaveTextContent(
+      "0/0/0/0/1",
+    );
+    await openMenu("multi");
+    const item = await screen.findByTestId("sku-tier-delete-multi");
+    expect(item).toHaveAttribute("aria-disabled", "true");
+    expect(deleteSkuTier).not.toHaveBeenCalled();
   });
 
   it("surfaces a 409 detail from delete", async () => {
@@ -273,6 +295,7 @@ describe("AdminSkuTierPanel", () => {
         subscriptions: 1,
         invoices: 3,
         requests: 0,
+        promos: 0,
       }),
     );
     vi.mocked(listAdminOrgs).mockResolvedValue({
@@ -302,6 +325,7 @@ describe("AdminSkuTierPanel", () => {
         subscriptions: 0,
         invoices: 0,
         requests: 0,
+        promos: 0,
       }),
     );
     vi.mocked(listAdminOrgs).mockResolvedValue({
@@ -356,6 +380,7 @@ describe("AdminSkuTierPanel", () => {
         subscriptions: 0,
         invoices: 0,
         requests: 0,
+        promos: 0,
       }),
     );
     renderPanel();

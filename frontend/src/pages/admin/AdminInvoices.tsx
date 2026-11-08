@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/Accordion";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { DatePicker } from "@/components/ui/DatePicker";
+import { Textarea } from "@/components/ui/Textarea";
 import { Badge } from "@/components/ui/Badge";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import {
@@ -99,6 +101,9 @@ function AdminInvoices() {
   const [product, setProduct] = useState<InvoiceProduct>("scan");
   const [sku, setSku] = useState("");
   const [cycle, setCycle] = useState<"monthly" | "annual">("monthly");
+  const [periodStart, setPeriodStart] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [notes, setNotes] = useState("");
   const [promoCode, setPromoCode] = useState("");
   const [promoResult, setPromoResult] = useState<PromoValidateResult | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
@@ -263,6 +268,9 @@ function AdminInvoices() {
         sku: skuValue,
         product,
         cycle,
+        ...(periodStart ? { period_start: periodStart } : {}),
+        ...(dueDate ? { due_date: dueDate } : {}),
+        ...(notes.trim() ? { notes: notes.trim() } : {}),
         ...(promoResult
           ? { promo_code: promoCode.trim().toUpperCase() }
           : {}),
@@ -270,6 +278,9 @@ function AdminInvoices() {
       }),
     onSuccess: () => {
       toast.success(t("invoiceCreated"));
+      setPeriodStart("");
+      setDueDate("");
+      setNotes("");
       clearPromo();
       clearRequest();
       void qc.invalidateQueries({ queryKey: ["admin-invoices"] });
@@ -424,7 +435,7 @@ function AdminInvoices() {
                     <TableRow>
                       <TableHead>{t("colProduct")}</TableHead>
                       <TableHead>{t("colSku")}</TableHead>
-                      <TableHead>{t("colListIdr")}</TableHead>
+                      <TableHead>{t("colListPrice")}</TableHead>
                       <TableHead>{t("colSeats")}</TableHead>
                       <TableHead>{t("colInvoicable")}</TableHead>
                     </TableRow>
@@ -557,6 +568,38 @@ function AdminInvoices() {
                 )}
                 {t("invoiceCreate")}
               </Button>
+            </div>
+          </div>
+          <div className="grid gap-3 border-t border-border pt-3 sm:grid-cols-2">
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="inv-period-start">{t("invoicePeriodStart")}</Label>
+              <DatePicker
+                id="inv-period-start"
+                value={periodStart}
+                onChange={setPeriodStart}
+                placeholder={t("invoicePeriodStartPlaceholder")}
+                aria-label={t("invoicePeriodStart")}
+              />
+            </div>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="inv-due-date">{t("invoiceDueDate")}</Label>
+              <DatePicker
+                id="inv-due-date"
+                value={dueDate}
+                onChange={setDueDate}
+                placeholder={t("invoiceDueDatePlaceholder")}
+                aria-label={t("invoiceDueDate")}
+              />
+            </div>
+            <div className="flex min-w-0 flex-col gap-1.5 sm:col-span-2">
+              <Label htmlFor="inv-notes">{t("invoiceNotesLabel")}</Label>
+              <Textarea
+                id="inv-notes"
+                value={notes}
+                maxLength={500}
+                placeholder={t("invoiceNotesPlaceholder")}
+                onChange={(event) => setNotes(event.target.value)}
+              />
             </div>
           </div>
           <div className="space-y-2 border-t border-border pt-3">

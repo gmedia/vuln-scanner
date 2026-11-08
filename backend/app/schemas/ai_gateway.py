@@ -164,6 +164,7 @@ class AiWalletOut(BaseModel):
 
 class AiWalletTopup(BaseModel):
     amount_idr: int = Field(..., ge=1)
+    idempotency_key: str | None = Field(default=None, max_length=80)
 
 
 class AiPublicModelOut(BaseModel):

@@ -506,6 +506,56 @@ async def test_manual_approve_racing_a_webhook_credits_once(
 
 
 @pytest.mark.asyncio
+async def test_parallel_admin_credits_with_one_key_credit_once(
+    pg_engine: AsyncEngine,
+) -> None:
+    """Locks the idempotency-key unique index and its savepoint recovery.
+
+    Two admin direct credits share one key. Without the partial unique index
+    both insert an ``admin_credit`` order and credit twice; without the
+    savepoint recovery the loser returns a 500 instead of the winner's order.
+    Exactly one order and one ``kind='topup'`` ledger row must exist.
+    """
+    seed = await pg_helpers.seed(pg_engine)
+    key = "admin-credit-race-1"
+
+    async def credit():
+        async def _run(session):
+            admin = await pg_helpers.detached_actor(pg_engine, seed.admin_id)
+            return await topup_service.admin_credit(
+                session,
+                org_id=seed.org_a_id,
+                admin=admin,
+                amount_idr=TOPUP_AMOUNT,
+                idempotency_key=key,
+            )
+
+        return await pg_helpers.run_in_session(pg_engine, _run)
+
+    results = await asyncio.gather(credit(), credit(), return_exceptions=True)
+    errors = [result for result in results if isinstance(result, BaseException)]
+    assert errors == [], errors
+    orders = [result for result in results if isinstance(result, AiTopupOrder)]
+    assert len(orders) == 2, results
+    order_ids = {order.id for order in orders}
+    assert len(order_ids) == 1, results
+    order_id = order_ids.pop()
+
+    order_count = await pg_helpers.scalar_count(
+        pg_engine,
+        select(func.count()).select_from(AiTopupOrder).where(AiTopupOrder.organization_id == seed.org_a_id),
+    )
+    assert order_count == 1
+    assert await _topup_credit_count(pg_engine, order_id) == 1
+
+    balance = await pg_helpers.read(
+        pg_engine,
+        lambda session: session.execute(select(AiWallet.balance_idr).where(AiWallet.organization_id == seed.org_a_id)),
+    )
+    assert int(balance.scalar_one()) == TOPUP_AMOUNT
+
+
+@pytest.mark.asyncio
 async def test_parallel_topup_checkouts_create_one_pending_attempt(
     pg_engine: AsyncEngine,
     monkeypatch: pytest.MonkeyPatch,
@@ -594,6 +644,13 @@ def test_partial_unique_indexes_that_preserve_duplicate_invariants() -> None:
     for dialect in ("postgresql_where", "sqlite_where"):
         predicate = str(pending.dialect_kwargs[dialect])
         assert "status = 'pending'" in predicate, (dialect, predicate)
+
+    idempotency = index_for(AiTopupOrder.__table__, "uq_ai_topup_orders_idempotency_key")
+    assert idempotency.unique is True
+    assert [column.name for column in idempotency.columns] == ["idempotency_key"]
+    for dialect in ("postgresql_where", "sqlite_where"):
+        predicate = str(idempotency.dialect_kwargs[dialect])
+        assert "idempotency_key IS NOT NULL" in predicate, (dialect, predicate)
 
     invoice_request = index_for(OrgInvoice.__table__, "uq_org_invoices_subscription_request")
     assert invoice_request.unique is True

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
@@ -1079,19 +1079,48 @@ async def test_create_invoice_defaults_due_date_to_period_start(db_session, ctx)
     transport = ASGITransport(app=app)
     try:
         async with AsyncClient(transport=transport, base_url="http://test") as client:
+            # A future period keeps term_days=0 equal to the period start while
+            # the due-date clamp cannot rewrite it to "now".
+            period_start = (datetime.now(UTC) + timedelta(days=32)).replace(
+                day=1, hour=0, minute=0, second=0, microsecond=0
+            )
             created = await client.post(
                 "/api/admin/invoices",
                 headers=_auth(ctx["admin"]),
                 json={
                     "organization_id": str(ctx["org"].id),
                     "sku": "pro",
-                    "period_start": "2026-09-01T00:00:00Z",
+                    "period_start": period_start.isoformat(),
                 },
             )
             assert created.status_code == 201, created.text
             body = created.json()
-            assert body["due_date"].startswith("2026-09-01")
+            assert body["due_date"].startswith(period_start.date().isoformat())
             assert body["sent_at"] is None
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_create_invoice_default_due_date_is_not_in_the_past(db_session, ctx):
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            today = datetime.now(UTC).date()
+            created = await client.post(
+                "/api/admin/invoices",
+                headers=_auth(ctx["admin"]),
+                json={
+                    "organization_id": str(ctx["org"].id),
+                    "sku": "pro",
+                },
+            )
+            assert created.status_code == 201, created.text
+            due = datetime.fromisoformat(
+                created.json()["due_date"].replace("Z", "+00:00")
+            )
+            assert due.date() >= today
     finally:
         app.dependency_overrides.clear()
 

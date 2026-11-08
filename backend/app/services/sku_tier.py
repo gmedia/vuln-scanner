@@ -743,6 +743,52 @@ class SkuTierService:
         await self.db.refresh(tier)
         return tier
 
+    async def update_catalog_price(
+        self,
+        product: str,
+        sku: str,
+        list_idr: int,
+        invoicable: bool | None,
+        actor_user_id: uuid.UUID | None,
+    ) -> SkuCatalog:
+        """Update one ``sku_catalog`` row and audit the change.
+
+        This is the **only** writer for ``SkuCatalog.list_idr`` and
+        ``SkuCatalog.invoicable``. HPP margin revenue is
+        ``sku_catalog.list_idr × counts``, so a second writer silently corrupts
+        reported margin: ``InvoiceService.update_catalog`` delegates here and
+        ``tests/test_sku_tier_single_writer.py`` fails when another module
+        starts writing the row.
+        """
+        result = await self.db.execute(
+            select(SkuCatalog).where(SkuCatalog.product == product, SkuCatalog.sku == sku)
+        )
+        row = result.scalar_one_or_none()
+        if row is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Catalog row not found")
+        changes: dict[str, dict[str, object]] = {}
+        if row.list_idr != list_idr:
+            changes[f"price.{product}.list_idr"] = {"from": row.list_idr, "to": list_idr}
+        if invoicable is not None and row.invoicable != invoicable:
+            changes[f"price.{product}.invoicable"] = {"from": row.invoicable, "to": invoicable}
+        row.list_idr = list_idr
+        if invoicable is not None:
+            row.invoicable = invoicable
+        row.updated_at = datetime.now(UTC)
+        row.updated_by = actor_user_id
+        if changes:
+            self.db.add(
+                SkuTierHistory(
+                    sku_code=sku,
+                    action="price_updated",
+                    actor_user_id=actor_user_id,
+                    changes=changes,
+                )
+            )
+        await self.db.commit()
+        await self.db.refresh(row)
+        return row
+
     async def deactivate(self, code: str, actor: User) -> SkuTier:
         tier = await self.get(code)
         if tier.is_default:

@@ -16,6 +16,7 @@ from tasks.billing import (
     PAST_DUE_GRACE_DAYS,
     RENEWAL_DRAFT_LEAD_DAYS,
     _next_annual_start,
+    _next_invoice_number,
     draft_annual_renewals,
     finalize_periods,
     prune_payment_events,
@@ -391,7 +392,7 @@ class TestDraftAnnualRenewals:
         existing_result = MagicMock()
         existing_result.scalar_one_or_none.return_value = None
         number_result = MagicMock()
-        number_result.scalar_one.return_value = 0
+        number_result.scalar_one_or_none.return_value = None
 
         session = MagicMock()
         session.execute.side_effect = [
@@ -463,7 +464,7 @@ class TestDraftAnnualRenewals:
         existing_result = MagicMock()
         existing_result.scalar_one_or_none.return_value = None
         number_result = MagicMock()
-        number_result.scalar_one.return_value = 0
+        number_result.scalar_one_or_none.return_value = None
 
         session = MagicMock()
         session.execute.side_effect = [
@@ -554,3 +555,21 @@ def test_beat_schedule_registers_daily_payment_prune():
     entry = celery_app.conf.beat_schedule["payment-prune-events-daily"]
     assert entry["task"] == "payment.prune_events"
     assert celery_app.conf.task_routes["payment.prune_events"] == {"queue": "ip_scan"}
+
+
+class TestNextInvoiceNumber:
+    def test_uses_the_max_suffix_so_a_void_does_not_reuse_a_number(self):
+        session = MagicMock()
+        session.execute.return_value.scalar_one_or_none.return_value = "SX-202601-0003"
+
+        number = _next_invoice_number(session, datetime(2026, 1, 15, tzinfo=UTC))
+
+        assert number == "SX-202601-0004"
+
+    def test_starts_at_one_for_an_empty_month(self):
+        session = MagicMock()
+        session.execute.return_value.scalar_one_or_none.return_value = None
+
+        number = _next_invoice_number(session, datetime(2026, 2, 1, tzinfo=UTC))
+
+        assert number == "SX-202602-0001"

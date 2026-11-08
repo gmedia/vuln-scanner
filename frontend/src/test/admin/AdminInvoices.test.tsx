@@ -33,6 +33,27 @@ vi.mock("@/api/admin", () => ({
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
+vi.mock("@/components/ui/DatePicker", () => ({
+  DatePicker: ({
+    id,
+    value,
+    onChange,
+    placeholder,
+  }: {
+    id?: string;
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+  }) => (
+    <input
+      id={id}
+      value={value}
+      placeholder={placeholder}
+      onChange={(event) => onChange(event.target.value)}
+    />
+  ),
+}));
+
 vi.mock("@/components/ui/Select", () => {
   function collectSelectValues(node: React.ReactNode): string[] {
     const values: string[] = [];
@@ -565,6 +586,58 @@ describe("AdminInvoices", () => {
     await userEvent.click(await screen.findByTestId("invoice-pay-confirm"));
     expect(toast.success).toHaveBeenCalledWith(
       "Marked paid — Host invoice; Scan org SKU unchanged",
+    );
+  });
+
+  it("labels the invoice amount column as the tax-inclusive total", () => {
+    render(<AdminInvoices />);
+    expect(
+      within(screen.getByTestId("invoices-list-desktop")).getByText(
+        "Total (incl. tax)",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("invoice-catalog-desktop")).getByText(
+        "List IDR",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("sends period start, due date, and notes when filled", async () => {
+    type MutOpts = {
+      mutationFn: (...args: unknown[]) => unknown;
+      onSuccess?: (...args: unknown[]) => void;
+    };
+    vi.mocked(useMutation).mockImplementation(((opts: MutOpts) => ({
+      mutate: () => {
+        opts.mutationFn();
+        opts.onSuccess?.();
+      },
+      isPending: false,
+    })) as unknown as typeof useMutation);
+
+    render(<AdminInvoices />);
+    changeSelect(document.getElementById("inv-org") as HTMLElement, "org-1");
+    fireEvent.change(
+      document.getElementById("inv-period-start") as HTMLInputElement,
+      { target: { value: "2026-12-01" } },
+    );
+    fireEvent.change(
+      document.getElementById("inv-due-date") as HTMLInputElement,
+      { target: { value: "2027-01-15" } },
+    );
+    fireEvent.change(
+      document.getElementById("inv-notes") as HTMLTextAreaElement,
+      { target: { value: "PO-123" } },
+    );
+    await userEvent.click(screen.getByTestId("invoice-create"));
+
+    expect(adminApi.createAdminInvoice).toHaveBeenCalledWith(
+      expect.objectContaining({
+        period_start: "2026-12-01",
+        due_date: "2027-01-15",
+        notes: "PO-123",
+      }),
     );
   });
 

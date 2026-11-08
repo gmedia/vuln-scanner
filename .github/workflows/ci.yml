@@ -138,6 +138,7 @@ jobs:
               - 'backend/app/**/openai_v1*'
               - 'frontend/src/pages/Ai.tsx'
               - 'frontend/e2e/ai.spec.ts'
+              - 'frontend/e2e/ai-topup.spec.ts'
             mod_admin:
               - 'backend/app/api/admin_routes.py'
               - 'frontend/src/pages/admin/**'
@@ -756,6 +757,12 @@ jobs:
           sed -i 's/API_KEY=<your-api-key-here>/API_KEY=e2e-test-api-key/' .env
           sed -i 's/SECRET_KEY=<your-secret-key-here>/SECRET_KEY=e2e-secret-key/' .env
           sed -i 's/JWT_SECRET=<your-jwt-secret-here>/JWT_SECRET=e2e-jwt-secret/' .env
+          # AI wallet top-up E2E: enable the customer gateway and set fake bank
+          # copy so manual transfer returns 201 instead of 503. Test-only values.
+          sed -i 's/^AI_GATEWAY_ENABLED=false/AI_GATEWAY_ENABLED=true/' .env
+          sed -i 's|^INVOICE_BANK_NAME=.*|INVOICE_BANK_NAME=E2E Bank|' .env
+          sed -i 's|^INVOICE_BANK_ACCOUNT=.*|INVOICE_BANK_ACCOUNT=0000000000|' .env
+          sed -i 's|^INVOICE_BANK_HOLDER=.*|INVOICE_BANK_HOLDER=E2E|' .env
 
       - name: Install frontend dependencies (pre-Docker — avoid root-owned node_modules)
         run: npm ci
@@ -814,7 +821,7 @@ jobs:
             sleep 3
           done
           # Pre-compile all routes E2E tests visit (Vite on-demand = cold start per route)
-          for route in /login /register /dashboard /scan/ip /scan/domain /scan/mobile /assets /credit-history; do
+          for route in /login /register /dashboard /scan/ip /scan/domain /scan/mobile /assets /credit-history /ai/topup /admin/ai/topups; do
             echo "  Warming route: $route"
             curl -s -o /dev/null -w "  → HTTP %{http_code}\n" "http://localhost:5173$route" || true
           done

@@ -125,6 +125,7 @@
   "invoicePrintDue": "Jatuh tempo",
   "invoicePrintDpp": "DPP (11/12)",
   "invoicePrintPpn": "PPN 12%",
+  "invoicePrintPph23": "PPh 23 (2%)",
   "seatCapHint": "Workspace ini mencapai batas {{limit}} kursi. Upgrade untuk menambah.",
   "switchFail": "Gagal berpindah workspace."
 }

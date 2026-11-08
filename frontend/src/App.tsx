@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { ErrorBoundary } from "react-error-boundary";
 import AppShell from "@/components/layout/AppShell";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -46,7 +46,6 @@ const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
 const AdminUserDetail = lazy(() => import("@/pages/admin/AdminUserDetail"));
 const AdminHpp = lazy(() => import("@/pages/admin/AdminHpp"));
 const AdminSkuCatalog = lazy(() => import("@/pages/admin/AdminSkuCatalog"));
-const AdminHppSimulator = lazy(() => import("@/pages/admin/AdminHppSimulator"));
 const AdminInvoices = lazy(() => import("@/pages/admin/AdminInvoices"));
 const AdminPromoCodes = lazy(() => import("@/pages/admin/AdminPromoCodes"));
 const AdminSubscriptionRequests = lazy(() => import("@/pages/admin/AdminSubscriptionRequests"));
@@ -233,7 +232,7 @@ function App() {
               />
               <Route
                 path="/admin/simulator"
-                element={<PageBoundary component={AdminHppSimulator} />}
+                element={<Navigate to="/admin/hpp?tab=what-if" replace />}
               />
               <Route
                 path="/admin/invoices"
