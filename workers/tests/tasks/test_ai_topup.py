@@ -22,7 +22,13 @@ from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB  # noqa: E402
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID  # noqa: E402
 from sqlalchemy.orm import Session, sessionmaker  # noqa: E402
 
-from tasks.ai_topup import expire_stale_orders, expire_stale_topup_orders  # noqa: E402
+from tasks.ai_topup import (  # noqa: E402
+    TOPUP_PROOF_RETENTION_DAYS,
+    expire_stale_orders,
+    expire_stale_topup_orders,
+    purge_expired_topup_proofs,
+    purge_expired_topup_proofs_task,
+)
 
 
 class _UUIDType(TypeDecorator):
@@ -97,8 +103,15 @@ def _seed_order(
     status: str,
     expires_at: datetime,
     attempt_status: str | None = "pending",
+    proof_object_key: str | None = None,
+    proof_mime: str | None = None,
+    proof_size_bytes: int | None = None,
+    proof_uploaded_at: datetime | None = None,
+    updated_at: datetime | None = None,
 ) -> AiTopupOrder:
     org_id = uuid.uuid4()
+    if status == "awaiting_verification" and proof_object_key is None:
+        proof_object_key = "proof/seed"
     order = AiTopupOrder(
         id=uuid.uuid4(),
         organization_id=org_id,
@@ -109,9 +122,14 @@ def _seed_order(
         currency="IDR",
         payment_method="manual_transfer",
         status=status,
-        proof_object_key="proof/seed" if status == "awaiting_verification" else None,
+        proof_object_key=proof_object_key,
+        proof_mime=proof_mime,
+        proof_size_bytes=proof_size_bytes,
+        proof_uploaded_at=proof_uploaded_at,
         expires_at=expires_at,
     )
+    if updated_at is not None:
+        order.updated_at = updated_at
     db.add(order)
     if attempt_status is not None:
         db.add(
@@ -203,3 +221,142 @@ def test_task_returns_expired_count_and_commits(session: Session) -> None:
     with factory() as check:
         order = check.query(AiTopupOrder).one()
         assert order.status == "expired"
+
+
+def _seed_proof_order(
+    db: Session,
+    *,
+    status: str,
+    updated_at: datetime,
+    proof_object_key: str,
+    attempt_status: str | None = None,
+) -> AiTopupOrder:
+    return _seed_order(
+        db,
+        status=status,
+        expires_at=updated_at,
+        attempt_status=attempt_status,
+        proof_object_key=proof_object_key,
+        proof_mime="image/png",
+        proof_size_bytes=4096,
+        proof_uploaded_at=updated_at,
+        updated_at=updated_at,
+    )
+
+
+def test_purge_deletes_proof_after_retention(session: Session, monkeypatch: pytest.MonkeyPatch) -> None:
+    now = datetime.now(UTC)
+    terminal_at = now - timedelta(days=TOPUP_PROOF_RETENTION_DAYS + 1)
+    order = _seed_proof_order(session, status="expired", updated_at=terminal_at, proof_object_key="proof/old")
+    calls: list[str] = []
+    monkeypatch.setattr("tasks.ai_topup.delete_proof", calls.append)
+
+    purged = purge_expired_topup_proofs(session, now=now)
+    session.commit()
+
+    assert purged == 1
+    assert calls == ["proof/old"]
+    stored = session.get(AiTopupOrder, order.id)
+    assert stored is not None
+    assert stored.proof_object_key is None
+    assert stored.proof_mime is None
+    assert stored.proof_size_bytes is None
+    assert stored.proof_uploaded_at is None
+
+
+def test_purge_keeps_proof_inside_retention(session: Session, monkeypatch: pytest.MonkeyPatch) -> None:
+    now = datetime.now(UTC)
+    terminal_at = now - timedelta(days=TOPUP_PROOF_RETENTION_DAYS - 1)
+    order = _seed_proof_order(session, status="expired", updated_at=terminal_at, proof_object_key="proof/recent")
+    calls: list[str] = []
+    monkeypatch.setattr("tasks.ai_topup.delete_proof", calls.append)
+
+    assert purge_expired_topup_proofs(session, now=now) == 0
+    session.refresh(order)
+
+    assert calls == []
+    assert order.proof_object_key == "proof/recent"
+
+
+def test_purge_keeps_paid_proof_of_any_age(session: Session, monkeypatch: pytest.MonkeyPatch) -> None:
+    now = datetime.now(UTC)
+    terminal_at = now - timedelta(days=400)
+    order = _seed_proof_order(
+        session,
+        status="paid",
+        updated_at=terminal_at,
+        proof_object_key="proof/paid",
+        attempt_status="succeeded",
+    )
+    calls: list[str] = []
+    monkeypatch.setattr("tasks.ai_topup.delete_proof", calls.append)
+
+    assert purge_expired_topup_proofs(session, now=now) == 0
+    session.refresh(order)
+
+    assert calls == []
+    assert order.proof_object_key == "proof/paid"
+
+
+def test_purge_keeps_awaiting_verification_proof(session: Session, monkeypatch: pytest.MonkeyPatch) -> None:
+    now = datetime.now(UTC)
+    terminal_at = now - timedelta(days=400)
+    order = _seed_proof_order(
+        session,
+        status="awaiting_verification",
+        updated_at=terminal_at,
+        proof_object_key="proof/awaiting",
+    )
+    calls: list[str] = []
+    monkeypatch.setattr("tasks.ai_topup.delete_proof", calls.append)
+
+    assert purge_expired_topup_proofs(session, now=now) == 0
+    session.refresh(order)
+
+    assert calls == []
+    assert order.proof_object_key == "proof/awaiting"
+
+
+@pytest.mark.parametrize("status", ["expired", "rejected", "canceled"])
+def test_purge_covers_every_terminal_status(session: Session, monkeypatch: pytest.MonkeyPatch, status: str) -> None:
+    now = datetime.now(UTC)
+    terminal_at = now - timedelta(days=TOPUP_PROOF_RETENTION_DAYS + 1)
+    _seed_proof_order(session, status=status, updated_at=terminal_at, proof_object_key=f"proof/{status}")
+    calls: list[str] = []
+    monkeypatch.setattr("tasks.ai_topup.delete_proof", calls.append)
+
+    assert purge_expired_topup_proofs(session, now=now) == 1
+    assert calls == [f"proof/{status}"]
+
+
+def test_second_purge_run_is_a_noop(session: Session, monkeypatch: pytest.MonkeyPatch) -> None:
+    now = datetime.now(UTC)
+    terminal_at = now - timedelta(days=TOPUP_PROOF_RETENTION_DAYS + 1)
+    _seed_proof_order(session, status="expired", updated_at=terminal_at, proof_object_key="proof/only")
+    calls: list[str] = []
+    monkeypatch.setattr("tasks.ai_topup.delete_proof", calls.append)
+
+    assert purge_expired_topup_proofs(session, now=now) == 1
+    session.commit()
+    assert purge_expired_topup_proofs(session, now=now) == 0
+    session.commit()
+
+    assert calls == ["proof/only"]
+
+
+def test_purge_task_returns_count_and_commits(session: Session, monkeypatch: pytest.MonkeyPatch) -> None:
+    now = datetime.now(UTC)
+    terminal_at = now - timedelta(days=TOPUP_PROOF_RETENTION_DAYS + 1)
+    _seed_proof_order(session, status="expired", updated_at=terminal_at, proof_object_key="proof/task")
+    factory = sessionmaker(bind=session.get_bind(), expire_on_commit=False)
+    calls: list[str] = []
+    monkeypatch.setattr("tasks.ai_topup.delete_proof", calls.append)
+
+    with patch("tasks.ai_topup.get_sync_session", return_value=factory()):
+        outcome = purge_expired_topup_proofs_task()
+
+    assert outcome == {"purged": 1}
+    assert calls == ["proof/task"]
+    with factory() as check:
+        order = check.query(AiTopupOrder).one()
+        assert order.proof_object_key is None

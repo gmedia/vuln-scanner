@@ -388,3 +388,21 @@ groups:
             order this old means the expire worker is not retiring it. Check
             ai_topup.expire_stale_orders and the worker logs; a later provider
             succeeded is still credited.
+      # Informational only: the gauge infers purges from updated_at over 24h, not
+      # an exact counter, and the daily sweep caps at 200 rows. A normal day clears
+      # a handful of proofs, so a sustained value above 100 signals an unexpected
+      # bulk purge (clock skew, a terminal-status flood, or a manual backfill).
+      - alert: VulnScannerAiTopupProofPurgeBulk
+        expr: vuln_ai_topup_proofs_purged_total > 100
+        for: 1h
+        labels:
+          severity: info
+          service: vuln-scanner
+        annotations:
+          summary: "AI top-up proof purge cleared more than 100 orders in 24h"
+          description: >-
+            vuln_ai_topup_proofs_purged_total is {{ $value }}. The daily
+            ai_topup.purge_expired_topup_proofs sweep normally clears a handful of
+            proofs. Confirm the worker logs, that object storage was reachable, and
+            that this is not a large batch of terminal orders before treating it as
+            a fault.

@@ -147,6 +147,7 @@ They are exported from `backend/app/metrics.py` next to the payment metrics.
 | `vuln_ai_topup_awaiting_verification_total` | gauge | Proofs waiting for an admin |
 | `vuln_ai_topup_refund_review_total` | gauge | Refunds waiting for clawback/write-off |
 | `vuln_ai_topup_webhook_failed_total` | gauge | Failed top-up webhook events in the last 24h |
+| `vuln_ai_topup_proofs_purged_total` | gauge | Terminal orders whose proof was cleared in the last 24h (derived from `updated_at`) |
 
 Alert meanings:
 
@@ -162,6 +163,9 @@ Alert meanings:
   refunds are accumulating; inspect the flow and the queue.
 - **Pending age > 3 days** — an order outlived its TTL; the expire worker is
   not retiring it.
+- **Proof purge > 100 in 24h** — informational. The gauge is inferred from
+  `updated_at`, so it is an upper bound. A sustained value means an unexpected
+  bulk purge; check the worker logs and that object storage was reachable.
 
 Existing `vuln_payment_*` gauges are scoped to `payable_kind='invoice'`, so a
 top-up backlog must never page as an invoice SLO breach.
@@ -184,7 +188,40 @@ is the admin download endpoint above.
   location.
 - There is no antivirus/OCR in v1; verify the file visually as part of review.
 
-## 10) Migration and deploy notes
+## 10) Proof retention
+
+`ai_topup.purge_expired_topup_proofs` runs daily on the `ip_scan` queue
+(`celery_app.py`, 03:15 UTC). It deletes the stored transfer-proof object 90
+days after the order reached a terminal status, then clears
+`proof_object_key`, `proof_mime`, `proof_size_bytes`, and `proof_uploaded_at`.
+The order row itself is never deleted: it stays as the payment audit trail.
+
+- Only `expired`, `rejected`, and `canceled` orders are eligible. `paid`,
+  `refunded`, and `refund_review` keep their proof indefinitely, because the
+  proof is evidence for a completed payment.
+- `updated_at` is the terminal timestamp: every status change stamps it, and
+  `expire_stale_orders` sets it explicitly when it retires an order.
+- The purge is idempotent: a second run finds nothing because
+  `proof_object_key` is already NULL. At most 200 orders are handled per run.
+- The storage backend must be reachable during the run. `delete_proof` is
+  best-effort, so a storage error never aborts the batch, but it also cannot be
+  told apart from success: the row is cleared either way and the object can be
+  left orphaned. Confirm COS (or the shared `scan_data` volume for the local
+  backend) is reachable, and reconcile orphans from the storage inventory if a
+  purge ran during an outage.
+
+Verify the job ran:
+
+```bash
+# Worker log line, present only when at least one proof was purged
+docker compose logs worker_ip | grep "Purged expired AI top-up proofs"
+```
+
+`vuln_ai_topup_proofs_purged_total` counts terminal orders with no proof whose
+`updated_at` is within 24h. It is an approximation: `updated_at` also moves on
+other terminal transitions, so treat it as an upper bound.
+
+## 11) Migration and deploy notes
 
 S6 adds `ai_topup_orders.resolution_note` (nullable, varchar(255)) with
 revision `ai_topup_v1_s6`, whose parent is `ai_topup_v1_s1`. A green `main`
@@ -192,7 +229,7 @@ deploy already runs `alembic upgrade head`; do not run a second manual
 migration after a successful deploy. If a deploy fails, follow the deploy
 runbook rather than improvising a schema change.
 
-## 11) Launch readiness
+## 12) Launch readiness
 
 Before announcing the top-up flow, run the read-only readiness check from
 `backend/` (or inside the backend container with the deployment environment
