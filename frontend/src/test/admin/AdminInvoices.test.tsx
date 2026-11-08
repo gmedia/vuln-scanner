@@ -320,7 +320,7 @@ describe("AdminInvoices", () => {
     );
   });
 
-  it("calls paid mutate from the draft row", async () => {
+  it("asks for a bank reference before marking paid", async () => {
     const mutate = vi.fn();
     vi.mocked(useMutation).mockReturnValue({
       mutate,
@@ -329,7 +329,59 @@ describe("AdminInvoices", () => {
     render(<AdminInvoices />);
     await userEvent.click(screen.getAllByTestId("invoice-actions-inv-1")[1]);
     await userEvent.click(await screen.findByTestId("invoice-paid-inv-1"));
-    expect(mutate).toHaveBeenCalledWith("inv-1");
+    expect(mutate).not.toHaveBeenCalled();
+
+    const dialog = await screen.findByRole("alertdialog");
+    expect(dialog).toHaveTextContent("SX-202609-0001");
+
+    await userEvent.type(screen.getByTestId("invoice-pay-ref"), "TF-999");
+    await userEvent.click(screen.getByTestId("invoice-pay-confirm"));
+    expect(mutate).toHaveBeenCalledWith({ id: "inv-1", bankRef: "TF-999" });
+  });
+
+  it("does not carry the bank reference to another invoice", async () => {
+    const mutate = vi.fn();
+    vi.mocked(useMutation).mockReturnValue({
+      mutate,
+      isPending: false,
+    } as unknown as ReturnType<typeof useMutation>);
+    vi.mocked(useQuery).mockImplementation(((opts: { queryKey: unknown[] }) => {
+      const key = String(opts.queryKey[0]);
+      if (key === "admin-sku-catalog") {
+        return { data: catalog, isLoading: false };
+      }
+      if (key === "admin-orgs") {
+        return { data: { items: [], total: 0 }, isLoading: false };
+      }
+      return {
+        data: {
+          items: [
+            { ...invoices[0], id: "inv-1", number: "SX-ONE" },
+            { ...invoices[0], id: "inv-2", number: "SX-TWO" },
+          ],
+          total: 2,
+        },
+        isLoading: false,
+      };
+    }) as typeof useQuery);
+
+    render(<AdminInvoices />);
+    await userEvent.click(screen.getAllByTestId("invoice-actions-inv-1")[1]);
+    await userEvent.click(await screen.findByTestId("invoice-paid-inv-1"));
+    await userEvent.type(screen.getByTestId("invoice-pay-ref"), "TF-ONE");
+    await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+    await userEvent.click(screen.getAllByTestId("invoice-actions-inv-2")[1]);
+    await userEvent.click(await screen.findByTestId("invoice-paid-inv-2"));
+    expect(await screen.findByTestId("invoice-pay-ref")).toHaveValue("");
+  });
+
+  it("has no global bank reference input", () => {
+    render(<AdminInvoices />);
+    expect(document.getElementById("inv-bank-ref")).toBeNull();
+    expect(
+      screen.queryByText("Bank ref (for mark paid)"),
+    ).not.toBeInTheDocument();
   });
 
   it("asks before voiding an invoice", async () => {
@@ -518,12 +570,12 @@ describe("AdminInvoices", () => {
       sku: "pro",
     } as never);
     type MutOpts = {
-      mutationFn: (id: string) => unknown;
+      mutationFn: (vars: { id: string; bankRef?: string }) => unknown;
       onSuccess?: (inv: unknown) => void;
     };
     vi.mocked(useMutation).mockImplementation(((opts: MutOpts) => ({
-      mutate: (id: string) => {
-        const result = opts.mutationFn(id);
+      mutate: (vars: { id: string; bankRef?: string }) => {
+        const result = opts.mutationFn(vars);
         opts.onSuccess?.(result);
       },
       isPending: false,
@@ -532,6 +584,7 @@ describe("AdminInvoices", () => {
     render(<AdminInvoices />);
     await userEvent.click(screen.getAllByTestId("invoice-actions-inv-1")[1]);
     await userEvent.click(await screen.findByTestId("invoice-paid-inv-1"));
+    await userEvent.click(await screen.findByTestId("invoice-pay-confirm"));
     expect(toast.success).toHaveBeenCalledWith(
       "Marked paid — Host invoice; Scan org SKU unchanged",
     );
