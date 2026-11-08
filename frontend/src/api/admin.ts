@@ -1082,6 +1082,8 @@ export async function createAdminInvoice(body: {
   sku: string;
   product?: InvoiceProduct;
   cycle?: "monthly" | "annual";
+  period_start?: string | null;
+  due_date?: string | null;
   notes?: string;
   promo_code?: string | null;
   subscription_request_id?: string | null;
