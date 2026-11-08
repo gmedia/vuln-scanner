@@ -51,6 +51,23 @@ test.describe("Admin — Access @admin", () => {
     ).toBeVisible({ timeout: 10_000 });
     await expect(
       page.locator("aside").locator("a[href='/admin/simulator']"),
-    ).toBeVisible({ timeout: 10_000 });
+    ).toHaveCount(0);
+  });
+
+  test("admin HPP page exposes report and what-if tabs", async ({ page }) => {
+    await page.goto("/admin/hpp");
+    await expect(page.getByTestId("hpp-tab-report")).toBeVisible({
+      timeout: 15_000,
+    });
+    await page.getByTestId("hpp-tab-what-if").click();
+    await expect(page.getByTestId("hpp-sim-table")).toBeVisible();
+  });
+
+  test("/admin/simulator redirects to the what-if tab", async ({ page }) => {
+    await page.goto("/admin/simulator");
+    await expect(page).toHaveURL(/\/admin\/hpp\?tab=what-if/);
+    await expect(page.getByTestId("hpp-sim-table")).toBeVisible({
+      timeout: 15_000,
+    });
   });
 });

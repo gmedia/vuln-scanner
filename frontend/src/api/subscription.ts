@@ -75,6 +75,7 @@ export interface SkuTierUsage {
   subscriptions: number;
   invoices: number;
   requests: number;
+  promos: number;
 }
 
 export interface SkuTierInfo {

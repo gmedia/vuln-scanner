@@ -151,6 +151,12 @@ export function InvoicePrintSheet({
               <span>{t("invoicePrintPpn")}</span>
               <span className="num">{formatIdr(invoice.ppn_idr ?? 0)}</span>
             </p>
+            {(invoice.pph23_idr ?? 0) > 0 ? (
+              <p className="inv-totals-row" data-testid="invoice-print-pph23">
+                <span>{t("invoicePrintPph23")}</span>
+                <span className="num">{formatIdr(invoice.pph23_idr ?? 0)}</span>
+              </p>
+            ) : null}
           </>
         ) : null}
         <p className="inv-totals-row inv-totals-grand">

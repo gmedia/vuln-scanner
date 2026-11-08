@@ -273,6 +273,7 @@ class AiTopupOrder(Base):
     )
     pack_code: Mapped[str | None] = mapped_column(String(32), nullable=True)
     reference_code: Mapped[str] = mapped_column(String(32), nullable=False)
+    idempotency_key: Mapped[str | None] = mapped_column(String(80), nullable=True)
     amount_idr: Mapped[int] = mapped_column(BigInteger, nullable=False)
     credit_idr: Mapped[int] = mapped_column(BigInteger, nullable=False)
     bonus_idr: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0, server_default="0")
@@ -337,6 +338,13 @@ class AiTopupOrder(Base):
         Index("ix_ai_topup_orders_organization_id", "organization_id"),
         Index("ix_ai_topup_orders_org_created", "organization_id", sa.text("created_at DESC")),
         Index("ix_ai_topup_orders_status_created", "status", "created_at"),
+        Index(
+            "uq_ai_topup_orders_idempotency_key",
+            "idempotency_key",
+            unique=True,
+            postgresql_where=text("idempotency_key IS NOT NULL"),
+            sqlite_where=text("idempotency_key IS NOT NULL"),
+        ),
     )
 
 

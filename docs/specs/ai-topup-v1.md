@@ -320,10 +320,29 @@ Rules:
 | POST | `/api/admin/ai/topup/orders/{id}/reject` | `{reason}` |
 | POST | `/api/admin/ai/topup/orders/{id}/resolve-refund` | `{action: "clawback"\|"write_off", note}` |
 | GET/POST/PATCH | `/api/admin/ai/topup/packs` | pack CRUD |
-| POST | `/api/admin/ai/wallets/{org_id}/topup` | **legacy**, unchanged; gains an optional `idempotency_key` |
+| POST | `/api/admin/ai/topup/orders/admin-credit` | Direct wallet credit as an `admin_credit` order; optional `idempotency_key` |
+| POST | `/api/admin/ai/wallets/{org_id}/topup` | **legacy** URL; delegates to `admin_credit`, optional `idempotency_key`, still returns `AiWalletOut` |
 
 **The admin queue must stay alive when `AI_GATEWAY_ENABLED=false`.** If ops disables AI while proofs
 are pending, a customer has already paid and must still be creditable. Only the customer routes 404.
+
+### 4.2.1 Admin direct credit
+
+`POST /api/admin/ai/topup/orders/admin-credit` (platform admin, **not** gated by
+`AI_GATEWAY_ENABLED`) credits a wallet directly:
+
+```json
+{"organization_id": "...", "amount_idr": 50000, "note": "support goodwill", "idempotency_key": "..."}
+```
+
+It creates a `payment_method='admin_credit'` order with `amount_idr = 0`,
+`bonus_idr = credit_idr = amount_idr`, `status='paid'`, one `kind='topup'` ledger
+row and one `PaymentAttempt(provider='manual', method='manual_credit')`, all in
+one transaction. The optional `idempotency_key` (≤80 chars) is enforced by the
+partial unique index `uq_ai_topup_orders_idempotency_key`: the same key from the
+same org returns the existing order without crediting again; a key already used
+by another org is a 409. Omitting the key keeps the legacy "credit every call"
+behaviour.
 
 ## 5) Proof-of-transfer storage
 

@@ -36,6 +36,7 @@ CANCELABLE_STATUSES = ("pending_payment", "awaiting_verification")
 REFUND_ACTIONS = ("clawback", "write_off")
 RESOLUTION_NOTE_MAX = 255
 REFUND_DEFAULT_NOTE = "refund:clawback"
+IDEMPOTENCY_CONFLICT = "idempotency_key is already used by another organization"
 
 
 def _validate(*, code: str, label: str, amount_idr: int, bonus_idr: int) -> None:
@@ -449,6 +450,139 @@ async def approve(
             return current
         raise
 
+    await db.refresh(order)
+    return order
+
+
+async def _order_by_idempotency_key(db: AsyncSession, key: str) -> AiTopupOrder | None:
+    return (await db.execute(select(AiTopupOrder).where(AiTopupOrder.idempotency_key == key))).scalar_one_or_none()
+
+
+async def _insert_admin_credit(
+    db: AsyncSession,
+    *,
+    org_id: UUID,
+    admin_id: UUID,
+    amount_idr: int,
+    note: str | None,
+    idempotency_key: str | None,
+    now: datetime,
+) -> AiTopupOrder:
+    """Insert the paid order, credit the wallet and record the manual attempt.
+
+    Runs inside the caller's savepoint so a duplicate key rolls the whole unit
+    back instead of leaving an order without its credit (or vice versa).
+    """
+    order = AiTopupOrder(
+        organization_id=org_id,
+        created_by_user_id=admin_id,
+        pack_id=None,
+        pack_code=None,
+        reference_code=_reference_code(now),
+        idempotency_key=idempotency_key,
+        amount_idr=0,
+        credit_idr=amount_idr,
+        bonus_idr=amount_idr,
+        currency="IDR",
+        payment_method="admin_credit",
+        status="paid",
+        paid_at=now,
+        verified_by_user_id=admin_id,
+        verified_at=now,
+        expires_at=now,
+    )
+    db.add(order)
+    await db.flush()
+    await ai_wallet.credit(
+        db,
+        organization_id=org_id,
+        amount_idr=amount_idr,
+        kind="topup",
+        topup_order_id=order.id,
+        actor_user_id=admin_id,
+        note=note or order.reference_code,
+        commit=False,
+    )
+    db.add(
+        PaymentAttempt(
+            provider="manual",
+            payable_kind="topup",
+            topup_order_id=order.id,
+            organization_id=org_id,
+            amount_idr=order.amount_idr,
+            status="succeeded",
+            method="manual_credit",
+            provider_ref=order.reference_code,
+            succeeded_at=now,
+            created_by_user_id=admin_id,
+        )
+    )
+    await db.flush()
+    return order
+
+
+async def admin_credit(
+    db: AsyncSession,
+    *,
+    org_id: UUID,
+    admin: User,
+    amount_idr: int,
+    note: str | None = None,
+    idempotency_key: str | None = None,
+) -> AiTopupOrder:
+    """Credit a wallet directly as an ``admin_credit`` order.
+
+    Idempotent on ``idempotency_key``: the same key from the same org returns
+    the existing order without crediting again, and a key already used by a
+    different org is a 409. Without a key every call credits, which is the
+    documented backward-compatible behaviour of the legacy endpoint.
+
+    The order insert, the ledger credit and the manual ``PaymentAttempt`` share
+    one savepoint and one commit. The ledger unique index (one ``kind='topup'``
+    row per order) and the order unique index (one order per key) are the
+    server-side guarantees; the client key is only an input.
+    """
+    if amount_idr < 1:
+        raise HTTPException(status_code=422, detail="amount_idr must be positive")
+
+    key = idempotency_key.strip() if idempotency_key else None
+    if not key:
+        key = None
+
+    if key is not None:
+        existing = await _order_by_idempotency_key(db, key)
+        if existing is not None:
+            if existing.organization_id != org_id:
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=IDEMPOTENCY_CONFLICT)
+            return existing
+
+    now = datetime.now(UTC)
+    admin_id = admin.id
+    order: AiTopupOrder | None = None
+    try:
+        async with db.begin_nested():
+            order = await _insert_admin_credit(
+                db,
+                org_id=org_id,
+                admin_id=admin_id,
+                amount_idr=amount_idr,
+                note=note,
+                idempotency_key=key,
+                now=now,
+            )
+    except IntegrityError:
+        # The savepoint was rolled back; a concurrent request with the same key
+        # may have committed first. Return its order instead of raising a 500.
+        if key is not None:
+            existing = await _order_by_idempotency_key(db, key)
+            if existing is not None:
+                if existing.organization_id != org_id:
+                    raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=IDEMPOTENCY_CONFLICT) from None
+                return existing
+        raise
+
+    assert order is not None
+    await db.commit()
     await db.refresh(order)
     return order
 

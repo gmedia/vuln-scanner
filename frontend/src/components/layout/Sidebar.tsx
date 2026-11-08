@@ -248,12 +248,6 @@ function Sidebar() {
                   testId="nav-admin-skus"
                 />
                 <NavItem
-                  to="/admin/simulator"
-                  labelKey="adminSimulator"
-                  icon={Calculator}
-                  testId="nav-admin-simulator"
-                />
-                <NavItem
                   to="/admin/invoices"
                   labelKey="invoices"
                   icon={Receipt}

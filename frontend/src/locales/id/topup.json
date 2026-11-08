@@ -99,5 +99,19 @@
   "refundReviewTitle": "Peninjauan pengembalian dana",
   "refundReviewBody": "Pembayaran ini sedang ditinjau untuk pengembalian dana. Hubungi dukungan jika butuh bantuan.",
   "polling": "Memeriksa status pembayaran…",
-  "checkAgain": "Periksa lagi"
+  "checkAgain": "Periksa lagi",
+  "historyTitle": "Riwayat top up",
+  "historyEmptyTitle": "Belum ada top up.",
+  "historyEmptyBody": "Pesanan top up organisasi Anda akan muncul di sini setelah dibuat.",
+  "historyError": "Gagal memuat riwayat top up.",
+  "historyRetry": "Coba lagi",
+  "historyLoadMore": "Muat lebih banyak",
+  "historyLoading": "Memuat…",
+  "historyColumnReference": "Referensi",
+  "historyColumnAmount": "Nominal",
+  "historyColumnMethod": "Metode",
+  "historyColumnStatus": "Status",
+  "historyColumnDate": "Dibuat",
+  "historyColumnAction": "Aksi",
+  "historyOpen": "Buka"
 }

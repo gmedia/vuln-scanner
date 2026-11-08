@@ -8,6 +8,7 @@ import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 import {
   createTopupOrder,
+  getTopupOrders,
   getTopupPacks,
   type TopupPack,
   type TopupOrder,
@@ -120,6 +121,12 @@ describe("AiTopup", () => {
       organization_id: "org1",
       balance_idr: 25_000,
       currency: "IDR",
+    });
+    vi.mocked(getTopupOrders).mockResolvedValue({
+      items: [],
+      total: 0,
+      page: 1,
+      limit: 20,
     });
   });
 

@@ -37,7 +37,12 @@ import {
   WorkspaceShellBody,
   WorkspaceShellHead,
 } from "@/components/workspace/WorkspaceShell";
-import type { WorkspaceTone } from "@/components/workspace/workspaceChrome";
+import {
+  methodLabel,
+  statusBadgeVariant,
+  statusLabelKey,
+  statusTone,
+} from "@/components/ai/topupStatus";
 import { apiErrorMessage } from "@/api/apiErrors";
 import { getAiWallet } from "@/api/ai";
 import {
@@ -63,35 +68,6 @@ const SETTLED_STATUSES = new Set([
   "refunded",
   "refund_review",
 ]);
-
-function statusBadgeVariant(
-  status: string,
-): "success" | "pending" | "info" | "failed" | "default" | "medium" {
-  if (status === "paid") return "success";
-  if (status === "pending_payment") return "pending";
-  if (status === "awaiting_verification") return "info";
-  if (status === "rejected") return "failed";
-  if (status === "refund_review") return "medium";
-  return "default";
-}
-
-function statusTone(status: string): WorkspaceTone {
-  if (status === "paid") return "success";
-  if (status === "rejected") return "danger";
-  if (status === "refund_review") return "warn";
-  if (status === "pending_payment") return "primary";
-  if (status === "awaiting_verification") return "info";
-  return "idle";
-}
-
-function methodLabel(
-  t: (key: string) => string,
-  method: string,
-): string {
-  if (method === "midtrans") return t("methodMidtransShort");
-  if (method === "manual_transfer") return t("methodManualShort");
-  return method;
-}
 
 export default function AiTopupStatus() {
   const { orderId } = useParams<{ orderId: string }>();
@@ -303,10 +279,7 @@ export default function AiTopupStatus() {
                 data-status={order.status}
                 className="text-[10px] uppercase"
               >
-                {t(`status${order.status
-                  .split("_")
-                  .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-                  .join("")}`)}
+                {t(statusLabelKey(order.status))}
               </Badge>
             }
           />

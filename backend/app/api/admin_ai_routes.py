@@ -32,7 +32,7 @@ from app.schemas.ai_gateway import (
     AiWalletOut,
     AiWalletTopup,
 )
-from app.services import ai_fx
+from app.services import ai_fx, ai_wallet
 from app.services.ai_crypto import encrypt_credential
 from app.services.ai_pricing import (
     canonical_hpp_usd,
@@ -43,7 +43,7 @@ from app.services.ai_pricing import (
     usd_per_1m_to_legacy_per_1k,
 )
 from app.services.ai_proxy import admin_trial_chat
-from app.services.ai_wallet import topup as wallet_topup
+from app.services.ai_topup import admin_credit
 from app.services.auth import get_current_admin
 
 router = APIRouter(prefix="/admin/ai", tags=["admin-ai"])
@@ -596,14 +596,21 @@ async def topup_wallet(
     org_id: uuid.UUID,
     request: Request,
     body: AiWalletTopup,
-    _admin: User = Depends(get_current_admin),
+    admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
 ) -> AiWalletOut | Response:
     _disabled()
     limited = await _limit(request)
     if limited:
         return limited
-    wallet = await wallet_topup(db, org_id, body.amount_idr)
+    await admin_credit(
+        db,
+        org_id=org_id,
+        admin=admin,
+        amount_idr=body.amount_idr,
+        idempotency_key=body.idempotency_key,
+    )
+    wallet = await ai_wallet.get_or_create_wallet(db, org_id)
     return AiWalletOut.model_validate(wallet)
 
 
