@@ -67,7 +67,7 @@ Prod nginx (`nginx/sinexis.app.conf`) proxies `/api/` and `/ws/` to FastAPI; **`
 | Topic | Default |
 |-------|---------|
 | **Payer** | **Organization AI wallet** (not `users.credits`) |
-| **Motion** | **Prepaid IDR** top-up by admin/ops until finance adds `service_id` |
+| **Motion** | **Prepaid IDR**. Platform admin can credit any org; org owner/admin can **self-serve top-up** (Midtrans or manual transfer) per [`ai-topup-v1.md`](ai-topup-v1.md). Finance still owns pack values and any `service_id`. |
 | **Unit** | Sell prices are **USD per 1M tokens** (`price_usd_per_1m_*`). The IDR charge is the combined prompt+completion total converted **once** at the request's locked FX and rounded **up** to whole IDR. `price_idr_per_1k_*` is a derived display/rollback value, never the source of truth. |
 | **FX** | Daily `ai_fx_rates` snapshot (Celery beat 01:10 UTC, `ai_fx.refresh` on the `ip_scan` worker) with **visible** source + effective date and an admin **manual override**. The rate is resolved **once at reserve**, stored on the reservation, and prices both the customer charge and COGS, so a later change cannot reprice a request. `AI_USD_IDR` is only the fallback when the table is empty. |
 | **Catalog** | **Named aliases only** (`sinexis/…`); reject unknown `model` |
@@ -89,10 +89,10 @@ Prod nginx (`nginx/sinexis.app.conf`) proxies `/api/` and `/ws/` to FastAPI; **`
 
 | Actor | Notes |
 |-------|--------|
-| **Org admin/owner** | Keys, usage, wallet visibility (read); cannot set wholesale creds |
+| **Org admin/owner** | Keys, usage, wallet visibility (read); **self-serve wallet top-up** ([`ai-topup-v1.md`](ai-topup-v1.md)); cannot set wholesale creds |
 | **Org member** | Call `/v1` with a key they were given |
 | **Org viewer** | Usage read-only if product wants parity; **no keys, no spend** (lock: **no spend**) |
-| **Platform admin** | Providers, models, FX, HPP/markup, all-org usage, trial chat, top-up org wallet, kill switch |
+| **Platform admin** | Providers, models, FX, HPP/markup, all-org usage, trial chat, legacy direct top-up of any org wallet, top-up verification queue, kill switch |
 | **SDK client** | OpenAI SDK `base_url=…/v1`, `api_key=sx-…` |
 | **Upstream** | HTTPS OpenAI-compat `chat/completions` only |
 
@@ -172,7 +172,7 @@ SPA /admin/ai                  -- admin --> /api/admin/ai/*
 | Column | Notes |
 |--------|-------|
 | `organization_id` | unique |
-| `balance_idr` | integer |
+| `balance_idr` | bigint (widened from `integer`; see [`ai-topup-v1.md`](ai-topup-v1.md) TU16) |
 | `currency` | `IDR` v1 |
 | `updated_at` | |
 
@@ -243,14 +243,14 @@ Unique `(base, quote, effective_date)`; a same-day re-fetch or override updates 
 |--------|-------|
 | `id` | UUID |
 | `organization_id` | FK `ai_wallets.organization_id`, indexed |
-| `kind` | `topup` \| `reserve` \| `settle_adjust` \| `release` \| `manual_adjust` \| `opening` |
+| `kind` | `topup` \| `reserve` \| `settle_adjust` \| `release` \| `manual_adjust` \| `opening` \| `refund` |
 | `delta_idr` | signed IDR change |
 | `balance_after_idr` | post-change balance, `>= 0` |
 | `reservation_id`, `usage_event_id`, `actor_user_id` | nullable links |
 | `note` | optional |
 | `created_at` | |
 
-Partial unique `(kind, reservation_id)`; every balance mutation writes exactly one row in the same transaction as the wallet update, so `sum(delta_idr)` equals `balance_idr`. The USD-pricing follow-up seeds one `opening` row per pre-existing wallet as `balance - existing ledger sum`, so `sum(delta_idr) == balance_idr` holds for every wallet after that migration; a drift gauge alerts if it stops holding.
+Partial unique `(kind, reservation_id)`; every balance mutation writes exactly one row in the same transaction as the wallet update, so `sum(delta_idr)` equals `balance_idr`. Top-up settlement adds `topup_order_id` plus a partial unique `(topup_order_id) WHERE kind = 'topup'` so one order settles at most once ([`ai-topup-v1.md`](ai-topup-v1.md) TU5). The USD-pricing follow-up seeds one `opening` row per pre-existing wallet as `balance - existing ledger sum`, so `sum(delta_idr) == balance_idr` holds for every wallet after that migration; a drift gauge alerts if it stops holding.
 
 ---
 
@@ -299,6 +299,7 @@ disagree, and a test asserts they return identical id sets.
 | DELETE | `/api/ai/keys/{id}` | revoke |
 | GET | `/api/ai/usage` | org-scoped, metadata + HTTP status, cache hits, TTFT, derived TPS |
 | GET | `/api/ai/wallet` | balance |
+| GET/POST | `/api/ai/topup/*` | packs, orders, proof upload, Midtrans checkout, cancel; owner/admin for writes — [`ai-topup-v1.md`](ai-topup-v1.md) §4.1 |
 | GET | `/api/ai/models` | public catalog; same servable filter as `/v1/models` |
 | POST | `/api/ai/chat` | keyless customer trial chat; same proxy, charged to the org wallet, `stream` rejected |
 
@@ -308,7 +309,9 @@ disagree, and a test asserts they return identical id sets.
 |--------|------|------|
 | CRUD | `/api/admin/ai/providers` | health ping |
 | CRUD | `/api/admin/ai/models` | |
-| POST | `/api/admin/ai/wallets/{org_id}/topup` | |
+| POST | `/api/admin/ai/wallets/{org_id}/topup` | legacy direct credit; new top-ups go through the order flow |
+| GET/POST | `/api/admin/ai/topup/orders` | verification queue, detail, proof, approve/reject, resolve-refund — [`ai-topup-v1.md`](ai-topup-v1.md) §4.2 |
+| CRUD | `/api/admin/ai/topup/packs` | pack catalog |
 | GET | `/api/admin/ai/usage` | all orgs |
 | POST | `/api/admin/ai/chat` | trial; cap |
 | GET | `/api/admin/ai/fx` | effective rate + source + date + 30-row history |
