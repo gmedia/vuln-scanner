@@ -54,6 +54,7 @@ const AdminSubscriptions = lazy(() => import("@/pages/admin/AdminSubscriptions")
 const AdminBlog = lazy(() => import("@/pages/admin/AdminBlog"));
 const AdminEmailLogs = lazy(() => import("@/pages/admin/AdminEmailLogs"));
 const AdminAi = lazy(() => import("@/pages/admin/AdminAi"));
+const AdminAiTopups = lazy(() => import("@/pages/admin/AdminAiTopups"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 function App() {
@@ -261,6 +262,10 @@ function App() {
               <Route
                 path="/admin/ai"
                 element={<PageBoundary component={AdminAi} />}
+              />
+              <Route
+                path="/admin/ai/topups"
+                element={<PageBoundary component={AdminAiTopups} />}
               />
             </Route>
           </Route>
