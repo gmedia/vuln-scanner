@@ -1,7 +1,8 @@
-"""AI top-up: pack catalog (S1) + manual-transfer orders (S2).
+"""AI top-up: pack catalog (S1), orders (S2/S3) and refund resolution (S6).
 
-S2 covers manual-transfer orders, private proof upload and admin verification.
-Midtrans checkout/webhook, the expire worker and metrics belong to later slices.
+S2 covers manual-transfer orders, private proof upload and admin verification;
+S3 adds Midtrans checkout/webhook settlement. S6 adds the manual refund
+resolution (clawback or write-off) for a ``refund_review`` order.
 """
 
 from __future__ import annotations
@@ -32,6 +33,9 @@ ORDER_TTL = timedelta(days=3)
 
 PROOF_STATUSES = ("pending_payment", "awaiting_verification")
 CANCELABLE_STATUSES = ("pending_payment", "awaiting_verification")
+REFUND_ACTIONS = ("clawback", "write_off")
+RESOLUTION_NOTE_MAX = 255
+REFUND_DEFAULT_NOTE = "refund:clawback"
 
 
 def _validate(*, code: str, label: str, amount_idr: int, bonus_idr: int) -> None:
@@ -498,6 +502,74 @@ async def cancel(
         attempt.status = "expired"
         attempt.provider_status = "expired"
         attempt.updated_at = now
+    await db.commit()
+    await db.refresh(order)
+    return order
+
+
+async def resolve_refund(
+    db: AsyncSession,
+    *,
+    order_id: UUID,
+    admin: User,
+    action: str,
+    note: str | None,
+) -> AiTopupOrder:
+    """Resolve a ``refund_review`` order as a clawback or a write-off.
+
+    ``clawback`` removes ``credit_idr`` from the wallet and writes one
+    ``kind='refund'`` ledger row; ``write_off`` deliberately leaves the money with
+    the customer. Both are recorded on the order so the queue has an audit trail.
+    A second call for an already ``refunded`` order is a no-op (200), which is
+    what makes a double-click safe. The order lock serialises concurrent
+    resolutions; the ledger's ``kind='topup'`` unique index is untouched because
+    the clawback row uses a different ``kind``.
+    """
+    if action not in REFUND_ACTIONS:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="action must be 'clawback' or 'write_off'",
+        )
+
+    now = datetime.now(UTC)
+    order = await _order_for_update(db, order_id)
+    if order.status == "refunded":
+        return order
+    if order.status != "refund_review":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Order is not awaiting refund resolution",
+        )
+
+    resolution_note = (note or "").strip()[:RESOLUTION_NOTE_MAX] or None
+    admin_id = admin.id
+    if action == "clawback":
+        wallet = await ai_wallet.get_wallet(db, order.organization_id)
+        balance_idr = int(wallet.balance_idr) if wallet is not None else 0
+        if balance_idr < order.credit_idr:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    "Insufficient balance to claw back this top-up "
+                    f"(wallet {balance_idr} IDR, credit {order.credit_idr} IDR)"
+                ),
+            )
+        await ai_wallet.adjust(
+            db,
+            organization_id=order.organization_id,
+            delta_idr=-order.credit_idr,
+            kind="refund",
+            topup_order_id=order.id,
+            actor_user_id=admin_id,
+            note=resolution_note or REFUND_DEFAULT_NOTE,
+            commit=False,
+        )
+
+    order.status = "refunded"
+    order.verified_by_user_id = admin_id
+    order.verified_at = now
+    order.resolution_note = resolution_note
+    order.updated_at = now
     await db.commit()
     await db.refresh(order)
     return order

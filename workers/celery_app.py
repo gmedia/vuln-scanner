@@ -54,6 +54,7 @@ celery_app.conf.update(
         "ai_fx.refresh": {"queue": "ip_scan"},
         "ai_reservations.reap": {"queue": "ip_scan"},
         "ai_providers.probe": {"queue": "ip_scan"},
+        "ai_topup.expire_stale_orders": {"queue": "ip_scan"},
     },
     task_annotations={
         "ip_scan.run": {"rate_limit": "10/m"},
@@ -129,6 +130,10 @@ celery_app.conf.update(
             "task": "ai_providers.probe",
             "schedule": 300.0,
         },
+        "ai-topup-expire-stale-orders-every-15m": {
+            "task": "ai_topup.expire_stale_orders",
+            "schedule": 900.0,
+        },
     },
 )
 
@@ -147,5 +152,6 @@ celery_app.autodiscover_tasks(
         "tasks.ai_fx",
         "tasks.ai_reservations",
         "tasks.ai_providers",
+        "tasks.ai_topup",
     ]
 )

@@ -306,3 +306,85 @@ groups:
             vuln_promo_redemptions_24h is {{ $value }}. This is usually a leaked code
             or a runaway campaign, not organic demand. Open /admin/promo-codes, sort by
             redemptions, and deactivate the offending code.
+      - alert: VulnScannerAiTopupVerificationBacklog
+        expr: vuln_ai_topup_awaiting_verification_total > 20
+        for: 2h
+        labels:
+          severity: warning
+          service: vuln-scanner
+        annotations:
+          summary: "AI top-up proof verification is backing up"
+          description: >-
+            vuln_ai_topup_awaiting_verification_total is {{ $value }}. Manual
+            transfer proofs have waited more than two hours for an admin. Open
+            /admin/ai/topups, filter awaiting_verification, and approve or reject
+            each order; the customer cannot use the credit until it is verified.
+      - alert: VulnScannerAiTopupPendingOverdue
+        expr: vuln_ai_topup_pending_overdue_total > 0
+        for: 15m
+        labels:
+          severity: warning
+          service: vuln-scanner
+        annotations:
+          summary: "AI top-up orders are past their expiry but still pending"
+          description: >-
+            vuln_ai_topup_pending_overdue_total is {{ $value }}. The 15-minute
+            ai_topup.expire_stale_orders beat has not retired these orders. Check
+            that celery beat is running, the task is routed to ip_scan, and the
+            worker logs show the sweep. An expired order can still be credited by
+            a later provider succeeded event.
+      - alert: VulnScannerAiTopupRefundReview
+        expr: vuln_ai_topup_refund_review_total > 0
+        for: 15m
+        labels:
+          severity: critical
+          service: vuln-scanner
+        annotations:
+          summary: "An AI top-up refund is waiting for an admin decision"
+          description: >-
+            vuln_ai_topup_refund_review_total is {{ $value }}. A refund or
+            chargeback was recorded and no clawback or write-off has been made.
+            Open /admin/ai/topups, review the order, then resolve it as clawback
+            (remove the credit) or write-off (leave the credit with the customer).
+      - alert: VulnScannerAiTopupWebhookFailures
+        expr: vuln_ai_topup_webhook_failed_total > 0
+        for: 15m
+        labels:
+          severity: warning
+          service: vuln-scanner
+        annotations:
+          summary: "AI top-up webhook events failed in the last 24h"
+          description: >-
+            vuln_ai_topup_webhook_failed_total is {{ $value }}. A top-up webhook
+            failed and the wallet was not credited. Check the backend logs for
+            signature, amount-mismatch, or unknown-order errors, then confirm the
+            transaction in the Midtrans dashboard before crediting manually. Never
+            credit the same reference twice.
+      - alert: VulnScannerAiTopupOrderBacklog
+        expr: sum(vuln_ai_topup_orders_total{status=~"canceled|expired|refund_review"}) > 50
+        for: 1h
+        labels:
+          severity: warning
+          service: vuln-scanner
+        annotations:
+          summary: "AI top-up terminal/refund orders are piling up"
+          description: >-
+            vuln_ai_topup_orders_total shows more than 50 canceled, expired, or
+            refund_review orders. A steady expired/canceled backlog means customers
+            abandon the transfer flow or the expiry sweep is not keeping up; an
+            increasing refund_review slice means refunds are not being resolved.
+            Review the queue and the expire worker.
+      - alert: VulnScannerAiTopupPendingAgeStale
+        expr: vuln_ai_topup_pending_age_seconds > 259200
+        for: 1h
+        labels:
+          severity: warning
+          service: vuln-scanner
+        annotations:
+          summary: "An AI top-up order has been pending for more than three days"
+          description: >-
+            vuln_ai_topup_pending_age_seconds is {{ $value }}. Manual orders expire
+            after three days and Midtrans follows the provider expiry, so a pending
+            order this old means the expire worker is not retiring it. Check
+            ai_topup.expire_stale_orders and the worker logs; a later provider
+            succeeded is still credited.

@@ -145,6 +145,7 @@ class AiTopupAdminOrderOut(BaseModel):
     verified_by_user_id: uuid.UUID | None = None
     verified_at: datetime | None = None
     rejection_reason: str | None = None
+    resolution_note: str | None = None
     paid_at: datetime | None = None
     expires_at: datetime
     created_at: datetime
@@ -179,6 +180,7 @@ class AiTopupAdminOrderOut(BaseModel):
             verified_by_user_id=order.verified_by_user_id,
             verified_at=order.verified_at,
             rejection_reason=order.rejection_reason,
+            resolution_note=order.resolution_note,
             paid_at=order.paid_at,
             expires_at=order.expires_at,
             created_at=order.created_at,
@@ -200,3 +202,8 @@ class AiTopupApproveIn(BaseModel):
 
 class AiTopupRejectIn(BaseModel):
     reason: str = Field(..., min_length=1, max_length=255)
+
+
+class AiTopupResolveRefundIn(BaseModel):
+    action: Literal["clawback", "write_off"]
+    note: str | None = Field(default=None, max_length=255)
