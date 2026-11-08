@@ -226,7 +226,7 @@ class BillingService:
         method: str = "bank_transfer",
         reference: str | None = None,
     ) -> tuple[OrgInvoice, Subscription | None, PaymentAttempt]:
-        inv = await InvoiceService(self.db).mark_paid(invoice_id, reference)
+        inv = await InvoiceService(self.db).mark_paid(invoice_id, reference, actor_id=actor.id)
         sub: Subscription | None = await self.get_subscription(inv.organization_id)
         if inv.product == "scan":
             sub = await self.activate_from_invoice(
