@@ -137,6 +137,8 @@
   "invoicePaid": "Ditandai lunas — SKU Scan org diterapkan jika produk scan",
   "invoicePaid_scan": "Ditandai lunas — SKU Scan org diterapkan",
   "invoicePaid_host": "Ditandai lunas — invoice Host; SKU Scan org tidak berubah",
+  "invoiceNonScanNotice": "Invoice ini hanya catatan tagihan. Menandainya lunas tidak mengubah paket, SKU, atau hak akses pelanggan.",
+  "invoiceNonScanMarker": "Bukan invoice Scan — paket dan hak akses tidak berubah",
   "invoicePrint": "Cetak",
   "invoicePdf": "PDF",
   "invoicePdfFail": "Gagal mengunduh PDF invoice",

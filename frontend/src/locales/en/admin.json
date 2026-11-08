@@ -137,6 +137,8 @@
   "invoicePaid": "Marked paid — Scan org SKU applied when product is scan",
   "invoicePaid_scan": "Marked paid — Scan org SKU applied",
   "invoicePaid_host": "Marked paid — Host invoice; Scan org SKU unchanged",
+  "invoiceNonScanNotice": "This invoice is a billing record only. Marking it paid does not change the customer's plan, SKU, or entitlements.",
+  "invoiceNonScanMarker": "Not a Scan invoice — plan and entitlements unchanged",
   "invoicePrint": "Print",
   "invoicePdf": "PDF",
   "invoicePdfFail": "Could not download invoice PDF",

@@ -692,4 +692,17 @@ describe("AdminInvoices", () => {
     expect(skuRoot?.querySelector("[data-value=basic]")).toBeTruthy();
   });
 
+  it("shows a billing-only notice for non-Scan products and hides it for Scan", async () => {
+    render(<AdminInvoices />);
+    expect(
+      screen.queryByTestId("invoice-nonscan-notice"),
+    ).not.toBeInTheDocument();
+
+    changeSelect(screen.getByTestId("invoice-product"), "host");
+
+    const notice = await screen.findByTestId("invoice-nonscan-notice");
+    expect(notice).toHaveTextContent(/billing record only/i);
+    expect(notice.textContent).not.toMatch(/plan is now/i);
+  });
+
 });
