@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 import pytest_asyncio
@@ -13,12 +13,14 @@ from app.database import get_db
 from app.main import app
 from app.models.asset import ScanAsset
 from app.models.billing import Subscription
+from app.models.invoice import OrgInvoice
 from app.models.organization import Organization, OrganizationMembership
 from app.models.sku_tier import SkuTier
 from app.models.sku_tier_history import SkuTierHistory
 from app.models.subscription import SubscriptionRequest
 from app.models.user import User
 from app.services.auth import create_access_token, hash_password
+from app.services.invoice_math import as_utc, period_bounds_utc
 from app.services.organization import ensure_personal_org
 
 
@@ -809,8 +811,148 @@ async def test_admin_can_approve_a_pending_request(db_session, ctx):
     assert body["status"] == "approved"
     assert body["resolution_note"] == "approved by ops"
 
+    # Approval records the decision; it must not grant paid entitlement.
+    await db_session.refresh(ctx["org"])
+    assert ctx["org"].sku == "basic"
+
+    invoices = (
+        await db_session.execute(
+            select(OrgInvoice).where(
+                OrgInvoice.subscription_request_id == request.id,
+            )
+        )
+    ).scalars().all()
+    assert len(invoices) == 1
+    invoice = invoices[0]
+    assert invoice.status == "draft"
+    assert invoice.product == "scan"
+    assert invoice.sku == "pro"
+    assert invoice.organization_id == ctx["org"].id
+
+    subscription = await db_session.scalar(
+        select(Subscription).where(Subscription.organization_id == ctx["org"].id)
+    )
+    assert subscription is not None
+    assert subscription.status == "incomplete"
+    assert subscription.sku == "pro"
+
+    history = (
+        await db_session.execute(
+            select(SkuTierHistory).where(
+                SkuTierHistory.organization_id == ctx["org"].id,
+                SkuTierHistory.action == "assigned",
+            )
+        )
+    ).scalars().all()
+    assert history == []
+
+
+@pytest.mark.asyncio
+async def test_approval_with_a_blank_note_persists_a_resolution_note(db_session, ctx):
+    request = await _pending_request(db_session, ctx["org"].id, ctx["owner"].id)
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                f"/api/admin/subscription-requests/{request.id}/approve",
+                headers=_auth(ctx["admin"]),
+                json={"note": ""},
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200, response.text
+    assert response.json()["resolution_note"] == "Approved; invoice draft created"
+    stored = await db_session.get(SubscriptionRequest, request.id)
+    assert stored is not None
+    await db_session.refresh(stored)
+    assert stored.resolution_note == "Approved; invoice draft created"
+
+
+@pytest.mark.asyncio
+async def test_approval_moves_the_draft_to_the_next_free_period(db_session, ctx):
+    start, end = period_bounds_utc(None, "monthly")
+    db_session.add(
+        OrgInvoice(
+            id=uuid.uuid4(),
+            organization_id=ctx["org"].id,
+            number=f"SX-EXIST-{uuid.uuid4().hex[:8]}",
+            product="scan",
+            sku="basic",
+            amount_idr=300_000,
+            period_start=start,
+            period_end=end,
+            due_date=end,
+            status="sent",
+            notes="",
+        )
+    )
+    await db_session.commit()
+    request = await _pending_request(db_session, ctx["org"].id, ctx["owner"].id)
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                f"/api/admin/subscription-requests/{request.id}/approve",
+                headers=_auth(ctx["admin"]),
+                json={"note": ""},
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    # The current period is already billed, so approval must not 409: it drafts
+    # the next period instead.
+    assert response.status_code == 200, response.text
+    invoice = await db_session.scalar(
+        select(OrgInvoice).where(OrgInvoice.subscription_request_id == request.id)
+    )
+    assert invoice is not None
+    assert invoice.status == "draft"
+    assert as_utc(invoice.period_start) == end + timedelta(microseconds=1)
+    await db_session.refresh(ctx["org"])
+    assert ctx["org"].sku == "basic"
+
+
+@pytest.mark.asyncio
+async def test_paying_the_approval_invoice_applies_the_tier(db_session, ctx):
+    request = await _pending_request(db_session, ctx["org"].id, ctx["owner"].id)
+    _bind(db_session)
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            approved = await client.post(
+                f"/api/admin/subscription-requests/{request.id}/approve",
+                headers=_auth(ctx["admin"]),
+                json={"note": ""},
+            )
+            assert approved.status_code == 200, approved.text
+            invoice = await db_session.scalar(
+                select(OrgInvoice).where(
+                    OrgInvoice.subscription_request_id == request.id
+                )
+            )
+            assert invoice is not None
+            assert invoice.status == "draft"
+            paid = await client.post(
+                f"/api/admin/invoices/{invoice.id}/paid",
+                headers=_auth(ctx["admin"]),
+                json={"bank_ref": "TF-APPROVAL-PAY-1"},
+            )
+            assert paid.status_code == 200, paid.text
+    finally:
+        app.dependency_overrides.clear()
+
     await db_session.refresh(ctx["org"])
     assert ctx["org"].sku == "pro"
+
+    subscription = await db_session.scalar(
+        select(Subscription).where(Subscription.organization_id == ctx["org"].id)
+    )
+    assert subscription is not None
+    assert subscription.status == "active"
+    assert subscription.sku == "pro"
 
     history = (
         await db_session.execute(
@@ -822,6 +964,7 @@ async def test_admin_can_approve_a_pending_request(db_session, ctx):
     ).scalars().all()
     assert len(history) == 1
     assert history[0].sku_code == "pro"
+    assert history[0].actor_user_id == ctx["admin"].id
     assert history[0].changes["tier"] == {"from": "basic", "to": "pro"}
     assert history[0].changes["source"]["to"] == "subscription_request"
 
@@ -905,7 +1048,7 @@ async def test_resolving_an_unknown_request_returns_404(db_session, ctx):
 
 
 @pytest.mark.asyncio
-async def test_approval_syncs_an_existing_subscription(db_session, ctx):
+async def test_approval_keeps_an_existing_subscription_sku(db_session, ctx):
     request = await _pending_request(db_session, ctx["org"].id, ctx["owner"].id)
     db_session.add(
         Subscription(
@@ -935,7 +1078,8 @@ async def test_approval_syncs_an_existing_subscription(db_session, ctx):
         select(Subscription).where(Subscription.organization_id == ctx["org"].id)
     )
     assert subscription is not None
-    assert subscription.sku == "pro"
+    assert subscription.sku == "basic"
+    assert subscription.status == "active"
 
 
 @pytest.mark.asyncio

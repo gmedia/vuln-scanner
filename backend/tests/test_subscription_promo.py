@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.main import app
+from app.models.invoice import OrgInvoice
 from app.models.organization import Organization, OrganizationMembership
 from app.models.promo import PromoRedemption
 from app.models.subscription import SubscriptionRequest
@@ -163,7 +164,7 @@ async def test_request_stores_normalized_code(db_session: AsyncSession) -> None:
     assert stored.promo_code == "STORECODE2026"
 
 @pytest.mark.asyncio
-async def test_approval_does_not_consume_but_invoice_does(
+async def test_approval_creates_the_invoice_and_consumes_promo(
     db_session: AsyncSession,
 ) -> None:
     owner = await _make_user(db_session, "sub-promo-approve@example.com")
@@ -182,31 +183,39 @@ async def test_approval_does_not_consume_but_invoice_does(
     await SubscriptionService(db_session).resolve(
         request.id, admin, new_status="approved", note="ok"
     )
-    assert (
-        await db_session.scalar(select(func.count()).select_from(PromoRedemption))
-        == 0
-    )
 
-    invoice = await InvoiceService(db_session).create_invoice(
-        organization_id=org.id,
-        sku="pro",
-        actor=admin,
-        promo_code="APPROVE2026",
-        subscription_request_id=request.id,
-    )
+    # Approval now creates the draft invoice, so the promo is redeemed there.
     redemption = await db_session.scalar(
-        select(PromoRedemption).where(PromoRedemption.invoice_id == invoice.id)
+        select(PromoRedemption).where(
+            PromoRedemption.subscription_request_id == request.id
+        )
     )
     assert redemption is not None
-    assert redemption.subscription_request_id == request.id
     assert redemption.organization_id == org.id
+    invoice = await db_session.get(OrgInvoice, redemption.invoice_id)
+    assert invoice is not None
+    assert invoice.status == "draft"
+    assert invoice.subscription_request_id == request.id
+    assert invoice.promo_code == "APPROVE2026"
+    assert invoice.discount_idr == 65_000
 
     stored = await db_session.get(SubscriptionRequest, request.id)
     assert stored is not None
     assert stored.status == "approved"
     assert stored.resolved_by_user_id == admin.id
     assert stored.resolved_at is not None
-    assert invoice.number in stored.resolution_note
+    assert stored.resolution_note == "ok"
+
+    with pytest.raises(HTTPException) as conflict:
+        await InvoiceService(db_session).create_invoice(
+            organization_id=org.id,
+            sku="pro",
+            actor=admin,
+            promo_code="APPROVE2026",
+            subscription_request_id=request.id,
+        )
+    assert conflict.value.status_code == 409
+    assert await db_session.scalar(select(func.count()).select_from(OrgInvoice)) == 1
 
 @pytest.mark.asyncio
 async def test_invoice_without_promo_also_consumes_request(

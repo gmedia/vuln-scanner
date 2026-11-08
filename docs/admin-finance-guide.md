@@ -82,7 +82,7 @@ aturan, bukan salinan penuh copy tersebut.
 - Laporan HPP adalah **estimasi biaya/margin, bukan laba invoice**.
 - **Simulator tidak menyimpan apa pun** — refresh menghapus isian.
 - `Record payment` membutuhkan invoice **`sent`**, dan hanya invoice produk **scan** yang mengaktifkan langganan.
-- `Approve` permintaan paket memindahkan tier **segera** dengan catatan approval **kosong**.
+- `Approve` permintaan paket hanya mencatat keputusan + membuat invoice draft dan langganan `incomplete`; tier baru berlaku setelah invoice **scan** dibayar.
 - Top-up AI hanya menerima **UUID organisasi yang ditempel** (tidak ada pencarian).
 - Kurs FX di layar AI **hanya untuk tampilan harga**; COGS penagihan tetap memakai `AI_USD_IDR`.
 - Harga model AI diisi dalam **USD per 1 juta token**.
