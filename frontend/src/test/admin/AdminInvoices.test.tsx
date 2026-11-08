@@ -187,8 +187,8 @@ const invoices = [
     bank_ref: null,
     notes: "",
     paid_at: null,
-    created_at: "2026-09-13T00:00:00Z",
-    updated_at: "2026-09-13T00:00:00Z",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
     organization_name: "Acme",
   },
 ];
@@ -465,6 +465,7 @@ describe("AdminInvoices", () => {
     });
   });
 
+
   it("creates an annual invoice when the cycle is switched", async () => {
     type MutOpts = {
       mutationFn: (...args: unknown[]) => unknown;
@@ -618,4 +619,33 @@ describe("AdminInvoices", () => {
     expect(skuRoot?.querySelector("[data-value=basic]")).toBeTruthy();
   });
 
+  it("flags a draft that has been sitting for more than a week", () => {
+    const stale = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+    vi.mocked(useQuery).mockImplementation(((opts: { queryKey: unknown[] }) => {
+      const key = String(opts.queryKey[0]);
+      if (key === "admin-sku-catalog") {
+        return { data: catalog, isLoading: false };
+      }
+      if (key === "admin-orgs") {
+        return { data: { items: [], total: 0 }, isLoading: false };
+      }
+      return {
+        data: {
+          items: [{ ...invoices[0], created_at: stale, updated_at: stale }],
+          total: 1,
+        },
+        isLoading: false,
+      };
+    }) as typeof useQuery);
+    render(<AdminInvoices />);
+
+    expect(
+      screen.getAllByTestId("invoice-stale-draft-inv-1")[0],
+    ).toHaveTextContent("Draft > 7 days");
+  });
+
+  it("does not flag a fresh draft", () => {
+    render(<AdminInvoices />);
+    expect(screen.queryByTestId("invoice-stale-draft-inv-1")).toBeNull();
+  });
 });

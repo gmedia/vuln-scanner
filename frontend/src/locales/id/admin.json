@@ -143,6 +143,8 @@
   "invoiceVoidConfirmTitle": "Batalkan invoice ini?",
   "invoiceVoidConfirmBody": "Invoice yang dibatalkan tidak bisa kembali ke draf atau terkirim.",
   "invoiceVoided": "Invoice dibatalkan",
+  "invoiceStaleDraft": "Draft > 7 hari",
+  "invoiceStaleDraftHint": "Draft yang belum dikirim ini memblokir periode berikutnya untuk pelanggan ini. Kirim, batalkan, atau biarkan sapuan harian mengakhirinya.",
   "invoicesEmpty": "Belum ada invoice.",
   "invGuideTitle": "Cara menggunakan halaman ini",
   "invGuideHint": "Pilih organisasi dan SKU, buat draf, lalu tandai terkirim dan lunas setelah transfer masuk.",

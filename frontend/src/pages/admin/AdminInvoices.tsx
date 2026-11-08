@@ -82,6 +82,15 @@ function formatIdr(n: number): string {
   return `Rp ${n.toLocaleString("id-ID")}`;
 }
 
+const STALE_DRAFT_DAYS = 7;
+
+function isStaleDraft(inv: InvoiceItem): boolean {
+  if (inv.status !== "draft") return false;
+  const created = Date.parse(inv.created_at);
+  if (Number.isNaN(created)) return false;
+  return Date.now() - created >= STALE_DRAFT_DAYS * 24 * 60 * 60 * 1000;
+}
+
 function isInvoiceProduct(value: string): value is InvoiceProduct {
   return value === "scan" || value === "host" || value === "uptime" || value === "guard";
 }
@@ -754,6 +763,15 @@ function AdminInvoices() {
                         {inv.number}
                       </p>
                       <Badge variant="default">{inv.status}</Badge>
+                      {isStaleDraft(inv) ? (
+                        <Badge
+                          variant="pending"
+                          title={t("invoiceStaleDraftHint")}
+                          data-testid={`invoice-stale-draft-${inv.id}`}
+                        >
+                          {t("invoiceStaleDraft")}
+                        </Badge>
+                      ) : null}
                     </div>
                     <p className="mt-1 text-sm text-foreground">
                       {inv.organization_name ?? "—"}
@@ -884,6 +902,15 @@ function AdminInvoices() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="default">{inv.status}</Badge>
+                      {isStaleDraft(inv) ? (
+                        <Badge
+                          variant="pending"
+                          title={t("invoiceStaleDraftHint")}
+                          data-testid={`invoice-stale-draft-${inv.id}`}
+                        >
+                          {t("invoiceStaleDraft")}
+                        </Badge>
+                      ) : null}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end">

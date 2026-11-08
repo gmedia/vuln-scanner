@@ -143,6 +143,8 @@
   "invoiceVoidConfirmTitle": "Void this invoice?",
   "invoiceVoidConfirmBody": "A voided invoice cannot be returned to draft or sent.",
   "invoiceVoided": "Invoice voided",
+  "invoiceStaleDraft": "Draft > 7 days",
+  "invoiceStaleDraftHint": "This unsent draft blocks the next period for this customer. Send it, void it, or let the daily sweep expire it.",
   "invoicesEmpty": "No invoices yet.",
   "invGuideTitle": "How to use this page",
   "invGuideHint": "Pick an organization and SKU, create a draft, then mark it sent and paid once the transfer arrives.",
