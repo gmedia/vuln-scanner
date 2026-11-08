@@ -151,6 +151,8 @@
   "invoicePayRefLabel": "Bank reference",
   "invoicePayRefHint": "Optional. Used to reconcile the transfer with the bank statement.",
   "invoicePayConfirm": "Mark paid",
+  "invoiceStaleDraft": "Draft > 7 days",
+  "invoiceStaleDraftHint": "This unsent draft blocks the next period for this customer. Send it, void it, or let the daily sweep expire it.",
   "invoicesEmpty": "No invoices yet.",
   "invoiceOrgSearchLabel": "Search organizations",
   "invoiceOrgSearchPlaceholder": "Search name or slug",

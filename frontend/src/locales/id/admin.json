@@ -151,6 +151,8 @@
   "invoicePayRefLabel": "Referensi bank",
   "invoicePayRefHint": "Opsional. Dipakai untuk mencocokkan transfer dengan rekening koran.",
   "invoicePayConfirm": "Tandai lunas",
+  "invoiceStaleDraft": "Draft > 7 hari",
+  "invoiceStaleDraftHint": "Draft yang belum dikirim ini memblokir periode berikutnya untuk pelanggan ini. Kirim, batalkan, atau biarkan sapuan harian mengakhirinya.",
   "invoicesEmpty": "Belum ada invoice.",
   "invoiceOrgSearchLabel": "Cari organisasi",
   "invoiceOrgSearchPlaceholder": "Cari nama atau slug",
