@@ -15,7 +15,7 @@ import os
 import sys
 import uuid
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, cast
 
 from celery import shared_task
 from loguru import logger
@@ -102,19 +102,18 @@ def purge_expired_topup_proofs(session: Session, *, now: datetime) -> int:
     ``proof_object_key`` makes a second run find nothing.
     """
     cutoff = now - timedelta(days=TOPUP_PROOF_RETENTION_DAYS)
+    rows = session.execute(
+        select(AiTopupOrder.id, AiTopupOrder.proof_object_key)
+        .where(
+            AiTopupOrder.proof_object_key.is_not(None),
+            AiTopupOrder.status.in_(_TERMINAL_PROOF_STATUSES),
+            AiTopupOrder.updated_at < cutoff,
+        )
+        .order_by(AiTopupOrder.updated_at.asc(), AiTopupOrder.id.asc())
+        .limit(PROOF_PURGE_BATCH_SIZE)
+    ).all()
     candidates: list[tuple[uuid.UUID, str]] = [
-        (order_id, ref)
-        for order_id, ref in session.execute(
-            select(AiTopupOrder.id, AiTopupOrder.proof_object_key)
-            .where(
-                AiTopupOrder.proof_object_key.is_not(None),
-                AiTopupOrder.status.in_(_TERMINAL_PROOF_STATUSES),
-                AiTopupOrder.updated_at < cutoff,
-            )
-            .order_by(AiTopupOrder.updated_at.asc(), AiTopupOrder.id.asc())
-            .limit(PROOF_PURGE_BATCH_SIZE)
-        ).all()
-        if ref is not None
+        (cast(uuid.UUID, order_id), cast(str, ref)) for order_id, ref in rows if ref is not None
     ]
 
     purged = 0
