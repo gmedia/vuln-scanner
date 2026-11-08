@@ -46,6 +46,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  AdminNotice,
   AdminShell,
   AdminShellBody,
   AdminShellHead,
@@ -557,6 +558,13 @@ function AdminInvoices() {
               </Button>
             </div>
           </div>
+          {product !== "scan" ? (
+            <AdminNotice tone="info" role="status">
+              <span data-testid="invoice-nonscan-notice">
+                {t("invoiceNonScanNotice")}
+              </span>
+            </AdminNotice>
+          ) : null}
           <div className="space-y-2 border-t border-border pt-3">
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="flex min-w-0 flex-col gap-1.5">
@@ -754,6 +762,15 @@ function AdminInvoices() {
                         {inv.number}
                       </p>
                       <Badge variant="default">{inv.status}</Badge>
+                      {inv.product !== "scan" ? (
+                        <Badge
+                          variant="info"
+                          title={t("invoiceNonScanMarker")}
+                          data-testid={`invoice-nonscan-badge-${inv.id}`}
+                        >
+                          {inv.product}
+                        </Badge>
+                      ) : null}
                     </div>
                     <p className="mt-1 text-sm text-foreground">
                       {inv.organization_name ?? "—"}
@@ -869,7 +886,19 @@ function AdminInvoices() {
                         {inv.number}
                       </TableCell>
                       <TableCell>{inv.organization_name ?? "—"}</TableCell>
-                      <TableCell>{inv.product}</TableCell>
+                      <TableCell>
+                        {inv.product === "scan" ? (
+                          inv.product
+                        ) : (
+                          <Badge
+                            variant="info"
+                            title={t("invoiceNonScanMarker")}
+                            data-testid={`invoice-nonscan-badge-${inv.id}`}
+                          >
+                            {inv.product}
+                          </Badge>
+                        )}
+                      </TableCell>
                       <TableCell>{tierLabel(inv.sku)}</TableCell>
                       <TableCell className="font-mono tabular-nums">
                         {formatIdr(inv.total_idr ?? inv.amount_idr)}
