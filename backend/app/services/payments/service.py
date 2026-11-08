@@ -207,10 +207,15 @@ class PaymentService:
         cancel_url: str,
     ) -> PaymentAttempt:
         """Start a gateway checkout for a prepaid wallet top-up order."""
+        # Captured before the call: the ``IntegrityError`` recovery inside
+        # ``_create_checkout`` rolls the session back, which expires ``order``.
+        # Reading ``order.id`` afterwards would trigger a lazy load outside the
+        # greenlet and raise ``MissingGreenlet`` on a concurrent double-click.
+        order_id = order.id
         attempt = await self._create_checkout(
             _CheckoutPayable(
                 kind="topup",
-                payable_id=order.id,
+                payable_id=order_id,
                 organization_id=order.organization_id,
                 number=order.reference_code,
                 amount_idr=int(order.amount_idr),
@@ -229,7 +234,7 @@ class PaymentService:
         # back (`IntegrityError` recovery), which expires the caller's instance.
         current = (
             await self.db.execute(
-                select(AiTopupOrder).where(AiTopupOrder.id == order.id).execution_options(populate_existing=True)
+                select(AiTopupOrder).where(AiTopupOrder.id == order_id).execution_options(populate_existing=True)
             )
         ).scalar_one_or_none()
         if current is None:
