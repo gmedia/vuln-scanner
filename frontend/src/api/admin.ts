@@ -341,9 +341,11 @@ export async function listAiUsage(params?: {
 export async function topupAiWallet(
   orgId: string,
   amountIdr: number,
+  idempotencyKey: string,
 ): Promise<{ organization_id: string; balance_idr: number }> {
   const { data } = await api.post(`/api/admin/ai/wallets/${orgId}/topup`, {
     amount_idr: amountIdr,
+    idempotency_key: idempotencyKey,
   });
   return data;
 }

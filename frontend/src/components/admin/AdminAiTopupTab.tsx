@@ -17,9 +17,17 @@ export function AdminAiTopupTab() {
   const { t } = useTranslation("admin");
   const [orgId, setOrgId] = useState("");
   const [amount, setAmount] = useState("10000");
+  // One key per pending admin credit: a retry or double-click reuses it so the
+  // server returns the first order instead of crediting twice. Rotate only
+  // after a success, so the next intentional top-up creates a new order.
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
   const topupMut = useMutation({
-    mutationFn: () => topupAiWallet(orgId.trim(), Number(amount)),
-    onSuccess: () => toast.success(t("aiTopupOk")),
+    mutationFn: () =>
+      topupAiWallet(orgId.trim(), Number(amount), idempotencyKey),
+    onSuccess: () => {
+      toast.success(t("aiTopupOk"));
+      setIdempotencyKey(crypto.randomUUID());
+    },
     onError: (err) => toast.error(apiErrorMessage(err, t("aiTopupFail"))),
   });
   return (

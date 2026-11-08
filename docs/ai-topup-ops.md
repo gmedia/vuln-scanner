@@ -25,6 +25,7 @@ The API surface is:
 | `POST` | `/api/admin/ai/topup/orders/{id}/approve` | Credit a manual order; optional `force` when a gateway attempt is still pending |
 | `POST` | `/api/admin/ai/topup/orders/{id}/reject` | Reject with a reason; no credit |
 | `POST` | `/api/admin/ai/topup/orders/{id}/resolve-refund` | Clawback or write-off a `refund_review` order |
+| `POST` | `/api/admin/ai/topup/orders/admin-credit` | Direct wallet credit as an `admin_credit` order; send one `idempotency_key` per grant and reuse it on retry |
 
 ## 2) Order statuses
 
