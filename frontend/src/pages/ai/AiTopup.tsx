@@ -1,27 +1,53 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { Building2, Check, TriangleAlert, Wallet, WalletCards } from "lucide-react";
+import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
+import {
+  Building2,
+  Check,
+  History,
+  Loader2,
+  TriangleAlert,
+  Wallet,
+  WalletCards,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import PageHeader from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/patterns/EmptyState";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent } from "@/components/ui/Card";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Skeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/Table";
 import { WorkspaceNotice } from "@/components/workspace/WorkspaceShell";
+import {
+  methodLabel,
+  statusBadgeVariant,
+  statusLabelKey,
+} from "@/components/ai/topupStatus";
 import { apiErrorMessage } from "@/api/apiErrors";
 import { getAiWallet, isAiDisabledError } from "@/api/ai";
 import {
   createTopupOrder,
+  getTopupOrders,
   getTopupPacks,
   type TopupMethod,
+  type TopupOrder,
   type TopupPack,
 } from "@/api/aiTopup";
-import { formatIdr } from "@/components/admin/aiFormat";
+import { formatAiTime, formatIdr } from "@/components/admin/aiFormat";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
+
+const HISTORY_PAGE_SIZE = 20;
 
 function PackCard({
   pack,
@@ -66,8 +92,118 @@ function PackCard({
   );
 }
 
-export default function AiTopup() {
+function HistoryStatusBadge({ status }: { readonly status: string }) {
   const { t } = useTranslation("topup");
+  return (
+    <Badge
+      variant={statusBadgeVariant(status)}
+      data-status={status}
+      className="text-[10px] uppercase"
+    >
+      {t(statusLabelKey(status))}
+    </Badge>
+  );
+}
+
+function HistoryRow({
+  order,
+  locale,
+}: {
+  readonly order: TopupOrder;
+  readonly locale: string;
+}) {
+  const { t } = useTranslation("topup");
+  return (
+    <TableRow data-testid={`ai-topup-history-row-desktop-${order.id}`}>
+      <TableCell className="pl-4">
+        <Link
+          to={`/ai/topup/${order.id}`}
+          data-testid={`ai-topup-history-ref-desktop-${order.id}`}
+          className="font-mono text-xs tabular-nums text-primary-text underline-offset-2 hover:underline"
+        >
+          {order.reference_code}
+        </Link>
+      </TableCell>
+      <TableCell className="text-right font-mono text-xs tabular-nums text-foreground">
+        {formatIdr(order.amount_idr)}
+      </TableCell>
+      <TableCell className="text-xs text-muted-foreground">
+        {methodLabel(t, order.payment_method)}
+      </TableCell>
+      <TableCell>
+        <HistoryStatusBadge status={order.status} />
+      </TableCell>
+      <TableCell className="text-xs text-muted-foreground">
+        {formatAiTime(order.created_at, locale)}
+      </TableCell>
+      <TableCell className="pr-4 text-right">
+        <Button asChild variant="outline" size="sm" className="min-h-11">
+          <Link
+            to={`/ai/topup/${order.id}`}
+            data-testid={`ai-topup-history-open-desktop-${order.id}`}
+          >
+            {t("historyOpen")}
+          </Link>
+        </Button>
+      </TableCell>
+    </TableRow>
+  );
+}
+
+function HistoryMobileCard({
+  order,
+  locale,
+}: {
+  readonly order: TopupOrder;
+  readonly locale: string;
+}) {
+  const { t } = useTranslation("topup");
+  return (
+    <article
+      className="rounded-lg border border-border bg-card p-3"
+      data-testid={`ai-topup-history-card-${order.id}`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <Link
+          to={`/ai/topup/${order.id}`}
+          data-testid={`ai-topup-history-ref-mobile-${order.id}`}
+          className="min-w-0 break-all font-mono text-xs tabular-nums text-primary-text underline-offset-2 hover:underline"
+        >
+          {order.reference_code}
+        </Link>
+        <HistoryStatusBadge status={order.status} />
+      </div>
+      <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+        <dt className="text-muted-foreground">{t("historyColumnAmount")}</dt>
+        <dd className="text-right font-mono tabular-nums text-foreground">
+          {formatIdr(order.amount_idr)}
+        </dd>
+        <dt className="text-muted-foreground">{t("historyColumnMethod")}</dt>
+        <dd className="text-right text-foreground">
+          {methodLabel(t, order.payment_method)}
+        </dd>
+        <dt className="text-muted-foreground">{t("historyColumnDate")}</dt>
+        <dd className="text-right text-foreground">
+          {formatAiTime(order.created_at, locale)}
+        </dd>
+      </dl>
+      <div className="mt-3 flex justify-end">
+        <Button asChild variant="outline" size="sm" className="min-h-11">
+          <Link
+            to={`/ai/topup/${order.id}`}
+            data-testid={`ai-topup-history-open-mobile-${order.id}`}
+          >
+            {t("historyOpen")}
+          </Link>
+        </Button>
+      </div>
+    </article>
+  );
+}
+
+export default function AiTopup() {
+  const { t, i18n } = useTranslation("topup");
+  const locale = i18n.language === "en" ? "en-US" : "id-ID";
   const orgId = useAuthStore((s) => s.activeOrgId);
   const navigate = useNavigate();
   const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
@@ -85,6 +221,25 @@ export default function AiTopup() {
     enabled: Boolean(orgId),
     retry: false,
   });
+  const historyQuery = useInfiniteQuery({
+    queryKey: ["ai-topup-orders", orgId],
+    queryFn: ({ pageParam }) => getTopupOrders(pageParam, HISTORY_PAGE_SIZE),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const loaded = lastPage.page * lastPage.limit;
+      return loaded < lastPage.total ? lastPage.page + 1 : undefined;
+    },
+    enabled: Boolean(orgId),
+    retry: false,
+  });
+
+  const historyItems = useMemo(
+    () => historyQuery.data?.pages.flatMap((page) => page.items) ?? [],
+    [historyQuery.data],
+  );
+  const historyPages = historyQuery.data?.pages;
+  const historyTotal = historyPages?.[historyPages.length - 1]?.total ?? 0;
+  const hasMoreHistory = historyItems.length < historyTotal;
 
   const packs = useMemo(() => {
     const items = packsQuery.data?.items ?? [];
@@ -282,6 +437,128 @@ export default function AiTopup() {
               <p className="text-xs text-muted-foreground">{t("noPackHint")}</p>
             ) : null}
           </form>
+
+          <Card data-testid="ai-topup-history">
+            <CardHeader className="border-b border-border">
+              <CardTitle className="text-sm font-semibold">
+                {t("historyTitle")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {historyQuery.isLoading ? (
+                <div className="p-4" data-testid="ai-topup-history-loading">
+                  <TableRowSkeleton
+                    rows={3}
+                    columns={5}
+                    label={t("historyLoading")}
+                  />
+                </div>
+              ) : historyQuery.isError ? (
+                <div className="p-4">
+                  <WorkspaceNotice tone="danger" role="status">
+                    <div
+                      className="space-y-2"
+                      data-testid="ai-topup-history-error"
+                    >
+                      <p className="text-sm font-medium text-foreground">
+                        {t("historyError")}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="min-h-11"
+                        onClick={() => void historyQuery.refetch()}
+                      >
+                        {t("historyRetry")}
+                      </Button>
+                    </div>
+                  </WorkspaceNotice>
+                </div>
+              ) : historyItems.length === 0 ? (
+                <EmptyState
+                  testId="ai-topup-history-empty"
+                  className="m-4"
+                  icon={History}
+                  title={t("historyEmptyTitle")}
+                  hint={t("historyEmptyBody")}
+                />
+              ) : (
+                <>
+                  <div className="space-y-2 p-4 md:hidden">
+                    {historyItems.map((item) => (
+                      <HistoryMobileCard
+                        key={item.id}
+                        order={item}
+                        locale={locale}
+                      />
+                    ))}
+                  </div>
+                  <div className="hidden md:block">
+                    <Table className="table-fixed">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[24%] pl-4 text-[10px] uppercase tracking-wider">
+                            {t("historyColumnReference")}
+                          </TableHead>
+                          <TableHead className="w-[16%] text-right text-[10px] uppercase tracking-wider">
+                            {t("historyColumnAmount")}
+                          </TableHead>
+                          <TableHead className="w-[16%] text-[10px] uppercase tracking-wider">
+                            {t("historyColumnMethod")}
+                          </TableHead>
+                          <TableHead className="w-[16%] text-[10px] uppercase tracking-wider">
+                            {t("historyColumnStatus")}
+                          </TableHead>
+                          <TableHead className="w-[18%] text-[10px] uppercase tracking-wider">
+                            {t("historyColumnDate")}
+                          </TableHead>
+                          <TableHead className="w-[10%] pr-4 text-right text-[10px] uppercase tracking-wider">
+                            {t("historyColumnAction")}
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {historyItems.map((item) => (
+                          <HistoryRow
+                            key={item.id}
+                            order={item}
+                            locale={locale}
+                          />
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
+              )}
+            </CardContent>
+            {hasMoreHistory &&
+            !historyQuery.isLoading &&
+            !historyQuery.isError ? (
+              <div className="flex justify-center border-t border-border p-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="min-h-11"
+                  data-testid="ai-topup-history-load-more"
+                  disabled={historyQuery.isFetchingNextPage}
+                  onClick={() => void historyQuery.fetchNextPage()}
+                >
+                  {historyQuery.isFetchingNextPage ? (
+                    <>
+                      <Loader2
+                        className="mr-1.5 h-4 w-4 animate-spin"
+                        aria-hidden
+                      />
+                      {t("historyLoading")}
+                    </>
+                  ) : (
+                    t("historyLoadMore")
+                  )}
+                </Button>
+              </div>
+            ) : null}
+          </Card>
         </div>
       )}
     </div>

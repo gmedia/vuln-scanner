@@ -99,5 +99,19 @@
   "refundReviewTitle": "Refund review",
   "refundReviewBody": "This payment is under refund review. Contact support if you need help.",
   "polling": "Checking payment status…",
-  "checkAgain": "Check again"
+  "checkAgain": "Check again",
+  "historyTitle": "Top-up history",
+  "historyEmptyTitle": "No top-ups yet.",
+  "historyEmptyBody": "Your organization's top-up orders will appear here after you create one.",
+  "historyError": "Could not load top-up history.",
+  "historyRetry": "Try again",
+  "historyLoadMore": "Load more",
+  "historyLoading": "Loading…",
+  "historyColumnReference": "Reference",
+  "historyColumnAmount": "Amount",
+  "historyColumnMethod": "Method",
+  "historyColumnStatus": "Status",
+  "historyColumnDate": "Created",
+  "historyColumnAction": "Action",
+  "historyOpen": "Open"
 }
