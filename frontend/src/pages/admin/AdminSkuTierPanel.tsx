@@ -114,7 +114,13 @@ interface TierFormState {
 function usageTotal(tier: SkuTierInfo): number {
   const usage = tier.usage;
   if (!usage) return 0;
-  return usage.orgs + usage.subscriptions + usage.invoices + usage.requests;
+  return (
+    usage.orgs +
+    usage.subscriptions +
+    usage.invoices +
+    usage.requests +
+    usage.promos
+  );
 }
 
 function emptyPrices(): TierFormState["prices"] {
@@ -376,7 +382,7 @@ function TierCells({
   );
 
   const counts = tier.usage
-    ? `${tier.usage.orgs}/${tier.usage.subscriptions}/${tier.usage.invoices}/${tier.usage.requests}`
+    ? `${tier.usage.orgs}/${tier.usage.subscriptions}/${tier.usage.invoices}/${tier.usage.requests}/${tier.usage.promos}`
     : "—";
 
   if (!desktop) {
@@ -429,6 +435,7 @@ function TierCells({
                 subscriptions: tier.usage.subscriptions,
                 invoices: tier.usage.invoices,
                 requests: tier.usage.requests,
+                promos: tier.usage.promos,
               })}
             </Button>
           ) : (
