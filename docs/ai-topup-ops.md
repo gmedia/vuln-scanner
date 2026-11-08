@@ -190,3 +190,40 @@ revision `ai_topup_v1_s6`, whose parent is `ai_topup_v1_s1`. A green `main`
 deploy already runs `alembic upgrade head`; do not run a second manual
 migration after a successful deploy. If a deploy fails, follow the deploy
 runbook rather than improvising a schema change.
+
+## 11) Launch readiness
+
+Before announcing the top-up flow, run the read-only readiness check from
+`backend/` (or inside the backend container with the deployment environment
+loaded):
+
+```bash
+cd backend && python -m scripts.check_topup_ready
+```
+
+It only reads settings and the `ai_topup_packs` table: no writes, no provider
+calls, and it never prints the bank account value, keys, or hosts. Read the
+table as follows:
+
+| Status | Meaning | Action |
+|---|---|---|
+| `PASS` | The check holds. | None. |
+| `WARN` | Valid launch, but a non-default path is off (for example the gateway is disabled, so manual transfer only). | Confirm that is intended. |
+| `FAIL` | The feature is unusable as configured. | Fix before launch; the command exits `1`. |
+
+Checks, in order:
+
+1. `AI_GATEWAY_ENABLED` — `FAIL` when false, because customer routes return
+   `404` and nothing is sellable.
+2. `ACTIVE_TOPUP_PACKS` — `FAIL` when no active pack exists; otherwise the
+   count and the cheapest/highest amount range are printed.
+3. `BANK_COPY` — `FAIL` when any of the bank name, account, or holder is empty
+   (manual transfer returns `503`); the output only says `set`/`missing`.
+4. `PAYMENT_GATEWAY_ENABLED` — `WARN` when the gateway is off. Manual bank
+   transfer alone is a valid launch.
+5. `MIDTRANS_PROVIDER` — `WARN` only when the gateway is enabled but the
+   provider is not fully configured. Use `python -m scripts.check_payment_config`
+   for the detailed blocking issues.
+
+Exit code `0` means no `FAIL` (warnings allowed); exit code `1` means at least
+one check failed, so the command can gate an ops checklist.
