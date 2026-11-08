@@ -10,6 +10,7 @@ never the right to settle real money.
 
 import os
 import sys
+import uuid
 from datetime import UTC, datetime
 from typing import Any
 
@@ -37,7 +38,7 @@ def expire_stale_orders(session: Session, *, now: datetime) -> int:
     admin approve a no-op for that order: approve wins, the order is not expired,
     and its pending attempt is left for the approval path to retire.
     """
-    candidates = list(
+    candidates: list[uuid.UUID] = list(
         session.execute(
             select(AiTopupOrder.id)
             .where(
