@@ -124,7 +124,7 @@ function reportUnitCost(
   return unit > 0 ? unit : null;
 }
 
-function AdminHppSimulator() {
+function AdminHppSimulator({ embedded = false }: { embedded?: boolean }) {
   const { t } = useTranslation("admin");
   const { tiers } = useTierMap();
   const tierOptions = tiers.filter((tier) => !tier.sales_led);
@@ -133,9 +133,9 @@ function AdminHppSimulator() {
   const [targetMargin, setTargetMargin] = useState("");
   const [rows, setRows] = useState(emptyRows);
 
-  const { data: skuPrices } = useQuery({
-    queryKey: ["admin-sku-prices"],
-    queryFn: adminApi.getSkuPrices,
+  const { data: pricing } = useQuery({
+    queryKey: ["admin-sku-pricing"],
+    queryFn: adminApi.getSkuPricing,
   });
   const { data: hppReport } = useQuery({
     queryKey: ["admin-hpp-report"],
@@ -157,7 +157,7 @@ function AdminHppSimulator() {
     if (draft.price.trim() !== "") return draft.price;
     const sku = selectedSku(service);
     if (!sku) return draft.price;
-    const listed = lockedPrice(skuPrices, service, sku);
+    const listed = lockedPrice(pricing?.items, service, sku);
     return listed == null ? "" : String(listed);
   };
 
@@ -206,13 +206,22 @@ function AdminHppSimulator() {
 
   return (
     <div className="w-full space-y-6">
-      <PageHeader title={t("simTitle")} description={t("simSubtitle")} />
+      {embedded ? null : (
+        <PageHeader title={t("simTitle")} description={t("simSubtitle")} />
+      )}
 
       <div data-testid="hpp-sim-banner">
         <AdminNotice tone="warn" role="status">
           {t("simBanner")}
         </AdminNotice>
       </div>
+
+      <p
+        data-testid="hpp-sim-drift-note"
+        className="text-xs leading-relaxed text-muted-foreground"
+      >
+        {t("simDriftNote")}
+      </p>
 
       <AdminShell testid="hpp-sim-guide" tone="info">
         <AdminShellHead
@@ -495,7 +504,7 @@ function AdminHppSimulator() {
 
           {SERVICES.some((service) => {
             const sku = selectedSku(service);
-            return sku !== "" && lockedPrice(skuPrices, service, sku) === null;
+            return sku !== "" && lockedPrice(pricing?.items, service, sku) === null;
           }) ? (
             <p
               data-testid="hpp-sim-price-warning"

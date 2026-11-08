@@ -7,7 +7,9 @@ import {
   Check,
   Trash2,
   Receipt,
+  FileText,
 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import {
   Accordion,
   AccordionContent,
@@ -54,8 +56,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/Tabs";
 import PageHeader from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/patterns/EmptyState";
+import AdminHppSimulator from "@/pages/admin/AdminHppSimulator";
 import { adminApi, type HppRateItem } from "@/api/admin";
 import { apiErrorMessage } from "@/api/apiErrors";
 import { useTranslation } from "react-i18next";
@@ -71,6 +80,14 @@ function formatIdr(n: number | null | undefined): string {
 function AdminHpp() {
   const { t } = useTranslation("admin");
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get("tab") === "what-if" ? "what-if" : "report";
+  const onTabChange = (value: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (value === "what-if") next.set("tab", "what-if");
+    else next.delete("tab");
+    setSearchParams(next, { replace: true });
+  };
   const [edited, setEdited] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState<string | null>(null);
   const [overheadEdit, setOverheadEdit] = useState<number | null>(null);
@@ -214,7 +231,31 @@ function AdminHpp() {
         description={t("hppSubtitle")}
       />
 
-      <AdminShell testid="hpp-guide" tone="info">
+      <Tabs value={tab} onValueChange={onTabChange}>
+        <TabsList
+          variant="line"
+          className="w-full flex-wrap justify-start sm:flex-nowrap"
+        >
+          <TabsTrigger
+            value="report"
+            className="gap-1.5"
+            data-testid="hpp-tab-report"
+          >
+            <FileText aria-hidden />
+            {t("hppTabReport")}
+          </TabsTrigger>
+          <TabsTrigger
+            value="what-if"
+            className="gap-1.5"
+            data-testid="hpp-tab-what-if"
+          >
+            <Calculator aria-hidden />
+            {t("hppTabWhatIf")}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="report" className="mt-4 space-y-6">
+          <AdminShell testid="hpp-guide" tone="info">
         <AdminShellHead
           icon={BookOpen}
           title={t("hppGuideTitle")}
@@ -873,6 +914,12 @@ function AdminHpp() {
         page={historyPage}
         onPageChange={setHistoryPage}
       />
+        </TabsContent>
+
+        <TabsContent value="what-if" className="mt-4">
+          <AdminHppSimulator embedded />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

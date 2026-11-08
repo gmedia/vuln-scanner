@@ -140,6 +140,11 @@ describe("Sidebar", () => {
     expect(screen.getByTestId("nav-admin-skus")).toHaveTextContent(
       "SKUs, Tiers & Pricing",
     );
+    expect(screen.getByTestId("nav-admin-hpp")).toHaveAttribute(
+      "href",
+      "/admin/hpp",
+    );
+    expect(screen.queryByTestId("nav-admin-simulator")).toBeNull();
   });
 
   it("shows active scan section when activeJobId is set", () => {
