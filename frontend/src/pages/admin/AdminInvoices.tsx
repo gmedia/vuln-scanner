@@ -93,11 +93,12 @@ function AdminInvoices() {
   const qc = useQueryClient();
   const [status, setStatus] = useState("all");
   const [voidTarget, setVoidTarget] = useState<InvoiceItem | null>(null);
+  const [payTarget, setPayTarget] = useState<InvoiceItem | null>(null);
+  const [payRef, setPayRef] = useState("");
   const [orgId, setOrgId] = useState("");
   const [product, setProduct] = useState<InvoiceProduct>("scan");
   const [sku, setSku] = useState("");
   const [cycle, setCycle] = useState<"monthly" | "annual">("monthly");
-  const [bankRef, setBankRef] = useState("");
   const [promoCode, setPromoCode] = useState("");
   const [promoResult, setPromoResult] = useState<PromoValidateResult | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
@@ -288,13 +289,14 @@ function AdminInvoices() {
     onError: (err) => toast.error(apiErrorMessage(err, t("invoiceSendFail"))),
   });
   const payMut = useMutation({
-    mutationFn: (id: string) =>
-      adminApi.payAdminInvoice(id, bankRef || undefined),
+    mutationFn: ({ id, bankRef }: { id: string; bankRef?: string }) =>
+      adminApi.payAdminInvoice(id, bankRef),
     onSuccess: (inv) => {
       toast.success(
         t(`invoicePaid_${inv.product}`, { defaultValue: t("invoicePaid") }),
       );
-      setBankRef("");
+      setPayTarget(null);
+      setPayRef("");
       void qc.invalidateQueries({ queryKey: ["admin-invoices"] });
     },
     onError: (err) => toast.error(apiErrorMessage(err, t("invoicePayFail"))),
@@ -700,7 +702,7 @@ function AdminInvoices() {
       >
         <AdminShellHead icon={FileText} title={t("invoiceListCard")} />
         <AdminShellBody className="space-y-3">
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:max-w-xs">
             <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="inv-status">{t("colStatus")}</Label>
               <Select value={status} onValueChange={setStatus}>
@@ -715,16 +717,6 @@ function AdminInvoices() {
                   <SelectItem value="void">void</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="flex min-w-0 flex-col gap-1.5 sm:col-span-2">
-              <Label htmlFor="inv-bank-ref">{t("colBankRef")}</Label>
-              <Input
-                id="inv-bank-ref"
-                className="h-10 min-h-10"
-                value={bankRef}
-                onChange={(e) => setBankRef(e.target.value)}
-                placeholder="TF-…"
-              />
             </div>
           </div>
           {invoicesQ.isLoading ? (
@@ -820,7 +812,10 @@ function AdminInvoices() {
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 data-testid={`invoice-paid-m-${inv.id}`}
-                                onSelect={() => payMut.mutate(inv.id)}
+                                onSelect={() => {
+                                  setPayRef("");
+                                  setPayTarget(inv);
+                                }}
                               >
                                 {t("invoiceMarkPaid")}
                               </DropdownMenuItem>
@@ -934,7 +929,10 @@ function AdminInvoices() {
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem
                                     data-testid={`invoice-paid-${inv.id}`}
-                                    onSelect={() => payMut.mutate(inv.id)}
+                                    onSelect={() => {
+                                      setPayRef("");
+                                      setPayTarget(inv);
+                                    }}
                                   >
                                     {t("invoiceMarkPaid")}
                                   </DropdownMenuItem>
@@ -981,6 +979,69 @@ function AdminInvoices() {
                       }}
                     >
                       {t("invoiceVoid")}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <AlertDialog
+                open={!!payTarget}
+                onOpenChange={(open) => {
+                  if (!open) {
+                    setPayTarget(null);
+                    setPayRef("");
+                  }
+                }}
+              >
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t("invoicePayTitle")}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {t("invoicePayBody", { number: payTarget?.number ?? "" })}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <div className="space-y-3">
+                    <div className="rounded-md border border-border bg-muted/40 p-3">
+                      <p className="text-sm text-foreground">
+                        {payTarget?.organization_name ?? "—"}
+                      </p>
+                      <p className="mt-1 font-mono tabular-nums text-foreground">
+                        {payTarget
+                          ? formatIdr(payTarget.total_idr ?? payTarget.amount_idr)
+                          : ""}
+                      </p>
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-1.5">
+                      <Label htmlFor="invoice-pay-ref">
+                        {t("invoicePayRefLabel")}
+                      </Label>
+                      <Input
+                        id="invoice-pay-ref"
+                        className="h-10 min-h-10"
+                        value={payRef}
+                        maxLength={64}
+                        placeholder="TF-…"
+                        onChange={(e) => setPayRef(e.target.value)}
+                        data-testid="invoice-pay-ref"
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        {t("invoicePayRefHint")}
+                      </p>
+                    </div>
+                  </div>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                    <AlertDialogAction
+                      data-testid="invoice-pay-confirm"
+                      disabled={payMut.isPending}
+                      onClick={() => {
+                        if (!payTarget) return;
+                        payMut.mutate({
+                          id: payTarget.id,
+                          bankRef: payRef.trim() || undefined,
+                        });
+                      }}
+                    >
+                      {t("invoicePayConfirm")}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
