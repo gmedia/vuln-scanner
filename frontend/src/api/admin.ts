@@ -1113,9 +1113,19 @@ export async function payAdminInvoice(
   return data;
 }
 
-export async function voidAdminInvoice(id: string): Promise<InvoiceItem> {
+export async function voidAdminInvoice(
+  id: string,
+  opts?: { force?: boolean; reason?: string },
+): Promise<InvoiceItem> {
   const { data } = await api.post<InvoiceItem>(
     `/api/admin/invoices/${id}/void`,
+    null,
+    {
+      params: {
+        force: opts?.force ?? undefined,
+        reason: opts?.reason ?? undefined,
+      },
+    },
   );
   return data;
 }

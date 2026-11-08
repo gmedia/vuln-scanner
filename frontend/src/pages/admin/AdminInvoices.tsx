@@ -47,6 +47,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/Checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -175,6 +176,8 @@ function AdminInvoices() {
   const [voidTarget, setVoidTarget] = useState<InvoiceItem | null>(null);
   const [payTarget, setPayTarget] = useState<InvoiceItem | null>(null);
   const [payRef, setPayRef] = useState("");
+  const [voidReason, setVoidReason] = useState("");
+  const [voidForce, setVoidForce] = useState(false);
   const [orgId, setOrgId] = useState("");
   const [product, setProduct] = useState<InvoiceProduct>("scan");
   const [sku, setSku] = useState("");
@@ -409,13 +412,30 @@ function AdminInvoices() {
     onError: (err) => toast.error(apiErrorMessage(err, t("invoicePayFail"))),
   });
   const voidMut = useMutation({
-    mutationFn: (id: string) => adminApi.voidAdminInvoice(id),
+    mutationFn: ({
+      id,
+      force,
+      reason,
+    }: {
+      id: string;
+      force?: boolean;
+      reason?: string;
+    }) => adminApi.voidAdminInvoice(id, { force, reason }),
     onSuccess: () => {
       toast.success(t("invoiceVoided"));
+      setVoidTarget(null);
       void qc.invalidateQueries({ queryKey: ["admin-invoices"] });
     },
     onError: (err) => toast.error(apiErrorMessage(err, t("invoiceVoidFail"))),
   });
+
+  function openVoid(inv: InvoiceItem, force: boolean) {
+    setVoidReason("");
+    setVoidForce(force);
+    setVoidTarget(inv);
+  }
+
+  const voidNeedsReason = voidForce || voidTarget?.status === "paid";
 
   async function downloadPdf(inv: InvoiceItem) {
     try {
@@ -1010,9 +1030,21 @@ function AdminInvoices() {
                               <DropdownMenuItem
                                 variant="destructive"
                                 data-testid={`invoice-void-m-${inv.id}`}
-                                onSelect={() => setVoidTarget(inv)}
+                                onSelect={() => openVoid(inv, false)}
                               >
                                 {t("invoiceVoid")}
+                              </DropdownMenuItem>
+                            </>
+                          ) : null}
+                          {inv.status === "paid" ? (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                variant="destructive"
+                                data-testid={`invoice-correct-m-${inv.id}`}
+                                onSelect={() => openVoid(inv, true)}
+                              >
+                                {t("invoiceCorrectPayment")}
                               </DropdownMenuItem>
                             </>
                           ) : null}
@@ -1148,9 +1180,21 @@ function AdminInvoices() {
                                   <DropdownMenuItem
                                     variant="destructive"
                                     data-testid={`invoice-void-${inv.id}`}
-                                    onSelect={() => setVoidTarget(inv)}
+                                    onSelect={() => openVoid(inv, false)}
                                   >
                                     {t("invoiceVoid")}
+                                  </DropdownMenuItem>
+                                </>
+                              ) : null}
+                              {inv.status === "paid" ? (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    variant="destructive"
+                                    data-testid={`invoice-correct-${inv.id}`}
+                                    onSelect={() => openVoid(inv, true)}
+                                  >
+                                    {t("invoiceCorrectPayment")}
                                   </DropdownMenuItem>
                                 </>
                               ) : null}
@@ -1166,24 +1210,64 @@ function AdminInvoices() {
               <AlertDialog
                 open={!!voidTarget}
                 onOpenChange={(open) => {
-                  if (!open) setVoidTarget(null);
+                  if (!open) {
+                    setVoidTarget(null);
+                    setVoidReason("");
+                    setVoidForce(false);
+                  }
                 }}
               >
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>{t("invoiceVoidConfirmTitle")}</AlertDialogTitle>
+                    <AlertDialogTitle>
+                      {voidTarget?.status === "paid"
+                        ? t("invoiceCorrectPaymentTitle")
+                        : t("invoiceVoidConfirmTitle")}
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                      {t("invoiceVoidConfirmBody")}
+                      {voidTarget?.status === "paid"
+                        ? t("invoiceCorrectPaymentBody")
+                        : t("invoiceVoidConfirmBody")}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
+                  <div className="flex min-w-0 flex-col gap-1.5">
+                    <Label htmlFor="invoice-void-reason">
+                      {voidNeedsReason
+                        ? t("invoiceVoidReasonRequired")
+                        : t("invoiceVoidReason")}
+                    </Label>
+                    <Textarea
+                      id="invoice-void-reason"
+                      className="min-h-20"
+                      value={voidReason}
+                      maxLength={500}
+                      onChange={(e) => setVoidReason(e.target.value)}
+                      data-testid="invoice-void-reason"
+                    />
+                  </div>
+                  {voidTarget?.status === "paid" ? null : (
+                    <label className="flex items-start gap-2 text-sm text-muted-foreground">
+                      <Checkbox
+                        checked={voidForce}
+                        onCheckedChange={(v) => setVoidForce(v === true)}
+                        data-testid="invoice-void-force"
+                      />
+                      <span>{t("invoiceVoidForceHint")}</span>
+                    </label>
+                  )}
                   <AlertDialogFooter>
                     <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
                     <AlertDialogAction
                       className={buttonVariants({ variant: "destructive" })}
                       data-testid="invoice-void-confirm"
+                      disabled={voidNeedsReason && !voidReason.trim()}
                       onClick={() => {
-                        if (voidTarget) voidMut.mutate(voidTarget.id);
-                        setVoidTarget(null);
+                        if (!voidTarget) return;
+                        voidMut.mutate({
+                          id: voidTarget.id,
+                          force: voidTarget.status === "paid" || voidForce,
+                          reason: voidReason.trim() || undefined,
+                        });
                       }}
                     >
                       {t("invoiceVoid")}
