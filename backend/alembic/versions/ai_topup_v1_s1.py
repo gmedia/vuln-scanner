@@ -62,10 +62,14 @@ ORDER_CHECKS = (
     ),
 )
 
+#: Enforced for every new row, but added ``NOT VALID`` on Postgres so a legacy
+#: ``payment_attempts`` row without an invoice cannot block ``alembic upgrade``.
+LEGACY_TOLERANT_CHECK = "ck_payment_attempt_invoice_required"
+
 PAYMENT_ATTEMPT_CHECKS = (
     ("ck_payment_attempt_payable_kind", "payable_kind IN ('invoice', 'topup')"),
     (
-        "ck_payment_attempt_invoice_required",
+        LEGACY_TOLERANT_CHECK,
         "payable_kind <> 'invoice' OR invoice_id IS NOT NULL",
     ),
     (
@@ -85,6 +89,7 @@ LEDGER_KINDS_WITHOUT_REFUND = "kind IN ('topup', 'reserve', 'settle_adjust', 're
 
 
 def upgrade() -> None:
+    is_postgres = op.get_bind().dialect.name == "postgresql"
     op.create_table(
         "ai_topup_packs",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -154,6 +159,8 @@ def upgrade() -> None:
             ondelete="SET NULL",
         )
         for name, expression in PAYMENT_ATTEMPT_CHECKS:
+            if is_postgres and name == LEGACY_TOLERANT_CHECK:
+                continue
             batch_op.create_check_constraint(name, expression)
         batch_op.create_index("ix_payment_attempts_topup_order_id", ["topup_order_id"])
         batch_op.create_index(
@@ -176,6 +183,12 @@ def upgrade() -> None:
             type_=sa.BigInteger(),
             existing_nullable=False,
             existing_server_default=sa.text("0"),
+        )
+
+    if is_postgres:
+        expression = dict(PAYMENT_ATTEMPT_CHECKS)[LEGACY_TOLERANT_CHECK]
+        op.execute(
+            f"ALTER TABLE payment_attempts ADD CONSTRAINT {LEGACY_TOLERANT_CHECK} CHECK ({expression}) NOT VALID"
         )
 
     with op.batch_alter_table("ai_wallet_ledger") as batch_op:
