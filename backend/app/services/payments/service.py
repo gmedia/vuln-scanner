@@ -8,14 +8,16 @@ behind one explicit seam.
 from __future__ import annotations
 
 import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException
-from sqlalchemy import func, select
+from sqlalchemy import ColumnElement, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.models.ai_gateway import AiTopupOrder
 from app.models.billing import OrgBillingProfile, PaymentAttempt
 from app.models.invoice import OrgInvoice
 from app.models.organization import Organization, OrganizationMembership
@@ -41,6 +43,19 @@ def _as_utc(value: datetime | None) -> datetime | None:
     return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
 
 
+@dataclass(frozen=True, slots=True)
+class _CheckoutPayable:
+    """The gateway-relevant slice of an invoice or a top-up order."""
+
+    kind: str
+    payable_id: uuid.UUID
+    organization_id: uuid.UUID
+    number: str
+    amount_idr: int
+    status: str
+    description: str
+
+
 class PaymentService:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
@@ -58,24 +73,43 @@ class PaymentService:
             raise HTTPException(status_code=404, detail="Payment attempt not found")
         return attempt
 
-    async def blocking_attempt(self, invoice_id: uuid.UUID) -> PaymentAttempt | None:
+    @staticmethod
+    def _payable_filter(
+        invoice_id: uuid.UUID | None,
+        topup_order_id: uuid.UUID | None,
+    ) -> ColumnElement[bool]:
+        """The one partial-index key an attempt is scoped by (invoice or top-up)."""
+        if invoice_id is not None and topup_order_id is not None:
+            raise ValueError("pass either invoice_id or topup_order_id, not both")
+        if topup_order_id is not None:
+            return PaymentAttempt.topup_order_id == topup_order_id
+        if invoice_id is not None:
+            return PaymentAttempt.invoice_id == invoice_id
+        raise ValueError("invoice_id or topup_order_id is required")
+
+    async def blocking_attempt(
+        self,
+        invoice_id: uuid.UUID | None = None,
+        *,
+        topup_order_id: uuid.UUID | None = None,
+    ) -> PaymentAttempt | None:
+        key = self._payable_filter(invoice_id, topup_order_id)
         return (
-            await self.db.execute(
-                select(PaymentAttempt)
-                .where(
-                    PaymentAttempt.invoice_id == invoice_id,
-                    PaymentAttempt.status == "pending",
-                )
-                .limit(1)
-            )
+            await self.db.execute(select(PaymentAttempt).where(key, PaymentAttempt.status == "pending").limit(1))
         ).scalar_one_or_none()
 
-    async def pending_attempts(self, invoice_id: uuid.UUID) -> list[PaymentAttempt]:
+    async def pending_attempts(
+        self,
+        invoice_id: uuid.UUID | None = None,
+        *,
+        topup_order_id: uuid.UUID | None = None,
+    ) -> list[PaymentAttempt]:
+        key = self._payable_filter(invoice_id, topup_order_id)
         rows = (
             (
                 await self.db.execute(
                     select(PaymentAttempt).where(
-                        PaymentAttempt.invoice_id == invoice_id,
+                        key,
                         PaymentAttempt.status == "pending",
                     )
                 )
@@ -105,8 +139,8 @@ class PaymentService:
         )
         return status, can_pay
 
-    async def _customer_email(self, inv: OrgInvoice, org: Organization) -> str:
-        profile = await self.db.get(OrgBillingProfile, inv.organization_id)
+    async def _customer_email(self, organization_id: uuid.UUID, org: Organization) -> str:
+        profile = await self.db.get(OrgBillingProfile, organization_id)
         if profile is not None and (profile.billing_email or "").strip():
             return profile.billing_email.strip()
         owner = (
@@ -114,7 +148,7 @@ class PaymentService:
                 select(User.email)
                 .join(OrganizationMembership, OrganizationMembership.user_id == User.id)
                 .where(
-                    OrganizationMembership.organization_id == inv.organization_id,
+                    OrganizationMembership.organization_id == organization_id,
                     OrganizationMembership.role == "owner",
                 )
                 .limit(1)
@@ -147,6 +181,95 @@ class PaymentService:
         return_url: str,
         cancel_url: str,
     ) -> PaymentAttempt:
+        return await self._create_checkout(
+            _CheckoutPayable(
+                kind="invoice",
+                payable_id=inv.id,
+                organization_id=inv.organization_id,
+                number=inv.number,
+                amount_idr=int(inv.total_idr or 0),
+                status=inv.status,
+                description=f"Sinexis {inv.product} {inv.sku}",
+            ),
+            actor,
+            provider_name,
+            return_url=return_url,
+            cancel_url=cancel_url,
+        )
+
+    async def create_topup_checkout(
+        self,
+        order: AiTopupOrder,
+        actor: User,
+        provider_name: str,
+        *,
+        return_url: str,
+        cancel_url: str,
+    ) -> PaymentAttempt:
+        """Start a gateway checkout for a prepaid wallet top-up order."""
+        # Captured before the call: the ``IntegrityError`` recovery inside
+        # ``_create_checkout`` rolls the session back, which expires ``order``.
+        # Reading ``order.id`` afterwards would trigger a lazy load outside the
+        # greenlet and raise ``MissingGreenlet`` on a concurrent double-click.
+        order_id = order.id
+        attempt = await self._create_checkout(
+            _CheckoutPayable(
+                kind="topup",
+                payable_id=order_id,
+                organization_id=order.organization_id,
+                number=order.reference_code,
+                amount_idr=int(order.amount_idr),
+                status=order.status,
+                description=f"Sinexis AI top-up {order.reference_code}",
+            ),
+            actor,
+            provider_name,
+            return_url=return_url,
+            cancel_url=cancel_url,
+        )
+        attempt_expires = _as_utc(attempt.expires_at)
+        if attempt_expires is None:
+            return attempt
+        # Re-read through the identity map: the checkout above may have rolled
+        # back (`IntegrityError` recovery), which expires the caller's instance.
+        current = (
+            await self.db.execute(
+                select(AiTopupOrder).where(AiTopupOrder.id == order_id).execution_options(populate_existing=True)
+            )
+        ).scalar_one_or_none()
+        if current is None:
+            return attempt
+        current_expires = _as_utc(current.expires_at)
+        if current_expires is None or attempt_expires < current_expires:
+            current.expires_at = attempt_expires
+            await self.db.commit()
+        return attempt
+
+    @staticmethod
+    def _validate_payable(payable: _CheckoutPayable) -> None:
+        match payable.kind:
+            case "invoice":
+                if payable.status != "sent":
+                    raise HTTPException(status_code=409, detail="Invoice is not payable")
+                if payable.amount_idr <= 0:
+                    raise HTTPException(status_code=409, detail="Invoice total must be greater than zero")
+            case "topup":
+                if payable.status != "pending_payment":
+                    raise HTTPException(status_code=409, detail="Top-up order is not payable")
+                if payable.amount_idr <= 0:
+                    raise HTTPException(status_code=409, detail="Top-up amount must be greater than zero")
+            case _:
+                raise ValueError(f"unknown payable kind: {payable.kind}")
+
+    async def _create_checkout(
+        self,
+        payable: _CheckoutPayable,
+        actor: User,
+        provider_name: str,
+        *,
+        return_url: str,
+        cancel_url: str,
+    ) -> PaymentAttempt:
         if not settings.payment_gateway_enabled:
             raise HTTPException(status_code=503, detail="Payment gateway is disabled")
         try:
@@ -154,13 +277,11 @@ class PaymentService:
         except ProviderUnavailable as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-        if inv.status != "sent":
-            raise HTTPException(status_code=409, detail="Invoice is not payable")
-        if (inv.total_idr or 0) <= 0:
-            raise HTTPException(status_code=409, detail="Invoice total must be greater than zero")
+        self._validate_payable(payable)
 
-        invoice_id = inv.id
-        pending = await self.blocking_attempt(invoice_id)
+        invoice_id = payable.payable_id if payable.kind == "invoice" else None
+        topup_order_id = payable.payable_id if payable.kind == "topup" else None
+        pending = await self.blocking_attempt(invoice_id, topup_order_id=topup_order_id)
         if pending is not None:
             if await self._expire_if_stale(pending):
                 pending = None
@@ -172,26 +293,30 @@ class PaymentService:
                     detail=f"pending payment attempt {pending.id} already exists",
                 )
 
-        org = await self.db.get(Organization, inv.organization_id)
+        org = await self.db.get(Organization, payable.organization_id)
         if org is None:
             raise HTTPException(status_code=404, detail="Organization not found")
 
-        max_seq = (
-            await self.db.execute(
-                select(func.max(PaymentAttempt.attempt_seq)).where(PaymentAttempt.invoice_id == invoice_id)
-            )
-        ).scalar()
+        key = self._payable_filter(invoice_id, topup_order_id)
+        max_seq = (await self.db.execute(select(func.max(PaymentAttempt.attempt_seq)).where(key))).scalar()
         seq = int(max_seq or 0) + 1
-        order_id = f"{inv.number}-A{seq}"
+        order_id = f"{payable.number}-A{seq}"
         if len(order_id) > _MAX_ORDER_ID:
             raise HTTPException(status_code=500, detail="Generated provider order id is too long")
 
+        customer_email = (
+            (actor.email or "").strip()
+            if payable.kind == "topup"
+            else await self._customer_email(payable.organization_id, org)
+        )
         attempt = PaymentAttempt(
             provider=provider.name,
             provider_order_id=order_id,
             invoice_id=invoice_id,
-            organization_id=inv.organization_id,
-            amount_idr=inv.total_idr,
+            topup_order_id=topup_order_id,
+            payable_kind=payable.kind,
+            organization_id=payable.organization_id,
+            amount_idr=payable.amount_idr,
             currency="IDR",
             status="pending",
             method=None,
@@ -204,7 +329,7 @@ class PaymentService:
             await self.db.commit()
         except IntegrityError:
             await self.db.rollback()
-            existing = await self.blocking_attempt(invoice_id)
+            existing = await self.blocking_attempt(invoice_id, topup_order_id=topup_order_id)
             if existing is not None and existing.provider == provider.name and existing.checkout_url:
                 return existing
             detail = (
@@ -216,11 +341,11 @@ class PaymentService:
 
         request = CheckoutRequest(
             order_id=order_id,
-            amount_idr=inv.total_idr,
+            amount_idr=payable.amount_idr,
             currency="IDR",
-            invoice_number=inv.number,
-            description=f"Sinexis {inv.product} {inv.sku}",
-            customer_email=await self._customer_email(inv, org),
+            invoice_number=payable.number,
+            description=payable.description,
+            customer_email=customer_email,
             customer_name=org.name,
             return_url=return_url,
             cancel_url=cancel_url,

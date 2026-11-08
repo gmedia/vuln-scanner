@@ -116,6 +116,7 @@ class TestPaymentAmountMismatchReader:
         sql = str(executed.args[0])
         assert "failure_code = 'amount_mismatch'" in sql
         assert "failed_at >= :cutoff" in sql
+        assert "payable_kind = 'invoice'" in sql
 
 
 class TestPaymentDuplicateSettlementReader:
@@ -128,6 +129,7 @@ class TestPaymentDuplicateSettlementReader:
         sql = str(executed.args[0])
         assert "provider_status = 'duplicate'" in sql
         assert "updated_at >= :cutoff" in sql
+        assert "payable_kind = 'invoice'" in sql
 
 
 class TestPaymentRefundsReader:
@@ -140,6 +142,7 @@ class TestPaymentRefundsReader:
         sql = str(executed.args[0])
         assert "status = 'refunded'" in sql
         assert "updated_at >= :cutoff" in sql
+        assert "payable_kind = 'invoice'" in sql
         assert "cutoff" in executed.args[1]
 
     def test_reader_returns_zero_when_scalar_is_null(self):
@@ -156,20 +159,140 @@ class TestPaymentRefundsReader:
             conn.execute(
                 text(
                     "CREATE TABLE payment_attempts "
-                    "(id VARCHAR PRIMARY KEY, status VARCHAR NOT NULL, updated_at DATETIME NOT NULL)"
+                    "(id VARCHAR PRIMARY KEY, status VARCHAR NOT NULL, "
+                    "updated_at DATETIME NOT NULL, payable_kind VARCHAR NOT NULL)"
                 )
             )
             conn.execute(
                 text(
-                    "INSERT INTO payment_attempts (id, status, updated_at) "
-                    "VALUES (:id, :status, :updated_at)"
+                    "INSERT INTO payment_attempts (id, status, updated_at, payable_kind) "
+                    "VALUES (:id, :status, :updated_at, :payable_kind)"
                 ),
                 [
-                    {"id": "pending", "status": "pending", "updated_at": now},
-                    {"id": "refunded", "status": "refunded", "updated_at": now},
+                    {"id": "pending", "status": "pending", "updated_at": now, "payable_kind": "invoice"},
+                    {"id": "refunded", "status": "refunded", "updated_at": now, "payable_kind": "invoice"},
+                    {"id": "topup", "status": "refunded", "updated_at": now, "payable_kind": "topup"},
                 ],
             )
         with patch("app.metrics._ai_engine", return_value=engine):
+            assert _read_payment_refunds_24h() == 1.0
+        engine.dispose()
+
+    @pytest.mark.filterwarnings("ignore:The default datetime adapter is deprecated")
+    def test_topup_attempts_are_excluded_from_every_attempt_reader(self, tmp_path):
+        from sqlalchemy import create_engine, text
+
+        engine = create_engine(f"sqlite:///{tmp_path / 'isolation.db'}")
+        now = datetime.now(UTC)
+        hour_ago = now - timedelta(hours=1)
+        two_hours_ago = now - timedelta(hours=2)
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    "CREATE TABLE payment_attempts ("
+                    "id VARCHAR PRIMARY KEY, status VARCHAR NOT NULL, "
+                    "updated_at DATETIME NOT NULL, created_at DATETIME NOT NULL, "
+                    "failure_code VARCHAR, failed_at DATETIME, "
+                    "provider_status VARCHAR, payable_kind VARCHAR NOT NULL)"
+                )
+            )
+            conn.execute(
+                text(
+                    "INSERT INTO payment_attempts "
+                    "(id, status, updated_at, created_at, failure_code, failed_at, "
+                    "provider_status, payable_kind) VALUES "
+                    "(:id, :status, :updated_at, :created_at, :failure_code, :failed_at, "
+                    ":provider_status, :payable_kind)"
+                ),
+                [
+                    {
+                        "id": "invoice-pending",
+                        "status": "pending",
+                        "updated_at": now,
+                        "created_at": hour_ago,
+                        "failure_code": None,
+                        "failed_at": None,
+                        "provider_status": None,
+                        "payable_kind": "invoice",
+                    },
+                    {
+                        "id": "topup-pending",
+                        "status": "pending",
+                        "updated_at": now,
+                        "created_at": two_hours_ago,
+                        "failure_code": None,
+                        "failed_at": None,
+                        "provider_status": None,
+                        "payable_kind": "topup",
+                    },
+                    {
+                        "id": "invoice-mismatch",
+                        "status": "failed",
+                        "updated_at": now,
+                        "created_at": two_hours_ago,
+                        "failure_code": "amount_mismatch",
+                        "failed_at": now,
+                        "provider_status": None,
+                        "payable_kind": "invoice",
+                    },
+                    {
+                        "id": "topup-mismatch",
+                        "status": "failed",
+                        "updated_at": now,
+                        "created_at": two_hours_ago,
+                        "failure_code": "amount_mismatch",
+                        "failed_at": now,
+                        "provider_status": None,
+                        "payable_kind": "topup",
+                    },
+                    {
+                        "id": "invoice-dup",
+                        "status": "succeeded",
+                        "updated_at": now,
+                        "created_at": two_hours_ago,
+                        "failure_code": None,
+                        "failed_at": None,
+                        "provider_status": "duplicate",
+                        "payable_kind": "invoice",
+                    },
+                    {
+                        "id": "topup-dup",
+                        "status": "succeeded",
+                        "updated_at": now,
+                        "created_at": two_hours_ago,
+                        "failure_code": None,
+                        "failed_at": None,
+                        "provider_status": "duplicate",
+                        "payable_kind": "topup",
+                    },
+                    {
+                        "id": "invoice-refund",
+                        "status": "refunded",
+                        "updated_at": now,
+                        "created_at": two_hours_ago,
+                        "failure_code": None,
+                        "failed_at": None,
+                        "provider_status": "refunded",
+                        "payable_kind": "invoice",
+                    },
+                    {
+                        "id": "topup-refund",
+                        "status": "refunded",
+                        "updated_at": now,
+                        "created_at": two_hours_ago,
+                        "failure_code": None,
+                        "failed_at": None,
+                        "provider_status": "refunded",
+                        "payable_kind": "topup",
+                    },
+                ],
+            )
+        with patch("app.metrics._ai_engine", return_value=engine):
+            assert _read_payment_pending_attempts() == 1.0
+            age = _read_payment_pending_age_seconds()
+            assert age is not None and 3595 <= age <= 3605
+            assert _read_payment_amount_mismatches_24h() == 1.0
+            assert _read_payment_duplicate_settlements_24h() == 1.0
             assert _read_payment_refunds_24h() == 1.0
         engine.dispose()
 

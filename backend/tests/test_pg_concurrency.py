@@ -31,12 +31,15 @@ from sqlalchemy.pool import NullPool
 
 import app.services.invoice as invoice_module
 from app.config import settings
+from app.models.ai_gateway import AiTopupOrder, AiWallet, AiWalletLedger
 from app.models.billing import PaymentAttempt
 from app.models.invoice import OrgInvoice
 from app.models.promo import PromoRedemption
 from app.models.user import User
+from app.services import ai_topup as topup_service
+from app.services.billing import BillingService
 from app.services.invoice import InvoiceService
-from app.services.payments.base import CheckoutResult
+from app.services.payments.base import CheckoutResult, NormalizedEvent
 from app.services.payments.service import PaymentService
 from tests import pg_helpers
 
@@ -166,17 +169,13 @@ async def test_global_promo_quota_is_serialised_by_the_row_lock(
 
     applied = await pg_helpers.scalar_count(
         pg_engine,
-        select(func.count())
-        .select_from(PromoRedemption)
-        .where(PromoRedemption.status == "applied"),
+        select(func.count()).select_from(PromoRedemption).where(PromoRedemption.status == "applied"),
     )
     assert applied == 1
 
     with_promo = await pg_helpers.scalar_count(
         pg_engine,
-        select(func.count())
-        .select_from(OrgInvoice)
-        .where(OrgInvoice.promo_code == PROMO_CODE),
+        select(func.count()).select_from(OrgInvoice).where(OrgInvoice.promo_code == PROMO_CODE),
     )
     assert with_promo == 1
 
@@ -272,9 +271,7 @@ async def test_one_pending_checkout_per_invoice(
 
         return await pg_helpers.run_in_session(pg_engine, _run)
 
-    results = await asyncio.gather(
-        checkout("midtrans"), checkout("xendit"), return_exceptions=True
-    )
+    results = await asyncio.gather(checkout("midtrans"), checkout("xendit"), return_exceptions=True)
     oks, errs = _outcomes(results)
 
     assert len(oks) == 1, results
@@ -298,9 +295,7 @@ async def test_one_pending_checkout_per_invoice(
 
     all_attempts = await pg_helpers.read(
         pg_engine,
-        lambda session: session.execute(
-            select(PaymentAttempt).where(PaymentAttempt.invoice_id == invoice_id)
-        ),
+        lambda session: session.execute(select(PaymentAttempt).where(PaymentAttempt.invoice_id == invoice_id)),
     )
     rows = list(all_attempts.scalars().all())
     order_keys = [(row.provider, row.provider_order_id) for row in rows]
@@ -350,9 +345,7 @@ async def test_invoice_number_allocation_survives_a_real_unique_violation(
 
         return await pg_helpers.run_in_session(pg_engine, _run)
 
-    results = await asyncio.gather(
-        create(seed.org_a_id), create(seed.org_b_id), return_exceptions=True
-    )
+    results = await asyncio.gather(create(seed.org_a_id), create(seed.org_b_id), return_exceptions=True)
     oks, errs = _outcomes(results)
 
     assert errs == [], results
@@ -362,10 +355,223 @@ async def test_invoice_number_allocation_survives_a_real_unique_violation(
     assert all(INVOICE_NUMBER_RE.match(number) for number in numbers)
     assert sorted(allocated) == ["SX-202604-0001", "SX-202604-0001", "SX-202604-0002"]
 
-    total = await pg_helpers.scalar_count(
-        pg_engine, select(func.count()).select_from(OrgInvoice)
-    )
+    total = await pg_helpers.scalar_count(pg_engine, select(func.count()).select_from(OrgInvoice))
     assert total == 2
+
+
+TOPUP_AMOUNT = 100_000
+
+
+def _topup_event(attempt: PaymentAttempt, *, event_id: str, kind: str = "succeeded") -> NormalizedEvent:
+    return NormalizedEvent(
+        event_id=event_id,
+        kind=kind,
+        provider_order_id=attempt.provider_order_id,
+        provider_payment_id=f"pay-{event_id}",
+        amount_idr=TOPUP_AMOUNT,
+        currency="IDR",
+        method="qris",
+    )
+
+
+async def _topup_credit_count(engine: AsyncEngine, order_id: uuid.UUID) -> int:
+    return await pg_helpers.scalar_count(
+        engine,
+        select(func.count()).select_from(AiWalletLedger).where(AiWalletLedger.topup_order_id == order_id),
+    )
+
+
+@pytest.mark.asyncio
+async def test_parallel_topup_webhooks_credit_exactly_once(
+    pg_engine: AsyncEngine,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Locks the order row lock + ``kind='topup'`` ledger unique under a race.
+
+    Two providers' worth of *different* event ids settle one order at the same
+    time. Without the row lock (or without the ledger unique index) both
+    transactions credit the wallet and the balance doubles while the sum of
+    ledger deltas still looks self-consistent.
+    """
+    seed = await pg_helpers.seed(pg_engine)
+    reference = "261101-CONC01"
+    order_id = await pg_helpers.insert_topup_order(
+        pg_engine,
+        organization_id=seed.org_a_id,
+        reference_code=reference,
+        amount_idr=TOPUP_AMOUNT,
+    )
+    attempt_id = await pg_helpers.insert_topup_attempt(
+        pg_engine,
+        organization_id=seed.org_a_id,
+        order_id=order_id,
+        reference_code=reference,
+        amount_idr=TOPUP_AMOUNT,
+    )
+    monkeypatch.setattr(settings, "midtrans_verify_status", False)
+
+    async def settle(event_id: str):
+        async def _run(session):
+            attempt = await session.get(PaymentAttempt, attempt_id)
+            assert attempt is not None
+            return await BillingService(session).apply_gateway_event(
+                "midtrans", _topup_event(attempt, event_id=event_id)
+            )
+
+        return await pg_helpers.run_in_session(pg_engine, _run)
+
+    results = await asyncio.gather(settle("evt-conc-a"), settle("evt-conc-b"), return_exceptions=True)
+    assert [type(result).__name__ for result in results if isinstance(result, BaseException)] == [], results
+    statuses = sorted(result.status for result in results if not isinstance(result, BaseException))
+    # Both events are applied; the second observes ``paid`` and settles as a no-op
+    # (the event row is still ``processed`` because that is the only terminal status).
+    assert statuses == ["processed", "processed"], results
+
+    assert await _topup_credit_count(pg_engine, order_id) == 1
+    balance = await pg_helpers.read(
+        pg_engine,
+        lambda session: session.execute(select(AiWallet.balance_idr).where(AiWallet.organization_id == seed.org_a_id)),
+    )
+    assert int(balance.scalar_one()) == TOPUP_AMOUNT
+
+    order = await pg_helpers.read(pg_engine, lambda session: session.get(AiTopupOrder, order_id))
+    assert order is not None and order.status == "paid"
+
+
+@pytest.mark.asyncio
+async def test_manual_approve_racing_a_webhook_credits_once(
+    pg_engine: AsyncEngine,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Locks the order lock shared by ``approve`` and the webhook settlement.
+
+    A manual approval and a gateway ``succeeded`` race one order. Whichever
+    wins, the loser must observe ``paid`` and return without a second ledger
+    row and without raising (a 500 would hand the customer a duplicate charge
+    with no audit trail).
+    """
+    seed = await pg_helpers.seed(pg_engine)
+    reference = "261101-CONC02"
+    order_id = await pg_helpers.insert_topup_order(
+        pg_engine,
+        organization_id=seed.org_a_id,
+        reference_code=reference,
+        amount_idr=TOPUP_AMOUNT,
+        status="awaiting_verification",
+    )
+    attempt_id = await pg_helpers.insert_topup_attempt(
+        pg_engine,
+        organization_id=seed.org_a_id,
+        order_id=order_id,
+        reference_code=reference,
+        amount_idr=TOPUP_AMOUNT,
+    )
+    monkeypatch.setattr(settings, "midtrans_verify_status", False)
+
+    async def approve():
+        async def _run(session):
+            admin = await pg_helpers.detached_actor(pg_engine, seed.admin_id)
+            return await topup_service.approve(
+                session,
+                order_id=order_id,
+                admin=admin,
+                bank_ref="MANUAL-RACE",
+                force=True,
+            )
+
+        return await pg_helpers.run_in_session(pg_engine, _run)
+
+    async def webhook():
+        async def _run(session):
+            attempt = await session.get(PaymentAttempt, attempt_id)
+            assert attempt is not None
+            return await BillingService(session).apply_gateway_event(
+                "midtrans", _topup_event(attempt, event_id="evt-approve-race")
+            )
+
+        return await pg_helpers.run_in_session(pg_engine, _run)
+
+    results = await asyncio.gather(approve(), webhook(), return_exceptions=True)
+    errors = [result for result in results if isinstance(result, BaseException)]
+    assert errors == [], errors
+
+    assert await _topup_credit_count(pg_engine, order_id) == 1
+    order = await pg_helpers.read(pg_engine, lambda session: session.get(AiTopupOrder, order_id))
+    assert order is not None and order.status == "paid"
+    balance = await pg_helpers.read(
+        pg_engine,
+        lambda session: session.execute(select(AiWallet.balance_idr).where(AiWallet.organization_id == seed.org_a_id)),
+    )
+    assert int(balance.scalar_one()) == TOPUP_AMOUNT
+
+
+@pytest.mark.asyncio
+async def test_parallel_topup_checkouts_create_one_pending_attempt(
+    pg_engine: AsyncEngine,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Locks ``uq_payment_attempt_pending_topup`` and the top-up seq recovery.
+
+    Two concurrent checkouts for one order. The partial unique index is the only
+    thing that can stop a second ``pending`` row, and the ``IntegrityError``
+    recovery must key on ``topup_order_id`` (not ``invoice_id``) or the loser
+    either raises 500 or allocates a sequence across every invoice attempt.
+    """
+    seed = await pg_helpers.seed(pg_engine)
+    reference = "261101-CONC03"
+    order_id = await pg_helpers.insert_topup_order(
+        pg_engine,
+        organization_id=seed.org_a_id,
+        reference_code=reference,
+        amount_idr=TOPUP_AMOUNT,
+    )
+    monkeypatch.setattr(settings, "payment_gateway_enabled", True)
+    monkeypatch.setattr(
+        "app.services.payments.service.build_provider",
+        _build_fake_provider,
+    )
+
+    async def checkout():
+        async def _run(session):
+            order = await session.get(AiTopupOrder, order_id)
+            assert order is not None
+            actor = await pg_helpers.detached_actor(pg_engine, seed.admin_id)
+            return await PaymentService(session).create_topup_checkout(
+                order,
+                actor,
+                "midtrans",
+                return_url="https://example.invalid/return",
+                cancel_url="https://example.invalid/cancel",
+            )
+
+        return await pg_helpers.run_in_session(pg_engine, _run)
+
+    results = await asyncio.gather(checkout(), checkout(), return_exceptions=True)
+    errors = [result for result in results if isinstance(result, BaseException)]
+    assert all(isinstance(err, HTTPException) and err.status_code == 409 for err in errors), results
+
+    pending = await pg_helpers.read(
+        pg_engine,
+        lambda session: session.execute(
+            select(PaymentAttempt).where(
+                PaymentAttempt.topup_order_id == order_id,
+                PaymentAttempt.status == "pending",
+            )
+        ),
+    )
+    pending_rows = list(pending.scalars().all())
+    assert len(pending_rows) == 1, pending_rows
+    assert pending_rows[0].payable_kind == "topup"
+    assert pending_rows[0].invoice_id is None
+    assert pending_rows[0].provider_order_id == f"{reference}-A1"
+
+    all_rows = await pg_helpers.read(
+        pg_engine,
+        lambda session: session.execute(select(PaymentAttempt).where(PaymentAttempt.topup_order_id == order_id)),
+    )
+    rows = list(all_rows.scalars().all())
+    assert [row.attempt_seq for row in rows] == [1]
+    assert len({row.provider_order_id for row in rows}) == len(rows)
 
 
 def test_partial_unique_indexes_that_preserve_duplicate_invariants() -> None:
@@ -389,17 +595,13 @@ def test_partial_unique_indexes_that_preserve_duplicate_invariants() -> None:
         predicate = str(pending.dialect_kwargs[dialect])
         assert "status = 'pending'" in predicate, (dialect, predicate)
 
-    invoice_request = index_for(
-        OrgInvoice.__table__, "uq_org_invoices_subscription_request"
-    )
+    invoice_request = index_for(OrgInvoice.__table__, "uq_org_invoices_subscription_request")
     assert invoice_request.unique is True
     for dialect in ("postgresql_where", "sqlite_where"):
         predicate = str(invoice_request.dialect_kwargs[dialect])
         assert "subscription_request_id IS NOT NULL" in predicate, (dialect, predicate)
 
-    promo_request = index_for(
-        PromoRedemption.__table__, "uq_promo_redemption_request"
-    )
+    promo_request = index_for(PromoRedemption.__table__, "uq_promo_redemption_request")
     assert promo_request.unique is True
     for dialect in ("postgresql_where", "sqlite_where"):
         predicate = str(promo_request.dialect_kwargs[dialect])

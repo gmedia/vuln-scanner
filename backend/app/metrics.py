@@ -314,7 +314,7 @@ def _read_payment_pending_attempts() -> float | None:
 
         with _ai_engine().connect() as conn:
             raw = conn.execute(
-                text("SELECT COUNT(*) FROM payment_attempts WHERE status = 'pending'")
+                text("SELECT COUNT(*) FROM payment_attempts WHERE status = 'pending' AND payable_kind = 'invoice'")
             ).scalar()
         return float(raw or 0)
     except Exception as e:
@@ -334,7 +334,9 @@ def _read_payment_pending_age_seconds() -> float | None:
 
         with _ai_engine().connect() as conn:
             oldest = conn.execute(
-                text("SELECT MIN(created_at) FROM payment_attempts WHERE status = 'pending'")
+                text(
+                    "SELECT MIN(created_at) FROM payment_attempts WHERE status = 'pending' AND payable_kind = 'invoice'"
+                )
             ).scalar()
         if oldest is None:
             return 0.0
@@ -355,10 +357,7 @@ def _read_payment_failed_events_24h() -> float | None:
         cutoff = datetime.now(UTC) - timedelta(hours=24)
         with _ai_engine().connect() as conn:
             raw = conn.execute(
-                text(
-                    "SELECT COUNT(*) FROM payment_events "
-                    "WHERE status = 'failed' AND received_at >= :cutoff"
-                ),
+                text("SELECT COUNT(*) FROM payment_events WHERE status = 'failed' AND received_at >= :cutoff"),
                 {"cutoff": cutoff},
             ).scalar()
         return float(raw or 0)
@@ -381,7 +380,8 @@ def _read_payment_amount_mismatches_24h() -> float | None:
             raw = conn.execute(
                 text(
                     "SELECT COUNT(*) FROM payment_attempts "
-                    "WHERE failure_code = 'amount_mismatch' AND failed_at >= :cutoff"
+                    "WHERE failure_code = 'amount_mismatch' AND failed_at >= :cutoff "
+                    "AND payable_kind = 'invoice'"
                 ),
                 {"cutoff": cutoff},
             ).scalar()
@@ -404,7 +404,8 @@ def _read_payment_duplicate_settlements_24h() -> float | None:
             raw = conn.execute(
                 text(
                     "SELECT COUNT(*) FROM payment_attempts "
-                    "WHERE provider_status = 'duplicate' AND updated_at >= :cutoff"
+                    "WHERE provider_status = 'duplicate' AND updated_at >= :cutoff "
+                    "AND payable_kind = 'invoice'"
                 ),
                 {"cutoff": cutoff},
             ).scalar()
@@ -426,7 +427,11 @@ def _read_payment_refunds_24h() -> float | None:
         cutoff = datetime.now(UTC) - timedelta(hours=24)
         with _ai_engine().connect() as conn:
             raw = conn.execute(
-                text("SELECT COUNT(*) FROM payment_attempts WHERE status = 'refunded' AND updated_at >= :cutoff"),
+                text(
+                    "SELECT COUNT(*) FROM payment_attempts "
+                    "WHERE status = 'refunded' AND updated_at >= :cutoff "
+                    "AND payable_kind = 'invoice'"
+                ),
                 {"cutoff": cutoff},
             ).scalar()
         return float(raw or 0)
@@ -496,10 +501,7 @@ def _read_promo_redemptions_24h() -> float | None:
         cutoff = datetime.now(UTC) - timedelta(hours=24)
         with _ai_engine().connect() as conn:
             raw = conn.execute(
-                text(
-                    "SELECT COUNT(*) FROM promo_redemptions "
-                    "WHERE status = 'applied' AND created_at >= :cutoff"
-                ),
+                text("SELECT COUNT(*) FROM promo_redemptions WHERE status = 'applied' AND created_at >= :cutoff"),
                 {"cutoff": cutoff},
             ).scalar()
         return float(raw or 0)
@@ -520,10 +522,7 @@ def _read_promo_pending_approvals() -> float | None:
 
         with _ai_engine().connect() as conn:
             raw = conn.execute(
-                text(
-                    "SELECT COUNT(*) FROM promo_codes "
-                    "WHERE requires_approval = true AND approved_at IS NULL"
-                )
+                text("SELECT COUNT(*) FROM promo_codes WHERE requires_approval = true AND approved_at IS NULL")
             ).scalar()
         return float(raw or 0)
     except Exception as e:

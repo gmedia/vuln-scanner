@@ -414,11 +414,11 @@ async def test_checkout_integrity_error_returns_existing_attempt(
     real_blocking = PaymentService.blocking_attempt
     calls = {"n": 0}
 
-    async def fake_blocking(self, invoice_id):  # noqa: ANN001
+    async def fake_blocking(self, invoice_id=None, *, topup_order_id=None):  # noqa: ANN001
         calls["n"] += 1
         if calls["n"] == 1:
             return None
-        return await real_blocking(self, invoice_id)
+        return await real_blocking(self, invoice_id, topup_order_id=topup_order_id)
 
     monkeypatch.setattr(PaymentService, "blocking_attempt", fake_blocking)
 

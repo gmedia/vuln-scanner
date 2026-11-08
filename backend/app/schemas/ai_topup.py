@@ -53,6 +53,15 @@ class AiTopupOrderCreate(BaseModel):
     method: Literal["manual_transfer", "midtrans"]
 
 
+class AiTopupCheckoutIn(BaseModel):
+    provider: Literal["midtrans"]
+
+
+class AiTopupCheckoutOut(BaseModel):
+    redirect_url: str
+    attempt_id: uuid.UUID
+
+
 class AiTopupBankOut(BaseModel):
     bank_name: str | None = None
     bank_account: str | None = None

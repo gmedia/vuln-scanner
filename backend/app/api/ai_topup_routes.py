@@ -20,6 +20,8 @@ from app.models.ai_gateway import AiTopupOrder
 from app.models.user import User
 from app.schemas.ai_topup import (
     AiTopupBankOut,
+    AiTopupCheckoutIn,
+    AiTopupCheckoutOut,
     AiTopupOrderCreate,
     AiTopupOrderList,
     AiTopupOrderOut,
@@ -30,6 +32,7 @@ from app.services import ai_topup as topup_service
 from app.services.auth import get_active_org_id, get_current_user
 from app.services.invoice import bank_copy
 from app.services.organization import require_membership
+from app.services.payments.service import PaymentService
 
 router = APIRouter(prefix="/ai/topup", tags=["ai-topup"])
 
@@ -43,6 +46,12 @@ proof_limiter = RateLimiter(
     max_requests=10,
     window_seconds=60,
     prefix="ratelimit:ai_topup_proof",
+    bypass_e2e=False,
+)
+checkout_limiter = RateLimiter(
+    max_requests=20,
+    window_seconds=60,
+    prefix="ratelimit:ai_topup_checkout",
     bypass_e2e=False,
 )
 
@@ -169,6 +178,35 @@ async def upload_proof(
         upload=file,
     )
     return _customer_out(order, None)
+
+
+@router.post("/orders/{order_id}/checkout", response_model=AiTopupCheckoutOut)
+async def checkout_order(
+    order_id: uuid.UUID,
+    body: AiTopupCheckoutIn,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> AiTopupCheckoutOut | Response:
+    _disabled()
+    limited = await checkout_limiter(request)
+    if limited:
+        return limited
+    org_id = await _admin_org(request, current_user, db)
+    order = await topup_service.get_order(db, org_id, order_id)
+    if order.status != "pending_payment" or order.payment_method != "midtrans":
+        raise HTTPException(status_code=409, detail="Order is not payable through the gateway")
+    base = settings.frontend_url.rstrip("/")
+    attempt = await PaymentService(db).create_topup_checkout(
+        order,
+        current_user,
+        body.provider,
+        return_url=f"{base}/ai/topup/{order.id}",
+        cancel_url=f"{base}/ai/topup/{order.id}",
+    )
+    if not attempt.checkout_url:
+        raise HTTPException(status_code=502, detail="Payment provider did not return a redirect URL")
+    return AiTopupCheckoutOut(redirect_url=attempt.checkout_url, attempt_id=attempt.id)
 
 
 @router.post("/orders/{order_id}/cancel", response_model=AiTopupOrderOut)
