@@ -16,6 +16,7 @@ vi.mock("@tanstack/react-query", () => ({
   useQuery: vi.fn(),
   useMutation: vi.fn(),
   useQueryClient: vi.fn(),
+  keepPreviousData: (data: unknown) => data,
 }));
 
 vi.mock("@/api/admin", () => ({

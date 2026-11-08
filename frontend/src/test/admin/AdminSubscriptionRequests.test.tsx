@@ -123,4 +123,38 @@ describe("AdminSubscriptionRequests", () => {
       await screen.findByTestId("admin-subscription-requests-empty"),
     ).toBeInTheDocument();
   });
+
+  it("requests page 2 and renders the matching slice count", async () => {
+    const user = userEvent.setup();
+    vi.mocked(listAdminSubscriptionRequests).mockImplementation(
+      async (params) => {
+        const page = params?.page ?? 1;
+        const items = Array.from({ length: 50 }, (_, i) => ({
+          ...request,
+          id: `req-${page}-${i}`,
+          organization_name: `Org ${page}-${i}`,
+        }));
+        return { items, total: 60 };
+      },
+    );
+
+    renderPage();
+    await screen.findByTestId("admin-subscription-requests-table");
+    expect(screen.getByTestId("subscription-requests-range")).toHaveTextContent(
+      "Showing 1–50 of 60",
+    );
+
+    await user.click(screen.getByTestId("subscription-requests-next"));
+
+    await waitFor(() =>
+      expect(listAdminSubscriptionRequests).toHaveBeenLastCalledWith(
+        expect.objectContaining({ page: 2, page_size: 50 }),
+      ),
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("subscription-requests-range")).toHaveTextContent(
+        "Showing 51–60 of 60",
+      ),
+    );
+  });
 });

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, Check, ClipboardList, Loader2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -30,6 +30,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { EmptyState } from "@/components/patterns/EmptyState";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/Pagination";
 import { useTierMap } from "@/hooks/useTierMap";
 import {
   approveAdminSubscriptionRequest,
@@ -58,21 +65,80 @@ function statusVariant(
   return "default";
 }
 
+const PAGE_SIZE = 50;
+
+function Pager({
+  page,
+  total,
+  onPage,
+  testId,
+}: {
+  page: number;
+  total: number;
+  onPage: (page: number) => void;
+  testId: string;
+}) {
+  const { t } = useTranslation("admin");
+  if (total === 0) return null;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const from = Math.min((page - 1) * PAGE_SIZE + 1, total);
+  const to = Math.min(page * PAGE_SIZE, total);
+  return (
+    <div className="flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
+      <p
+        className="font-mono text-xs tabular-nums text-muted-foreground"
+        data-testid={`${testId}-range`}
+      >
+        {t("showingRange", { from, to, total })}
+      </p>
+      {totalPages > 1 ? (
+        <Pagination className="mx-0 w-auto justify-end">
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                data-testid={`${testId}-prev`}
+                onClick={() => onPage(Math.max(1, page - 1))}
+                disabled={page <= 1}
+              />
+            </PaginationItem>
+            <PaginationItem>
+              <span className="px-2 font-mono text-xs tabular-nums text-muted-foreground">
+                {t("pageOf", { page, total: totalPages })}
+              </span>
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationNext
+                data-testid={`${testId}-next`}
+                onClick={() => onPage(Math.min(totalPages, page + 1))}
+                disabled={page >= totalPages}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      ) : null}
+    </div>
+  );
+}
+
 function AdminSubscriptionRequests() {
   const { t, i18n } = useTranslation("admin");
   const { label: tierLabel } = useTierMap();
   const dateLocale = i18n.language === "en" ? "en-US" : "id-ID";
   const qc = useQueryClient();
   const [status, setStatus] = useState("pending");
+  const [page, setPage] = useState(1);
   const [rejectTarget, setRejectTarget] = useState<SubscriptionRequestItem | null>(null);
   const [rejectNote, setRejectNote] = useState("");
 
   const query = useQuery({
-    queryKey: ["admin-subscription-requests", status],
+    queryKey: ["admin-subscription-requests", status, page],
     queryFn: () =>
       listAdminSubscriptionRequests({
         status: status === "all" ? undefined : status,
+        page,
+        page_size: PAGE_SIZE,
       }),
+    placeholderData: keepPreviousData,
   });
 
   const approveMut = useMutation({
@@ -166,7 +232,13 @@ function AdminSubscriptionRequests() {
             <Label htmlFor="admin-subscription-request-status">
               {t("subscriptionRequestFilter")}
             </Label>
-            <Select value={status} onValueChange={setStatus}>
+            <Select
+              value={status}
+              onValueChange={(value) => {
+                setStatus(value);
+                setPage(1);
+              }}
+            >
               <SelectTrigger
                 id="admin-subscription-request-status"
                 className="h-10 min-h-10"
@@ -382,6 +454,12 @@ function AdminSubscriptionRequests() {
               </div>
             </>
           )}
+          <Pager
+            page={page}
+            total={query.data?.total ?? 0}
+            onPage={setPage}
+            testId="subscription-requests"
+          />
         </AdminShellBody>
       </AdminShell>
 

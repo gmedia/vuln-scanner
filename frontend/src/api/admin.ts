@@ -1071,6 +1071,7 @@ export async function listAdminInvoices(params?: {
   status?: string;
   organization_id?: string;
   page?: number;
+  page_size?: number;
 }): Promise<{ items: InvoiceItem[]; total: number }> {
   const { data } = await api.get<{ items: InvoiceItem[]; total: number }>(
     "/api/admin/invoices",
