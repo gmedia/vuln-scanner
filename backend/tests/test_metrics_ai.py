@@ -16,6 +16,7 @@ from app.metrics import (
     AiProvidersProbeAgeCollector,
     AiShortfallCollector,
     AiStaleReservationsCollector,
+    AiTopupProofsPurgedCollector,
     AiUpstreamBreakersOpenCollector,
     AiWalletLedgerDriftCollector,
     _read_ai_fx_rate_age_days,
@@ -24,6 +25,7 @@ from app.metrics import (
     _read_ai_providers_probe_age_seconds,
     _read_ai_shortfall_idr_24h,
     _read_ai_stale_open_reservations,
+    _read_ai_topup_proofs_purged_total,
     _read_ai_upstream_breakers_open,
     _read_ai_wallet_ledger_drift_idr,
     register_custom_metrics,
@@ -325,13 +327,62 @@ class TestAiProvidersDegradedCollector:
             assert list(AiProvidersDegradedCollector().collect()) == []
 
 
+class TestAiTopupProofsPurgedReader:
+    def _reader_returning(self, scalar: object) -> tuple[float | None, MagicMock]:
+        engine = MagicMock()
+        execute = engine.connect.return_value.__enter__.return_value.execute
+        execute.return_value.scalar.return_value = scalar
+        with patch("app.metrics._ai_engine", return_value=engine):
+            return _read_ai_topup_proofs_purged_total(), execute
+
+    def test_reader_returns_sql_count(self):
+        value, execute = self._reader_returning(7)
+        assert value == 7.0
+        sql = str(execute.call_args.args[0])
+        assert "proof_object_key IS NULL" in sql
+        assert "status IN ('expired', 'rejected', 'canceled')" in sql
+
+    @pytest.mark.parametrize("scalar", [0, None])
+    def test_null_count_is_zero(self, scalar):
+        value, _ = self._reader_returning(scalar)
+        assert value == 0.0
+
+    def test_reader_returns_none_when_engine_raises(self):
+        with patch("app.metrics._ai_engine", side_effect=RuntimeError("no db")):
+            assert _read_ai_topup_proofs_purged_total() is None
+
+
+class TestAiTopupProofsPurgedCollector:
+    def test_emits_count_when_reader_returns_purges(self):
+        with patch("app.metrics._read_ai_topup_proofs_purged_total", return_value=7.0):
+            family, sample = _only_sample(AiTopupProofsPurgedCollector())
+
+        assert family.name == "vuln_ai_topup_proofs_purged_total"
+        assert family.type == "gauge"
+        assert sample.value == 7.0
+
+    def test_emits_zero_rather_than_nothing_on_a_quiet_day(self):
+        with patch("app.metrics._read_ai_topup_proofs_purged_total", return_value=0.0):
+            family, sample = _only_sample(AiTopupProofsPurgedCollector())
+
+        assert sample.value == 0.0
+
+    def test_emits_nothing_when_reader_returns_none(self):
+        with patch("app.metrics._read_ai_topup_proofs_purged_total", return_value=None):
+            assert list(AiTopupProofsPurgedCollector().collect()) == []
+
+    def test_emits_nothing_when_reader_raises(self):
+        with patch("app.metrics._read_ai_topup_proofs_purged_total", side_effect=RuntimeError("db down")):
+            assert list(AiTopupProofsPurgedCollector().collect()) == []
+
+
 class TestRegisterCustomMetrics:
     def test_registers_each_collector_once(self, reset_registration_flag):
         with patch.object(metrics_mod.REGISTRY, "register") as mock_reg:
             register_custom_metrics()
             register_custom_metrics()
 
-        assert mock_reg.call_count == 25
+        assert mock_reg.call_count == 26
         classes = [type(call.args[0]).__name__ for call in mock_reg.call_args_list]
         assert sorted(classes) == sorted(
             [
@@ -346,6 +397,7 @@ class TestRegisterCustomMetrics:
                 "AiTopupOrdersTotalCollector",
                 "AiTopupPendingAgeCollector",
                 "AiTopupPendingOverdueCollector",
+                "AiTopupProofsPurgedCollector",
                 "AiTopupRefundReviewCollector",
                 "AiTopupWebhookFailedCollector",
                 "AiUpstreamBreakersOpenCollector",
@@ -362,7 +414,7 @@ class TestRegisterCustomMetrics:
                 "PromoRedemptions24hCollector",
             ]
         )
-        assert len(set(classes)) == 25
+        assert len(set(classes)) == 26
 
 
 class TestAiProvidersNeverProbedReader:

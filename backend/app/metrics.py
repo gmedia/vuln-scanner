@@ -41,6 +41,7 @@ _AI_TOPUP_PENDING_OVERDUE_NAME = "vuln_ai_topup_pending_overdue_total"
 _AI_TOPUP_AWAITING_VERIFICATION_NAME = "vuln_ai_topup_awaiting_verification_total"
 _AI_TOPUP_REFUND_REVIEW_NAME = "vuln_ai_topup_refund_review_total"
 _AI_TOPUP_WEBHOOK_FAILED_NAME = "vuln_ai_topup_webhook_failed_total"
+_AI_TOPUP_PROOFS_PURGED_NAME = "vuln_ai_topup_proofs_purged_total"
 
 # A failed top-up webhook is a payment that did not credit the wallet. A rolling
 # 24h window mirrors `vuln_payment_failed_events_24h`; the rows are retained far
@@ -562,6 +563,35 @@ def _read_ai_topup_webhook_failed_total() -> float | None:
         return float(raw or 0)
     except Exception as e:
         logger.debug("ai top-up webhook failed metric scrape failed: %s", e)
+        return None
+
+
+def _read_ai_topup_proofs_purged_total() -> float | None:
+    """Terminal top-up orders whose proof was cleared in the last 24h; None on failure.
+
+    The order row has no ``purged_at`` column, so a purge is inferred from
+    ``updated_at`` on terminal orders that no longer carry a ``proof_object_key``.
+    ``updated_at`` is also bumped by other terminal transitions, so this is an
+    upper-bound approximation rather than an exact purge counter. ``paid``,
+    ``refunded`` and ``refund_review`` are excluded because they never purge.
+    """
+    try:
+        from sqlalchemy import text
+
+        cutoff = datetime.now(UTC) - timedelta(hours=24)
+        with _ai_engine().connect() as conn:
+            raw = conn.execute(
+                text(
+                    "SELECT COUNT(*) FROM ai_topup_orders "
+                    "WHERE proof_object_key IS NULL "
+                    "AND status IN ('expired', 'rejected', 'canceled') "
+                    "AND updated_at >= :cutoff"
+                ),
+                {"cutoff": cutoff},
+            ).scalar()
+        return float(raw or 0)
+    except Exception as e:
+        logger.debug("ai top-up proofs purged metric scrape failed: %s", e)
         return None
 
 
@@ -1105,6 +1135,23 @@ class AiTopupWebhookFailedCollector:
         yield gauge
 
 
+class AiTopupProofsPurgedCollector:
+    def collect(self) -> Iterable[Metric]:
+        try:
+            value = _read_ai_topup_proofs_purged_total()
+        except Exception as e:
+            logger.debug("ai top-up proofs purged collector failed: %s", e)
+            return
+        if value is None:
+            return
+        gauge = GaugeMetricFamily(
+            _AI_TOPUP_PROOFS_PURGED_NAME,
+            "Terminal top-up orders whose proof was cleared in the last 24h (updated_at approximation)",
+        )
+        gauge.add_metric([], value)
+        yield gauge
+
+
 def register_custom_metrics() -> None:
     global _collector_registered
     if _collector_registered:
@@ -1134,4 +1181,5 @@ def register_custom_metrics() -> None:
     REGISTRY.register(AiTopupAwaitingVerificationCollector())
     REGISTRY.register(AiTopupRefundReviewCollector())
     REGISTRY.register(AiTopupWebhookFailedCollector())
+    REGISTRY.register(AiTopupProofsPurgedCollector())
     _collector_registered = True

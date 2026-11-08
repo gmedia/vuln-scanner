@@ -17,8 +17,6 @@ import tempfile
 import uuid
 from uuid import UUID
 
-from fastapi import HTTPException, status
-
 from app.config import settings
 from app.services.object_storage import ObjectStorageError, get_object_storage, is_cos_ref
 
@@ -88,6 +86,8 @@ def save_proof(org_id: UUID, order_id: UUID, data: bytes, mime: str) -> str:
 
 def read_proof(ref: str) -> bytes:
     """Read proof bytes for the admin-only download endpoint."""
+    from fastapi import HTTPException, status
+
     if is_cos_ref(ref):
         fd, tmp_path = tempfile.mkstemp(prefix="topup-proof-read-")
         os.close(fd)

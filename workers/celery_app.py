@@ -55,6 +55,7 @@ celery_app.conf.update(
         "ai_reservations.reap": {"queue": "ip_scan"},
         "ai_providers.probe": {"queue": "ip_scan"},
         "ai_topup.expire_stale_orders": {"queue": "ip_scan"},
+        "ai_topup.purge_expired_topup_proofs": {"queue": "ip_scan"},
     },
     task_annotations={
         "ip_scan.run": {"rate_limit": "10/m"},
@@ -133,6 +134,10 @@ celery_app.conf.update(
         "ai-topup-expire-stale-orders-every-15m": {
             "task": "ai_topup.expire_stale_orders",
             "schedule": 900.0,
+        },
+        "ai-topup-purge-expired-proofs-daily": {
+            "task": "ai_topup.purge_expired_topup_proofs",
+            "schedule": crontab(minute=15, hour=3),
         },
     },
 )
