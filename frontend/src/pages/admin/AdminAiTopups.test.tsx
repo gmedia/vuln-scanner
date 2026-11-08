@@ -88,8 +88,8 @@ function renderPage() {
 
 async function openMenu(id = "o1") {
   const user = userEvent.setup();
-  const triggers = await screen.findAllByTestId(`topup-actions-${id}`);
-  await user.click(triggers[0]);
+  const trigger = await screen.findByTestId(`topup-actions-${id}`);
+  await user.click(trigger);
   return user;
 }
 
@@ -146,6 +146,14 @@ describe("AdminAiTopups", () => {
         limit: 20,
       }),
     );
+  });
+
+  it("renders one action trigger per surface, not a duplicate id", async () => {
+    renderPage();
+    await screen.findByTestId("admin-ai-topups-table");
+
+    expect(screen.getAllByTestId("topup-actions-o1")).toHaveLength(1);
+    expect(screen.getByTestId("topup-actions-mobile-o1")).toBeInTheDocument();
   });
 
   it("refetches when the status filter changes", async () => {
