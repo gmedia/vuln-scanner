@@ -662,9 +662,10 @@ class SubscriptionService:
             )
             self.db.add(subscription)
         else:
-            # Keep the existing lifecycle status; only the planned SKU is
-            # refreshed. Organization.sku (entitlement) stays put.
-            subscription.sku = target_sku
+            # An existing row keeps both its status and its SKU: the customer is
+            # still on the tier they paid for. Writing target_sku here would make
+            # renewal drafting and the admin table report an unpaid plan as the
+            # current one. activate_from_invoice applies the SKU on payment.
             subscription.updated_at = datetime.now(UTC)
         await self.db.flush()
 

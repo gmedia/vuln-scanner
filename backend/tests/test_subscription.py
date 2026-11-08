@@ -1048,7 +1048,7 @@ async def test_resolving_an_unknown_request_returns_404(db_session, ctx):
 
 
 @pytest.mark.asyncio
-async def test_approval_syncs_an_existing_subscription(db_session, ctx):
+async def test_approval_keeps_an_existing_subscription_sku(db_session, ctx):
     request = await _pending_request(db_session, ctx["org"].id, ctx["owner"].id)
     db_session.add(
         Subscription(
@@ -1078,7 +1078,8 @@ async def test_approval_syncs_an_existing_subscription(db_session, ctx):
         select(Subscription).where(Subscription.organization_id == ctx["org"].id)
     )
     assert subscription is not None
-    assert subscription.sku == "pro"
+    assert subscription.sku == "basic"
+    assert subscription.status == "active"
 
 
 @pytest.mark.asyncio
