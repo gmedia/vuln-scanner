@@ -312,9 +312,12 @@ describe("AdminInvoices", () => {
 
   it("asks before voiding an invoice", async () => {
     const user = userEvent.setup();
-    type MutOpts = { mutationFn: (id: string) => unknown };
+    type MutOpts = {
+      mutationFn: (v: { id: string; force?: boolean; reason?: string }) => unknown;
+    };
     vi.mocked(useMutation).mockImplementation(((opts: MutOpts) => ({
-      mutate: (id: string) => opts.mutationFn(id),
+      mutate: (v: { id: string; force?: boolean; reason?: string }) =>
+        opts.mutationFn(v),
       isPending: false,
     })) as unknown as typeof useMutation);
 
@@ -325,7 +328,53 @@ describe("AdminInvoices", () => {
     expect(adminApi.voidAdminInvoice).not.toHaveBeenCalled();
 
     await user.click(screen.getByTestId("invoice-void-confirm"));
-    expect(adminApi.voidAdminInvoice).toHaveBeenCalledWith("inv-1");
+    expect(adminApi.voidAdminInvoice).toHaveBeenCalledWith("inv-1", {
+      force: false,
+      reason: undefined,
+    });
+  });
+
+  it("requires a reason to correct a paid invoice and sends force", async () => {
+    const user = userEvent.setup();
+    type MutOpts = {
+      mutationFn: (v: { id: string; force?: boolean; reason?: string }) => unknown;
+    };
+    vi.mocked(useMutation).mockImplementation(((opts: MutOpts) => ({
+      mutate: (v: { id: string; force?: boolean; reason?: string }) =>
+        opts.mutationFn(v),
+      isPending: false,
+    })) as unknown as typeof useMutation);
+    vi.mocked(useQuery).mockImplementation(((opts: { queryKey: unknown[] }) => {
+      const key = String(opts.queryKey[0]);
+      if (key === "admin-sku-catalog") {
+        return { data: catalog, isLoading: false };
+      }
+      if (key === "admin-orgs") {
+        return { data: { items: [], total: 0 }, isLoading: false };
+      }
+      return {
+        data: { items: [{ ...invoices[0], status: "paid" }], total: 1 },
+        isLoading: false,
+      };
+    }) as typeof useQuery);
+
+    render(<AdminInvoices />);
+    await user.click(screen.getAllByTestId("invoice-actions-inv-1")[1]);
+    await user.click(await screen.findByTestId("invoice-correct-inv-1"));
+
+    const dialog = await screen.findByRole("alertdialog");
+    expect(dialog).toHaveTextContent("audit correction");
+
+    const confirm = screen.getByTestId("invoice-void-confirm");
+    expect(confirm).toBeDisabled();
+
+    await user.type(screen.getByTestId("invoice-void-reason"), "wrong invoice");
+    expect(confirm).not.toBeDisabled();
+    await user.click(confirm);
+    expect(adminApi.voidAdminInvoice).toHaveBeenCalledWith("inv-1", {
+      force: true,
+      reason: "wrong invoice",
+    });
   });
 
   it("does not show print on a draft invoice", async () => {
