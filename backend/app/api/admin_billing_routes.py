@@ -20,6 +20,7 @@ from app.schemas.billing import (
 )
 from app.services.auth import get_current_admin
 from app.services.billing import BillingService
+from app.services.payments.service import guard_pending_attempts
 
 router = APIRouter(prefix="/admin", tags=["admin-billing"])
 admin_limiter = RateLimiter(
@@ -73,6 +74,14 @@ async def record_payment(
     limit_response = await admin_limiter(request)
     if limit_response:
         return limit_response
+    await guard_pending_attempts(
+        db,
+        body.invoice_id,
+        force=body.force,
+        reason=body.reason,
+        actor=current_admin,
+        action="record-payment",
+    )
     inv, sub, attempt = await BillingService(db).record_manual_payment(
         org_id,
         body.invoice_id,

@@ -7,6 +7,7 @@ behind one explicit seam.
 
 from __future__ import annotations
 
+import logging
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -28,6 +29,8 @@ from app.services.payments.base import (
     ProviderUnavailable,
 )
 from app.services.payments.registry import build_provider, enabled_providers
+
+logger = logging.getLogger(__name__)
 
 _CHECKOUT_TTL = timedelta(hours=24)
 _MAX_ORDER_ID = 50
@@ -408,3 +411,45 @@ class PaymentService:
         await self.db.commit()
         await self.db.refresh(attempt)
         return attempt
+
+
+async def guard_pending_attempts(
+    db: AsyncSession,
+    invoice_id: uuid.UUID,
+    *,
+    force: bool,
+    reason: str | None,
+    actor: User,
+    action: str,
+) -> None:
+    """Block a state-changing admin action while a gateway attempt is pending.
+
+    Shared by every path that settles or voids an invoice so a pending gateway
+    checkout cannot race the local state change. ``force=True`` requires a
+    non-empty ``reason`` and best-effort cancels (or locally expires) the pending
+    attempts before the caller proceeds.
+    """
+    service = PaymentService(db)
+    attempt = await service.blocking_attempt(invoice_id)
+    if attempt is None:
+        return
+    if not force:
+        raise HTTPException(status_code=409, detail=f"pending gateway attempt {attempt.id}")
+    cleaned = (reason or "").strip()
+    if not cleaned:
+        raise HTTPException(status_code=400, detail="reason is required when force=true")
+    for pending in await service.pending_attempts(invoice_id):
+        try:
+            await service.cancel_attempt(pending, actor)
+        except Exception:  # noqa: BLE001 - provider cancel is best-effort; expire locally
+            pending.status = "expired"
+            pending.provider_status = "expired"
+            pending.updated_at = datetime.now(UTC)
+            await db.commit()
+    logger.warning(
+        "Invoice %s force-%s by admin %s: %s",
+        invoice_id,
+        action,
+        actor.id,
+        cleaned[:200],
+    )

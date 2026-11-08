@@ -41,9 +41,19 @@ def bank_copy(*, include: bool) -> dict[str, str | None] | None:
 
 
 async def next_invoice_number(db: AsyncSession, period_start: datetime) -> str:
+    """Return the next invoice number for the period's month prefix.
+
+    ``MAX(number) + 1`` rather than ``COUNT(*) + 1``: the prefix already encodes
+    year+month, so the numeric suffix resets each month, and counting rows makes
+    two different organizations collide on ``uq_org_invoices_number`` as soon as
+    one invoice in the month was voided/deleted (count drops while numbers stay).
+    """
     prefix = f"SX-{period_start.year:04d}{period_start.month:02d}-"
-    result = await db.execute(select(func.count()).select_from(OrgInvoice).where(OrgInvoice.number.startswith(prefix)))
-    n = int(result.scalar() or 0) + 1
+    result = await db.execute(
+        select(func.max(OrgInvoice.number)).where(OrgInvoice.number.startswith(prefix))
+    )
+    latest = result.scalar()
+    n = int(str(latest)[-4:]) + 1 if latest else 1
     return f"{prefix}{n:04d}"
 
 
@@ -410,25 +420,51 @@ class InvoiceService:
             raise HTTPException(status_code=404, detail="Invoice not found")
         return inv
 
-    async def send(self, invoice_id: uuid.UUID) -> OrgInvoice:
+    async def _get_for_update(self, invoice_id: uuid.UUID) -> OrgInvoice:
+        """Load an invoice under a row lock for a state transition.
+
+        Two concurrent "mark paid" requests must not both observe ``draft|sent``
+        and both transition the row; the second waits for the first to commit
+        and then sees ``paid``. SQLite ignores ``FOR UPDATE`` (tests), Postgres
+        honours it (prod).
+        """
+        inv = (
+            await self.db.execute(
+                select(OrgInvoice).where(OrgInvoice.id == invoice_id).with_for_update()
+            )
+        ).scalar_one_or_none()
+        if inv is None:
+            raise HTTPException(status_code=404, detail="Invoice not found")
+        return inv
+
+    async def send(self, invoice_id: uuid.UUID, *, actor_id: uuid.UUID | None = None) -> OrgInvoice:
         inv = await self.get(invoice_id)
         if inv.status != "draft":
             raise HTTPException(status_code=409, detail="Only draft invoices can be sent")
         inv.status = "sent"
         inv.sent_at = inv.sent_at or datetime.now(UTC)
+        inv.sent_by_user_id = actor_id
         inv.updated_at = datetime.now(UTC)
         await self.db.commit()
         await self.db.refresh(inv)
         return inv
 
-    async def _mark_paid(self, invoice_id: uuid.UUID, bank_ref: str | None) -> OrgInvoice:
+    async def _mark_paid(
+        self,
+        invoice_id: uuid.UUID,
+        bank_ref: str | None,
+        *,
+        actor_id: uuid.UUID | None = None,
+    ) -> OrgInvoice:
         """Apply the paid transition without committing.
 
         The gateway path needs to mark the invoice paid and activate the
         subscription in one transaction; the public wrapper keeps the original
-        commit+refresh contract for every existing caller.
+        commit+refresh contract for every existing caller. Gateway callers pass
+        no actor, leaving ``paid_by_user_id`` NULL; the admin/manual path passes
+        the acting admin.
         """
-        inv = await self.get(invoice_id)
+        inv = await self._get_for_update(invoice_id)
         if inv.status not in ("draft", "sent"):
             raise HTTPException(status_code=409, detail="Invoice cannot be marked paid")
         org = await self.db.get(Organization, inv.organization_id) if inv.product == "scan" else None
@@ -438,6 +474,7 @@ class InvoiceService:
                 raise HTTPException(status_code=409, detail="Tier is retired")
         inv.status = "paid"
         inv.paid_at = datetime.now(UTC)
+        inv.paid_by_user_id = actor_id
         if bank_ref is not None:
             inv.bank_ref = bank_ref.strip()[:64] or None
         if org is not None and inv.subscription_request_id is None:
@@ -456,26 +493,63 @@ class InvoiceService:
         await self.db.flush()
         return inv
 
-    async def mark_paid(self, invoice_id: uuid.UUID, bank_ref: str | None) -> OrgInvoice:
-        inv = await self._mark_paid(invoice_id, bank_ref)
+    async def mark_paid(
+        self,
+        invoice_id: uuid.UUID,
+        bank_ref: str | None,
+        *,
+        actor_id: uuid.UUID | None = None,
+    ) -> OrgInvoice:
+        inv = await self._mark_paid(invoice_id, bank_ref, actor_id=actor_id)
         await self.db.commit()
         await self.db.refresh(inv)
         return inv
 
-    async def _void(self, invoice_id: uuid.UUID) -> OrgInvoice:
-        """Apply the void transition without committing (see ``_mark_paid``)."""
+    async def _void(
+        self,
+        invoice_id: uuid.UUID,
+        *,
+        actor_id: uuid.UUID | None = None,
+        force: bool = False,
+        reason: str | None = None,
+    ) -> OrgInvoice:
+        """Apply the void transition without committing (see ``_mark_paid``).
+
+        ``paid`` invoices can only be voided with ``force=True`` **and** a
+        non-empty ``reason``. This is an audit correction for a payment recorded
+        in error, not a refund: ``PaymentAttempt`` rows are retained and
+        ``organization.sku`` is deliberately left untouched. Reverting access is
+        a separate ops decision (the refund flow), never a side effect of voiding.
+        """
         inv = await self.get(invoice_id)
-        if inv.status not in ("draft", "sent"):
+        cleaned = (reason or "").strip()
+        if inv.status == "paid":
+            if not force:
+                raise HTTPException(status_code=409, detail="Only draft or sent invoices can be voided")
+            if not cleaned:
+                raise HTTPException(status_code=400, detail="reason is required when force=true")
+        elif inv.status not in ("draft", "sent"):
             raise HTTPException(status_code=409, detail="Only draft or sent invoices can be voided")
         inv.status = "void"
         inv.subscription_request_id = None
+        inv.voided_by_user_id = actor_id
+        inv.voided_at = datetime.now(UTC)
+        if cleaned:
+            inv.void_reason = cleaned[:500]
         inv.updated_at = datetime.now(UTC)
         await PromoService(self.db).release_for_invoice(invoice_id)
         await self.db.flush()
         return inv
 
-    async def void(self, invoice_id: uuid.UUID) -> OrgInvoice:
-        inv = await self._void(invoice_id)
+    async def void(
+        self,
+        invoice_id: uuid.UUID,
+        *,
+        actor_id: uuid.UUID | None = None,
+        force: bool = False,
+        reason: str | None = None,
+    ) -> OrgInvoice:
+        inv = await self._void(invoice_id, actor_id=actor_id, force=force, reason=reason)
         await self.db.commit()
         await self.db.refresh(inv)
         return inv
