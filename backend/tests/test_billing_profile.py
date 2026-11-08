@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime, timedelta
 
 import pytest
 import pytest_asyncio
@@ -156,6 +157,13 @@ async def test_profile_rejects_malformed_npwp(db_session, ctx):
 async def test_payment_terms_drive_the_invoice_due_date(db_session, ctx):
     _bind(db_session)
     transport = ASGITransport(app=app)
+    now = datetime.now(UTC)
+    period_start = (
+        datetime(now.year + 1, 1, 1, tzinfo=UTC)
+        if now.month == 12
+        else datetime(now.year, now.month + 1, 1, tzinfo=UTC)
+    )
+    expected_due = (period_start + timedelta(days=30)).date().isoformat()
     try:
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             await client.put(
@@ -169,11 +177,11 @@ async def test_payment_terms_drive_the_invoice_due_date(db_session, ctx):
                 json={
                     "organization_id": str(ctx["org"].id),
                     "sku": "pro",
-                    "period_start": "2026-09-01T00:00:00Z",
+                    "period_start": period_start.isoformat(),
                 },
             )
             assert created.status_code == 201, created.text
-            assert created.json()["due_date"].startswith("2026-10-01")
+            assert created.json()["due_date"].startswith(expected_due)
     finally:
         app.dependency_overrides.clear()
 
