@@ -18,7 +18,7 @@ from typing import Any, cast
 
 from celery import shared_task
 from loguru import logger
-from sqlalchemy import CursorResult, func, select, text
+from sqlalchemy import CursorResult, bindparam, func, select, text
 
 from utils.database import get_sync_session
 
@@ -46,6 +46,10 @@ from app.services.email import send_billing_reminder_email  # noqa: E402
 # Configurable so ops can widen the grace window without a deploy.
 PAST_DUE_GRACE_DAYS = int(os.getenv("BILLING_PAST_DUE_GRACE_DAYS", "7"))
 PAST_DUE_CANCEL_DAYS = int(os.getenv("BILLING_PAST_DUE_CANCEL_DAYS", "45"))
+# Days after creation before an unsent DRAFT invoice is voided. A draft that is
+# never sent keeps blocking the next period for the same org/product through the
+# overlap guard, so one abandoned approval would silently stop future billing.
+DRAFT_EXPIRY_DAYS = int(os.getenv("BILLING_DRAFT_EXPIRY_DAYS", "14"))
 MAX_REMINDER_ATTEMPTS = 3
 
 _CLOSE_CANCELED = text(
@@ -117,6 +121,60 @@ _TERMINAL_PAST_DUE = text(
 def _count_rows(session: Any, statement: Any, params: dict[str, Any]) -> int:
     result = cast(CursorResult[Any], session.execute(statement, params))
     return len(result.all())
+
+_EXPIRE_DRAFT_INVOICES = text(
+    """
+    UPDATE org_invoices
+    SET status = 'void',
+        void_reason = :reason,
+        voided_at = :now,
+        subscription_request_id = NULL,
+        updated_at = :now
+    WHERE status = 'draft'
+      AND created_at <= :cutoff
+    RETURNING id
+    """
+)
+
+_RELEASE_PROMOS_FOR_INVOICES = text(
+    """
+    UPDATE promo_redemptions
+    SET status = 'released',
+        released_at = :now
+    WHERE invoice_id IN :ids
+      AND status = 'applied'
+    """
+).bindparams(bindparam("ids", expanding=True))
+
+
+@shared_task(bind=True, name="billing.expire_draft_invoices", acks_late=True, max_retries=1)  # type: ignore
+def expire_draft_invoices(self: Any) -> dict[str, int]:
+    """Void draft invoices older than ``DRAFT_EXPIRY_DAYS``.
+
+    Voiding releases the promo redemption and clears ``subscription_request_id``,
+    so the request becomes linkable to a fresh invoice instead of being stuck
+    behind a draft nobody will ever send.
+    """
+    now = datetime.now(UTC)
+    cutoff = now - timedelta(days=DRAFT_EXPIRY_DAYS)
+    session = get_sync_session()
+    try:
+        rows = session.execute(
+            _EXPIRE_DRAFT_INVOICES,
+            {"now": now, "cutoff": cutoff, "reason": "expired draft"},
+        ).all()
+        expired_ids = [row.id for row in rows]
+        if expired_ids:
+            session.execute(_RELEASE_PROMOS_FOR_INVOICES, {"now": now, "ids": expired_ids})
+        session.commit()
+        if expired_ids:
+            logger.info("Expired stale draft invoices: count={count}", count=len(expired_ids))
+        return {"expired_count": len(expired_ids)}
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 @shared_task(bind=True, name="billing.finalize_periods", acks_late=True, max_retries=1)  # type: ignore

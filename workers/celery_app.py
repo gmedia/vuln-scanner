@@ -106,6 +106,10 @@ celery_app.conf.update(
             "task": "billing.draft_annual_renewals",
             "schedule": 86400.0,
         },
+        "billing-expire-draft-invoices-daily": {
+            "task": "billing.expire_draft_invoices",
+            "schedule": crontab(minute=15, hour=4),
+        },
         "payment-expire-stale-checkouts-hourly": {
             "task": "payment.expire_stale_checkouts",
             "schedule": 3600.0,

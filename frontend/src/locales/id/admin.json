@@ -157,6 +157,8 @@
   "invoiceVoidReason": "Alasan (opsional)",
   "invoiceVoidReasonRequired": "Alasan (wajib)",
   "invoiceVoidForceHint": "Paksa: lewati upaya pembayaran gateway yang masih berjalan pada invoice ini.",
+  "invoiceStaleDraft": "Draft > 7 hari",
+  "invoiceStaleDraftHint": "Draft yang belum dikirim ini memblokir periode berikutnya untuk pelanggan ini. Kirim, batalkan, atau biarkan sapuan harian mengakhirinya.",
   "invoicesEmpty": "Belum ada invoice.",
   "invoiceOrgSearchLabel": "Cari organisasi",
   "invoiceOrgSearchPlaceholder": "Cari nama atau slug",

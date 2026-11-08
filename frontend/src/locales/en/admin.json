@@ -157,6 +157,8 @@
   "invoiceVoidReason": "Reason (optional)",
   "invoiceVoidReasonRequired": "Reason (required)",
   "invoiceVoidForceHint": "Force: override a live gateway payment attempt on this invoice.",
+  "invoiceStaleDraft": "Draft > 7 days",
+  "invoiceStaleDraftHint": "This unsent draft blocks the next period for this customer. Send it, void it, or let the daily sweep expire it.",
   "invoicesEmpty": "No invoices yet.",
   "invoiceOrgSearchLabel": "Search organizations",
   "invoiceOrgSearchPlaceholder": "Search name or slug",
