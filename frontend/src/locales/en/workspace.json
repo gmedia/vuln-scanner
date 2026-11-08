@@ -125,6 +125,7 @@
   "invoicePrintDue": "Due",
   "invoicePrintDpp": "DPP (11/12)",
   "invoicePrintPpn": "PPN 12%",
+  "invoicePrintPph23": "PPh 23 (2%)",
   "seatCapHint": "This workspace reached its {{limit}}-seat cap. Upgrade to add more.",
   "switchFail": "Could not switch workspace."
 }

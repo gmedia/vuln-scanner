@@ -237,7 +237,10 @@ class InvoiceService:
                 if profile is not None
                 else settings.invoice_default_term_days
             )
-            due = start + timedelta(days=max(0, term_days))
+            # A monthly period starts on the 1st, so a mid-month manual invoice
+            # would otherwise be born overdue. Never backdate the computed due.
+            computed_due = start + timedelta(days=max(0, term_days))
+            due = max(computed_due, datetime.now(UTC))
 
         base_list_idr = int(cat.list_idr)
         if cycle == "annual" and promo_code:
