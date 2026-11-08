@@ -132,6 +132,11 @@ Both new partial indexes must declare `postgresql_where` **and** `sqlite_where`
 (pattern: `models/billing.py:132-146`). A Postgres-only predicate makes the SQLite test schema
 create a full unique index, which would reject the second attempt for an order forever.
 
+`ck_payment_attempt_invoice_required` is added as `NOT VALID` on Postgres. `payment_attempts.invoice_id`
+was nullable before this feature, so a historical row without an invoice would otherwise abort
+`alembic upgrade head` and therefore every deploy. `NOT VALID` still rejects a new `invoice`-kind row
+with a NULL invoice; it only skips the one-time scan of pre-existing rows. No backfill is invented.
+
 ### 2.4 State machine
 
 ```text
