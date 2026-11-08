@@ -2,6 +2,7 @@ import uuid
 from datetime import UTC, datetime
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     CheckConstraint,
     DateTime,
@@ -22,6 +23,7 @@ BILLING_CYCLES = ("monthly", "annual")
 PAYMENT_ATTEMPT_STATUSES = ("pending", "succeeded", "failed", "expired", "refunded")
 PAYMENT_EVENT_STATUSES = ("received", "processed", "ignored", "failed")
 BILLING_REMINDER_STAGES = ("due_soon", "due_today", "overdue_1", "overdue_2", "final", "suspend_notice")
+PAYABLE_KINDS = ("invoice", "topup")
 
 
 class Subscription(Base):
@@ -92,6 +94,13 @@ class PaymentAttempt(Base):
         nullable=True,
         index=True,
     )
+    topup_order_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("ai_topup_orders.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    payable_kind: Mapped[str] = mapped_column(String(10), nullable=False, default="invoice", server_default="invoice")
     provider: Mapped[str] = mapped_column(String(32), nullable=False, default="manual")
     provider_ref: Mapped[str | None] = mapped_column(String(128), nullable=True)
     provider_order_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
@@ -106,14 +115,14 @@ class PaymentAttempt(Base):
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
     )
-    amount_idr: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    amount_idr: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="IDR")
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
     method: Mapped[str | None] = mapped_column(String(32), nullable=True)
     failure_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
     failure_message: Mapped[str | None] = mapped_column(String(255), nullable=True)
     fee_idr: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default=text("0"))
-    refunded_amount_idr: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default=text("0"))
+    refunded_amount_idr: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0, server_default=text("0"))
     next_retry_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     succeeded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     failed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -129,6 +138,19 @@ class PaymentAttempt(Base):
         CheckConstraint("amount_idr >= 0", name="ck_payment_attempt_amount"),
         CheckConstraint("fee_idr >= 0", name="ck_payment_attempt_fee"),
         CheckConstraint("refunded_amount_idr >= 0", name="ck_payment_attempt_refunded"),
+        CheckConstraint(f"payable_kind IN {PAYABLE_KINDS}", name="ck_payment_attempt_payable_kind"),
+        CheckConstraint(
+            "payable_kind <> 'invoice' OR invoice_id IS NOT NULL",
+            name="ck_payment_attempt_invoice_required",
+        ),
+        CheckConstraint(
+            "payable_kind <> 'topup' OR topup_order_id IS NOT NULL",
+            name="ck_payment_attempt_topup_required",
+        ),
+        CheckConstraint(
+            "NOT (invoice_id IS NOT NULL AND topup_order_id IS NOT NULL)",
+            name="ck_payment_attempt_payable_exclusive",
+        ),
         Index(
             "uq_payment_attempt_provider_order",
             "provider",
@@ -143,6 +165,13 @@ class PaymentAttempt(Base):
             unique=True,
             postgresql_where=text("status = 'pending'"),
             sqlite_where=text("status = 'pending'"),
+        ),
+        Index(
+            "uq_payment_attempt_pending_topup",
+            "topup_order_id",
+            unique=True,
+            postgresql_where=text("status = 'pending' AND topup_order_id IS NOT NULL"),
+            sqlite_where=text("status = 'pending' AND topup_order_id IS NOT NULL"),
         ),
     )
 

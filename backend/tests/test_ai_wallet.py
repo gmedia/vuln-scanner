@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 from decimal import ROUND_CEILING, Decimal
 
 import pytest
@@ -9,6 +9,7 @@ import pytest_asyncio
 from fastapi import HTTPException
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -20,6 +21,7 @@ from app.models.ai_gateway import (
     AiModel,
     AiProvider,
     AiReservation,
+    AiTopupOrder,
     AiUsageEvent,
     AiWallet,
     AiWalletLedger,
@@ -28,12 +30,14 @@ from app.models.organization import Organization, OrganizationMembership
 from app.models.user import User
 from app.services.ai_wallet import (
     PriceSnapshot,
+    adjust,
     affordable_max_tokens,
     affordable_prompt_tokens,
     billed_idr,
     billed_usd,
     cogs_idr,
     cogs_usd,
+    credit,
     get_wallet,
     hold_idr,
     record_usage,
@@ -685,3 +689,176 @@ async def test_record_usage_provider_override(db_session: AsyncSession, ctx) -> 
     }
     assert rows[overridden.id].provider_id == other_provider.id
     assert rows[defaulted.id].provider_id == model.provider_id
+
+
+def _make_order(organization_id: uuid.UUID, **overrides: object) -> AiTopupOrder:
+    values: dict[str, object] = {
+        "organization_id": organization_id,
+        "reference_code": f"REF-{uuid.uuid4().hex[:8]}",
+        "amount_idr": 1000,
+        "credit_idr": 1000,
+        "bonus_idr": 0,
+        "payment_method": "manual_transfer",
+        "status": "pending_payment",
+        "expires_at": datetime.now(UTC) + timedelta(days=1),
+    }
+    values.update(overrides)
+    return AiTopupOrder(**values)
+
+
+@pytest.mark.asyncio
+async def test_credit_writes_one_ledger_row_with_note_and_order(db_session: AsyncSession, ctx) -> None:
+    org = ctx["org"]
+    order = _make_order(org.id)
+    db_session.add(order)
+    await db_session.commit()
+
+    wallet = await credit(
+        db_session,
+        organization_id=org.id,
+        amount_idr=7500,
+        topup_order_id=order.id,
+        actor_user_id=ctx["owner"].id,
+        note=order.reference_code,
+        commit=True,
+    )
+    assert wallet.balance_idr == 7500
+
+    rows = list(
+        (await db_session.execute(select(AiWalletLedger).where(AiWalletLedger.organization_id == org.id)))
+        .scalars()
+        .all()
+    )
+    assert len(rows) == 1
+    row = rows[0]
+    assert row.kind == "topup"
+    assert row.delta_idr == 7500
+    assert row.balance_after_idr == 7500
+    assert row.note == order.reference_code
+    assert row.topup_order_id == order.id
+    assert row.actor_user_id == ctx["owner"].id
+
+
+@pytest.mark.asyncio
+async def test_credit_commit_false_flushes_but_does_not_commit(db_session: AsyncSession, ctx) -> None:
+    org_id = ctx["org"].id
+    await credit(db_session, organization_id=org_id, amount_idr=1234, commit=False)
+    assert db_session.in_transaction() is True
+    assert (await get_wallet(db_session, org_id)) is not None
+
+    await db_session.rollback()
+    assert (await get_wallet(db_session, org_id)) is None
+    rows = (
+        (await db_session.execute(select(AiWalletLedger).where(AiWalletLedger.organization_id == org_id)))
+        .scalars()
+        .all()
+    )
+    assert list(rows) == []
+
+
+@pytest.mark.asyncio
+async def test_adjust_applies_signed_delta_and_rejects_negative_balance(db_session: AsyncSession, ctx) -> None:
+    org = ctx["org"]
+    await credit(db_session, organization_id=org.id, amount_idr=1000, commit=True)
+
+    wallet = await adjust(db_session, organization_id=org.id, delta_idr=-400, note="goodwill", commit=True)
+    assert wallet.balance_idr == 600
+
+    with pytest.raises(HTTPException) as exc:
+        await adjust(db_session, organization_id=org.id, delta_idr=-601)
+    assert exc.value.status_code == 409
+
+    rows = list(
+        (await db_session.execute(select(AiWalletLedger).where(AiWalletLedger.organization_id == org.id)))
+        .scalars()
+        .all()
+    )
+    assert sum(1 for row in rows if row.kind == "manual_adjust") == 1
+    assert (await get_wallet(db_session, org.id)).balance_idr == 600
+
+
+@pytest.mark.asyncio
+async def test_topup_ledger_is_unique_per_order_but_refund_is_allowed(db_session: AsyncSession, ctx) -> None:
+    org_id = ctx["org"].id
+    order = _make_order(org_id)
+    db_session.add(order)
+    await db_session.commit()
+    order_id = order.id
+
+    await credit(db_session, organization_id=org_id, amount_idr=1000, topup_order_id=order_id, commit=True)
+
+    with pytest.raises(IntegrityError):
+        await credit(db_session, organization_id=org_id, amount_idr=1000, topup_order_id=order_id)
+    await db_session.rollback()
+
+    refunded = await adjust(
+        db_session,
+        organization_id=org_id,
+        delta_idr=-1000,
+        kind="refund",
+        topup_order_id=order_id,
+        commit=True,
+    )
+    assert refunded.balance_idr == 0
+
+    rows = list(
+        (await db_session.execute(select(AiWalletLedger).where(AiWalletLedger.topup_order_id == order_id)))
+        .scalars()
+        .all()
+    )
+    assert sorted(row.kind for row in rows) == ["refund", "topup"]
+    assert sum(row.delta_idr for row in rows) == 0
+
+
+@pytest.mark.asyncio
+async def test_admin_credit_order_checks(db_session: AsyncSession, ctx) -> None:
+    org_id = ctx["org"].id
+    invalid = _make_order(
+        org_id,
+        payment_method="admin_credit",
+        amount_idr=100,
+        credit_idr=100,
+        bonus_idr=0,
+    )
+    db_session.add(invalid)
+    with pytest.raises(IntegrityError):
+        await db_session.commit()
+    await db_session.rollback()
+
+    valid = _make_order(
+        org_id,
+        payment_method="admin_credit",
+        amount_idr=0,
+        credit_idr=500,
+        bonus_idr=500,
+    )
+    db_session.add(valid)
+    await db_session.commit()
+    assert valid.id is not None
+
+
+@pytest.mark.asyncio
+async def test_ledger_sum_equals_balance_after_credit_and_adjust(db_session: AsyncSession, ctx) -> None:
+    org = ctx["org"]
+    order = _make_order(org.id)
+    db_session.add(order)
+    await db_session.commit()
+
+    await credit(
+        db_session,
+        organization_id=org.id,
+        amount_idr=10_000,
+        topup_order_id=order.id,
+        note=order.reference_code,
+        commit=True,
+    )
+    await adjust(db_session, organization_id=org.id, delta_idr=-3_000, kind="refund", commit=True)
+
+    wallet = await get_wallet(db_session, org.id)
+    assert wallet is not None
+    rows = list(
+        (await db_session.execute(select(AiWalletLedger).where(AiWalletLedger.organization_id == org.id)))
+        .scalars()
+        .all()
+    )
+    assert sum(row.delta_idr for row in rows) == wallet.balance_idr == 7000

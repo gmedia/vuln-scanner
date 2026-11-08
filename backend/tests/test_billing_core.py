@@ -415,6 +415,9 @@ async def test_webhook_failed_sets_past_due_and_retry(db_session, ctx, monkeypat
     transport = ASGITransport(app=app)
     try:
         async with AsyncClient(transport=transport, base_url="http://test") as client:
+            invoice = await _create_invoice(client, ctx["admin"], ctx["org"])
+            inv = await db_session.get(OrgInvoice, uuid.UUID(str(invoice["id"])))
+            assert inv is not None
             sub = Subscription(
                 organization_id=ctx["org"].id,
                 sku="pro",
@@ -427,6 +430,7 @@ async def test_webhook_failed_sets_past_due_and_retry(db_session, ctx, monkeypat
             attempt = PaymentAttempt(
                 organization_id=ctx["org"].id,
                 subscription_id=sub.id,
+                invoice_id=inv.id,
                 provider="manual",
                 provider_ref="pay-2",
                 amount_idr=650_000,

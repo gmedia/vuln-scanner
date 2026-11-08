@@ -224,7 +224,9 @@ async def _ledger(
     balance_after_idr: int,
     reservation_id: UUID | None = None,
     usage_event_id: UUID | None = None,
+    topup_order_id: UUID | None = None,
     actor_user_id: UUID | None = None,
+    note: str | None = None,
 ) -> None:
     db.add(
         AiWalletLedger(
@@ -234,13 +236,32 @@ async def _ledger(
             balance_after_idr=balance_after_idr,
             reservation_id=reservation_id,
             usage_event_id=usage_event_id,
+            topup_order_id=topup_order_id,
             actor_user_id=actor_user_id,
+            note=note,
         )
     )
     await db.flush()
 
 
-async def topup(db: AsyncSession, organization_id: UUID, amount_idr: int) -> AiWallet:
+async def credit(
+    db: AsyncSession,
+    *,
+    organization_id: UUID,
+    amount_idr: int,
+    kind: str = "topup",
+    topup_order_id: UUID | None = None,
+    actor_user_id: UUID | None = None,
+    note: str | None = None,
+    commit: bool = False,
+) -> AiWallet:
+    """Add ``amount_idr`` to the wallet and write exactly one ledger row.
+
+    ``commit=False`` (the default) only flushes so a caller can compose the
+    order/ledger/event in one transaction. The ledger unique index on
+    ``topup_order_id`` makes a second ``kind='topup'`` credit for the same order
+    fail at the database boundary.
+    """
     if amount_idr < 1:
         raise HTTPException(status_code=422, detail="amount_idr must be positive")
     wallet = await get_or_create_wallet(db, organization_id)
@@ -253,13 +274,72 @@ async def topup(db: AsyncSession, organization_id: UUID, amount_idr: int) -> AiW
     await _ledger(
         db,
         organization_id=organization_id,
-        kind="topup",
+        kind=kind,
         delta_idr=amount_idr,
         balance_after_idr=balance,
+        topup_order_id=topup_order_id,
+        actor_user_id=actor_user_id,
+        note=note,
     )
-    await db.commit()
-    await db.refresh(wallet)
+    wallet.balance_idr = balance
+    if commit:
+        await db.commit()
+        await db.refresh(wallet)
     return wallet
+
+
+async def adjust(
+    db: AsyncSession,
+    *,
+    organization_id: UUID,
+    delta_idr: int,
+    kind: str = "manual_adjust",
+    topup_order_id: UUID | None = None,
+    actor_user_id: UUID | None = None,
+    note: str | None = None,
+    commit: bool = False,
+) -> AiWallet:
+    """Apply a signed delta and write exactly one ledger row.
+
+    The database check forbids a negative ``balance_after_idr``. The conditional
+    update below also rejects a negative result up front so the caller gets a
+    clear 4xx instead of an ``IntegrityError``, and a rejected adjustment never
+    writes a ledger row.
+    """
+    wallet = await get_or_create_wallet(db, organization_id)
+    stmt = update(AiWallet).where(AiWallet.organization_id == organization_id)
+    if delta_idr < 0:
+        stmt = stmt.where(AiWallet.balance_idr + delta_idr >= 0)
+    result = await db.execute(stmt.values(balance_idr=AiWallet.balance_idr + delta_idr))
+    if int(getattr(result, "rowcount", 0) or 0) != 1:
+        raise HTTPException(status_code=409, detail="adjustment would make the wallet balance negative")
+    balance = await _balance_idr(db, organization_id)
+    await _ledger(
+        db,
+        organization_id=organization_id,
+        kind=kind,
+        delta_idr=delta_idr,
+        balance_after_idr=balance,
+        topup_order_id=topup_order_id,
+        actor_user_id=actor_user_id,
+        note=note,
+    )
+    wallet.balance_idr = balance
+    if commit:
+        await db.commit()
+        await db.refresh(wallet)
+    return wallet
+
+
+async def topup(db: AsyncSession, organization_id: UUID, amount_idr: int) -> AiWallet:
+    """Legacy admin direct top-up. Commits so the admin response shows the new balance."""
+    return await credit(
+        db,
+        organization_id=organization_id,
+        amount_idr=amount_idr,
+        kind="topup",
+        commit=True,
+    )
 
 
 async def reserve(
