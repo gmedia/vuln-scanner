@@ -1,7 +1,7 @@
 """Payment safety: one settled manual attempt per invoice + void/paid audit trail.
 
 Revision ID: payment_safety_v1
-Revises: ai_topup_v1_s6
+Revises: ai_topup_v1_p0
 Create Date: 2026-11-08
 
 Two independent hardening changes on the invoice/payment path.
@@ -31,7 +31,7 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 revision: str = "payment_safety_v1"
-down_revision: str | None = "ai_topup_v1_s6"
+down_revision: str | None = "ai_topup_v1_p0"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
