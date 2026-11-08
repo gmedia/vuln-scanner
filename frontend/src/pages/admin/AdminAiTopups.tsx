@@ -9,6 +9,7 @@ import {
   Loader2,
   MoreHorizontal,
   RefreshCw,
+  RotateCcw,
   ShieldCheck,
   Wallet,
   XCircle,
@@ -62,6 +63,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { EmptyState } from "@/components/patterns/EmptyState";
+import { FormAlert } from "@/components/patterns/FormFeedback";
 import { WorkspaceNotice } from "@/components/workspace/WorkspaceShell";
 import { formatAiTime, formatIdr } from "@/components/admin/aiFormat";
 import { apiErrorMessage } from "@/api/apiErrors";
@@ -70,7 +72,9 @@ import {
   fetchAdminTopupProof,
   listAdminTopupOrders,
   rejectAdminTopupOrder,
+  resolveAdminTopupRefund,
   type AdminTopupOrder,
+  type AdminTopupRefundAction,
 } from "@/api/adminAiTopup";
 
 const PAGE_SIZE = 20;
@@ -139,6 +143,7 @@ function TopupRowActions({
   onViewProof,
   onApprove,
   onReject,
+  onResolveRefund,
   onCopyReference,
 }: {
   item: AdminTopupOrder;
@@ -146,6 +151,7 @@ function TopupRowActions({
   onViewProof: (item: AdminTopupOrder) => void;
   onApprove: (item: AdminTopupOrder) => void;
   onReject: (item: AdminTopupOrder) => void;
+  onResolveRefund: (item: AdminTopupOrder) => void;
   onCopyReference: (item: AdminTopupOrder) => void;
 }) {
   const { t } = useTranslation("admin");
@@ -191,6 +197,15 @@ function TopupRowActions({
           <CheckCircle2 className="mr-2 h-4 w-4" />
           {t("adminAiTopupsApprove")}
         </DropdownMenuItem>
+        {item.status === "refund_review" ? (
+          <DropdownMenuItem
+            data-testid={`topup-resolve-refund-${item.id}`}
+            onSelect={() => onResolveRefund(item)}
+          >
+            <RotateCcw className="mr-2 h-4 w-4" />
+            {t("adminAiTopupsResolveRefund")}
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           variant="destructive"
@@ -224,6 +239,12 @@ function AdminAiTopups() {
 
   const [rejectTarget, setRejectTarget] = useState<AdminTopupOrder | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+
+  const [refundTarget, setRefundTarget] = useState<AdminTopupOrder | null>(null);
+  const [refundAction, setRefundAction] =
+    useState<AdminTopupRefundAction>("clawback");
+  const [refundNote, setRefundNote] = useState("");
+  const [refundError, setRefundError] = useState<string | null>(null);
 
   const [proofTarget, setProofTarget] = useState<AdminTopupOrder | null>(null);
   const [proofUrl, setProofUrl] = useState<string | null>(null);
@@ -273,6 +294,31 @@ function AdminAiTopups() {
     },
     onError: (err) =>
       toast.error(apiErrorMessage(err, t("adminAiTopupsRejectFail"))),
+  });
+
+  const resolveRefundMut = useMutation({
+    mutationFn: (input: {
+      id: string;
+      action: AdminTopupRefundAction;
+      note?: string;
+    }) =>
+      resolveAdminTopupRefund(input.id, {
+        action: input.action,
+        note: input.note,
+      }),
+    onSuccess: () => {
+      toast.success(t("adminAiTopupsRefundSuccess"));
+      setRefundTarget(null);
+      setRefundAction("clawback");
+      setRefundNote("");
+      setRefundError(null);
+      void qc.invalidateQueries({ queryKey: ["admin-ai-topups"] });
+    },
+    onError: (err) => {
+      setRefundError(
+        apiErrorMessage(err, t("adminAiTopupsRefundFail")),
+      );
+    },
   });
 
   useEffect(
@@ -333,6 +379,13 @@ function AdminAiTopups() {
   function openReject(item: AdminTopupOrder) {
     setRejectTarget(item);
     setRejectReason("");
+  }
+
+  function openResolveRefund(item: AdminTopupOrder) {
+    setRefundTarget(item);
+    setRefundAction("clawback");
+    setRefundNote("");
+    setRefundError(null);
   }
 
   const items = query.data?.items ?? [];
@@ -519,6 +572,18 @@ function AdminAiTopups() {
                             status={item.status}
                             label={tTopup(statusLabelKey(item.status))}
                           />
+                          {item.resolution_note &&
+                          (item.status === "refund_review" ||
+                            item.status === "refunded") ? (
+                            <p
+                              className="mt-1 text-[11px] text-muted-foreground"
+                              data-testid={`topup-resolution-note-${item.id}`}
+                            >
+                              {t("adminAiTopupsResolutionNote", {
+                                note: item.resolution_note,
+                              })}
+                            </p>
+                          ) : null}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {item.proof_uploaded_at
@@ -536,6 +601,7 @@ function AdminAiTopups() {
                               onViewProof={(target) => void openProof(target)}
                               onApprove={openApprove}
                               onReject={openReject}
+                              onResolveRefund={openResolveRefund}
                               onCopyReference={(target) =>
                                 void copyReference(target)
                               }
@@ -567,6 +633,18 @@ function AdminAiTopups() {
                     <p className="mt-1 font-mono text-xs tabular-nums text-foreground">
                       {item.reference_code} · {formatIdr(item.amount_idr)}
                     </p>
+                    {item.resolution_note &&
+                    (item.status === "refund_review" ||
+                      item.status === "refunded") ? (
+                      <p
+                        className="mt-1 text-[11px] text-muted-foreground"
+                        data-testid={`topup-resolution-note-mobile-${item.id}`}
+                      >
+                        {t("adminAiTopupsResolutionNote", {
+                          note: item.resolution_note,
+                        })}
+                      </p>
+                    ) : null}
                     <p className="mt-1 text-xs text-muted-foreground">
                       {methodLabel(tTopup, item.payment_method)} ·{" "}
                       {formatAiTime(item.created_at, locale)}
@@ -584,6 +662,7 @@ function AdminAiTopups() {
                         onViewProof={(target) => void openProof(target)}
                         onApprove={openApprove}
                         onReject={openReject}
+                        onResolveRefund={openResolveRefund}
                         onCopyReference={(target) => void copyReference(target)}
                       />
                     </div>
@@ -819,6 +898,109 @@ function AdminAiTopups() {
                 <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" aria-hidden />
               ) : null}
               {t("adminAiTopupsRejectConfirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={refundTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRefundTarget(null);
+            setRefundAction("clawback");
+            setRefundNote("");
+            setRefundError(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("adminAiTopupsRefundTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("adminAiTopupsRefundBody")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3">
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="admin-ai-topups-refund-action">
+                {t("adminAiTopupsRefundAction")}
+              </Label>
+              <Select
+                value={refundAction}
+                onValueChange={(value) => {
+                  setRefundAction(value as AdminTopupRefundAction);
+                  setRefundError(null);
+                }}
+              >
+                <SelectTrigger
+                  id="admin-ai-topups-refund-action"
+                  data-testid="admin-ai-topups-refund-action"
+                  aria-label={t("adminAiTopupsRefundAction")}
+                  className="h-10 min-h-10"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="clawback">
+                    {t("adminAiTopupsRefundClawback")}
+                  </SelectItem>
+                  <SelectItem value="write_off">
+                    {t("adminAiTopupsRefundWriteOff")}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {refundAction === "clawback"
+                  ? t("adminAiTopupsRefundClawbackHint")
+                  : t("adminAiTopupsRefundWriteOffHint")}
+              </p>
+            </div>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="admin-ai-topups-refund-note">
+                {t("adminAiTopupsRefundNote")}
+              </Label>
+              <Textarea
+                id="admin-ai-topups-refund-note"
+                value={refundNote}
+                maxLength={255}
+                placeholder={t("adminAiTopupsRefundNotePlaceholder")}
+                onChange={(event) => {
+                  setRefundNote(event.target.value);
+                  setRefundError(null);
+                }}
+                data-testid="admin-ai-topups-refund-note"
+              />
+            </div>
+            {refundError ? (
+              <div data-testid="admin-ai-topups-refund-error">
+                <FormAlert message={refundError} />
+              </div>
+            ) : null}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel type="button">
+              {t("adminAiTopupsCancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              type="button"
+              disabled={resolveRefundMut.isPending}
+              data-testid="admin-ai-topups-refund-submit"
+              onClick={(event) => {
+                event.preventDefault();
+                if (!refundTarget) return;
+                const note = refundNote.trim();
+                resolveRefundMut.mutate({
+                  id: refundTarget.id,
+                  action: refundAction,
+                  note: note || undefined,
+                });
+              }}
+            >
+              {resolveRefundMut.isPending ? (
+                <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" aria-hidden />
+              ) : null}
+              {t("adminAiTopupsRefundConfirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

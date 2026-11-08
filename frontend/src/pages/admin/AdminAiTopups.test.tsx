@@ -10,6 +10,7 @@ import {
   fetchAdminTopupProof,
   listAdminTopupOrders,
   rejectAdminTopupOrder,
+  resolveAdminTopupRefund,
   type AdminTopupOrder,
 } from "@/api/adminAiTopup";
 
@@ -19,6 +20,7 @@ vi.mock("@/api/adminAiTopup", () => ({
   fetchAdminTopupProof: vi.fn(),
   approveAdminTopupOrder: vi.fn(),
   rejectAdminTopupOrder: vi.fn(),
+  resolveAdminTopupRefund: vi.fn(),
 }));
 
 beforeAll(() => {
@@ -60,6 +62,7 @@ function order(overrides: Partial<AdminTopupOrder> = {}): AdminTopupOrder {
     verified_by_user_id: null,
     verified_at: null,
     rejection_reason: null,
+    resolution_note: null,
     paid_at: null,
     expires_at: "2026-11-10T00:00:00Z",
     created_at: "2026-11-07T08:00:00Z",
@@ -103,6 +106,9 @@ beforeEach(() => {
   );
   vi.mocked(rejectAdminTopupOrder).mockResolvedValue(
     order({ status: "rejected", rejection_reason: "Not received" }),
+  );
+  vi.mocked(resolveAdminTopupRefund).mockResolvedValue(
+    order({ status: "refunded", resolution_note: "Chargeback accepted" }),
   );
   vi.mocked(fetchAdminTopupProof).mockResolvedValue(
     new Blob(["%PDF-1.4"], { type: "application/pdf" }),
@@ -262,5 +268,147 @@ describe("AdminAiTopups", () => {
     renderPage();
 
     expect(await screen.findByTestId("admin-ai-topups-empty")).toBeInTheDocument();
+  });
+
+  it("shows the Resolve refund action only for refund_review rows", async () => {
+    vi.mocked(listAdminTopupOrders).mockResolvedValue(
+      listResponse([
+        order({ id: "o1", status: "refund_review" }),
+        order({ id: "o2", status: "awaiting_verification" }),
+        order({ id: "o3", status: "paid" }),
+      ]),
+    );
+    renderPage();
+    await screen.findByTestId("admin-ai-topups-table");
+
+    const user = await openMenu("o1");
+    expect(
+      await screen.findByTestId("topup-resolve-refund-o1"),
+    ).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    await waitFor(() =>
+      expect(
+        screen.queryByTestId("topup-resolve-refund-o1"),
+      ).not.toBeInTheDocument(),
+    );
+
+    const user2 = await openMenu("o2");
+    expect(await screen.findByTestId("topup-approve-o2")).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("topup-resolve-refund-o2"),
+    ).not.toBeInTheDocument();
+    await user2.keyboard("{Escape}");
+    await waitFor(() =>
+      expect(
+        screen.queryByTestId("topup-approve-o2"),
+      ).not.toBeInTheDocument(),
+    );
+
+    await openMenu("o3");
+    expect(await screen.findByTestId("topup-approve-o3")).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("topup-resolve-refund-o3"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("resolves a refund as a clawback with a note and refetches", async () => {
+    vi.mocked(listAdminTopupOrders).mockResolvedValue(
+      listResponse([order({ id: "o1", status: "refund_review" })]),
+    );
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByTestId("admin-ai-topups-table");
+
+    await openMenu();
+    await user.click(await screen.findByTestId("topup-resolve-refund-o1"));
+    expect(await screen.findByRole("alertdialog")).toBeInTheDocument();
+
+    await user.type(
+      screen.getByTestId("admin-ai-topups-refund-note"),
+      "Customer disputed the transfer",
+    );
+    await user.click(screen.getByTestId("admin-ai-topups-refund-submit"));
+
+    await waitFor(() =>
+      expect(resolveAdminTopupRefund).toHaveBeenCalledWith("o1", {
+        action: "clawback",
+        note: "Customer disputed the transfer",
+      }),
+    );
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith("Refund resolved."),
+    );
+    await waitFor(() =>
+      expect(listAdminTopupOrders).toHaveBeenCalledTimes(2),
+    );
+  });
+
+  it("sends write_off when that resolution is chosen", async () => {
+    vi.mocked(listAdminTopupOrders).mockResolvedValue(
+      listResponse([order({ id: "o1", status: "refund_review" })]),
+    );
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByTestId("admin-ai-topups-table");
+
+    await openMenu();
+    await user.click(await screen.findByTestId("topup-resolve-refund-o1"));
+
+    await user.click(screen.getByRole("combobox", { name: "Resolution" }));
+    await user.click(
+      await screen.findByRole("option", {
+        name: "Write off (leave the money with the customer)",
+      }),
+    );
+    await user.click(screen.getByTestId("admin-ai-topups-refund-submit"));
+
+    await waitFor(() =>
+      expect(resolveAdminTopupRefund).toHaveBeenCalledWith(
+        "o1",
+        expect.objectContaining({ action: "write_off" }),
+      ),
+    );
+  });
+
+  it("keeps the refund dialog open and shows a 409 error", async () => {
+    vi.mocked(listAdminTopupOrders).mockResolvedValue(
+      listResponse([order({ id: "o1", status: "refund_review" })]),
+    );
+    vi.mocked(resolveAdminTopupRefund).mockRejectedValue({
+      response: {
+        status: 409,
+        data: { detail: "Insufficient balance to claw back this top-up" },
+      },
+    });
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByTestId("admin-ai-topups-table");
+
+    await openMenu();
+    await user.click(await screen.findByTestId("topup-resolve-refund-o1"));
+    await user.click(screen.getByTestId("admin-ai-topups-refund-submit"));
+
+    expect(
+      await screen.findByTestId("admin-ai-topups-refund-error"),
+    ).toHaveTextContent("Insufficient balance to claw back this top-up");
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+
+  it("shows a resolved refund note under the status", async () => {
+    vi.mocked(listAdminTopupOrders).mockResolvedValue(
+      listResponse([
+        order({
+          id: "o1",
+          status: "refunded",
+          resolution_note: "Chargeback accepted",
+        }),
+      ]),
+    );
+    renderPage();
+
+    expect(
+      await screen.findByTestId("topup-resolution-note-o1"),
+    ).toHaveTextContent("Chargeback accepted");
   });
 });
