@@ -63,6 +63,8 @@ class RecordPaymentRequest(BaseModel):
     invoice_id: uuid.UUID
     method: str = Field(default="bank_transfer", max_length=32)
     reference: str | None = Field(default=None, max_length=128)
+    force: bool = False
+    reason: str | None = Field(default=None, max_length=500)
 
 
 class RecordPaymentResponse(BaseModel):

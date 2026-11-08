@@ -1,5 +1,3 @@
-import logging
-from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
@@ -36,10 +34,8 @@ from app.schemas.invoice import (
 from app.services.auth import get_current_admin
 from app.services.billing import BillingService
 from app.services.invoice import InvoiceService, invoice_pdf_response, to_item
-from app.services.payments.service import PaymentService
+from app.services.payments.service import guard_pending_attempts
 from app.services.sku_tier import SkuTierService
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin", tags=["admin-invoices"])
 admin_limiter = RateLimiter(
@@ -47,42 +43,6 @@ admin_limiter = RateLimiter(
     window_seconds=settings.admin_rate_limit_window,
     prefix="ratelimit:admin_invoices",
 )
-
-
-
-async def _guard_pending_attempts(
-    db: AsyncSession,
-    invoice_id: UUID,
-    *,
-    force: bool,
-    reason: str | None,
-    actor: User,
-    action: str,
-) -> None:
-    service = PaymentService(db)
-    attempt = await service.blocking_attempt(invoice_id)
-    if attempt is None:
-        return
-    if not force:
-        raise HTTPException(status_code=409, detail=f"pending gateway attempt {attempt.id}")
-    cleaned = (reason or "").strip()
-    if not cleaned:
-        raise HTTPException(status_code=400, detail="reason is required when force=true")
-    for pending in await service.pending_attempts(invoice_id):
-        try:
-            await service.cancel_attempt(pending, actor)
-        except Exception:  # noqa: BLE001 - provider cancel is best-effort; expire locally
-            pending.status = "expired"
-            pending.provider_status = "expired"
-            pending.updated_at = datetime.now(UTC)
-            await db.commit()
-    logger.warning(
-        "Invoice %s force-%s by admin %s: %s",
-        invoice_id,
-        action,
-        actor.id,
-        cleaned[:200],
-    )
 
 
 @router.get("/orgs", response_model=AdminOrgListResponse)
@@ -324,7 +284,7 @@ async def send_invoice(
     limit_response = await admin_limiter(request)
     if limit_response:
         return limit_response
-    inv = await InvoiceService(db).send(invoice_id)
+    inv = await InvoiceService(db).send(invoice_id, actor_id=current_admin.id)
     return InvoiceItem.model_validate(await to_item(inv, org_name=None, include_bank=True, db=db))
 
 
@@ -341,7 +301,7 @@ async def pay_invoice(
     limit_response = await admin_limiter(request)
     if limit_response:
         return limit_response
-    await _guard_pending_attempts(
+    await guard_pending_attempts(
         db,
         invoice_id,
         force=force,
@@ -370,7 +330,7 @@ async def void_invoice(
     limit_response = await admin_limiter(request)
     if limit_response:
         return limit_response
-    await _guard_pending_attempts(
+    await guard_pending_attempts(
         db,
         invoice_id,
         force=force,
@@ -378,7 +338,12 @@ async def void_invoice(
         actor=current_admin,
         action="void",
     )
-    inv = await InvoiceService(db).void(invoice_id)
+    inv = await InvoiceService(db).void(
+        invoice_id,
+        actor_id=current_admin.id,
+        force=force,
+        reason=reason,
+    )
     return InvoiceItem.model_validate(await to_item(inv, org_name=None, include_bank=False, db=db))
 
 

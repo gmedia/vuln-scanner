@@ -173,6 +173,16 @@ class PaymentAttempt(Base):
             postgresql_where=text("status = 'pending' AND topup_order_id IS NOT NULL"),
             sqlite_where=text("status = 'pending' AND topup_order_id IS NOT NULL"),
         ),
+        # At most one settled manual payment per invoice. Two concurrent
+        # "record payment" requests can both pass the invoice-state check; the
+        # second insert now fails at the DB instead of double-booking revenue.
+        Index(
+            "uq_payment_attempt_manual_succeeded",
+            "invoice_id",
+            unique=True,
+            postgresql_where=text("provider = 'manual' AND status = 'succeeded'"),
+            sqlite_where=text("provider = 'manual' AND status = 'succeeded'"),
+        ),
     )
 
 
