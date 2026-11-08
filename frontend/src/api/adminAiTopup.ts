@@ -22,6 +22,7 @@ export interface AdminTopupOrder {
   verified_by_user_id: string | null;
   verified_at: string | null;
   rejection_reason: string | null;
+  resolution_note: string | null;
   paid_at: string | null;
   expires_at: string;
   created_at: string;
@@ -49,6 +50,13 @@ export interface ApproveAdminTopupInput {
 
 export interface RejectAdminTopupInput {
   reason: string;
+}
+
+export type AdminTopupRefundAction = "clawback" | "write_off";
+
+export interface ResolveAdminTopupRefundInput {
+  action: AdminTopupRefundAction;
+  note?: string;
 }
 
 export async function listAdminTopupOrders(
@@ -99,6 +107,22 @@ export async function rejectAdminTopupOrder(
 ): Promise<AdminTopupOrder> {
   const { data } = await api.post<AdminTopupOrder>(
     `/api/admin/ai/topup/orders/${id}/reject`,
+    input,
+  );
+  return data;
+}
+
+/**
+ * Resolve a `refund_review` order as a wallet clawback or a write-off.
+ * A clawback can fail with 409 when the wallet balance is below the credit;
+ * a write-off always succeeds for an order in `refund_review`.
+ */
+export async function resolveAdminTopupRefund(
+  id: string,
+  input: ResolveAdminTopupRefundInput,
+): Promise<AdminTopupOrder> {
+  const { data } = await api.post<AdminTopupOrder>(
+    `/api/admin/ai/topup/orders/${id}/resolve-refund`,
     input,
   );
   return data;
