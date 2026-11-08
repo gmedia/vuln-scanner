@@ -12,6 +12,7 @@ from app.api.admin_sku_tier_routes import org_router as admin_org_tier_history_r
 from app.api.admin_sku_tier_routes import router as admin_sku_tier_router
 from app.api.admin_subscription_routes import router as admin_subscription_router
 from app.api.ai_routes import router as ai_router
+from app.api.ai_topup_routes import router as ai_topup_router
 from app.api.asset_routes import router as asset_router
 from app.api.auth_routes import router as auth_router
 from app.api.billing_profile_routes import router as billing_profile_router
@@ -56,6 +57,7 @@ api_router.include_router(admin_blog_router)
 api_router.include_router(admin_ai_router)
 api_router.include_router(admin_ai_fx_router)
 api_router.include_router(admin_ai_topup_router)
+api_router.include_router(ai_topup_router)
 api_router.include_router(ai_router)
 api_router.include_router(blog_router)
 api_router.include_router(org_router)
