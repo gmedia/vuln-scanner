@@ -452,7 +452,7 @@ class InvoiceService:
         inv.paid_at = datetime.now(UTC)
         if bank_ref is not None:
             inv.bank_ref = bank_ref.strip()[:64] or None
-        if org is not None:
+        if org is not None and inv.subscription_request_id is None:
             if org.sku != inv.sku:
                 record_tier_assignment(
                     self.db,

@@ -15,7 +15,7 @@ In:
 - Bundle + à-la-carte list prices (read-only), annual 10/12 display.
 - Plan-change request (upgrade/downgrade), pending state, cancel request.
 - Invoice list for owner/admin, reusing `WorkspaceInvoiceCard` / `InvoicePrintSheet`.
-- Admin queue: list, approve, reject with note. **Approving applies the tier** — it moves `organizations.sku` and the matching `subscriptions.sku` to the requested tier in the same transaction and appends an `assigned` row to `sku_tier_history` (source `subscription_request`). It refuses with `400` if the target tier was retired while the request waited, leaving the request `pending` so ops can reject or pick another tier. Invoicing stays manual: approval does not create an invoice.
+- Admin queue: list, approve, reject with note. **Approving records the decision and creates the draft invoice plus an `incomplete` subscription.** It does not move `organizations.sku`; the paid **Scan** invoice applies the tier (`BillingService.activate_from_invoice`) and is the only point that appends an `assigned` row to `sku_tier_history` (source `subscription_request`). Approval refuses with `400` if the target tier was retired while the request waited, leaving the request `pending` so ops can reject or pick another tier. The draft uses the next free billing period when the current one is already invoiced, so the same month is never billed twice.
 
 Out:
 
@@ -34,7 +34,7 @@ Out:
 | S2 | `enterprise` is quote-only; not a request target and has no public price. |
 | S3 | Downgrade is blocked when current usage exceeds the target tier cap. |
 | S4 | One pending request per organization; duplicate → 409. |
-| S5 | Request approval records the decision only. Ops still issues the invoice; a paid **Scan** invoice applies `org.sku`. |
+| S5 | Request approval records the decision and creates a draft Scan invoice plus an `incomplete` subscription. It does not move `organizations.sku`; the paid Scan invoice applies `org.sku`. |
 | S6 | Bundle savings are not shown as a badge because Guard is free while Host Protect is active and the à-la-carte sum double-counts it. |
 | S7 | Annual is display + request only until annual invoices exist. |
 | S8 | Viewer/member sees plan + capacity; invoices and change CTA are owner/admin only. |
@@ -88,7 +88,7 @@ Admin (`get_current_admin`):
 | Method | Path |
 |---|---|
 | GET | `/api/admin/subscription-requests?status=&page=` |
-| POST | `/api/admin/subscription-requests/{id}/approve` — applies the tier; `400` if the target was retired, `409` if already resolved |
+| POST | `/api/admin/subscription-requests/{id}/approve` — records the decision, drafts the Scan invoice and an `incomplete` subscription; `400` if the target was retired, `409` if already resolved |
 | POST | `/api/admin/subscription-requests/{id}/reject` |
 
 `POST` body: `{ target_sku: <tier code>, cycle: monthly|annual, note?: string }` (any `sku_tiers` code that is `active` and `requestable`).

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
@@ -8,6 +8,7 @@ from fastapi import HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.models.asset import ScanAsset
 from app.models.billing import PaymentAttempt, Subscription
 from app.models.guard import GuardAgent
@@ -40,11 +41,11 @@ from app.schemas.subscription import (
 )
 from app.services.billing_access import billing_write_block
 from app.services.invoice import InvoiceService
+from app.services.invoice_math import period_bounds_utc
 from app.services.organization import role_at_least
 from app.services.promo import PromoService
 from app.services.sku_tier import (
     SkuTierService,
-    record_tier_assignment,
     workspace_seat_cap_detail,
 )
 
@@ -560,10 +561,16 @@ class SubscriptionService:
         org = await self.db.get(Organization, request.organization_id)
         if org is None:
             raise HTTPException(status_code=404, detail="Organization not found")
+
+        resolution_note = (note or "").strip()[:500]
         if new_status == "approved":
-            await self._apply_requested_tier(request, org, admin)
+            await self._approve_request(request, org, admin)
+            # The UI sends "" when the admin approves without a note. Persist a
+            # non-empty note so the queue never shows a blank resolution.
+            if not resolution_note:
+                resolution_note = "Approved; invoice draft created"
         request.status = new_status
-        request.resolution_note = (note or "").strip()[:500]
+        request.resolution_note = resolution_note
         request.resolved_by_user_id = admin.id
         request.resolved_at = datetime.now(UTC)
         request.updated_at = datetime.now(UTC)
@@ -575,38 +582,91 @@ class SubscriptionService:
             requested_by_email=None,
         )
 
-    async def _apply_requested_tier(
+    async def _next_period_start(
+        self, organization_id: UUID, cycle: str
+    ) -> datetime | None:
+        """Start of the first Scan period that does not overlap an existing one.
+
+        Returns ``None`` when the current period is free, leaving the invoice
+        service to use the current calendar period. When a non-void Scan invoice
+        already covers the current period, the next draft starts one microsecond
+        after the latest overlapping period ends. That avoids the overlap 409
+        and stops the same month being billed twice.
+        """
+        start, end = period_bounds_utc(None, cycle)
+        latest_end = await self.db.scalar(
+            select(func.max(OrgInvoice.period_end)).where(
+                OrgInvoice.organization_id == organization_id,
+                OrgInvoice.product == "scan",
+                OrgInvoice.status != "void",
+                OrgInvoice.period_start <= end,
+                OrgInvoice.period_end >= start,
+            )
+        )
+        latest = _utc(latest_end)
+        if latest is None:
+            return None
+        return latest + timedelta(microseconds=1)
+
+    async def _approve_request(
         self, request: SubscriptionRequest, org: Organization, admin: User
     ) -> None:
-        """Move the organization onto the requested tier.
+        """Record an approval: a draft invoice plus an incomplete subscription.
 
-        Approval is where the decision takes effect, so the org's effective tier
-        and the subscription that drives renewal billing are updated together.
-        Invoicing stays manual — ops still issues the invoice.
+        Approval is a decision, not a payment. It validates the target tier is
+        still active, creates the draft Scan invoice the customer will pay, and
+        ensures a Subscription row exists so renewal billing has a lifecycle
+        row. It deliberately leaves ``Organization.sku`` on the current tier and
+        records no tier assignment: only the paid invoice applies the tier
+        (``BillingService.activate_from_invoice``).
 
-        The target must still be active: a request can sit in the queue while
-        the tier is retired, and silently onboarding to a retired tier would
-        break the grandfathering rule that only existing orgs keep it.
+        The invoice uses the next free period when the current one is already
+        billed, and its due date is at least one day out so a draft is never
+        born overdue.
         """
-        if request.target_sku == org.sku:
-            return
-        await SkuTierService(self.db).get_active(request.target_sku)
+        target_sku = request.target_sku
+        cycle = request.cycle
+        promo_code = request.promo_code
+        request_id = request.id
+        await SkuTierService(self.db).get_active(target_sku)
+
+        period_start = await self._next_period_start(org.id, cycle)
+        now = datetime.now(UTC)
+        anchor = period_start if period_start is not None else now
+        due_date = max(anchor, now) + timedelta(
+            days=max(1, settings.invoice_default_term_days)
+        )
+        await InvoiceService(self.db).create_invoice(
+            organization_id=org.id,
+            sku=target_sku,
+            actor=admin,
+            product="scan",
+            period_start=period_start,
+            due_date=due_date,
+            cycle=cycle,
+            notes=f"Plan request {request_id}",
+            promo_code=promo_code,
+            subscription_request_id=request_id,
+        )
+
         subscription = await self.db.scalar(
             select(Subscription).where(Subscription.organization_id == org.id)
         )
-        if subscription is not None:
-            subscription.sku = request.target_sku
+        if subscription is None:
+            subscription = Subscription(
+                organization_id=org.id,
+                sku=target_sku,
+                status="incomplete",
+                cycle=cycle,
+                provider="manual",
+            )
+            self.db.add(subscription)
+        else:
+            # Keep the existing lifecycle status; only the planned SKU is
+            # refreshed. Organization.sku (entitlement) stays put.
+            subscription.sku = target_sku
             subscription.updated_at = datetime.now(UTC)
-        record_tier_assignment(
-            self.db,
-            organization_id=org.id,
-            sku_code=request.target_sku,
-            previous=org.sku,
-            actor_id=admin.id,
-            source="subscription_request",
-        )
-        org.sku = request.target_sku
-        org.updated_at = datetime.now(UTC)
+        await self.db.flush()
 
 
 __all__ = ["SubscriptionService"]

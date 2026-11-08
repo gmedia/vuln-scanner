@@ -28,7 +28,7 @@ from app.services import ai_wallet
 from app.services.invoice import InvoiceService
 from app.services.payments.base import NormalizedEvent, PaymentConfigError, ProviderUnavailable, StatusResult
 from app.services.payments.registry import build_provider
-from app.services.sku_tier import SkuTierService
+from app.services.sku_tier import SkuTierService, record_tier_assignment
 
 logger = logging.getLogger(__name__)
 
@@ -176,6 +176,7 @@ class BillingService:
         *,
         provider: str = "manual",
         provider_ref: str | None = None,
+        actor_id: UUID | None = None,
     ) -> Subscription:
         org = await self.db.get(Organization, inv.organization_id)
         if org is None:
@@ -184,6 +185,19 @@ class BillingService:
             tier = await SkuTierService(self.db).get(inv.sku)
             if not tier.active and org.sku != inv.sku:
                 raise HTTPException(status_code=409, detail="Tier is retired")
+            if actor_id is not None and org.sku != inv.sku:
+                record_tier_assignment(
+                    self.db,
+                    organization_id=org.id,
+                    sku_code=inv.sku,
+                    previous=org.sku,
+                    actor_id=actor_id,
+                    source=(
+                        "subscription_request"
+                        if inv.subscription_request_id is not None
+                        else "invoice_payment"
+                    ),
+                )
             org.sku = inv.sku
             org.updated_at = _now()
 
@@ -219,6 +233,7 @@ class BillingService:
                 inv,
                 provider="manual",
                 provider_ref=reference,
+                actor_id=actor.id,
             )
         attempt = PaymentAttempt(
             organization_id=inv.organization_id,
