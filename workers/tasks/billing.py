@@ -382,14 +382,17 @@ def _next_annual_start(current_end: datetime) -> datetime:
 
 
 def _next_invoice_number(session: Any, start: datetime) -> str:
-    """Sync twin of ``app.services.invoice.next_invoice_number``."""
+    """Sync twin of ``app.services.invoice.next_invoice_number``.
+
+    ``MAX(number) + 1`` rather than ``COUNT(*) + 1``: voiding an invoice leaves a
+    gap, and counting rows would reuse a number that already exists.
+    """
     prefix = f"SX-{start.year:04d}{start.month:02d}-"
-    used = session.execute(
-        select(func.count())
-        .select_from(OrgInvoice)
-        .where(OrgInvoice.number.startswith(prefix))
-    ).scalar_one()
-    return f"{prefix}{int(used) + 1:04d}"
+    latest = session.execute(
+        select(func.max(OrgInvoice.number)).where(OrgInvoice.number.startswith(prefix))
+    ).scalar_one_or_none()
+    n = int(str(latest)[-4:]) + 1 if latest else 1
+    return f"{prefix}{n:04d}"
 
 
 @shared_task(bind=True, name="billing.draft_annual_renewals", acks_late=True, max_retries=1)  # type: ignore
