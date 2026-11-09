@@ -102,6 +102,9 @@ That is dependency ordering, not CI polling.
 ## PR Handoff Template
 Every PR description must include:
 ```markdown
+## Issue
+Closes #<number>
+
 ## What
 - [change 1]
 - [change 2]
@@ -112,6 +115,8 @@ Every PR description must include:
 ## Next steps
 - [ ] [follow-up if any]
 ```
+
+**The closing keyword is mandatory.** A bare `(#1234)` in the PR title — which is what the commit-subject convention produces — does **not** close the issue. The issue stays `OPEN` with `state:ready`, so `./scripts/fleet-claim.sh preflight` keeps advertising it as claimable and another host will re-implement merged work. Use `Closes` / `Fixes` / `Resolves` in the body.
 
 UI PRs must also fill the design change protocol in [`.github/pull_request_template.md`](.github/pull_request_template.md) (six questions from [`docs/specs/design-invariants.md`](docs/specs/design-invariants.md) §3).
 
