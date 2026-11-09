@@ -26,6 +26,9 @@ type InvoiceItem = {
   status: string;
   period_start: string;
   period_end: string;
+  void_reason: string | null;
+  voided_at: string | null;
+  voided_by_user_id: string | null;
 };
 type SubscriptionRequestItem = {
   id: string;
@@ -424,5 +427,10 @@ test.describe
 
     // Force-void is an audit correction, not a refund: the paid tier stays.
     expect(await orgSku()).toBe(targetSku);
+
+    const voided = await invoiceById(currentInvoiceId);
+    expect(voided?.void_reason).toBe(voidReason);
+    expect(voided?.voided_at).toBeTruthy();
+    expect(voided?.voided_by_user_id).toBeTruthy();
   });
 });
