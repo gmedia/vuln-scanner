@@ -15,6 +15,7 @@ export interface AdminSubscriptionItem {
   organization_name: string | null;
   sku: string;
   status: AdminBillingStatus;
+  derived_from_request: boolean;
   cycle: AdminBillingCycle;
   current_period_start: string | null;
   current_period_end: string | null;

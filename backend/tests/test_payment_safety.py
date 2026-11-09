@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 import pytest_asyncio
+from fastapi import HTTPException
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
@@ -207,6 +208,25 @@ async def test_force_void_paid_keeps_attempts_and_sku(db_session: AsyncSession, 
     org = await db_session.get(Organization, ctx["org"].id)
     assert org is not None
     assert org.sku == "basic"
+
+
+@pytest.mark.asyncio
+async def test_void_paid_invoice_guards_survive_row_lock(
+    db_session: AsyncSession, ctx
+) -> None:
+    """``_void`` locks the row before guarding; a paid invoice still 409/400s."""
+    inv = await _invoice(db_session, ctx["org"], status="paid")
+    service = InvoiceService(db_session)
+
+    with pytest.raises(HTTPException) as no_force:
+        await service._void(inv.id)
+    assert no_force.value.status_code == 409
+    assert no_force.value.detail == "Only draft or sent invoices can be voided"
+
+    with pytest.raises(HTTPException) as no_reason:
+        await service._void(inv.id, force=True)
+    assert no_reason.value.status_code == 400
+    assert no_reason.value.detail == "reason is required when force=true"
 
 
 @pytest.mark.asyncio

@@ -14,6 +14,7 @@ class SubscriptionItem(BaseModel):
     organization_id: uuid.UUID
     sku: str
     status: str
+    derived_from_request: bool = False
     cycle: str
     current_period_start: datetime | None = None
     current_period_end: datetime | None = None

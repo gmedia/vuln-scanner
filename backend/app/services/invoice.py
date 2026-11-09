@@ -521,7 +521,7 @@ class InvoiceService:
         ``organization.sku`` is deliberately left untouched. Reverting access is
         a separate ops decision (the refund flow), never a side effect of voiding.
         """
-        inv = await self.get(invoice_id)
+        inv = await self._get_for_update(invoice_id)
         cleaned = (reason or "").strip()
         if inv.status == "paid":
             if not force:

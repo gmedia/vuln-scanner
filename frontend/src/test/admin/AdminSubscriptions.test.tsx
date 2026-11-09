@@ -127,6 +127,7 @@ const subscription: AdminSubscriptionItem = {
   organization_name: "Org A",
   sku: "pro",
   status: "past_due",
+  derived_from_request: false,
   cycle: "monthly",
   current_period_start: "2026-09-01T00:00:00Z",
   current_period_end: "2026-09-30T23:59:59Z",
@@ -390,5 +391,71 @@ describe("AdminSubscriptions", () => {
     expect(
       screen.getByRole("option", { name: "Awaiting payment" }),
     ).toBeInTheDocument();
+  });
+
+  it("hides actions for an incomplete row with no billing period", async () => {
+    vi.mocked(listAdminSubscriptions).mockResolvedValue({
+      items: [
+        {
+          ...subscription,
+          id: "sub-incomplete",
+          organization_id: "org-incomplete",
+          status: "incomplete",
+          current_period_start: null,
+          current_period_end: null,
+          cancel_at_period_end: false,
+        },
+      ],
+      total: 1,
+    });
+    renderPage();
+
+    const table = await screen.findByTestId("admin-subscriptions-table");
+    expect(
+      within(table).getByText("Issue and mark the invoice paid to activate."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("admin-subscription-pay-sub-incomplete"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("admin-subscription-cancel-sub-incomplete"),
+    ).not.toBeInTheDocument();
+
+    const mobile = screen.getByTestId(
+      "admin-subscription-mobile-sub-incomplete",
+    );
+    expect(
+      within(mobile).getByText("Issue and mark the invoice paid to activate."),
+    ).toBeInTheDocument();
+    expect(within(mobile).queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("keeps actions for an incomplete row with a billing period", async () => {
+    vi.mocked(listAdminSubscriptions).mockResolvedValue({
+      items: [
+        {
+          ...subscription,
+          id: "sub-incomplete-period",
+          organization_id: "org-incomplete-period",
+          status: "incomplete",
+          current_period_start: "2026-09-01T00:00:00Z",
+          current_period_end: "2026-09-30T23:59:59Z",
+          cancel_at_period_end: false,
+        },
+      ],
+      total: 1,
+    });
+    renderPage();
+
+    await screen.findByTestId("admin-subscriptions-table");
+    expect(
+      screen.getByTestId("admin-subscription-pay-sub-incomplete-period"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId("admin-subscription-cancel-sub-incomplete-period"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Issue and mark the invoice paid to activate."),
+    ).not.toBeInTheDocument();
   });
 });

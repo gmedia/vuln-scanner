@@ -139,6 +139,7 @@ def _awaiting_payment_item(
         organization_id=org.id,
         sku=request.target_sku if request is not None else org.sku,
         status="awaiting_payment",
+        derived_from_request=True,
         cycle=request.cycle if request is not None else "monthly",
         current_period_start=None,
         current_period_end=None,
