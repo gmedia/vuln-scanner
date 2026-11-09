@@ -1,9 +1,16 @@
 User-agent: *
 Allow: /
+
+# Signed-in app surface. Every route here is behind ProtectedRoute, has no
+# search value, and most pages do not call usePageMeta — so they would inherit
+# the static canonical `https://sinexis.app/` from index.html and compete with
+# the homepage. src/test/robotsTxt.test.ts fails CI when a private route is
+# added to src/App.tsx without a rule here.
 Disallow: /dashboard
 Disallow: /scan/
 Disallow: /schedules
 Disallow: /assets$
+Disallow: /credit-history
 Disallow: /guard
 Disallow: /siem
 Disallow: /ai
@@ -14,11 +21,29 @@ Disallow: /profile
 Disallow: /guide
 Disallow: /settings/
 Disallow: /org/
-Disallow: /admin/
+# Per-invoice payment links: never crawl (privacy + duplicate canonical).
+Disallow: /pay/
+# No trailing slash: covers the bare `/admin` dashboard as well as `/admin/*`.
+Disallow: /admin
+
+# Auth and account flows.
 Disallow: /login
 Disallow: /register
 Disallow: /verify-email
 Disallow: /forgot-password
 Disallow: /reset-password
+
+# Public status pages are reachable under any customer host; the edge
+# X-Robots-Tag map already answers `noindex` for them, and this keeps them out
+# of the crawl queue as well.
 Disallow: /status/
+
+# Machine surfaces: JSON/SSE and API-key-only endpoints. Crawling them only
+# spends crawl budget on a domain that is still waiting for indexing.
+Disallow: /api/
+Disallow: /v1/
+Disallow: /ws/
+Disallow: /metrics
+Disallow: /health
+
 Sitemap: https://sinexis.app/sitemap.xml
