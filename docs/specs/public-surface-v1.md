@@ -159,6 +159,7 @@ The hub has one `h1`, four pillar sections (`exposure`, `onbox`, `availability`,
 - Public product pages set `robots: "index"`.
 - Unknown slugs set `robots: "noindex"` and render the 404 surface.
 - The sitemap includes `/products` and the five product URLs; blog URLs stay gated by `BLOG_ENABLED`; `/`, `/terms`, and `/privacy` are always present.
+- `frontend/public/robots.txt` disallows **every** non-public route declared in `App.tsx`. Private pages rarely call `usePageMeta`, so they would otherwise inherit the static canonical `https://sinexis.app/` from `index.html` and compete with the homepage; `/pay/:invoiceId` would expose per-invoice payment URLs. `frontend/src/test/robotsTxt.test.ts` derives the route set from `App.tsx` and fails CI when a rule is missing. Machine surfaces (`/api/`, `/v1/`, `/ws/`, `/metrics`, `/health`) are disallowed to protect crawl budget.
 - Social crawlers that do not execute JavaScript may miss the per-page OG tags. This SPA limitation is accepted; prerender is not part of this slice.
 
 ---
@@ -169,7 +170,7 @@ The hub has one `h1`, four pillar sections (`exposure`, `onbox`, `availability`,
 cd frontend
 ./node_modules/.bin/tsc --noEmit
 ./node_modules/.bin/eslint src/
-./node_modules/.bin/vitest run src/test/services.test.ts src/test/Products.test.tsx src/test/ProductPage.test.tsx
+./node_modules/.bin/vitest run src/test/services.test.ts src/test/Products.test.tsx src/test/ProductPage.test.tsx src/test/robotsTxt.test.ts
 
 cd ../backend
 pytest tests/test_sitemap.py -q
