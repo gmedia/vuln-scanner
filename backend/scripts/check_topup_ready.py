@@ -35,6 +35,7 @@ CHECK_PAYMENT_GATEWAY = "PAYMENT_GATEWAY_ENABLED"
 CHECK_MIDTRANS = "MIDTRANS_PROVIDER"
 
 _PACK_ADMIN_PATH = "/api/admin/ai/topup/packs"
+_PACK_ADMIN_UI = "/admin/ai/packs"
 _GATEWAY_PREFLIGHT = "python -m scripts.check_payment_config"
 
 
@@ -78,7 +79,7 @@ async def _active_pack_check(db: AsyncSession) -> CheckResult:
         return _result(
             CHECK_ACTIVE_PACKS,
             "FAIL",
-            f"no active pack; customers have nothing to buy (create one via {_PACK_ADMIN_PATH})",
+            f"no active pack; customers have nothing to buy (add one at {_PACK_ADMIN_UI} or POST {_PACK_ADMIN_PATH})",
         )
     min_amount = int(row.min_amount or 0)
     max_amount = int(row.max_amount or 0)
