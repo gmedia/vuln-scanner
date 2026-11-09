@@ -107,6 +107,13 @@ function statusVariant(
   return "default";
 }
 
+function isAwaitingPaymentRow(item: AdminSubscriptionItem): boolean {
+  return (
+    item.derived_from_request ||
+    (item.status === "incomplete" && !item.current_period_start)
+  );
+}
+
 function Pager({
   page,
   total,
@@ -408,7 +415,7 @@ function AdminSubscriptions() {
                           ) : null}
                         </TableCell>
                         <TableCell className="text-right">
-                          {item.status === "awaiting_payment" ? (
+                          {isAwaitingPaymentRow(item) ? (
                             <span className="text-xs text-muted-foreground">
                               {t("subscriptionAwaitingPaymentHint")}
                             </span>
@@ -488,7 +495,7 @@ function AdminSubscriptions() {
                       {formatDate(item.current_period_start, dateLocale)} –{" "}
                       {formatDate(item.current_period_end, dateLocale)}
                     </p>
-                    {item.status === "awaiting_payment" ? (
+                    {isAwaitingPaymentRow(item) ? (
                       <p className="mt-3 text-xs text-muted-foreground">
                         {t("subscriptionAwaitingPaymentHint")}
                       </p>

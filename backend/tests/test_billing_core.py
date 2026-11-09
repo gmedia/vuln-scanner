@@ -584,6 +584,7 @@ async def test_admin_list_includes_approved_request_without_subscription(db_sess
     assert items[0].organization_id == ctx["other_org"].id
     assert items[0].organization_name == "Other Org"
     assert items[0].status == "awaiting_payment"
+    assert items[0].derived_from_request is True
     assert items[0].sku == "pro"
     assert items[0].cycle == "monthly"
 
@@ -598,6 +599,26 @@ async def test_admin_list_includes_approved_request_without_subscription(db_sess
     )
     assert active_total == 0
     assert active == []
+
+
+@pytest.mark.asyncio
+async def test_admin_list_marks_persisted_rows_as_not_derived(db_session, ctx):
+    service = BillingService(db_session)
+    db_session.add(
+        Subscription(
+            organization_id=ctx["org"].id,
+            sku="basic",
+            status="active",
+            cycle="monthly",
+            provider="manual",
+        )
+    )
+    await db_session.commit()
+
+    items, total = await service.list_admin(status_filter=None, page=1, page_size=50)
+
+    assert total == 1
+    assert items[0].derived_from_request is False
 
 
 @pytest.mark.asyncio
