@@ -265,3 +265,15 @@ Checks, in order:
 
 Exit code `0` means no `FAIL` (warnings allowed); exit code `1` means at least
 one check failed, so the command can gate an ops checklist.
+
+### Fixing a `FAIL`
+
+| Failed check | Fix |
+|---|---|
+| `AI_GATEWAY_ENABLED` | Set `AI_GATEWAY_ENABLED=true` in the deployment env and recreate the backend. |
+| `ACTIVE_TOPUP_PACKS` | Open `/admin/ai/packs` and add at least one active pack (or `POST /api/admin/ai/topup/packs`). Prices are an owner decision; the migration deliberately seeds none. |
+| `BANK_COPY` | Set `INVOICE_BANK_NAME`, `INVOICE_BANK_ACCOUNT`, `INVOICE_BANK_HOLDER` and recreate the backend. Without them manual orders return `503`. |
+
+Re-run the command after each fix; the target is `TOP-UP READINESS: OK` with
+exit code `0`. A remaining `WARN` on `PAYMENT_GATEWAY_ENABLED` is fine when the
+launch is manual-transfer only.
