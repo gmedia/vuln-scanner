@@ -243,6 +243,13 @@ test.describe
 
   test.afterAll(async () => {
     if (!api) return;
+    // This spec moves the shared E2E organization onto `targetSku`, and the
+    // force-void in the last test deliberately does NOT revert the tier. Restore
+    // it so later specs (admin-sku-tiers asserts on the basic tier's orgs) and
+    // reruns see the same starting state.
+    if (org && startingSku && requestId) {
+      await api.patch(`/api/orgs/${org.id}`, { data: { sku: startingSku } });
+    }
     await api.dispose();
   });
 
@@ -364,8 +371,11 @@ test.describe
       })
       .toBe("paid");
 
-    // Payment, not approval, applies the requested tier.
-    expect(await orgSku()).toBe(targetSku);
+    // Payment, not approval, applies the requested tier. Poll: the paid status
+    // commits before the subscription activation in the same request.
+    await expect
+      .poll(async () => orgSku(), { timeout: 30_000 })
+      .toBe(targetSku);
 
     // Source lives in the history row's `changes.source`; the org-scoped
     // endpoint is /api/admin/orgs/{org}/tier-history.
