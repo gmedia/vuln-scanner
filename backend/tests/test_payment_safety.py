@@ -190,7 +190,11 @@ async def test_force_void_paid_keeps_attempts_and_sku(db_session: AsyncSession, 
                 headers=_auth(ctx["admin"]),
             )
             assert response.status_code == 200, response.text
-            assert response.json()["status"] == "void"
+            body = response.json()
+            assert body["status"] == "void"
+            assert body["void_reason"] == "recorded in error"
+            assert body["voided_by_user_id"] == str(ctx["admin"].id)
+            assert body["voided_at"] is not None
     finally:
         app.dependency_overrides.clear()
 

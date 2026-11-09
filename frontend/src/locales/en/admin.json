@@ -146,6 +146,7 @@
   "invoiceVoidConfirmTitle": "Void this invoice?",
   "invoiceVoidConfirmBody": "A voided invoice cannot be returned to draft or sent.",
   "invoiceVoided": "Invoice voided",
+  "invoiceVoidedReason": "Voided: {{reason}}",
   "invoicePayTitle": "Mark invoice as paid",
   "invoicePayBody": "Record the bank transfer for {{number}}. This activates the plan when the invoice is a Scan invoice.",
   "invoicePayRefLabel": "Bank reference",

@@ -819,6 +819,11 @@ export interface InvoiceItem {
   bank_ref: string | null;
   notes: string;
   paid_at: string | null;
+  paid_by_user_id?: string | null;
+  sent_by_user_id?: string | null;
+  voided_by_user_id?: string | null;
+  void_reason?: string | null;
+  voided_at?: string | null;
   created_at: string;
   updated_at: string;
   organization_name?: string | null;

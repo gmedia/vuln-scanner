@@ -123,6 +123,11 @@ class InvoiceItem(BaseModel):
     bank_ref: str | None = None
     notes: str = ""
     paid_at: datetime | None = None
+    paid_by_user_id: uuid.UUID | None = None
+    sent_by_user_id: uuid.UUID | None = None
+    voided_by_user_id: uuid.UUID | None = None
+    void_reason: str | None = None
+    voided_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
     organization_name: str | None = None

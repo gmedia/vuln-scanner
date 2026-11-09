@@ -146,6 +146,7 @@
   "invoiceVoidConfirmTitle": "Batalkan invoice ini?",
   "invoiceVoidConfirmBody": "Invoice yang dibatalkan tidak bisa kembali ke draf atau terkirim.",
   "invoiceVoided": "Invoice dibatalkan",
+  "invoiceVoidedReason": "Dibatalkan: {{reason}}",
   "invoicePayTitle": "Tandai invoice lunas",
   "invoicePayBody": "Catat transfer bank untuk {{number}}. Ini mengaktifkan paket bila invoice adalah invoice Scan.",
   "invoicePayRefLabel": "Referensi bank",

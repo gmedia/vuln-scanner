@@ -961,6 +961,14 @@ function AdminInvoices() {
                       {inv.product} · {tierLabel(inv.sku)} ·{" "}
                       {formatIdr(inv.total_idr ?? inv.amount_idr)}
                     </p>
+                    {inv.status === "void" && inv.void_reason ? (
+                      <p
+                        className="mt-1 text-[11px] text-muted-foreground"
+                        data-testid={`invoice-void-reason-${inv.id}`}
+                      >
+                        {t("invoiceVoidedReason", { reason: inv.void_reason })}
+                      </p>
+                    ) : null}
                     {(inv.discount_idr ?? 0) > 0 ? (
                       <p
                         className="mt-1 text-[11px] text-muted-foreground"
@@ -1094,8 +1102,7 @@ function AdminInvoices() {
                           >
                             {inv.product}
                           </Badge>
-                        )}
-                      </TableCell>
+                        )}                      </TableCell>
                       <TableCell>{tierLabel(inv.sku)}</TableCell>
                       <TableCell className="font-mono tabular-nums">
                         {formatIdr(inv.total_idr ?? inv.amount_idr)}
@@ -1118,6 +1125,14 @@ function AdminInvoices() {
                         >
                           {t("invoiceStaleDraft")}
                         </Badge>
+                      ) : null}
+                      {inv.status === "void" && inv.void_reason ? (
+                        <p
+                          className="mt-1 text-[11px] text-muted-foreground"
+                          data-testid={`invoice-void-reason-desktop-${inv.id}`}
+                        >
+                          {t("invoiceVoidedReason", { reason: inv.void_reason })}
+                        </p>
                       ) : null}
                       </TableCell>
                       <TableCell className="text-right">
