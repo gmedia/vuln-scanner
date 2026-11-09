@@ -19,7 +19,7 @@ email-validator==2.3.0
 # That module uses SES when SES_ENABLED=true, so the SDK must be present here
 # too — otherwise worker mail silently degrades to the SMTP bridge while the
 # API uses SES. Same floor as backend/requirements.txt.
-boto3>=1.43.114
+boto3>=1.43.125
 pytest==9.1.1
 pytest-asyncio==1.4.1
 pytest-cov==7.1.0
