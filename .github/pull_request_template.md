@@ -1,3 +1,8 @@
+## Issue
+Closes #<number>
+
+Use a closing keyword (`Closes` / `Fixes` / `Resolves`) — a bare `(#1234)` in the title does **not** close the issue, and it leaves `state:ready` work in the claim ledger that another host will try to re-implement.
+
 ## What
 - [change 1]
 - [change 2]
