@@ -2,7 +2,7 @@
 fastapi==0.143.2
 starlette==1.8.0
 pytest==9.1.1
-pytest-asyncio==1.4.1
+pytest-asyncio==1.4.1.post1
 pytest-cov==7.1.0
 httpx==0.28.1
 aiosqlite==0.22.1
